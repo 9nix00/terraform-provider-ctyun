@@ -1,5 +1,9 @@
 package common
 
+import (
+	"errors"
+)
+
 const (
 	OpenapiSecurityGroupRuleNotFound = "Openapi.SecurityGroupRule.NotFound"
 	OpenapiOrderInprogress           = "Openapi.Order.Inprogress"
@@ -17,4 +21,8 @@ const (
 
 	CtiamNoPermission = "CTIAM_0005"
 	CtiamNoPrivilege  = "CTIAM_1044"
+
+	ErrorStatusCode = 900
 )
+
+var InvalidReturnObjError = errors.New("InvalidReturnObj")

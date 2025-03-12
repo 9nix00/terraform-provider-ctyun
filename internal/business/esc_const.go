@@ -18,6 +18,18 @@ const (
 	EcsStatusUnsubscribed  = "unsubscribed"
 	EcsStatusUnsubscribing = "unsubscribing"
 
+	EbmStatusCreating   = "CREATING"
+	EbmStatusStarting   = "STARTING"
+	EbmStatusRunning    = "RUNNING"
+	EbmStatusStopping   = "STOPPING"
+	EbmStatusStopped    = "STOPPED"
+	EbmStatusRestarting = "RESTARTING"
+	EbmStatusError      = "ERROR"
+
+	EbmStatusReinstalling      = "REINSTALLING"
+	EbmStatusMaintaining       = "MAINTAINING"
+	EbmStatusResettingPassword = "RESETTING_PASSWORD"
+
 	EcsFlavorType_CPU                  = "CPU"
 	EcsFlavorType_CPU_C3               = "CPU_C3"
 	EcsFlavorType_CPU_C6               = "CPU_C6"

@@ -3,30 +3,37 @@ package provider
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
 	"net/http"
 	"slices"
 	"strings"
 	"terraform-provider-ctyun/internal/common"
+	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ebm"
 	dataSource2 "terraform-provider-ctyun/internal/datasource"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	resource2 "terraform-provider-ctyun/internal/resource"
+	ebm2 "terraform-provider-ctyun/internal/service/ebm"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -202,6 +209,12 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			sdk_extend.LogHttpHook{},
 		},
 	}
+	coreConfig := &core.CtyunClientConfig{
+		HttpHooks: []core.HttpHook{
+			ctyunsdk.AddUserAgentHttpHook{},
+			sdk_extend.LogHttpHook{},
+		},
+	}
 
 	// consoleUrl不为空的情况
 	if consoleUrl != "" && len(inspectUrlKeywords) != 0 && env != ctyunsdk.EnvironmentProd {
@@ -210,18 +223,23 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	}
 
 	var httpClient *http.Client
+	var endpointUrl string
 	switch environment {
 	case ctyunsdk.EnvironmentDev:
 		httpClient = ctyunsdk.ClientTest()
+		endpointUrl = "https://%s-global.ctapi-test.ctyun.cn:21443"
 	case ctyunsdk.EnvironmentTest:
 		httpClient = ctyunsdk.ClientTest()
+		endpointUrl = "https://%s-global.ctapi-test.ctyun.cn:21443"
 	case ctyunsdk.EnvironmentProd:
 		httpClient = ctyunsdk.ClientProd()
+		endpointUrl = "https://%s-global.ctapi.ctyun.cn"
 	default:
 		httpClient = ctyunsdk.ClientProd()
+		endpointUrl = "https://%s-global.ctapi.ctyun.cn"
 	}
 	config.Client = httpClient
-
+	coreConfig.Client = httpClient
 	// 构造client
 	client, err := ctyunsdk.NewCtyunClient(environment, config)
 	if err != nil {
@@ -230,6 +248,8 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
+	coreClient := core.NewCtyunClient(coreConfig)
+
 	// 构造私秘钥信息
 	credential, err := ctyunsdk.NewCredential(ak, sk)
 	if err != nil {
@@ -237,6 +257,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		resp.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
+	SdkCredential := core.NewCredential(ak, sk)
 
 	extra := map[string]string{
 		common.ExtraRegionId:  regionId,
@@ -252,8 +273,10 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtIamApis:   ctiam.NewApis(client),
 			CtImageApis: ctimage.NewApis(client),
 			CtVpcApis:   ctvpc.NewApis(client),
+			EbmApis:     ebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
 		},
 		*credential,
+		*SdkCredential,
 		extra,
 	)
 	metadata := common.AcquireCtyunMetadata()
@@ -262,11 +285,42 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 }
 
 func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataSource {
-	return c.buildDataSource(dataSource2.NewCtyunRegions(), dataSource2.NewCtyunServices(), dataSource2.NewCtyunAuthorities(), dataSource2.NewCtyunImages(), dataSource2.NewCtyunEcsFlavors(), dataSource2.NewCtyunIamUserGroups())
+	return c.buildDataSource(
+		dataSource2.NewCtyunRegions(),
+		dataSource2.NewCtyunServices(),
+		dataSource2.NewCtyunAuthorities(),
+		dataSource2.NewCtyunImages(),
+		dataSource2.NewCtyunEcsFlavors(),
+		dataSource2.NewCtyunIamUserGroups(),
+		ebm2.NewCtyunEbmDeviceTypes(),
+	)
 }
 
 func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource {
-	return c.buildResource(resource2.NewCtyunPolicy(), resource2.NewCtyunVpc(), resource2.NewCtyunSecurityGroup(), resource2.NewCtyunSecurityGroupRule(), resource2.NewCtyunEip(), resource2.NewCtyunEipAssociation(), resource2.NewCtyunSubnet(), resource2.NewCtyunEcs(), resource2.NewCtyunIamUser(), resource2.NewCtyunIamUserGroup(), resource2.NewCtyunIdp(), resource2.NewCtyunEbs(), resource2.NewCtyunEbsAssociation(), resource2.NewCtyunImage(), resource2.NewCtyunImageAssociationUser(), resource2.NewCtyunKeypair(), resource2.NewCtyunBandwidth(), resource2.NewCtyunBandwidthAssociationEip(), resource2.NewCtyunPolicyAssociationUserGroup(), resource2.NewCtyunPolicyAssociationUser(), resource2.NewCtyunEnterpriseProject(), resource2.NewCtyunEnterpriseProjectAssociationUserGroup())
+	return c.buildResource(
+		resource2.NewCtyunPolicy(),
+		resource2.NewCtyunVpc(),
+		resource2.NewCtyunSecurityGroup(),
+		resource2.NewCtyunSecurityGroupRule(),
+		resource2.NewCtyunEip(),
+		resource2.NewCtyunEipAssociation(),
+		resource2.NewCtyunSubnet(),
+		resource2.NewCtyunEcs(),
+		resource2.NewCtyunIamUser(),
+		resource2.NewCtyunIamUserGroup(),
+		resource2.NewCtyunIdp(),
+		resource2.NewCtyunEbs(),
+		resource2.NewCtyunEbsAssociation(),
+		resource2.NewCtyunImage(),
+		resource2.NewCtyunImageAssociationUser(),
+		resource2.NewCtyunKeypair(),
+		resource2.NewCtyunBandwidth(),
+		resource2.NewCtyunBandwidthAssociationEip(),
+		resource2.NewCtyunPolicyAssociationUserGroup(),
+		resource2.NewCtyunPolicyAssociationUser(),
+		resource2.NewCtyunEnterpriseProject(),
+		resource2.NewCtyunEnterpriseProjectAssociationUserGroup(),
+		ebm2.NewCtyunEbm())
 }
 
 // buildDataSource 构建datasource
@@ -299,3 +353,30 @@ type CtyunProviderConfig struct {
 	ConsoleUrl         types.String `tfsdk:"console_url"`
 	InspectUrlKeywords types.Set    `tfsdk:"inspect_url_keywords"`
 }
+
+var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+	"scaffolding": providerserver.NewProtocol6WithError(NewCtyunProvider("test")()),
+}
+
+var TestAccProtoV6ProviderFactoriesWithEcho = map[string]func() (tfprotov6.ProviderServer, error){
+	"scaffolding": providerserver.NewProtocol6WithError(NewCtyunProvider("test")()),
+	"echo":        echoprovider.NewProviderServer(),
+}
+
+const (
+	TestConfig = `
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  region_id            = "bb9fdb42056f11eda1610242ac110002"         # 如果此值不填，则默认读取环境变量中的CTYUN_REGION_ID
+  az_name              = "cn-huadong1-jsnj1A-public-ctcloud"        # 如果此值不填，则默认读取环境变量中的CTYUN_AZ_NAME
+  env                  = "prod"                                     # 如果此值不填，则默认读取环境变量中的CTYUN_ENV
+}
+`
+)
