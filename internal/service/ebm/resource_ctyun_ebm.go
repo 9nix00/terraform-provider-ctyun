@@ -18,7 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"terraform-provider-ctyun/internal/core/ebm"
+	"terraform-provider-ctyun/internal/core/ctebm"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"time"
@@ -296,7 +296,7 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	diskList := c.buildDiskList(ctx, plan)
 	networkCardList := c.buildNetworkCardList(ctx, plan)
 	// 需要校验的很多，比如弹性裸金属需要安全组id、自选ip时需要传ip，自动分配需要传带宽，密码和密钥对必须有一个，raidid是否传递
-	params := &ebm.EbmCreateInstanceV4plusRequest{
+	params := &ctebm.EbmCreateInstanceV4plusRequest{
 		RegionID:             regionID,
 		AzName:               azName,
 		DeviceType:           plan.DeviceType.ValueString(),
@@ -333,7 +333,7 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 		params.PublicIP = &publicIP
 	}
 
-	resp, err := c.meta.Apis.EbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -394,7 +394,7 @@ func (c *ctyunEbm) handleInstance(ctx context.Context, plan CtyunEbmConfig, curr
 }
 
 func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.EbmApis.EbmStartInstanceApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmStartInstanceRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmStartInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStartInstanceRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
 		InstanceUUID: plan.ID.ValueString(),
@@ -437,7 +437,7 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 }
 
 func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.EbmApis.EbmStopInstanceApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmStopInstanceRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmStopInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStopInstanceRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
 		InstanceUUID: plan.ID.ValueString(),
@@ -478,7 +478,7 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 	return
 }
 
-func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ebm.EbmCreateInstanceV4plusDiskListRequest) {
+func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest) {
 	if plan.DiskList.IsNull() {
 		return
 	}
@@ -489,7 +489,7 @@ func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (disk
 	}
 	for _, disk := range diskList {
 		title := disk.Title.ValueString()
-		diskListReq = append(diskListReq, &ebm.EbmCreateInstanceV4plusDiskListRequest{
+		diskListReq = append(diskListReq, &ctebm.EbmCreateInstanceV4plusDiskListRequest{
 			DiskType: disk.DiskType.ValueString(),
 			Size:     int32(disk.Size.ValueInt64()),
 			Title:    &title,
@@ -499,7 +499,7 @@ func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (disk
 	return
 }
 
-func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (networkCardListReq []*ebm.EbmCreateInstanceV4plusNetworkCardListRequest) {
+func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest) {
 	var networkCardList []CtyunEbmNetworkCardList
 	if plan.NetworkCardList.IsNull() {
 		return
@@ -512,7 +512,7 @@ func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig
 		title := card.Title.ValueString()
 		fixedIP := card.FixedIP.ValueString()
 		ipv6 := card.FixedIP.ValueString()
-		params := &ebm.EbmCreateInstanceV4plusNetworkCardListRequest{
+		params := &ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{
 			Master:   card.Master.ValueBool(),
 			SubnetID: card.SubnetID.ValueString(),
 		}
@@ -602,7 +602,7 @@ func (c *ctyunEbm) updateInstanceInfo(ctx context.Context, state CtyunEbmConfig,
 	}
 
 	name := plan.InstanceName.ValueString()
-	resp, err := c.meta.Apis.EbmApis.EbmUpdateInstanceApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmUpdateInstanceRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmUpdateInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmUpdateInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
 		DisplayName:  &name,
@@ -630,7 +630,7 @@ func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, pla
 	if err != nil {
 		return
 	}
-	resp, err := c.meta.Apis.EbmApis.EbmResetPasswordApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmResetPasswordRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmResetPasswordApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmResetPasswordRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
 		InstanceUUID: state.ID.ValueString(),
@@ -709,7 +709,7 @@ func (c *ctyunEbm) checkAfterUpdatePassword(ctx context.Context, state CtyunEbmC
 }
 
 func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) (status string, err error) {
-	resp, err := c.meta.Apis.EbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmDescribeInstanceV4plusRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
 		RegionID:     state.RegionID.ValueString(),
 		InstanceUUID: state.ID.ValueString(),
 		AzName:       state.AzName.ValueString(),
@@ -733,7 +733,7 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 
-	resp, err := c.meta.Apis.EbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmDeleteInstanceRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
 		InstanceUUID: state.ID.ValueString(),
@@ -765,7 +765,7 @@ func (c *ctyunEbm) Configure(_ context.Context, request resource.ConfigureReques
 
 // getAndMergeEbm 查询ebm
 func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.EbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ebm.EbmDescribeInstanceV4plusRequest{
+	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
 		RegionID:     cfg.RegionID.ValueString(),
 		InstanceUUID: cfg.ID.ValueString(),
 		AzName:       cfg.AzName.ValueString(),

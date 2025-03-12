@@ -3,13 +3,13 @@ package common
 import (
 	"sync"
 	"terraform-provider-ctyun/internal/core/core"
+	"terraform-provider-ctyun/internal/core/ctebm"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
-	"terraform-provider-ctyun/internal/core/ebm"
 )
 
 var once sync.Once
@@ -56,5 +56,5 @@ type Apis struct {
 	CtIamApis   *ctiam.Apis
 	CtImageApis *ctimage.Apis
 	CtVpcApis   *ctvpc.Apis
-	EbmApis     *ebm.Apis
+	CtEbmApis   *ctebm.Apis
 }

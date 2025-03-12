@@ -6,7 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ebm"
+	"terraform-provider-ctyun/internal/core/ctebm"
 )
 
 func NewCtyunEbmDeviceTypes() datasource.DataSource {
@@ -123,13 +123,13 @@ func (c *ctyunEbmDeviceTypes) Read(ctx context.Context, request datasource.ReadR
 		return
 	}
 	deviceType := config.DeviceType.ValueString()
-	params := &ebm.EbmDeviceTypeListRequest{
+	params := &ctebm.EbmDeviceTypeListRequest{
 		RegionID:   regionId,
 		AzName:     azName,
 		DeviceType: &(deviceType),
 	}
 
-	resp, err := c.meta.Apis.EbmApis.EbmDeviceTypeListApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeviceTypeListApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return

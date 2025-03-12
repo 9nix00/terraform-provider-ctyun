@@ -22,17 +22,17 @@ import (
 	"strings"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/core"
+	"terraform-provider-ctyun/internal/core/ctebm"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
-	"terraform-provider-ctyun/internal/core/ebm"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	common2 "terraform-provider-ctyun/internal/service/common"
-	ebm2 "terraform-provider-ctyun/internal/service/ebm"
+	"terraform-provider-ctyun/internal/service/ebm"
 	"terraform-provider-ctyun/internal/service/ebs"
 	"terraform-provider-ctyun/internal/service/ecs"
 	"terraform-provider-ctyun/internal/service/iam"
@@ -277,7 +277,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtIamApis:   ctiam.NewApis(client),
 			CtImageApis: ctimage.NewApis(client),
 			CtVpcApis:   ctvpc.NewApis(client),
-			EbmApis:     ebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			CtEbmApis:   ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -296,7 +296,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		image.NewCtyunImages(),
 		ecs.NewCtyunEcsFlavors(),
 		iam.NewCtyunIamUserGroups(),
-		ebm2.NewCtyunEbmDeviceTypes(),
+		ebm.NewCtyunEbmDeviceTypes(),
 	)
 }
 
@@ -324,7 +324,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
-		ebm2.NewCtyunEbm())
+		ebm.NewCtyunEbm())
 }
 
 // buildDataSource 构建datasource
