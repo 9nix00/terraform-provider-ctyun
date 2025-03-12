@@ -29,11 +29,15 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ebm"
-	dataSource2 "terraform-provider-ctyun/internal/datasource"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	resource2 "terraform-provider-ctyun/internal/resource"
+	common2 "terraform-provider-ctyun/internal/service/common"
 	ebm2 "terraform-provider-ctyun/internal/service/ebm"
+	"terraform-provider-ctyun/internal/service/ebs"
+	"terraform-provider-ctyun/internal/service/ecs"
+	"terraform-provider-ctyun/internal/service/iam"
+	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -286,40 +290,40 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 
 func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return c.buildDataSource(
-		dataSource2.NewCtyunRegions(),
-		dataSource2.NewCtyunServices(),
-		dataSource2.NewCtyunAuthorities(),
-		dataSource2.NewCtyunImages(),
-		dataSource2.NewCtyunEcsFlavors(),
-		dataSource2.NewCtyunIamUserGroups(),
+		common2.NewCtyunRegions(),
+		common2.NewCtyunServices(),
+		iam.NewCtyunAuthorities(),
+		image.NewCtyunImages(),
+		ecs.NewCtyunEcsFlavors(),
+		iam.NewCtyunIamUserGroups(),
 		ebm2.NewCtyunEbmDeviceTypes(),
 	)
 }
 
 func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource {
 	return c.buildResource(
-		resource2.NewCtyunPolicy(),
-		resource2.NewCtyunVpc(),
-		resource2.NewCtyunSecurityGroup(),
-		resource2.NewCtyunSecurityGroupRule(),
-		resource2.NewCtyunEip(),
-		resource2.NewCtyunEipAssociation(),
-		resource2.NewCtyunSubnet(),
-		resource2.NewCtyunEcs(),
-		resource2.NewCtyunIamUser(),
-		resource2.NewCtyunIamUserGroup(),
-		resource2.NewCtyunIdp(),
-		resource2.NewCtyunEbs(),
-		resource2.NewCtyunEbsAssociation(),
-		resource2.NewCtyunImage(),
-		resource2.NewCtyunImageAssociationUser(),
-		resource2.NewCtyunKeypair(),
-		resource2.NewCtyunBandwidth(),
-		resource2.NewCtyunBandwidthAssociationEip(),
-		resource2.NewCtyunPolicyAssociationUserGroup(),
-		resource2.NewCtyunPolicyAssociationUser(),
-		resource2.NewCtyunEnterpriseProject(),
-		resource2.NewCtyunEnterpriseProjectAssociationUserGroup(),
+		iam.NewCtyunPolicy(),
+		vpc.NewCtyunVpc(),
+		vpc.NewCtyunSecurityGroup(),
+		vpc.NewCtyunSecurityGroupRule(),
+		vpc.NewCtyunEip(),
+		vpc.NewCtyunEipAssociation(),
+		vpc.NewCtyunSubnet(),
+		ecs.NewCtyunEcs(),
+		iam.NewCtyunIamUser(),
+		iam.NewCtyunIamUserGroup(),
+		iam.NewCtyunIdp(),
+		ebs.NewCtyunEbs(),
+		ebs.NewCtyunEbsAssociation(),
+		image.NewCtyunImage(),
+		image.NewCtyunImageAssociationUser(),
+		ecs.NewCtyunKeypair(),
+		vpc.NewCtyunBandwidth(),
+		vpc.NewCtyunBandwidthAssociationEip(),
+		iam.NewCtyunPolicyAssociationUserGroup(),
+		iam.NewCtyunPolicyAssociationUser(),
+		iam.NewCtyunEnterpriseProject(),
+		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
 		ebm2.NewCtyunEbm())
 }
 
