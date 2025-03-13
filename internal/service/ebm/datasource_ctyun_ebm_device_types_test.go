@@ -1,21 +1,19 @@
 package ebm_test
 
 import (
-	"fmt"
-	"terraform-provider-ctyun/internal/provider"
+	"terraform-provider-ctyun/internal/service"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestNewCtyunEbmDeviceTypes(t *testing.T) {
-	fmt.Println(123)
+func TestAccNewCtyunEbmDeviceTypes(t *testing.T) {
 	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: provider.TestAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: service.TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: provider.TestConfig + `data "ctyun_ebm_device_types" "test" {}`,
+				Config: service.TestConfig + `data "ctyun_ebm_device_types" "test" {}`,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.ctyun_ebm_device_types.test", "device_types.#", "2"),
 					resource.TestCheckResourceAttr("data.ctyun_ebm_device_types.test", "device_types.0.az_name", "cn-huadong1-jsnj1A-public-ctcloud"),

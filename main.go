@@ -4,9 +4,9 @@ import (
 	"context"
 	"flag"
 	"log"
+	"terraform-provider-ctyun/internal/service"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"terraform-provider-ctyun/internal/provider"
 )
 
 var (
@@ -24,7 +24,7 @@ func main() {
 		Debug:   debug,
 	}
 
-	err := providerserver.Serve(context.Background(), provider.NewCtyunProvider(version), opts)
+	err := providerserver.Serve(context.Background(), service.NewCtyunProvider(version), opts)
 
 	if err != nil {
 		log.Fatal(err.Error())

@@ -279,6 +279,50 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	// 创建出来了，但是没拿到返回值怎么办
+	returnObj, err := c.createInstance(ctx, plan)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	// 先保存订单号
+	masterOrderId := *returnObj.MasterOrderID
+	plan.MasterOrderID = types.StringValue(masterOrderId)
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 根据订单号轮询查资源的uuid
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId, 600)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	plan.ID = types.StringValue(loop.Uuid[0])
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机
+	err = c.handleInstance(ctx, plan, business.EbmStatusRunning, plan.Status.ValueString())
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	// 反查信息
+	err = c.getAndMergeEbm(ctx, &plan)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+}
+
+func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (returnObj ctebm.EbmCreateInstanceV4plusReturnObjResponse, err error) {
 	regionID := plan.RegionID.ValueString()
 	projectID := plan.ProjectID.ValueString()
 	azName := plan.AzName.ValueString()
@@ -335,48 +379,16 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 
 	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf(*resp.Message)
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-
-	// 先保存订单号
-	masterOrderId := *resp.ReturnObj.MasterOrderID
-	plan.MasterOrderID = types.StringValue(masterOrderId)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	// 根据订单号轮询查资源的uuid
-	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-	loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId, 600)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-	plan.ID = types.StringValue(loop.Uuid[0])
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机
-	_ = c.handleInstance(ctx, plan, business.EbmStatusRunning, plan.Status.ValueString())
-
-	// 反查信息
-	err = c.getAndMergeEbm(ctx, &plan)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	returnObj = *resp.ReturnObj
+	return
 }
 
 // handleInstance 操作机器
@@ -740,11 +752,12 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 		ClientToken:  uuid.NewString(),
 	})
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
@@ -793,7 +806,10 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 	cfg.VpcID = types.StringValue(*instance.VpcID)
 	cfg.Status = types.StringValue(*instance.EbmState)
 	//cfg.PublicIP = types.StringValue(*instance.PublicIP)
-
+	if cfg.InstanceChargeType.ValueString() == "ORDER_ON_DEMAND" {
+		cfg.CycleType = types.StringValue("")
+		cfg.CycleCount = types.Int64Value(0)
+	}
 	networkCard := types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"title":     types.StringType,

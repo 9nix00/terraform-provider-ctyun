@@ -1,4 +1,4 @@
-package provider
+package service
 
 import (
 	"context"
@@ -369,18 +369,10 @@ var TestAccProtoV6ProviderFactoriesWithEcho = map[string]func() (tfprotov6.Provi
 
 const (
 	TestConfig = `
-terraform {
-  required_providers {
-    ctyun = {
-      source = "ctyun-it/ctyun"
-    }
-  }
-}
-
 provider "ctyun" {
-  region_id            = "bb9fdb42056f11eda1610242ac110002"         # 如果此值不填，则默认读取环境变量中的CTYUN_REGION_ID
-  az_name              = "cn-huadong1-jsnj1A-public-ctcloud"        # 如果此值不填，则默认读取环境变量中的CTYUN_AZ_NAME
-  env                  = "prod"                                     # 如果此值不填，则默认读取环境变量中的CTYUN_ENV
+  region_id            = "bb9fdb42056f11eda1610242ac110002"
+  az_name              = "cn-huadong1-jsnj1A-public-ctcloud"
+  env                  = "prod"
 }
 `
 )
