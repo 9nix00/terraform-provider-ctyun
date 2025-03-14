@@ -21,6 +21,67 @@ func (c *ctyunEbmDeviceTypes) Metadata(_ context.Context, req datasource.Metadat
 	resp.TypeName = req.ProviderTypeName + "_ebm_device_types"
 }
 
+type CtyunEbmDeviceTypesModel struct {
+	Id                      types.Int64  `tfsdk:"id"`
+	DeviceType              types.String `tfsdk:"device_type"`
+	CpuModel                types.String `tfsdk:"cpu_model"`
+	NvmeVolumeType          types.String `tfsdk:"nvme_volume_type"`
+	NameZh                  types.String `tfsdk:"name_zh"`
+	NvmeVolumeInterface     types.String `tfsdk:"nvme_volume_interface"`
+	UpdateTime              types.String `tfsdk:"update_time"`
+	SystemVolumeSize        types.Int64  `tfsdk:"system_volume_size"`
+	SystemVolumeType        types.String `tfsdk:"system_volume_type"`
+	CpuManufacturer         types.String `tfsdk:"cpu_manufacturer"`
+	NameEn                  types.String `tfsdk:"name_en"`
+	NicAmount               types.Int64  `tfsdk:"nic_amount"`
+	NvmeVolumeAmount        types.Int64  `tfsdk:"nvme_volume_amount"`
+	SmartNicExist           types.Bool   `tfsdk:"smart_nic_exist"`
+	CpuFrequency            types.String `tfsdk:"cpu_frequency"`
+	CpuThreadAmount         types.Int64  `tfsdk:"cpu_thread_amount"`
+	SystemVolumeInterface   types.String `tfsdk:"system_volume_interface"`
+	GpuManufacturer         types.String `tfsdk:"gpu_manufacturer"`
+	DataVolumeType          types.String `tfsdk:"data_volume_type"`
+	GpuModel                types.String `tfsdk:"gpu_model"`
+	SystemVolumeAmount      types.Int64  `tfsdk:"system_volume_amount"`
+	DataVolumeDescription   types.String `tfsdk:"data_volume_description"`
+	GpuSize                 types.Int64  `tfsdk:"gpu_size"`
+	MemAmount               types.Int64  `tfsdk:"mem_amount"`
+	MemSize                 types.Int64  `tfsdk:"mem_size"`
+	GpuAmount               types.Int64  `tfsdk:"gpu_amount"`
+	SystemVolumeDescription types.String `tfsdk:"system_volume_description"`
+	MemFrequency            types.Int64  `tfsdk:"mem_frequency"`
+	AzName                  types.String `tfsdk:"az_name"`
+	NvmeVolumeSize          types.Int64  `tfsdk:"nvme_volume_size"`
+	CpuSockets              types.Int64  `tfsdk:"cpu_sockets"`
+	CpuAmount               types.Int64  `tfsdk:"cpu_amount"`
+	CreateTime              types.String `tfsdk:"create_time"`
+	SupportCloud            types.Bool   `tfsdk:"support_cloud"`
+	DataVolumeAmount        types.Int64  `tfsdk:"data_volume_amount"`
+	NumaNodeAmount          types.Int64  `tfsdk:"numa_node_amount"`
+	Region                  types.String `tfsdk:"region"`
+	DataVolumeSize          types.Int64  `tfsdk:"data_volume_size"`
+	DataVolumeInterface     types.String `tfsdk:"data_volume_interface"`
+	NicRate                 types.Int64  `tfsdk:"nic_rate"`
+	CloudBoot               types.Bool   `tfsdk:"cloud_boot"`
+	EnableShadowVpc         types.Bool   `tfsdk:"enable_shadow_vpc"`
+	ComputeIBAmount         types.Int64  `tfsdk:"compute_i_b_amount"`
+	ComputeIBRate           types.Int64  `tfsdk:"compute_i_b_rate"`
+	StorageIBAmount         types.Int64  `tfsdk:"storage_i_b_amount"`
+	StorageIBRate           types.Int64  `tfsdk:"storage_i_b_rate"`
+	ComputeRoCEAmount       types.Int64  `tfsdk:"compute_ro_c_e_amount"`
+	ComputeRoCERate         types.Int64  `tfsdk:"compute_ro_c_e_rate"`
+	StorageRoCEAmount       types.Int64  `tfsdk:"storage_ro_c_e_amount"`
+	StorageRoCERate         types.Int64  `tfsdk:"storage_ro_c_e_rate"`
+	Project                 types.String `tfsdk:"project"`
+}
+
+type CtyunEbmDeviceTypesConfig struct {
+	DeviceType  types.String               `tfsdk:"device_type"`
+	RegionId    types.String               `tfsdk:"region_id"`
+	AzName      types.String               `tfsdk:"az_name"`
+	DeviceTypes []CtyunEbmDeviceTypesModel `tfsdk:"device_types"`
+}
+
 func (c *ctyunEbmDeviceTypes) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027724/10754001**`,
@@ -202,65 +263,4 @@ func (c *ctyunEbmDeviceTypes) Configure(_ context.Context, request datasource.Co
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-}
-
-type CtyunEbmDeviceTypesModel struct {
-	Id                      types.Int64  `tfsdk:"id"`
-	DeviceType              types.String `tfsdk:"device_type"`
-	CpuModel                types.String `tfsdk:"cpu_model"`
-	NvmeVolumeType          types.String `tfsdk:"nvme_volume_type"`
-	NameZh                  types.String `tfsdk:"name_zh"`
-	NvmeVolumeInterface     types.String `tfsdk:"nvme_volume_interface"`
-	UpdateTime              types.String `tfsdk:"update_time"`
-	SystemVolumeSize        types.Int64  `tfsdk:"system_volume_size"`
-	SystemVolumeType        types.String `tfsdk:"system_volume_type"`
-	CpuManufacturer         types.String `tfsdk:"cpu_manufacturer"`
-	NameEn                  types.String `tfsdk:"name_en"`
-	NicAmount               types.Int64  `tfsdk:"nic_amount"`
-	NvmeVolumeAmount        types.Int64  `tfsdk:"nvme_volume_amount"`
-	SmartNicExist           types.Bool   `tfsdk:"smart_nic_exist"`
-	CpuFrequency            types.String `tfsdk:"cpu_frequency"`
-	CpuThreadAmount         types.Int64  `tfsdk:"cpu_thread_amount"`
-	SystemVolumeInterface   types.String `tfsdk:"system_volume_interface"`
-	GpuManufacturer         types.String `tfsdk:"gpu_manufacturer"`
-	DataVolumeType          types.String `tfsdk:"data_volume_type"`
-	GpuModel                types.String `tfsdk:"gpu_model"`
-	SystemVolumeAmount      types.Int64  `tfsdk:"system_volume_amount"`
-	DataVolumeDescription   types.String `tfsdk:"data_volume_description"`
-	GpuSize                 types.Int64  `tfsdk:"gpu_size"`
-	MemAmount               types.Int64  `tfsdk:"mem_amount"`
-	MemSize                 types.Int64  `tfsdk:"mem_size"`
-	GpuAmount               types.Int64  `tfsdk:"gpu_amount"`
-	SystemVolumeDescription types.String `tfsdk:"system_volume_description"`
-	MemFrequency            types.Int64  `tfsdk:"mem_frequency"`
-	AzName                  types.String `tfsdk:"az_name"`
-	NvmeVolumeSize          types.Int64  `tfsdk:"nvme_volume_size"`
-	CpuSockets              types.Int64  `tfsdk:"cpu_sockets"`
-	CpuAmount               types.Int64  `tfsdk:"cpu_amount"`
-	CreateTime              types.String `tfsdk:"create_time"`
-	SupportCloud            types.Bool   `tfsdk:"support_cloud"`
-	DataVolumeAmount        types.Int64  `tfsdk:"data_volume_amount"`
-	NumaNodeAmount          types.Int64  `tfsdk:"numa_node_amount"`
-	Region                  types.String `tfsdk:"region"`
-	DataVolumeSize          types.Int64  `tfsdk:"data_volume_size"`
-	DataVolumeInterface     types.String `tfsdk:"data_volume_interface"`
-	NicRate                 types.Int64  `tfsdk:"nic_rate"`
-	CloudBoot               types.Bool   `tfsdk:"cloud_boot"`
-	EnableShadowVpc         types.Bool   `tfsdk:"enable_shadow_vpc"`
-	ComputeIBAmount         types.Int64  `tfsdk:"compute_i_b_amount"`
-	ComputeIBRate           types.Int64  `tfsdk:"compute_i_b_rate"`
-	StorageIBAmount         types.Int64  `tfsdk:"storage_i_b_amount"`
-	StorageIBRate           types.Int64  `tfsdk:"storage_i_b_rate"`
-	ComputeRoCEAmount       types.Int64  `tfsdk:"compute_ro_c_e_amount"`
-	ComputeRoCERate         types.Int64  `tfsdk:"compute_ro_c_e_rate"`
-	StorageRoCEAmount       types.Int64  `tfsdk:"storage_ro_c_e_amount"`
-	StorageRoCERate         types.Int64  `tfsdk:"storage_ro_c_e_rate"`
-	Project                 types.String `tfsdk:"project"`
-}
-
-type CtyunEbmDeviceTypesConfig struct {
-	DeviceType  types.String               `tfsdk:"device_type"`
-	RegionId    types.String               `tfsdk:"region_id"`
-	AzName      types.String               `tfsdk:"az_name"`
-	DeviceTypes []CtyunEbmDeviceTypesModel `tfsdk:"device_types"`
 }

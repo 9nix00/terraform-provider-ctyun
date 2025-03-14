@@ -40,17 +40,51 @@ func (c *ctyunEbm) Metadata(_ context.Context, request resource.MetadataRequest,
 	response.TypeName = request.ProviderTypeName + "_ebm"
 }
 
-var a, _ = types.ListValue(
-	types.ObjectType{
-		AttrTypes: map[string]attr.Type{
-			"disk_type": basetypes.StringType{},
-			"size":      basetypes.Int64Type{},
-			"title":     basetypes.StringType{},
-			"type":      basetypes.StringType{},
-		},
-	},
-	[]attr.Value{},
-)
+type CtyunEbmConfig struct {
+	ID                   types.String        `tfsdk:"id"`
+	RegionID             types.String        `tfsdk:"region_id"`
+	AzName               types.String        `tfsdk:"az_name"`
+	DeviceType           types.String        `tfsdk:"device_type"`
+	InstanceName         types.String        `tfsdk:"instance_name"`
+	Hostname             types.String        `tfsdk:"hostname"`
+	ImageUUID            types.String        `tfsdk:"image_uuid"`
+	Password             types.String        `tfsdk:"password"`
+	ProjectID            types.String        `tfsdk:"project_id"`
+	SystemVolumeRaidUUID types.String        `tfsdk:"system_volume_raid_uuid"`
+	DataVolumeRaidUUID   types.String        `tfsdk:"data_volume_raid_uuid"`
+	VpcID                types.String        `tfsdk:"vpc_id"`
+	ExtIP                types.String        `tfsdk:"ext_ip"`
+	IpType               types.String        `tfsdk:"ip_type"`
+	BandWidth            types.Int64         `tfsdk:"band_width"`
+	PublicIP             types.String        `tfsdk:"public_ip"`
+	SecurityGroupID      types.String        `tfsdk:"security_group_id"`
+	DiskList             basetypes.ListValue `tfsdk:"disk_list"`
+	NetworkCardList      basetypes.ListValue `tfsdk:"network_card_list"`
+	UserData             types.String        `tfsdk:"user_data"`
+	KeyName              types.String        `tfsdk:"key_name"`
+	PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
+	AutoRenewStatus      types.Int64         `tfsdk:"auto_renew_status"`
+	InstanceChargeType   types.String        `tfsdk:"instance_charge_type"`
+	CycleCount           types.Int64         `tfsdk:"cycle_count"`
+	CycleType            types.String        `tfsdk:"cycle_type"`
+	MasterOrderID        types.String        `tfsdk:"master_order_id"`
+	Status               types.String        `tfsdk:"status"`
+}
+
+type CtyunEbmDiskList struct {
+	DiskType types.String `tfsdk:"disk_type"`
+	Title    types.String `tfsdk:"title"`
+	Type     types.String `tfsdk:"type"`
+	Size     types.Int64  `tfsdk:"size"`
+}
+
+type CtyunEbmNetworkCardList struct {
+	Title    types.String `tfsdk:"title"`
+	FixedIP  types.String `tfsdk:"fixed_ip"`
+	Master   types.Bool   `tfsdk:"master"`
+	Ipv6     types.String `tfsdk:"ipv6"`
+	SubnetID types.String `tfsdk:"subnet_id"`
+}
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
@@ -322,226 +356,6 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (returnObj ctebm.EbmCreateInstanceV4plusReturnObjResponse, err error) {
-	regionID := plan.RegionID.ValueString()
-	projectID := plan.ProjectID.ValueString()
-	azName := plan.AzName.ValueString()
-	publicIP := plan.PublicIP.ValueString()
-	password := plan.Password.ValueString()
-	systemVolumeRaidUUID := plan.SystemVolumeRaidUUID.ValueString()
-	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
-	ipType := plan.IpType.ValueString()
-	securityGroupID := plan.SecurityGroupID.ValueString()
-	userData := plan.UserData.ValueString()
-	keyName := plan.KeyName.ValueString()
-	instanceChargeType := plan.InstanceChargeType.ValueString()
-	cycleType := plan.CycleType.ValueString()
-	bandwidth := plan.BandWidth.ValueInt64()
-	diskList := c.buildDiskList(ctx, plan)
-	networkCardList := c.buildNetworkCardList(ctx, plan)
-	// 需要校验的很多，比如弹性裸金属需要安全组id、自选ip时需要传ip，自动分配需要传带宽，密码和密钥对必须有一个，raidid是否传递
-	params := &ctebm.EbmCreateInstanceV4plusRequest{
-		RegionID:             regionID,
-		AzName:               azName,
-		DeviceType:           plan.DeviceType.ValueString(),
-		InstanceName:         plan.InstanceName.ValueString(),
-		Hostname:             plan.Hostname.ValueString(),
-		ImageUUID:            plan.ImageUUID.ValueString(),
-		Password:             &password,
-		SystemVolumeRaidUUID: &systemVolumeRaidUUID,
-		DataVolumeRaidUUID:   &dataVolumeRaidUUID,
-		VpcID:                plan.VpcID.ValueString(),
-		ExtIP:                plan.ExtIP.ValueString(),
-		PayVoucherPrice:      float32(plan.PayVoucherPrice.ValueFloat64()),
-		ProjectID:            &projectID,
-		IpType:               &ipType,
-		DiskList:             diskList,
-		NetworkCardList:      networkCardList,
-		UserData:             &userData,
-		KeyName:              &keyName,
-		AutoRenewStatus:      int32(plan.AutoRenewStatus.ValueInt64()),
-		InstanceChargeType:   &instanceChargeType,
-		CycleCount:           int32(plan.CycleCount.ValueInt64()),
-		CycleType:            &cycleType,
-		ClientToken:          uuid.NewString(),
-		OrderCount:           1,
-	}
-
-	if bandwidth > 0 {
-		params.BandWidth = int32(bandwidth)
-	}
-	if securityGroupID != "" {
-		params.SecurityGroupID = &securityGroupID
-	}
-	if publicIP != "" {
-		params.PublicIP = &publicIP
-	}
-
-	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	returnObj = *resp.ReturnObj
-	return
-}
-
-// handleInstance 操作机器
-func (c *ctyunEbm) handleInstance(ctx context.Context, plan CtyunEbmConfig, currentStatus string, targetStatus string) (err error) {
-	if currentStatus == targetStatus {
-		return
-	}
-	switch targetStatus {
-	case business.EbmStatusStopped:
-		return c.stopInstance(ctx, plan)
-	case business.EbmStatusRunning:
-		return c.startInstance(ctx, plan)
-	}
-	return errors.New("操作机器状态失败，请检查实例状态")
-}
-
-func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.CtEbmApis.EbmStartInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStartInstanceRequest{
-		RegionID:     plan.RegionID.ValueString(),
-		AzName:       plan.AzName.ValueString(),
-		InstanceUUID: plan.ID.ValueString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*5, 20)
-	retryer.Start(
-		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
-			if err != nil {
-				return false
-			}
-			switch status {
-			case business.EbmStatusStarting:
-				// 执行中
-				return true
-			case business.EbmStatusRunning:
-				// 执行成功
-				executeSuccessFlag = true
-				return false
-			default:
-				// 默认为执行失败
-				return false
-			}
-		},
-	)
-	if !executeSuccessFlag {
-		return errors.New("执行开启ebm动作时，ebm状态异常")
-	}
-	return
-}
-
-func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.CtEbmApis.EbmStopInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStopInstanceRequest{
-		RegionID:     plan.RegionID.ValueString(),
-		AzName:       plan.AzName.ValueString(),
-		InstanceUUID: plan.ID.ValueString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*5, 20)
-	retryer.Start(
-		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
-			if err != nil {
-				return false
-			}
-			switch status {
-			case business.EbmStatusStopping:
-				// 执行中
-				return true
-			case business.EbmStatusStopped:
-				// 执行成功
-				executeSuccessFlag = true
-				return false
-			default:
-				// 默认为执行失败
-				return false
-			}
-		})
-	if !executeSuccessFlag {
-		return errors.New("执行关闭ebm动作时，ebm状态异常")
-	}
-	return
-}
-
-func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest) {
-	if plan.DiskList.IsNull() {
-		return
-	}
-	var diskList []CtyunEbmDiskList
-	diags := plan.DiskList.ElementsAs(ctx, &diskList, false)
-	if diags.HasError() {
-		return
-	}
-	for _, disk := range diskList {
-		title := disk.Title.ValueString()
-		diskListReq = append(diskListReq, &ctebm.EbmCreateInstanceV4plusDiskListRequest{
-			DiskType: disk.DiskType.ValueString(),
-			Size:     int32(disk.Size.ValueInt64()),
-			Title:    &title,
-			RawType:  disk.DiskType.ValueString(),
-		})
-	}
-	return
-}
-
-func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest) {
-	var networkCardList []CtyunEbmNetworkCardList
-	if plan.NetworkCardList.IsNull() {
-		return
-	}
-	diags := plan.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
-	if diags.HasError() {
-		return
-	}
-	for _, card := range networkCardList {
-		title := card.Title.ValueString()
-		fixedIP := card.FixedIP.ValueString()
-		ipv6 := card.FixedIP.ValueString()
-		params := &ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{
-			Master:   card.Master.ValueBool(),
-			SubnetID: card.SubnetID.ValueString(),
-		}
-		if title != "" {
-			params.Title = &title
-		}
-		if fixedIP != "" {
-			params.FixedIP = &fixedIP
-		}
-		if ipv6 != "" {
-			params.Ipv6 = &ipv6
-		}
-		networkCardListReq = append(networkCardListReq, params)
-	}
-	return
-}
-
 func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var state CtyunEbmConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
@@ -606,138 +420,6 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-// updateInstanceInfo 更新主机的部分信息
-func (c *ctyunEbm) updateInstanceInfo(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
-	// 判断名字是否相同
-	if plan.InstanceName.Equal(state.InstanceName) {
-		return
-	}
-
-	name := plan.InstanceName.ValueString()
-	resp, err := c.meta.Apis.CtEbmApis.EbmUpdateInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmUpdateInstanceRequest{
-		RegionID:     state.RegionID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-		DisplayName:  &name,
-		InstanceUUID: state.ID.ValueString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
-
-// updatePassword 修改密码
-func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
-	if state.Password.Equal(plan.Password) {
-		return
-	}
-	// 修改前需要检查机器状态
-	err = c.checkBeforeUpdatePassword(ctx, state)
-	if err != nil {
-		return
-	}
-	resp, err := c.meta.Apis.CtEbmApis.EbmResetPasswordApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmResetPasswordRequest{
-		RegionID:     state.RegionID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
-		NewPassword:  plan.Password.ValueString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-
-	err = c.checkAfterUpdatePassword(ctx, state)
-	if err != nil {
-		return
-	}
-	// 因为改完密码会默认开机，而改密码前一定是关机状态，这里要手动恢复到关机态
-	err = c.stopInstance(ctx, state)
-	if err != nil {
-		return
-	}
-	return
-}
-
-func (c *ctyunEbm) checkBeforeUpdatePassword(ctx context.Context, state CtyunEbmConfig) error {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 120) // 20min
-	retryer.Start(
-		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
-			if err != nil {
-				return false
-			}
-			switch status {
-			case business.EbmStatusStopping, business.EbmStatusResettingPassword:
-				return true
-			case business.EbmStatusStopped:
-				executeSuccessFlag = true
-				return false
-			default:
-				return false
-			}
-		})
-	if !executeSuccessFlag {
-		return errors.New("修改物理机密码前置检查失败，请确认物理机状态")
-	}
-	return nil
-}
-
-func (c *ctyunEbm) checkAfterUpdatePassword(ctx context.Context, state CtyunEbmConfig) error {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 120)
-	retryer.Start(
-		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
-			if err != nil {
-				return false
-			}
-			switch status {
-			case business.EbmStatusResettingPassword:
-				return true
-			case business.EbmStatusRunning:
-				executeSuccessFlag = true
-				return false
-			default:
-				return false
-			}
-		})
-	if !executeSuccessFlag {
-		return errors.New("修改物理机密码后置检查失败，请确认物理机状态")
-	}
-	return nil
-}
-
-func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) (status string, err error) {
-	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
-		RegionID:     state.RegionID.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf(*resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return *resp.ReturnObj.EbmState, err
-}
-
 func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var state CtyunEbmConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
@@ -774,6 +456,254 @@ func (c *ctyunEbm) Configure(_ context.Context, request resource.ConfigureReques
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+}
+
+// 导入命令：terraform import [配置标识].[导入配置名称] [uuid]
+func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var cfg CtyunEbmConfig
+	var id string
+	err := terraform_extend.Split(request.ID, &id)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
+	cfg.RegionID = types.StringValue(regionId)
+	azName := c.meta.GetExtraIfEmpty(cfg.AzName.ValueString(), common.ExtraAzName)
+	cfg.AzName = types.StringValue(azName)
+
+	cfg.ID = types.StringValue(id)
+	err = c.getAndMergeEbm(ctx, &cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+// createInstance 创建物理机
+func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (returnObj ctebm.EbmCreateInstanceV4plusReturnObjResponse, err error) {
+	regionID := plan.RegionID.ValueString()
+	projectID := plan.ProjectID.ValueString()
+	azName := plan.AzName.ValueString()
+	publicIP := plan.PublicIP.ValueString()
+	password := plan.Password.ValueString()
+	systemVolumeRaidUUID := plan.SystemVolumeRaidUUID.ValueString()
+	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
+	ipType := plan.IpType.ValueString()
+	securityGroupID := plan.SecurityGroupID.ValueString()
+	userData := plan.UserData.ValueString()
+	keyName := plan.KeyName.ValueString()
+	instanceChargeType := plan.InstanceChargeType.ValueString()
+	cycleType := plan.CycleType.ValueString()
+	bandwidth := plan.BandWidth.ValueInt64()
+	diskList := c.buildDiskList(ctx, plan)
+	networkCardList := c.buildNetworkCardList(ctx, plan)
+	// 需要校验的很多，比如弹性裸金属需要安全组id、自选ip时需要传ip，自动分配需要传带宽，密码和密钥对必须有一个，raidid是否传递等等
+	params := &ctebm.EbmCreateInstanceV4plusRequest{
+		RegionID:             regionID,
+		AzName:               azName,
+		DeviceType:           plan.DeviceType.ValueString(),
+		InstanceName:         plan.InstanceName.ValueString(),
+		Hostname:             plan.Hostname.ValueString(),
+		ImageUUID:            plan.ImageUUID.ValueString(),
+		Password:             &password,
+		SystemVolumeRaidUUID: &systemVolumeRaidUUID,
+		DataVolumeRaidUUID:   &dataVolumeRaidUUID,
+		VpcID:                plan.VpcID.ValueString(),
+		ExtIP:                plan.ExtIP.ValueString(),
+		PayVoucherPrice:      float32(plan.PayVoucherPrice.ValueFloat64()),
+		ProjectID:            &projectID,
+		IpType:               &ipType,
+		DiskList:             diskList,
+		NetworkCardList:      networkCardList,
+		UserData:             &userData,
+		KeyName:              &keyName,
+		AutoRenewStatus:      int32(plan.AutoRenewStatus.ValueInt64()),
+		InstanceChargeType:   &instanceChargeType,
+		CycleCount:           int32(plan.CycleCount.ValueInt64()),
+		CycleType:            &cycleType,
+		ClientToken:          uuid.NewString(),
+		OrderCount:           1,
+	}
+
+	if bandwidth > 0 {
+		params.BandWidth = int32(bandwidth)
+	}
+	if securityGroupID != "" {
+		params.SecurityGroupID = &securityGroupID
+	}
+	if publicIP != "" {
+		params.PublicIP = &publicIP
+	}
+
+	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	returnObj = *resp.ReturnObj
+	return
+}
+
+// buildDiskList 构建创建物理机时的云硬盘列表结构
+func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest) {
+	if plan.DiskList.IsNull() {
+		return
+	}
+	var diskList []CtyunEbmDiskList
+	diags := plan.DiskList.ElementsAs(ctx, &diskList, false)
+	if diags.HasError() {
+		return
+	}
+	for _, disk := range diskList {
+		title := disk.Title.ValueString()
+		diskListReq = append(diskListReq, &ctebm.EbmCreateInstanceV4plusDiskListRequest{
+			DiskType: disk.DiskType.ValueString(),
+			Size:     int32(disk.Size.ValueInt64()),
+			Title:    &title,
+			RawType:  disk.DiskType.ValueString(),
+		})
+	}
+	return
+}
+
+// buildNetworkCardList 构建创建物理机时的网卡结构
+func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest) {
+	var networkCardList []CtyunEbmNetworkCardList
+	if plan.NetworkCardList.IsNull() {
+		return
+	}
+	diags := plan.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
+	if diags.HasError() {
+		return
+	}
+	for _, card := range networkCardList {
+		title := card.Title.ValueString()
+		fixedIP := card.FixedIP.ValueString()
+		ipv6 := card.FixedIP.ValueString()
+		params := &ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{
+			Master:   card.Master.ValueBool(),
+			SubnetID: card.SubnetID.ValueString(),
+		}
+		if title != "" {
+			params.Title = &title
+		}
+		if fixedIP != "" {
+			params.FixedIP = &fixedIP
+		}
+		if ipv6 != "" {
+			params.Ipv6 = &ipv6
+		}
+		networkCardListReq = append(networkCardListReq, params)
+	}
+	return
+}
+
+// handleInstance 操作机器，开机或关机
+func (c *ctyunEbm) handleInstance(ctx context.Context, plan CtyunEbmConfig, currentStatus string, targetStatus string) (err error) {
+	if currentStatus == targetStatus {
+		return
+	}
+	switch targetStatus {
+	case business.EbmStatusStopped:
+		return c.stopInstance(ctx, plan)
+	case business.EbmStatusRunning:
+		return c.startInstance(ctx, plan)
+	}
+	return errors.New("操作机器状态失败，请检查实例状态")
+}
+
+// startInstance 启动物理机
+func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmStartInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStartInstanceRequest{
+		RegionID:     plan.RegionID.ValueString(),
+		AzName:       plan.AzName.ValueString(),
+		InstanceUUID: plan.ID.ValueString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*5, 20)
+	retryer.Start(
+		func(currentTime int) bool {
+			status, err := c.getInstanceStatus(ctx, plan)
+			if err != nil {
+				return false
+			}
+			switch status {
+			case business.EbmStatusStarting:
+				// 执行中
+				return true
+			case business.EbmStatusRunning:
+				// 执行成功
+				executeSuccessFlag = true
+				return false
+			default:
+				// 默认为执行失败
+				return false
+			}
+		},
+	)
+	if !executeSuccessFlag {
+		return errors.New("执行开启ebm动作时，ebm状态异常")
+	}
+	return
+}
+
+// stopInstance 关闭物理机
+func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmStopInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStopInstanceRequest{
+		RegionID:     plan.RegionID.ValueString(),
+		AzName:       plan.AzName.ValueString(),
+		InstanceUUID: plan.ID.ValueString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*5, 20)
+	retryer.Start(
+		func(currentTime int) bool {
+			status, err := c.getInstanceStatus(ctx, plan)
+			if err != nil {
+				return false
+			}
+			switch status {
+			case business.EbmStatusStopping:
+				// 执行中
+				return true
+			case business.EbmStatusStopped:
+				// 执行成功
+				executeSuccessFlag = true
+				return false
+			default:
+				// 默认为执行失败
+				return false
+			}
+		})
+	if !executeSuccessFlag {
+		return errors.New("执行关闭ebm动作时，ebm状态异常")
+	}
+	return
 }
 
 // getAndMergeEbm 查询ebm
@@ -890,71 +820,137 @@ func (c *ctyunEbm) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 	return true
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [uuid]
-func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var cfg CtyunEbmConfig
-	var id string
-	err := terraform_extend.Split(request.ID, &id)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+// updateInstanceInfo 更新主机的部分信息
+func (c *ctyunEbm) updateInstanceInfo(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
+	// 判断名字是否相同
+	if plan.InstanceName.Equal(state.InstanceName) {
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
-	cfg.RegionID = types.StringValue(regionId)
-	azName := c.meta.GetExtraIfEmpty(cfg.AzName.ValueString(), common.ExtraAzName)
-	cfg.AzName = types.StringValue(azName)
 
-	cfg.ID = types.StringValue(id)
-	err = c.getAndMergeEbm(ctx, &cfg)
+	name := plan.InstanceName.ValueString()
+	resp, err := c.meta.Apis.CtEbmApis.EbmUpdateInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmUpdateInstanceRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		DisplayName:  &name,
+		InstanceUUID: state.ID.ValueString(),
+	})
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	return
 }
 
-type CtyunEbmConfig struct {
-	ID                   types.String        `tfsdk:"id"`
-	RegionID             types.String        `tfsdk:"region_id"`
-	AzName               types.String        `tfsdk:"az_name"`
-	DeviceType           types.String        `tfsdk:"device_type"`
-	InstanceName         types.String        `tfsdk:"instance_name"`
-	Hostname             types.String        `tfsdk:"hostname"`
-	ImageUUID            types.String        `tfsdk:"image_uuid"`
-	Password             types.String        `tfsdk:"password"`
-	ProjectID            types.String        `tfsdk:"project_id"`
-	SystemVolumeRaidUUID types.String        `tfsdk:"system_volume_raid_uuid"`
-	DataVolumeRaidUUID   types.String        `tfsdk:"data_volume_raid_uuid"`
-	VpcID                types.String        `tfsdk:"vpc_id"`
-	ExtIP                types.String        `tfsdk:"ext_ip"`
-	IpType               types.String        `tfsdk:"ip_type"`
-	BandWidth            types.Int64         `tfsdk:"band_width"`
-	PublicIP             types.String        `tfsdk:"public_ip"`
-	SecurityGroupID      types.String        `tfsdk:"security_group_id"`
-	DiskList             basetypes.ListValue `tfsdk:"disk_list"`
-	NetworkCardList      basetypes.ListValue `tfsdk:"network_card_list"`
-	UserData             types.String        `tfsdk:"user_data"`
-	KeyName              types.String        `tfsdk:"key_name"`
-	PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
-	AutoRenewStatus      types.Int64         `tfsdk:"auto_renew_status"`
-	InstanceChargeType   types.String        `tfsdk:"instance_charge_type"`
-	CycleCount           types.Int64         `tfsdk:"cycle_count"`
-	CycleType            types.String        `tfsdk:"cycle_type"`
-	MasterOrderID        types.String        `tfsdk:"master_order_id"`
-	Status               types.String        `tfsdk:"status"`
+// updatePassword 修改密码
+func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
+	if state.Password.Equal(plan.Password) {
+		return
+	}
+	// 修改前需要检查机器状态
+	err = c.checkBeforeUpdatePassword(ctx, state)
+	if err != nil {
+		return
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmResetPasswordApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmResetPasswordRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.ID.ValueString(),
+		NewPassword:  plan.Password.ValueString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+
+	err = c.checkAfterUpdatePassword(ctx, state)
+	if err != nil {
+		return
+	}
+	// 因为改完密码会默认开机，而改密码前一定是关机状态，这里要手动恢复到关机态
+	err = c.stopInstance(ctx, state)
+	if err != nil {
+		return
+	}
+	return
 }
 
-type CtyunEbmDiskList struct {
-	DiskType types.String `tfsdk:"disk_type"`
-	Title    types.String `tfsdk:"title"`
-	Type     types.String `tfsdk:"type"`
-	Size     types.Int64  `tfsdk:"size"`
+// checkBeforeUpdatePassword 修改密码前对机器状态做检查
+func (c *ctyunEbm) checkBeforeUpdatePassword(ctx context.Context, state CtyunEbmConfig) error {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 120) // 20min
+	retryer.Start(
+		func(currentTime int) bool {
+			status, err := c.getInstanceStatus(ctx, state)
+			if err != nil {
+				return false
+			}
+			switch status {
+			case business.EbmStatusStopping, business.EbmStatusResettingPassword:
+				return true
+			case business.EbmStatusStopped:
+				executeSuccessFlag = true
+				return false
+			default:
+				return false
+			}
+		})
+	if !executeSuccessFlag {
+		return errors.New("修改物理机密码前置检查失败，请确认物理机状态")
+	}
+	return nil
 }
 
-type CtyunEbmNetworkCardList struct {
-	Title    types.String `tfsdk:"title"`
-	FixedIP  types.String `tfsdk:"fixed_ip"`
-	Master   types.Bool   `tfsdk:"master"`
-	Ipv6     types.String `tfsdk:"ipv6"`
-	SubnetID types.String `tfsdk:"subnet_id"`
+// checkAfterUpdatePassword 修改密码后检查是否需要恢复机器状态
+func (c *ctyunEbm) checkAfterUpdatePassword(ctx context.Context, state CtyunEbmConfig) error {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 120)
+	retryer.Start(
+		func(currentTime int) bool {
+			status, err := c.getInstanceStatus(ctx, state)
+			if err != nil {
+				return false
+			}
+			switch status {
+			case business.EbmStatusResettingPassword:
+				return true
+			case business.EbmStatusRunning:
+				executeSuccessFlag = true
+				return false
+			default:
+				return false
+			}
+		})
+	if !executeSuccessFlag {
+		return errors.New("修改物理机密码后置检查失败，请确认物理机状态")
+	}
+	return nil
+}
+
+// getInstanceStatus 查询物理机状态
+func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) (status string, err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
+		RegionID:     state.RegionID.ValueString(),
+		InstanceUUID: state.ID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return *resp.ReturnObj.EbmState, err
 }
