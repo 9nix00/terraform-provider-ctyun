@@ -9,12 +9,17 @@ import (
 	"terraform-provider-ctyun/internal/core/ctebm"
 )
 
-func NewCtyunEbmDeviceTypes() datasource.DataSource {
-	return &ctyunEbmDeviceTypes{}
-}
+var (
+	_ datasource.DataSource              = &ctyunEbmDeviceTypes{}
+	_ datasource.DataSourceWithConfigure = &ctyunEbmDeviceTypes{}
+)
 
 type ctyunEbmDeviceTypes struct {
 	meta *common.CtyunMetadata
+}
+
+func NewCtyunEbmDeviceTypes() datasource.DataSource {
+	return &ctyunEbmDeviceTypes{}
 }
 
 func (c *ctyunEbmDeviceTypes) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {

@@ -28,6 +28,12 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbm{}
+	_ resource.ResourceWithConfigure   = &ctyunEbm{}
+	_ resource.ResourceWithImportState = &ctyunEbm{}
+)
+
 type ctyunEbm struct {
 	meta *common.CtyunMetadata
 }
