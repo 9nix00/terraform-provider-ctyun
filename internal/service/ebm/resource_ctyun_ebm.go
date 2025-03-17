@@ -320,7 +320,7 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 		return
 	}
 
-	// 创建出来了，但是没拿到返回值怎么办
+	// 创建
 	returnObj, err := c.createInstance(ctx, plan)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())

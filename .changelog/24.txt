@@ -1,0 +1,8 @@
+release-note:bug
+resource/ctyun_ecs fix config
+
+release-note:enhancement
+provider: Support Ebm SDK
+
+release-note:deprecation
+data-source/ctyun_abc

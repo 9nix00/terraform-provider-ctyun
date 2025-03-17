@@ -1,0 +1,8 @@
+release-note:new-resource
+ctyun_ebm
+
+release-note:new-resource
+ctyun_ecs
+
+release-note:new-data-source
+ctyun_ebm_device_types

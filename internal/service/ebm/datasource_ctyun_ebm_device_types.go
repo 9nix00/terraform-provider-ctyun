@@ -27,7 +27,7 @@ func (c *ctyunEbmDeviceTypes) Metadata(_ context.Context, req datasource.Metadat
 }
 
 type CtyunEbmDeviceTypesModel struct {
-	Id                      types.Int64  `tfsdk:"id"`
+	ID                      types.Int64  `tfsdk:"id"`
 	DeviceType              types.String `tfsdk:"device_type"`
 	CpuModel                types.String `tfsdk:"cpu_model"`
 	NvmeVolumeType          types.String `tfsdk:"nvme_volume_type"`
@@ -82,7 +82,7 @@ type CtyunEbmDeviceTypesModel struct {
 
 type CtyunEbmDeviceTypesConfig struct {
 	DeviceType  types.String               `tfsdk:"device_type"`
-	RegionId    types.String               `tfsdk:"region_id"`
+	RegionID    types.String               `tfsdk:"region_id"`
 	AzName      types.String               `tfsdk:"az_name"`
 	DeviceTypes []CtyunEbmDeviceTypesModel `tfsdk:"device_types"`
 }
@@ -176,7 +176,7 @@ func (c *ctyunEbmDeviceTypes) Read(ctx context.Context, request datasource.ReadR
 		return
 	}
 
-	regionId := c.meta.GetExtraIfEmpty(config.RegionId.ValueString(), common.ExtraRegionId)
+	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
 	if regionId == "" {
 		msg := "regionId不能为空"
 		response.Diagnostics.AddError(msg, msg)
@@ -205,7 +205,7 @@ func (c *ctyunEbmDeviceTypes) Read(ctx context.Context, request datasource.ReadR
 	var deviceTypes []CtyunEbmDeviceTypesModel
 	for _, f := range resp.ReturnObj.Results {
 		deviceTypes = append(deviceTypes, CtyunEbmDeviceTypesModel{
-			Id:                      types.Int64Value(int64(f.Id)),
+			ID:                      types.Int64Value(int64(f.Id)),
 			DeviceType:              types.StringValue(*f.DeviceType),
 			CpuModel:                types.StringValue(*f.CpuModel),
 			NvmeVolumeType:          types.StringValue(*f.NvmeVolumeType),
