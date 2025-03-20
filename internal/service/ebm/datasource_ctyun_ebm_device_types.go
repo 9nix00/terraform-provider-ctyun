@@ -170,6 +170,12 @@ func (c *ctyunEbmDeviceTypes) Schema(_ context.Context, _ datasource.SchemaReque
 }
 
 func (c *ctyunEbmDeviceTypes) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var config CtyunEbmDeviceTypesConfig
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
@@ -197,7 +203,6 @@ func (c *ctyunEbmDeviceTypes) Read(ctx context.Context, request datasource.ReadR
 
 	resp, err := c.meta.Apis.CtEbmApis.EbmDeviceTypeListApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	} else if resp.ReturnObj == nil {
 		return

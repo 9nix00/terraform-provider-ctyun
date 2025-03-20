@@ -5,22 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"strings"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"time"
 
 	"terraform-provider-ctyun/internal/business"
@@ -68,13 +72,13 @@ type CtyunEbmConfig struct {
 	NetworkCardList      basetypes.ListValue `tfsdk:"network_card_list"`
 	UserData             types.String        `tfsdk:"user_data"`
 	KeyName              types.String        `tfsdk:"key_name"`
-	PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
-	AutoRenewStatus      types.Int64         `tfsdk:"auto_renew_status"`
-	InstanceChargeType   types.String        `tfsdk:"instance_charge_type"`
-	CycleCount           types.Int64         `tfsdk:"cycle_count"`
-	CycleType            types.String        `tfsdk:"cycle_type"`
-	MasterOrderID        types.String        `tfsdk:"master_order_id"`
-	Status               types.String        `tfsdk:"status"`
+	//PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
+	AutoRenewStatus    types.Int64  `tfsdk:"auto_renew_status"`
+	InstanceChargeType types.String `tfsdk:"instance_charge_type"`
+	CycleCount         types.Int64  `tfsdk:"cycle_count"`
+	CycleType          types.String `tfsdk:"cycle_type"`
+	MasterOrderID      types.String `tfsdk:"master_order_id"`
+	Status             types.String `tfsdk:"status"`
 }
 
 type CtyunEbmDiskList struct {
@@ -109,16 +113,25 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "区域ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"device_type": schema.StringAttribute{
 				Required:    true,
 				Description: "物理机套餐类型",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
@@ -134,6 +147,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"image_uuid": schema.StringAttribute{
 				Required:    true,
 				Description: "物理机镜像id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"password": schema.StringAttribute{
 				Sensitive:   true,
@@ -154,19 +170,31 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Computed:    true,
 				Description: "本地系统盘raid类型，如果有本地盘则必填",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"data_volume_raid_uuid": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "本地数据盘raid类型，如果有本地盘则必填",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "主网卡网络ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"ext_ip": schema.StringAttribute{
 				Required:    true,
-				Description: "是否使用弹性公网IP，取值范围:[1=自动分配,0=不使用,2=使用已有]",
+				Description: "是否使用弹性公网IP，取值范围:[自动分配:auto_assign,不使用:not_use,使用已有:use_exist]",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.EbmExtIp...),
+				},
 			},
 			"ip_type": schema.StringAttribute{
 				Optional:    true,
@@ -179,22 +207,50 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "带宽，取值范围:[1~2000]，默认值:100",
 				Default:     int64default.StaticInt64(0),
+				Validators: []validator.Int64{
+					validator2.AlsoRequiresEqualInt64(
+						path.MatchRoot("ext_ip"),
+						types.StringValue(business.EbmExtIpAutoAssign),
+					),
+					validator2.ConflictsWithEqualInt64(
+						path.MatchRoot("ext_ip"),
+						types.StringValue(business.EbmExtIpNotUse),
+						types.StringValue(business.EbmExtIpUseExist),
+					),
+					int64validator.Between(1, 2000),
+				},
 			},
 			"public_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "弹性公网IP的id",
-				Default:     stringdefault.StaticString(""),
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("ext_ip"),
+						types.StringValue(business.EbmExtIpUseExist),
+					),
+					validator2.ConflictsWithEqualStrings(
+						path.MatchRoot("ext_ip"),
+						types.StringValue(business.EbmExtIpNotUse),
+						types.StringValue(business.EbmExtIpAutoAssign),
+					),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"disk_list": schema.ListNestedAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "云盘信息列表，套餐中supportCloud为true表示支持云盘",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 				Default: listdefault.StaticValue(types.ListValueMust(
 					types.ObjectType{
 						AttrTypes: map[string]attr.Type{
@@ -211,6 +267,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						"disk_type": schema.StringAttribute{
 							Required:    true,
 							Description: "磁盘类型system或data，套餐中cloudBoot为true表示支持云盘系统盘",
+							Validators: []validator.String{
+								stringvalidator.OneOf("system", "data"),
+							},
 						},
 						"title": schema.StringAttribute{
 							Optional:    true,
@@ -220,6 +279,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						"type": schema.StringAttribute{
 							Required:    true,
 							Description: "磁盘分类，取值范围:[SAS=SAS盘,SATA=SATA盘,SSD-genric=SSD-genric盘,SSD=SSD盘]",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.EbsDiskTypes...),
+							},
 						},
 						"size": schema.Int64Attribute{
 							Required:    true,
@@ -231,6 +293,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"network_card_list": schema.ListNestedAttribute{
 				Required:    true,
 				Description: "网卡",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"title": schema.StringAttribute{
@@ -266,17 +331,20 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符",
 				Default:     stringdefault.StaticString(""),
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(1, 16384),
+				},
 			},
 			"key_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "密钥对名词",
 			},
-			"pay_voucher_price": schema.Float64Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券",
-				Default:     float64default.StaticFloat64(0.00),
-			},
+			//"pay_voucher_price": schema.Float64Attribute{
+			//	Optional:    true,
+			//	Computed:    true,
+			//	Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券",
+			//	Default:     float64default.StaticFloat64(0.00),
+			//},
 			"auto_renew_status": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
@@ -285,17 +353,46 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"instance_charge_type": schema.StringAttribute{
 				Required:    true,
-				Description: "实例计费类型 <br/>*ORDER_ON_CYCLE：包年包月<br/>*ORDER_ON_DEMAND：按量付费",
+				Description: "实例计费类型 <br/>*order_on_cycle：包年包月<br/>*order_on_demand：按量付费",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.EbmOrderOnCycle, business.EbmOrderOnDemand),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "订购时长，该参数需要与cycleType一同使用<br/>注：最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费（即instanceChargeType为ORDER_ON_DEMAND）时，无需填写该参数（填写无效）",
+				Description: "订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数",
+				Validators: []validator.Int64{
+					validator2.AlsoRequiresEqualInt64(
+						path.MatchRoot("instance_charge_type"),
+						types.StringValue(business.EbmOrderOnCycle),
+					),
+					validator2.ConflictsWithEqualInt64(
+						path.MatchRoot("instance_charge_type"),
+						types.StringValue(business.EbmOrderOnDemand),
+					),
+					// 上限设置高是为了续期
+					validator2.CycleCount(1, 1000, 1, 100),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "订购周期类型，取值范围:[MONTH=按月,YEAR=按年]<br/>注：cycleType与cycleCount一起填写；按量付费（即instanceChargeType为ORDER_ON_DEMAND）时，无需填写该参数（填写无效）",
+				Description: "订购周期类型，取值范围:[month=按月,year=按年]，cycleType与cycleCount一起填写；按量付费时，无需填写该参数",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("instance_charge_type"),
+						types.StringValue(business.EbmOrderOnCycle),
+					),
+					validator2.ConflictsWithEqualStrings(
+						path.MatchRoot("instance_charge_type"),
+						types.StringValue(business.EbmOrderOnDemand),
+					),
+					stringvalidator.OneOf(business.EbmCycleTypeMonth, business.EbmCycleTypeYear),
+				},
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
@@ -314,16 +411,26 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 }
 
 func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunEbmConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
+	// 创建前检查
+	err = c.checkBeforeCreateInstance(ctx, plan)
+	if err != nil {
+		return
+	}
 	// 创建
 	returnObj, err := c.createInstance(ctx, plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -339,7 +446,6 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId, 600)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	plan.ID = types.StringValue(loop.Uuid[0])
@@ -350,41 +456,52 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机
 	err = c.handleInstance(ctx, plan, business.EbmStatusRunning, plan.Status.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	// 反查信息
 	err = c.getAndMergeEbm(ctx, &plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
 func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunEbmConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
+	// 通过订单号同步
 	if !c.acquireAndSetIdIfOrderNotFinished(ctx, &state, response) {
 		return
 	}
-	err := c.getAndMergeEbm(ctx, &state)
+	// 查询远端
+	err = c.getAndMergeEbm(ctx, &state)
 	if errors.Is(err, common.InvalidReturnObjError) {
 		response.State.RemoveResource(ctx)
+		err = nil
 		return
 	} else if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	// tf文件中的
 	var plan CtyunEbmConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
@@ -397,42 +514,47 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
-
 	// 处理开关机
-	err := c.handleInstance(ctx, state, state.Status.ValueString(), plan.Status.ValueString())
+	err = c.handleInstance(ctx, state, state.Status.ValueString(), plan.Status.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	// 修改基础信息
 	err = c.updateInstanceInfo(ctx, state, plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	// 修改密码
 	err = c.updatePassword(ctx, state, plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	state.Password = plan.Password
-
+	// 查询远端信息
 	err = c.getAndMergeEbm(ctx, &state)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunEbmConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	// 关机
+	err = c.stopInstance(ctx, state)
+	if err != nil {
+		return
+	}
 	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
@@ -451,7 +573,6 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 }
@@ -466,11 +587,16 @@ func (c *ctyunEbm) Configure(_ context.Context, request resource.ConfigureReques
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [uuid]
 func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var cfg CtyunEbmConfig
 	var id string
-	err := terraform_extend.Split(request.ID, &id)
+	err = terraform_extend.Split(request.ID, &id)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
@@ -481,7 +607,6 @@ func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportState
 	cfg.ID = types.StringValue(id)
 	err = c.getAndMergeEbm(ctx, &cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
@@ -500,12 +625,14 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	securityGroupID := plan.SecurityGroupID.ValueString()
 	userData := plan.UserData.ValueString()
 	keyName := plan.KeyName.ValueString()
-	instanceChargeType := plan.InstanceChargeType.ValueString()
-	cycleType := plan.CycleType.ValueString()
+	instanceChargeType := strings.ToUpper(plan.InstanceChargeType.ValueString())
+	cycleType := strings.ToUpper(plan.CycleType.ValueString())
 	bandwidth := plan.BandWidth.ValueInt64()
 	diskList := c.buildDiskList(ctx, plan)
 	networkCardList := c.buildNetworkCardList(ctx, plan)
-	// 需要校验的很多，比如弹性裸金属需要安全组id、自选ip时需要传ip，自动分配需要传带宽，密码和密钥对必须有一个，raidid是否传递等等
+
+	extIp, _ := business.EbmExtIpMap.FromOriginalScene(plan.ExtIP.ValueString(), business.EbmExtIpMapScene1)
+
 	params := &ctebm.EbmCreateInstanceV4plusRequest{
 		RegionID:             regionID,
 		AzName:               azName,
@@ -517,8 +644,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		SystemVolumeRaidUUID: &systemVolumeRaidUUID,
 		DataVolumeRaidUUID:   &dataVolumeRaidUUID,
 		VpcID:                plan.VpcID.ValueString(),
-		ExtIP:                plan.ExtIP.ValueString(),
-		PayVoucherPrice:      float32(plan.PayVoucherPrice.ValueFloat64()),
+		ExtIP:                extIp.(string),
 		ProjectID:            &projectID,
 		IpType:               &ipType,
 		DiskList:             diskList,
@@ -554,6 +680,174 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		return
 	}
 	returnObj = *resp.ReturnObj
+	return
+}
+
+// checkBeforeCreateInstance 创建前检查
+func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmConfig) error {
+	cycleCount := plan.CycleCount.ValueInt64()
+	cycleType := plan.CycleType.ValueString()
+	if cycleType == business.EbmCycleTypeMonth && cycleCount > 11 ||
+		cycleType == business.EbmCycleTypeYear && cycleCount > 5 {
+		return fmt.Errorf("创建包周期物理机时，以月为单位，最长支持11月；以年为单位，最长支持5年")
+	}
+
+	// 确保当前虚拟私有云存在，且子网与虚拟私有云存在对应关系
+	vpc := plan.VpcID.ValueString()
+	subnets, err := business.NewVpcService(c.meta).GetVpcSubnet(ctx, vpc, plan.RegionID.ValueString(), plan.ProjectID.ValueString())
+	if err != nil {
+		return err
+	}
+	// 查询套餐
+	deviceTypeConfig, err := c.getDeviceTypeConfig(ctx, plan)
+	if err != nil {
+		return err
+	}
+
+	networkCardList := c.buildNetworkCardList(ctx, plan)
+	diskList := c.buildDiskList(ctx, plan)
+	for _, card := range networkCardList {
+		if subnet, ok := subnets[card.SubnetID]; !ok {
+			return fmt.Errorf("子网 %s 不属于 %s", card.SubnetID, vpc)
+		} else if *deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeCommonInt {
+			return fmt.Errorf("该套餐 %s 为弹性裸金属, 必须使用普通子网", plan.DeviceType.ValueString())
+		} else if !*deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeEbmInt {
+			return fmt.Errorf("该套餐 %s 为标准裸金属, 必须使用裸金属子网", plan.DeviceType.ValueString())
+		}
+
+	}
+	// 弹性裸金属必须有安全组id，标准裸金属一定不能有安全组id
+	secGroup := plan.SecurityGroupID.ValueString()
+	if *deviceTypeConfig.SmartNicExist && secGroup == "" {
+		return fmt.Errorf("该套餐 %s 为弹性裸金属，必须传递安全组ID", plan.DeviceType.ValueString())
+	}
+	if !*deviceTypeConfig.SmartNicExist && secGroup != "" {
+		return fmt.Errorf("该套餐 %s 为标准裸金属，不能传递安全组ID", plan.DeviceType.ValueString())
+	}
+	// 安全组必须存在
+	err = business.NewSecurityGroupService(c.meta).MustExist(ctx, plan.SecurityGroupID.ValueString(), plan.RegionID.ValueString())
+	if err != nil {
+		return err
+	}
+
+	// 校验eip
+	if plan.PublicIP.ValueString() != "" {
+		err = business.NewEipService(c.meta).MustExist(ctx, plan.PublicIP.ValueString(), plan.RegionID.ValueString())
+		if err != nil {
+			return err
+		}
+	}
+
+	// 高级版必须关联云硬盘
+	if !*deviceTypeConfig.SupportCloud && len(diskList) > 0 {
+		return fmt.Errorf("该套餐 %s 不支持关联云硬盘", plan.DeviceType.ValueString())
+	}
+	if *deviceTypeConfig.CloudBoot && len(diskList) == 0 {
+		return fmt.Errorf("该套餐 %s 需要从云硬盘启动，必须关联云硬盘", plan.DeviceType.ValueString())
+	}
+	var extSys bool
+	for _, disk := range diskList {
+		if disk.DiskType == "system" {
+			extSys = true
+			if disk.Size < 100 || disk.Size > 2048 {
+				return fmt.Errorf("云盘系统盘容量取值范围：[100, 2048]，单位GB")
+			}
+		} else if disk.DiskType == "data" {
+			if disk.Size < 10 || disk.Size > 32768 {
+				return fmt.Errorf("云盘数据盘容量取值范围：[10, 32768]，单位GB")
+			}
+		}
+	}
+	if !extSys && *deviceTypeConfig.CloudBoot {
+		return fmt.Errorf("该套餐 %s 需要从云硬盘启动，必须设置云盘系统盘", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.SystemVolumeAmount > 0 && plan.SystemVolumeRaidUUID.ValueString() == "" {
+		return fmt.Errorf("该套餐 %s 必须传递本地系统盘ID", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.DataVolumeAmount > 0 && plan.DataVolumeRaidUUID.ValueString() == "" {
+		return fmt.Errorf("该套餐 %s 必须传递本地数据盘ID", plan.DeviceType.ValueString())
+	}
+
+	// 检查库存
+	enough, err := c.checkStock(ctx, plan)
+	if err != nil {
+		return err
+	} else if !enough {
+		return fmt.Errorf("该套餐 %s 库存不足", plan.DeviceType.ValueString())
+	}
+
+	// 检查镜像
+	available, err := c.checkImage(ctx, plan)
+	if err != nil {
+		return err
+	} else if !available {
+		return fmt.Errorf("该套餐 %s 不能使用镜像 %s", plan.DeviceType.ValueString(), plan.ImageUUID.ValueString())
+	}
+
+	return nil
+}
+
+// checkImage 检查镜像是否可用
+func (c *ctyunEbm) checkImage(ctx context.Context, plan CtyunEbmConfig) (available bool, err error) {
+	deviceType := plan.DeviceType.ValueString()
+	imageUUID := plan.ImageUUID.ValueString()
+	params := &ctebm.EbmImageListRequest{
+		RegionID:   plan.RegionID.ValueString(),
+		AzName:     plan.AzName.ValueString(),
+		DeviceType: deviceType,
+		ImageUUID:  &imageUUID,
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmImageListApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	available = len(resp.ReturnObj.Results) > 0
+	return
+}
+
+// checkStock 获取库存
+func (c *ctyunEbm) checkStock(ctx context.Context, plan CtyunEbmConfig) (enough bool, err error) {
+	deviceType := plan.DeviceType.ValueString()
+	params := &ctebm.EbmDeviceStockListRequest{
+		RegionID:   plan.RegionID.ValueString(),
+		AzName:     plan.AzName.ValueString(),
+		DeviceType: &deviceType,
+		Count:      1,
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeviceStockListApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	enough = *resp.ReturnObj.Results[0].Success
+	return
+}
+
+// getDeviceTypeConfig 查询套餐详情
+func (c *ctyunEbm) getDeviceTypeConfig(ctx context.Context, plan CtyunEbmConfig) (result ctebm.EbmDeviceTypeListReturnObjResultsResponse, error error) {
+	deviceType := plan.DeviceType.ValueString()
+	params := &ctebm.EbmDeviceTypeListRequest{
+		RegionID:   plan.RegionID.ValueString(),
+		AzName:     plan.AzName.ValueString(),
+		DeviceType: &deviceType,
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeviceTypeListApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	if len(resp.ReturnObj.Results) == 0 {
+		err = fmt.Errorf("未查询到该套餐 %s", deviceType)
+		return
+	}
+	result = *resp.ReturnObj.Results[0]
 	return
 }
 
@@ -740,12 +1034,18 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 	cfg.SystemVolumeRaidUUID = types.StringValue(*instance.SystemVolumeRaidID)
 	cfg.DataVolumeRaidUUID = types.StringValue(*instance.DataVolumeRaidID)
 	cfg.VpcID = types.StringValue(*instance.VpcID)
-	cfg.Status = types.StringValue(*instance.EbmState)
-	//cfg.PublicIP = types.StringValue(*instance.PublicIP)
-	if cfg.InstanceChargeType.ValueString() == "ORDER_ON_DEMAND" {
+	cfg.Status = types.StringValue(strings.ToLower(*instance.EbmState))
+
+	if cfg.InstanceChargeType.ValueString() == business.EbmOrderOnDemand {
 		cfg.CycleType = types.StringValue("")
 		cfg.CycleCount = types.Int64Value(0)
 	}
+	if instance.PublicIP == nil {
+		cfg.PublicIP = types.StringValue("")
+	} else {
+		cfg.PublicIP = types.StringValue(*instance.PublicIP)
+	}
+
 	networkCard := types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"title":     types.StringType,
@@ -773,11 +1073,6 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 		networkCard,
 		cards,
 	)
-
-	// 密码、企业项目、ExtIP、IpType、
-	//bindwith、SecurityGroupID、disklist、NetworkCardList、UserData、KeyName, PayVoucherPrice
-	// AutoRenewStatus InstanceChargeType\CycleCount\CycleType\OrderCount没返回
-	// 需要填充
 
 	return nil
 }
@@ -890,6 +1185,51 @@ func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, pla
 	return
 }
 
+// renewInstance 续订物理机
+func (c *ctyunEbm) renewInstance(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
+	// 按需的没有续订
+	if state.InstanceChargeType.ValueString() == business.EbmOrderOnDemand {
+		return
+	}
+	if !state.CycleType.Equal(plan.CycleType) { // 单位变了
+		return fmt.Errorf("续订包周期物理机时，暂时不支持修改单位")
+	}
+	// 时长也没变，直接返回
+	if state.CycleCount.Equal(plan.CycleCount) {
+		return
+	}
+	cycleType := state.CycleType.ValueString()
+	cycleCount := plan.CycleCount.ValueInt64() - state.CycleCount.ValueInt64()
+	if cycleCount < 0 { // 时长缩短了，报错
+		err = fmt.Errorf("包周期物理机不支持缩短时长")
+		return
+	}
+
+	if cycleType == business.EbmCycleTypeMonth && cycleCount > 11 ||
+		cycleType == business.EbmCycleTypeYear && cycleCount > 5 {
+		return fmt.Errorf("续订包周期物理机时，以月为单位，最长支持11月；以年为单位，最长支持5年")
+	}
+	params := ctebm.EbmRenewInstanceRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.ID.ValueString(),
+		CycleType:    plan.CycleType.ValueString(),
+		CycleCount:   int32(cycleCount),
+		ClientToken:  uuid.NewString(),
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmRenewInstanceApi.Do(ctx, c.meta.SdkCredential, &params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf(*resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
 // checkBeforeUpdatePassword 修改密码前对机器状态做检查
 func (c *ctyunEbm) checkBeforeUpdatePassword(ctx context.Context, state CtyunEbmConfig) error {
 	var executeSuccessFlag bool
@@ -958,5 +1298,5 @@ func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) 
 		err = common.InvalidReturnObjError
 		return
 	}
-	return *resp.ReturnObj.EbmState, err
+	return strings.ToLower(*resp.ReturnObj.EbmState), err
 }

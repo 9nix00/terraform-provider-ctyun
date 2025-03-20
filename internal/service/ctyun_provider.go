@@ -210,12 +210,14 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	config := &ctyunsdk.CtyunClientConfig{
 		HttpHooks: []ctyunsdk.HttpHook{
 			ctyunsdk.AddUserAgentHttpHook{},
+			sdk_extend.MetricHttpHook{},
 			sdk_extend.LogHttpHook{},
 		},
 	}
 	coreConfig := &core.CtyunClientConfig{
 		HttpHooks: []core.HttpHook{
 			ctyunsdk.AddUserAgentHttpHook{},
+			sdk_extend.MetricHttpHook{},
 			sdk_extend.LogHttpHook{},
 		},
 	}
