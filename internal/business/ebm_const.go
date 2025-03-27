@@ -13,15 +13,18 @@ const (
 	EbmCycleTypeMonth = "month"
 	EbmCycleTypeYear  = "year"
 
-	EbmStatusCreating   = "creating"
-	EbmStatusStarting   = "starting"
-	EbmStatusRunning    = "running"
-	EbmStatusStopping   = "stopping"
-	EbmStatusStopped    = "stopped"
-	EbmStatusRestarting = "restarting"
-	EbmStatusError      = "error"
-
+	EbmStatusCreating          = "creating"
+	EbmStatusStarting          = "starting"
+	EbmStatusRunning           = "running"
+	EbmStatusStopping          = "stopping"
+	EbmStatusStopped           = "stopped"
+	EbmStatusRestarting        = "restarting"
+	EbmStatusError             = "error"
 	EbmStatusResettingPassword = "resetting_password"
+	EbmStatusResettingHostname = "resetting_hostname"
+
+	EbmSystemDiskType = "system"
+	EbmDataDiskType   = "system"
 )
 
 const (

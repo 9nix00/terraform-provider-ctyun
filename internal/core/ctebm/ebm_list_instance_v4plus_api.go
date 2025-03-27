@@ -163,7 +163,7 @@ type EbmListInstanceV4plusReturnObjResultsResponse struct {
 	 */EbmState *string `json:"ebmState"` /*  物理机状态
 	 */Flavor *EbmListInstanceV4plusReturnObjResultsFlavorResponse `json:"flavor"` /*  规格信息
 	 */Interfaces []*EbmListInstanceV4plusReturnObjResultsInterfacesResponse `json:"interfaces"` /*  网卡信息
-	 */NetworkInfo *EbmListInstanceV4plusReturnObjResultsNetworkInfoResponse `json:"networkInfo"` /*  网络信息
+	 */NetworkInfo []*EbmListInstanceV4plusReturnObjResultsNetworkInfoResponse `json:"networkInfo"` /*  网络信息
 	 */RaidDetail *EbmListInstanceV4plusReturnObjResultsRaidDetailResponse `json:"raidDetail"` /*  磁盘阵列信息
 	 */AttachedVolumes []*string `json:"attachedVolumes"` /*  挂载的硬盘ID
 	 */DeviceDetail *EbmListInstanceV4plusReturnObjResultsDeviceDetailResponse `json:"deviceDetail"` /*  设备信息

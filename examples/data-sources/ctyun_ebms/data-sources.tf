@@ -11,12 +11,13 @@ provider "ctyun" {
   env                  = "prod"
 }
 
-data "ctyun_ebm_device_types" "test" {
+data "ctyun_ebms" "test" {
   region_id            = "200000001852"
   az_name              = "cn-huabei2-tj-3a-public-ctcloud"
+  # az_name =             "cn-huabei2-tj1A-public-ctcloud"
 }
 
-output "ctyun_ebm_device_types_test" {
-  value = data.ctyun_ebm_device_types.test
+output "ctyun_ebms_test" {
+  value = data.ctyun_ebms.test
 }
 

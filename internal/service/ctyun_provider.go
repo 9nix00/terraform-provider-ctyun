@@ -16,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"github.com/hashicorp/terraform-plugin-testing/echoprovider"
 	"net/http"
 	"slices"
 	"strings"
@@ -299,6 +298,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ecs.NewCtyunEcsFlavors(),
 		iam.NewCtyunIamUserGroups(),
 		ebm.NewCtyunEbmDeviceTypes(),
+		ebm.NewCtyunEbms(),
+		ebm.NewCtyunEbmDeviceRaids(),
+		ebm.NewCtyunEbmDeviceImages(),
 	)
 }
 
@@ -360,21 +362,8 @@ type CtyunProviderConfig struct {
 	InspectUrlKeywords types.Set    `tfsdk:"inspect_url_keywords"`
 }
 
-var TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-	"scaffolding": providerserver.NewProtocol6WithError(NewCtyunProvider("test")()),
+func GetTestAccProtoV6ProviderFactories() map[string]func() (tfprotov6.ProviderServer, error) {
+	return map[string]func() (tfprotov6.ProviderServer, error){
+		"ctyun": providerserver.NewProtocol6WithError(NewCtyunProvider("test")()),
+	}
 }
-
-var TestAccProtoV6ProviderFactoriesWithEcho = map[string]func() (tfprotov6.ProviderServer, error){
-	"scaffolding": providerserver.NewProtocol6WithError(NewCtyunProvider("test")()),
-	"echo":        echoprovider.NewProviderServer(),
-}
-
-const (
-	TestConfig = `
-provider "ctyun" {
-  region_id            = "bb9fdb42056f11eda1610242ac110002"
-  az_name              = "cn-huadong1-jsnj1A-public-ctcloud"
-  env                  = "prod"
-}
-`
-)

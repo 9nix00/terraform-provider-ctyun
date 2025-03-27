@@ -24,9 +24,11 @@ type CtyunMetadata struct {
 
 // InitCtyunMetadata 初始化
 func InitCtyunMetadata(apis *Apis, credential ctyunsdk.Credential, sdkCred core.Credential, extra map[string]string) {
-	once.Do(func() {
+	if ctyunMetadata == nil {
 		ctyunMetadata = &CtyunMetadata{Apis: apis, Credential: credential, SdkCredential: sdkCred, extra: extra}
-	})
+	} else {
+		ctyunMetadata.extra = extra
+	}
 }
 
 // AcquireCtyunMetadata 获取实例对象
