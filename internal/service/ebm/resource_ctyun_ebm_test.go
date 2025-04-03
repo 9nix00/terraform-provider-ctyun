@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccNewCtyunEbm(t *testing.T) {
+	resourceName := "ctyun_ebm.test"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
@@ -43,9 +44,9 @@ resource "ctyun_ebm" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "status", "running"),
-					resource.TestCheckResourceAttrSet("ctyun_ebm.test", "id"),
-					resource.TestCheckResourceAttrSet("ctyun_ebm.test", "master_order_id"),
+					resource.TestCheckResourceAttr(resourceName, "status", "running"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
@@ -85,13 +86,12 @@ data "ctyun_ebms" "data_test" {
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.ctyun_ebms.data_test", "instances.#", "1"),
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "instance_name", "ebm-tf-test-0402-1"),
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "hostname", "ebm-tf-test-0402-2"),
+					resource.TestCheckResourceAttr(resourceName, "instance_name", "ebm-tf-test-0402-1"),
+					resource.TestCheckResourceAttr(resourceName, "hostname", "ebm-tf-test-0402-2"),
 				),
 			},
-
 			{
-				ResourceName:      "ctyun_ebm.test",
+				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

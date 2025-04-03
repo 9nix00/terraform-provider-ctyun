@@ -8,6 +8,7 @@ import (
 )
 
 func TestAccNewCtyunEbmInterface(t *testing.T) {
+	resourceName := "ctyun_ebm_interface.test"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
@@ -27,9 +28,9 @@ resource "ctyun_ebm_interface" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ctyun_ebm_interface.test", "security_group_ids.#", "1"),
-					resource.TestCheckResourceAttr("ctyun_ebm_interface.test", "security_group_ids.0", "sg-t0ae11aig1"),
-					resource.TestCheckResourceAttrSet("ctyun_ebm_interface.test", "interface_id"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.0", "sg-t0ae11aig1"),
+					resource.TestCheckResourceAttrSet(resourceName, "interface_id"),
 				),
 			},
 			{
@@ -48,12 +49,11 @@ resource "ctyun_ebm_interface" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ctyun_ebm_interface.test", "security_group_ids.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.#", "2"),
 				),
 			},
-
 			{
-				ResourceName:            "ctyun_ebm_interface.test",
+				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},

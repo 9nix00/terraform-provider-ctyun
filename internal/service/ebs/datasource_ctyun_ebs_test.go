@@ -60,7 +60,7 @@ resource "ctyun_ebs" "test" {
 			{
 				Config: `
 provider "ctyun" {
-  env                  = "prod"
+  env = "prod"
 }
 
 data "ctyun_ebs_volumes" "test" {
