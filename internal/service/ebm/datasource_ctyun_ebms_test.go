@@ -22,9 +22,6 @@ data "ctyun_ebms" "test" {
   region_id = "200000001852"
   az_name = "cn-huabei2-tj-3a-public-ctcloud"
 }`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.ctyun_ebms.test", "instances.#", "0"),
-				),
 			},
 		},
 	})

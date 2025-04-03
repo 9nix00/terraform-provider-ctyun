@@ -22,6 +22,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
+	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -273,12 +274,13 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-			CtEbsApis:   ctebs.NewApis(client),
-			CtEcsApis:   ctecs.NewApis(client),
-			CtIamApis:   ctiam.NewApis(client),
-			CtImageApis: ctimage.NewApis(client),
-			CtVpcApis:   ctvpc.NewApis(client),
-			CtEbmApis:   ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			CtEbsApis:    ctebs.NewApis(client),
+			CtEcsApis:    ctecs.NewApis(client),
+			CtIamApis:    ctiam.NewApis(client),
+			CtImageApis:  ctimage.NewApis(client),
+			CtVpcApis:    ctvpc.NewApis(client),
+			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -301,6 +303,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbms(),
 		ebm.NewCtyunEbmDeviceRaids(),
 		ebm.NewCtyunEbmDeviceImages(),
+		ebs.NewCtyunEbsVolumes(),
 	)
 }
 
@@ -328,7 +331,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
-		ebm.NewCtyunEbm())
+		ebm.NewCtyunEbm(),
+		ebm.NewCtyunEbmInterface(),
+		ebm.NewCtyunEbmAssociationEbs(),
+	)
 }
 
 // buildDataSource 构建datasource

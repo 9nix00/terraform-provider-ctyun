@@ -69,7 +69,7 @@ type EbmCreateInstanceV4plusRequest struct {
 	 */PayVoucherPrice float32 `json:"payVoucherPrice"` /*  代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数部分无效；不可为负数；字段为0时表示不使用代金券
 	 */AutoRenewStatus int32 `json:"autoRenewStatus"` /*  是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费），<br/>注：按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年
 	 */InstanceChargeType *string `json:"instanceChargeType"` /*  实例计费类型，默认为ORDER_ON_CYCLE（包年包月）<br/>
-	 */CycleCount int32 `json:"cycleCount"` /*  订购时长，该参数需要与cycleType一同使用<br/>注：最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；
+	 */CycleCount int32 `json:"cycleCount,omitempty"` /*  订购时长，该参数需要与cycleType一同使用<br/>注：最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；
 	 */CycleType *string `json:"cycleType"` /*  订购周期类型 ，取值范围:[MONTH=按月,YEAR=按年]<br/>注：cycleType与cycleCount一起填写；
 	 */OrderCount int32 `json:"orderCount"` /*  购买数量
 	 */ClientToken string `json:"clientToken"` /*  客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一，使用同一个ClientToken值，其他请求参数相同时，则代表为同一个请求。保留时间为24小时

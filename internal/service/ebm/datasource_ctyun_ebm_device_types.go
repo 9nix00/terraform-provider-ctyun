@@ -24,8 +24,8 @@ func NewCtyunEbmDeviceTypes() datasource.DataSource {
 	return &ctyunEbmDeviceTypes{}
 }
 
-func (c *ctyunEbmDeviceTypes) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_ebm_device_types"
+func (c *ctyunEbmDeviceTypes) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_ebm_device_types"
 }
 
 type CtyunEbmDeviceTypesModel struct {
@@ -89,8 +89,8 @@ type CtyunEbmDeviceTypesConfig struct {
 	DeviceTypes []CtyunEbmDeviceTypesModel `tfsdk:"device_types"`
 }
 
-func (c *ctyunEbmDeviceTypes) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+func (c *ctyunEbmDeviceTypes) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027724/10754001**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{

@@ -41,6 +41,13 @@ func ConflictsWithEqualInt64(expression path.Expression, objs ...attr.Value) val
 	}
 }
 
+func ConflictsWithEqualInt32(expression path.Expression, objs ...attr.Value) validator.Int32 {
+	return &validatorConflictsWithEqual{
+		expression: expression,
+		objs:       objs,
+	}
+}
+
 func ConflictsWithEqualBool(expression path.Expression, objs ...attr.Value) validator.Bool {
 	return &validatorConflictsWithEqual{
 		expression: expression,
@@ -107,6 +114,18 @@ func (v validatorConflictsWithEqual) ValidateString(ctx context.Context, request
 }
 
 func (v validatorConflictsWithEqual) ValidateInt64(ctx context.Context, req validator.Int64Request, resp *validator.Int64Response) {
+	validateReq := conflictsWithEqualValidatorRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &conflictsWithEqualValidatorResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorConflictsWithEqual) ValidateInt32(ctx context.Context, req validator.Int32Request, resp *validator.Int32Response) {
 	validateReq := conflictsWithEqualValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,

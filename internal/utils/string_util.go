@@ -25,7 +25,15 @@ func IsDigit(target rune) bool {
 	return target >= '0' && target <= '9'
 }
 
-// SecStringValue 避免nil
+// SecString *string转string
+func SecString(str *string) string {
+	if str == nil {
+		return ""
+	}
+	return *str
+}
+
+// SecStringValue *string转types.String
 func SecStringValue(str *string) types.String {
 	if str == nil {
 		return types.StringValue("")
@@ -33,7 +41,7 @@ func SecStringValue(str *string) types.String {
 	return types.StringValue(*str)
 }
 
-// SecLowerStringValue 避免nil, 返回全小写
+// SecLowerStringValue *string转types.String全小写
 func SecLowerStringValue(str *string) types.String {
 	if str == nil {
 		return types.StringValue("")
@@ -41,7 +49,7 @@ func SecLowerStringValue(str *string) types.String {
 	return types.StringValue(strings.ToLower(*str))
 }
 
-// SecUpperStringValue 避免nil, 返回全大写
+// SecUpperStringValue *string转types.String全大写
 func SecUpperStringValue(str *string) types.String {
 	if str == nil {
 		return types.StringValue("")
@@ -49,7 +57,7 @@ func SecUpperStringValue(str *string) types.String {
 	return types.StringValue(strings.ToLower(*str))
 }
 
-// StrPointerArrayToStrArray 字符串指针数组转字符串数组
+// StrPointerArrayToStrArray []*string转[]string
 func StrPointerArrayToStrArray(array []*string) []string {
 	ret := []string{}
 	for _, str := range array {
@@ -60,4 +68,55 @@ func StrPointerArrayToStrArray(array []*string) []string {
 		}
 	}
 	return ret
+}
+
+// DifferenceStrArray 获取两个字符串数组的差集并去重
+func DifferenceStrArray(a, b []string) (diffA []string, diffB []string) {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	diffAMap := make(map[string]struct{})
+	// 找出 a 中不在 b 里的元素
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			if _, exists := diffAMap[x]; !exists {
+				diffA = append(diffA, x)
+				diffAMap[x] = struct{}{}
+			}
+		}
+	}
+
+	ma := make(map[string]struct{}, len(a))
+	for _, x := range a {
+		ma[x] = struct{}{}
+	}
+	diffBMap := make(map[string]struct{})
+	// 找出 b 中不在 a 里的元素
+	for _, x := range b {
+		if _, found := ma[x]; !found {
+			if _, exists := diffBMap[x]; !exists {
+				diffB = append(diffB, x)
+				diffBMap[x] = struct{}{}
+			}
+		}
+	}
+	return
+}
+
+// AreStringSlicesEqual 对比字符串数组是否相同
+func AreStringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	count := make(map[string]int, len(a))
+	for _, s := range a {
+		count[s]++
+	}
+	for _, s := range b {
+		if count[s]--; count[s] < 0 {
+			return false
+		}
+	}
+	return true
 }

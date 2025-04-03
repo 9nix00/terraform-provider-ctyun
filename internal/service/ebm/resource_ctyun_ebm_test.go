@@ -14,31 +14,35 @@ func TestAccNewCtyunEbm(t *testing.T) {
 			{
 				Config: `
 provider "ctyun" {
-  region_id	= "bb9fdb42056f11eda1610242ac110002"
-  az_name = "cn-huadong1-jsnj2A-public-ctcloud"
-  env = "prod"
+  region_id            = "200000001852"
+  az_name              = "cn-huabei2-tj1A-public-ctcloud"
+  env                  = "prod"
 }
 
 resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.2xlarge4"
-  instance_name = "ebm-25-tf"
-  hostname = "ebm-25-tf"
+  device_type = "physical.s5.2xlarge1"
+  instance_name = "ebm-0323-tf"
+  hostname = "ebm-03221-tf"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss12345"
-  security_group_id = "sg-vrp4x1lm7p"
-  vpc_id = "vpc-5o8oe0oci6"
+  password = "P@ss132345"
+  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
+  vpc_id = "vpc-6zxqwrg1r6"
   ext_ip = "not_use"
-  system_volume_raid_uuid = "r-wtzluqacgzzxgunnabdkpnpjew3d"
-  data_volume_raid_uuid = "r-qytwf9r5h0yn9x4evjkyr0n1cwyb"
+  system_volume_raid_uuid = ""
   instance_charge_type = "order_on_demand"
+  status = "running"
+  disk_list = [{
+    disk_type = "system"
+    size = "100"
+    type = "sata"
+  }]
   network_card_list = [{
     master = true,
-    subnet_id = "subnet-n7zbsy4b91"
+    subnet_id = "subnet-43z7cqmjlp"
   }]
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "device_type", "physical.s5.2xlarge4"),
 					resource.TestCheckResourceAttr("ctyun_ebm.test", "status", "running"),
 					resource.TestCheckResourceAttrSet("ctyun_ebm.test", "id"),
 					resource.TestCheckResourceAttrSet("ctyun_ebm.test", "master_order_id"),
@@ -47,35 +51,42 @@ resource "ctyun_ebm" "test" {
 			{
 				Config: `
 provider "ctyun" {
-  region_id	= "bb9fdb42056f11eda1610242ac110002"
-  az_name = "cn-huadong1-jsnj2A-public-ctcloud"
-  env = "prod"
+  region_id            = "200000001852"
+  az_name              = "cn-huabei2-tj1A-public-ctcloud"
+  env                  = "prod"
 }
 
 resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.2xlarge4"
-  instance_name = "ebm-0324-tf"
-  hostname = "ebm-0324-hostname"
+  device_type = "physical.s5.2xlarge1"
+  instance_name = "ebm-tf-test-0402-1"
+  hostname = "ebm-tf-test-0402-2"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
   password = "P@ss12345"
-  security_group_id = "sg-vrp4x1lm7p"
-  vpc_id = "vpc-5o8oe0oci6"
+  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
+  vpc_id = "vpc-6zxqwrg1r6"
   ext_ip = "not_use"
-  status = "stopped"
-  system_volume_raid_uuid = "r-wtzluqacgzzxgunnabdkpnpjew3d"
-  data_volume_raid_uuid = "r-qytwf9r5h0yn9x4evjkyr0n1cwyb"
+  system_volume_raid_uuid = ""
   instance_charge_type = "order_on_demand"
+  status = "stopped"
+  disk_list = [{
+    disk_type = "system"
+    size = "100"
+    type = "sata"
+  }]
   network_card_list = [{
     master = true,
-    subnet_id = "subnet-n7zbsy4b91"
+    subnet_id = "subnet-43z7cqmjlp"
   }]
+}
+
+data "ctyun_ebms" "data_test" {
+	instance_id_list = ctyun_ebm.test.instance_id
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "device_type", "physical.s5.2xlarge4"),
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "status", "stopped"),
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "instance_name", "ebm-0324-tf"),
-					resource.TestCheckResourceAttr("ctyun_ebm.test", "hostname", "ebm-0324-hostname"),
+					resource.TestCheckResourceAttr("data.ctyun_ebms.data_test", "instances.#", "1"),
+					resource.TestCheckResourceAttr("ctyun_ebm.test", "instance_name", "ebm-tf-test-0402-1"),
+					resource.TestCheckResourceAttr("ctyun_ebm.test", "hostname", "ebm-tf-test-0402-2"),
 				),
 			},
 
