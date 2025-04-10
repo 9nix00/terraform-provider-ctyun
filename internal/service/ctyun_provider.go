@@ -23,6 +23,7 @@ import (
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
+	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -281,6 +282,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtVpcApis:    ctvpc.NewApis(client),
 			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
 			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
+			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -304,6 +306,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbmDeviceRaids(),
 		ebm.NewCtyunEbmDeviceImages(),
 		ebs.NewCtyunEbsVolumes(),
+		ecs.NewCtyunEcsInstances(),
+		ecs.NewCtyunEcsAffinityGroups(),
 	)
 }
 
@@ -334,6 +338,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ebm.NewCtyunEbm(),
 		ebm.NewCtyunEbmInterface(),
 		ebm.NewCtyunEbmAssociationEbs(),
+		ecs.NewCtyunEcsAffinityGroup(),
+		ecs.NewCtyunEcsAffinityGroupAssociation(),
 	)
 }
 

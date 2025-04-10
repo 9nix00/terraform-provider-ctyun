@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"strings"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
@@ -1343,6 +1344,7 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 				executeSuccessFlag = true
 				return false
 			default:
+				tflog.Debug(ctx, "修改物理机密码或hostname后机器状态异常: "+status)
 				return false
 			}
 		})

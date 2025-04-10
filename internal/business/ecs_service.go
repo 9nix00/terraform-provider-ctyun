@@ -44,3 +44,18 @@ func (u EcsService) MustExist(ctx context.Context, id, regionId string) error {
 	}
 	return nil
 }
+
+func (u EcsService) GetEcsStatus(ctx context.Context, id, regionId string) (string, error) {
+	instance, err := u.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, u.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
+		RegionId:   regionId,
+		InstanceId: id,
+	})
+	if err != nil {
+		// 实例已经被退订的情况
+		if err.ErrorCode() == common.EcsInstanceNotFound {
+			return "", fmt.Errorf("云主机 %s 不存在", id)
+		}
+		return "", err
+	}
+	return instance.InstanceStatus, nil
+}

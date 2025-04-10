@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunEbm{}
-	_ resource.ResourceWithConfigure   = &ctyunEbm{}
-	_ resource.ResourceWithImportState = &ctyunEbm{}
+	_ resource.Resource                = &ctyunEbmAssociationEbs{}
+	_ resource.ResourceWithConfigure   = &ctyunEbmAssociationEbs{}
+	_ resource.ResourceWithImportState = &ctyunEbmAssociationEbs{}
 )
 
 type ctyunEbmAssociationEbs struct {
@@ -256,7 +256,7 @@ func (c *ctyunEbmAssociationEbs) checkBeforeAssociation(ctx context.Context, pla
 	return
 }
 
-// association 绑定后检查
+// checkAfterAssociation 绑定后检查
 func (c *ctyunEbmAssociationEbs) checkAfterAssociation(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)

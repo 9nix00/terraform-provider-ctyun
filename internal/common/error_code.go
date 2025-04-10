@@ -18,11 +18,12 @@ const (
 	EbsOrderInProgress               = "ebs.order.inProgress"
 	OpenapiVpcNotFound               = "Openapi.Vpc.NotFound"
 	OpenapiSubnetNotFound            = "Openapi.Subnet.NotFound"
-
-	CtiamNoPermission = "CTIAM_0005"
-	CtiamNoPrivilege  = "CTIAM_1044"
+	EcsAffinityGroupNotBound         = "Ecs.AffinityGroup.NotBound"
+	CtiamNoPermission                = "CTIAM_0005"
+	CtiamNoPrivilege                 = "CTIAM_1044"
 
 	ErrorStatusCode = 900
 )
 
-var InvalidReturnObjError = errors.New("InvalidReturnObj")
+var InvalidReturnObjError = errors.New("invalid return object")
+var InvalidReturnObjResultsError = errors.New("invalid result object results")
