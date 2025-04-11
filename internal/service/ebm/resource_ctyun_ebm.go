@@ -20,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"strings"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
@@ -1304,10 +1303,12 @@ func (c *ctyunEbm) updateHostname(ctx context.Context, state CtyunEbmConfig, pla
 // checkBeforeUpdatePasswordOrHostname 修改密码或主机名前对机器状态做检查
 func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, state CtyunEbmConfig) error {
 	var executeSuccessFlag bool
+	var status string
+	var err error
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
+			status, err = c.getInstanceStatus(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1321,8 +1322,11 @@ func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, stat
 				return false
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("修改物理机密码或hostname失败，请确认物理机状态，修改密码或hostname必须先关机")
+		return errors.New("修改物理机密码或hostname失败，请确认物理机状态，修改密码或hostname必须先关机，当前状态：" + status)
 	}
 	return nil
 }
@@ -1330,10 +1334,12 @@ func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, stat
 // checkAfterUpdatePasswordOrHostname 修改后检查机器状态
 func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state CtyunEbmConfig) error {
 	var executeSuccessFlag bool
+	var status string
+	var err error
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
+			status, err = c.getInstanceStatus(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1344,12 +1350,14 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 				executeSuccessFlag = true
 				return false
 			default:
-				tflog.Debug(ctx, "修改物理机密码或hostname后机器状态异常: "+status)
 				return false
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("修改物理机密码或hostname后，检查失败，请确认物理机状态")
+		return errors.New("修改物理机密码或hostname后，检查失败，请确认物理机状态：" + status)
 	}
 	return nil
 }

@@ -28,10 +28,10 @@ data "ctyun_ebm_device_raids" "data_raid" {
 
 resource "ctyun_ebm" "ebm_test" {
   device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
-  instance_name = "ebm-0323-tf"
-  hostname = "ebm-03221-tf"
+  instance_name = "ebm-0411-tf"
+  hostname = "ebm-0411-tf"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss132345"
+  password = "P@ss12345"
   security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
   vpc_id = "vpc-6zxqwrg1r6"
   ext_ip = "not_use"
