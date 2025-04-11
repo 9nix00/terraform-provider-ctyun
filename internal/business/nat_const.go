@@ -22,6 +22,22 @@ const (
 	SpecMedium     = 2
 	SpecLarge      = 3
 	SpecExtraLarge = 4
+
+	// protocol
+	ProtocolTcp = "tcp"
+	ProtocolUdp = "udp"
+
+	//DNAT运行状态
+	DNatStateActive   = "active"
+	DNatStateFreezing = "freezing"
+	DNatStateCreating = "creating"
+
+	SubnetTypeVPC    = 1
+	SubnetTypeCustom = 2
+
+	// SNAT创建状态
+	SNatCreateStatusING  = "in_progress"
+	SnatCreateStatusDone = "done"
 )
 
 var NatOrderCycleTypes = []string{
@@ -47,4 +63,19 @@ var NatSpecs = []int64{
 	SpecMedium,
 	SpecLarge,
 	SpecExtraLarge,
+}
+
+var DNatProtocols = []string{
+	ProtocolTcp,
+	ProtocolUdp,
+}
+var DNatStatus = []string{
+	DNatStateActive,
+	DNatStateFreezing,
+	DNatStateCreating,
+}
+
+var SNatSubnetTypes = []int32{
+	SubnetTypeVPC,
+	SubnetTypeCustom,
 }

@@ -4,6 +4,7 @@ import (
 	"sync"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
+	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -53,10 +54,11 @@ func (c CtyunMetadata) GetExtraIfEmpty(target, extraKey string) string {
 }
 
 type Apis struct {
-	CtEbsApis   *ctebs.Apis
-	CtEcsApis   *ctecs.Apis
-	CtIamApis   *ctiam.Apis
-	CtImageApis *ctimage.Apis
-	CtVpcApis   *ctvpc.Apis
-	CtEbmApis   *ctebm.Apis
+	CtEbsApis    *ctebs.Apis
+	CtEcsApis    *ctecs.Apis
+	CtIamApis    *ctiam.Apis
+	CtImageApis  *ctimage.Apis
+	CtVpcApis    *ctvpc.Apis
+	CtEbmApis    *ctebm.Apis
+	SdkCtVpcApis *sdkCtvpc.Apis
 }
