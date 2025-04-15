@@ -184,7 +184,7 @@ func (c *ctyunVpcRouteTables) Read(ctx context.Context, request datasource.ReadR
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
