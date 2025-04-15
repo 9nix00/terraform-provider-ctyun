@@ -14,10 +14,6 @@ func TestAccNewCtyunEbmDeviceRaids(t *testing.T) {
 			// Read testing
 			{
 				Config: `
-provider "ctyun" {
-  env = "prod"
-}
-
 data "ctyun_ebm_device_raids" "test" {
   region_id = "200000001852"
   az_name = "cn-huabei2-tj1A-public-ctcloud"

@@ -987,10 +987,11 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 		return
 	}
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 20)
+	var status string
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
+			status, err = c.getInstanceStatus(ctx, plan)
 			if err != nil {
 				return false
 			}
@@ -1008,8 +1009,11 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 			}
 		},
 	)
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("执行开启ebm动作时，ebm状态异常")
+		return errors.New("执行开启ebm动作时，ebm状态异常：status")
 	}
 	return
 }
@@ -1031,10 +1035,11 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 		return
 	}
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 20)
+	var status string
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
+			status, err = c.getInstanceStatus(ctx, plan)
 			if err != nil {
 				return false
 			}
@@ -1051,8 +1056,11 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 				return false
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("执行关闭ebm动作时，ebm状态异常")
+		return errors.New("执行关闭ebm动作时，ebm状态异常，当前状态：" + status)
 	}
 	return
 }

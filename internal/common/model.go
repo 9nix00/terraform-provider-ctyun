@@ -5,6 +5,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -57,4 +58,5 @@ type Apis struct {
 	CtEbmApis    *ctebm.Apis
 	SdkCtEbsApis *ctebs2.Apis
 	SdkCtEcsApis *ctecs2.Apis
+	SdkCtVpcApis *ctvpc2.Apis
 }
