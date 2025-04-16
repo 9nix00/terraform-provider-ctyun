@@ -10,48 +10,44 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunVpc(t *testing.T) {
+func TestAccCtyunSecurityGroup(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
-	resourceName := "ctyun_vpc." + rnd
-	datasourceName := "data.ctyun_vpcs." + dnd
 
-	initName := utils.GenerateRandomString()
-	initCidr := "192.168.0.0/16"
-	initDescription := utils.GenerateRandomString()
+	resourceName := "ctyun_security_group." + rnd
+	datasourcName := "data.ctyun_security_groups." + dnd
 
-	updatedName := utils.GenerateRandomString()
-	updatedDescription := utils.GenerateRandomString()
+	initName := "init"
+	initDescription := "description"
+	updatedName := "updated"
+	updatedDescription := "updated-description"
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, initName, initDescription, initCidr),
+				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, initName, initDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttr(resourceName, "cidr", initCidr),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, updatedName, updatedDescription, initCidr),
+				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, updatedName, updatedDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cidr", initCidr),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, updatedName, updatedDescription, initCidr),
+				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, updatedName, updatedDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "vpcs.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "vpcs.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "vpcs.0.cidr", initCidr),
-					resource.TestCheckResourceAttr(datasourceName, "vpcs.0.description", updatedDescription),
+					resource.TestCheckResourceAttr(datasourcName, "security_groups.#", "1"),
+					resource.TestCheckResourceAttr(datasourcName, "security_groups.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourcName, "security_groups.0.description", updatedDescription),
 				),
 			},
 			{
@@ -62,14 +58,15 @@ func TestAccCtyunVpc(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					id := ds.ID
 					regionId := ds.Attributes["region_id"]
-					projectId := ds.Attributes["project_id"]
 					if id == "" || regionId == "" {
 						return "", fmt.Errorf("id or region_id is required")
 					}
-					return fmt.Sprintf("%s,%s,%s", id, regionId, projectId), nil
+					return fmt.Sprintf("%s,%s", id, regionId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"project_id",
+				},
 			},
 		},
 	})

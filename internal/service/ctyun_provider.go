@@ -314,6 +314,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
 		vpc.NewCtyunVpcRouteTables(),
+		vpc.NewCtyunVpcRouteTableRules(),
 	)
 }
 
@@ -347,6 +348,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsAffinityGroup(),
 		ecs.NewCtyunEcsAffinityGroupAssociation(),
 		vpc.NewCtyunVpcRouteTable(),
+		vpc.NewCtyunVpcRouteTableRule(),
 	)
 }
 

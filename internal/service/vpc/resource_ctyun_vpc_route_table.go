@@ -192,7 +192,6 @@ func (c *ctyunVpcRouteTable) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
-	//response.State.RemoveResource(ctx)
 }
 
 func (c *ctyunVpcRouteTable) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {

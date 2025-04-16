@@ -43,7 +43,7 @@ type CtyunSecurityGroupRule struct {
 }
 
 type CtyunSecurityGroupsModel struct {
-	SecurityGroupName     types.String             `tfsdk:"security_group_name"`
+	Name                  types.String             `tfsdk:"name"`
 	SecurityGroupID       types.String             `tfsdk:"security_group_id"`
 	VmNum                 types.Int32              `tfsdk:"vm_num"`
 	Origin                types.String             `tfsdk:"origin"`
@@ -118,7 +118,7 @@ func (c *ctyunSecurityGroups) Schema(_ context.Context, _ datasource.SchemaReque
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"security_group_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "安全组名称",
 						},
@@ -262,21 +262,21 @@ func (c *ctyunSecurityGroups) Read(ctx context.Context, request datasource.ReadR
 		err = common.InvalidReturnObjError
 		return
 	}
-	// 调用API
+	// 解析返回值
 	config.SecurityGroups = []CtyunSecurityGroupsModel{}
 	config.TotalPage = types.Int32Value(resp.ReturnObj.TotalPage)
 	config.TotalCount = types.Int32Value(resp.ReturnObj.TotalCount)
 	config.CurrentCount = types.Int32Value(resp.ReturnObj.CurrentCount)
 	for _, s := range resp.ReturnObj.SecurityGroups {
 		item := CtyunSecurityGroupsModel{
-			SecurityGroupName: utils.SecStringValue(s.SecurityGroupName),
-			SecurityGroupID:   utils.SecStringValue(s.Id),
-			VmNum:             types.Int32Value(s.VmNum),
-			Origin:            utils.SecStringValue(s.Origin),
-			VpcName:           utils.SecStringValue(s.VpcName),
-			VpcID:             utils.SecStringValue(s.VpcID),
-			CreationTime:      utils.SecStringValue(s.CreationTime),
-			Description:       utils.SecStringValue(s.Description),
+			Name:            utils.SecStringValue(s.SecurityGroupName),
+			SecurityGroupID: utils.SecStringValue(s.Id),
+			VmNum:           types.Int32Value(s.VmNum),
+			Origin:          utils.SecStringValue(s.Origin),
+			VpcName:         utils.SecStringValue(s.VpcName),
+			VpcID:           utils.SecStringValue(s.VpcID),
+			CreationTime:    utils.SecStringValue(s.CreationTime),
+			Description:     utils.SecStringValue(s.Description),
 		}
 		for _, r := range s.SecurityGroupRuleList {
 			rule := CtyunSecurityGroupRule{
@@ -296,8 +296,6 @@ func (c *ctyunSecurityGroups) Read(ctx context.Context, request datasource.ReadR
 		}
 		config.SecurityGroups = append(config.SecurityGroups, item)
 	}
-	// 解析返回值
-
 	// 保存到state
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }

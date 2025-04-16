@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccNewCtyunEbmInterface(t *testing.T) {
+func TestAccCtyunEbmInterface(t *testing.T) {
 	resourceName := "ctyun_ebm_interface.test"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),

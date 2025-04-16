@@ -33,7 +33,7 @@ type CtyunSubnetsModel struct {
 	Name              types.String `tfsdk:"name"`
 	Description       types.String `tfsdk:"description"`
 	VpcID             types.String `tfsdk:"vpc_id"`
-	AvailabilityZones []string     `tfsdk:"availability_zones"`
+	AvailabilityZones types.Set    `tfsdk:"availability_zones"`
 	RouteTableID      types.String `tfsdk:"route_table_id"`
 	NetworkAclID      types.String `tfsdk:"network_acl_id"`
 	CIDR              types.String `tfsdk:"cidr"`
@@ -47,8 +47,8 @@ type CtyunSubnetsModel struct {
 	Ipv6Start         types.String `tfsdk:"ipv6_start"`
 	Ipv6End           types.String `tfsdk:"ipv6_end"`
 	Ipv6GatewayIP     types.String `tfsdk:"ipv6_gateway_ip"`
-	DnsList           []string     `tfsdk:"dns_list"`
-	NtpList           []string     `tfsdk:"ntp_list"`
+	DnsList           types.Set    `tfsdk:"dns_list"`
+	NtpList           types.Set    `tfsdk:"ntp_list"`
 	Type              types.Int32  `tfsdk:"type"`
 	UpdatedAt         types.String `tfsdk:"updated_at"`
 }
@@ -127,7 +127,7 @@ func (c *ctyunSubnets) Schema(_ context.Context, _ datasource.SchemaRequest, res
 							Computed:    true,
 							Description: "VpcID",
 						},
-						"availability_zones": schema.ListAttribute{
+						"availability_zones": schema.SetAttribute{
 							ElementType: types.StringType,
 							Computed:    true,
 							Description: "子网所在的可用区名",
@@ -184,12 +184,12 @@ func (c *ctyunSubnets) Schema(_ context.Context, _ datasource.SchemaRequest, res
 							Computed:    true,
 							Description: "v6网关地址",
 						},
-						"dns_list": schema.ListAttribute{
+						"dns_list": schema.SetAttribute{
 							ElementType: types.StringType,
 							Computed:    true,
 							Description: "DNS服务器地址:默认为空；必须为正确的IPv4格式；重新触发DHCP后生效，最大数组长度为4",
 						},
-						"ntp_list": schema.ListAttribute{
+						"ntp_list": schema.SetAttribute{
 							ElementType: types.StringType,
 							Computed:    true,
 							Description: "NTP服务器地址:默认为空，必须为正确的域名或IPv4格式；重新触发DHCP后生效，最大数组长度为4",
@@ -263,29 +263,29 @@ func (c *ctyunSubnets) Read(ctx context.Context, request datasource.ReadRequest,
 	config.CurrentCount = types.Int32Value(resp.ReturnObj.CurrentCount)
 	for _, s := range resp.ReturnObj.Subnets {
 		item := CtyunSubnetsModel{
-			SubnetID:          utils.SecStringValue(s.SubnetID),
-			Name:              utils.SecStringValue(s.Name),
-			Description:       utils.SecStringValue(s.Description),
-			VpcID:             utils.SecStringValue(s.VpcID),
-			AvailabilityZones: utils.StrPointerArrayToStrArray(s.AvailabilityZones),
-			RouteTableID:      utils.SecStringValue(s.RouteTableID),
-			NetworkAclID:      utils.SecStringValue(s.NetworkAclID),
-			CIDR:              utils.SecStringValue(s.CIDR),
-			GatewayIP:         utils.SecStringValue(s.GatewayIP),
-			Start:             utils.SecStringValue(s.Start),
-			End:               utils.SecStringValue(s.End),
-			AvailableIPCount:  types.Int32Value(s.AvailableIPCount),
-			Ipv6Enabled:       types.Int32Value(s.Ipv6Enabled),
-			EnableIpv6:        utils.SecBoolValue(s.EnableIpv6),
-			Ipv6CIDR:          utils.SecStringValue(s.Ipv6CIDR),
-			Ipv6Start:         utils.SecStringValue(s.Ipv6Start),
-			Ipv6End:           utils.SecStringValue(s.Ipv6End),
-			Ipv6GatewayIP:     utils.SecStringValue(s.Ipv6GatewayIP),
-			DnsList:           utils.StrPointerArrayToStrArray(s.DnsList),
-			NtpList:           utils.StrPointerArrayToStrArray(s.NtpList),
-			Type:              types.Int32Value(s.RawType),
-			UpdatedAt:         utils.SecStringValue(s.UpdatedAt),
+			SubnetID:         utils.SecStringValue(s.SubnetID),
+			Name:             utils.SecStringValue(s.Name),
+			Description:      utils.SecStringValue(s.Description),
+			VpcID:            utils.SecStringValue(s.VpcID),
+			RouteTableID:     utils.SecStringValue(s.RouteTableID),
+			NetworkAclID:     utils.SecStringValue(s.NetworkAclID),
+			CIDR:             utils.SecStringValue(s.CIDR),
+			GatewayIP:        utils.SecStringValue(s.GatewayIP),
+			Start:            utils.SecStringValue(s.Start),
+			End:              utils.SecStringValue(s.End),
+			AvailableIPCount: types.Int32Value(s.AvailableIPCount),
+			Ipv6Enabled:      types.Int32Value(s.Ipv6Enabled),
+			EnableIpv6:       utils.SecBoolValue(s.EnableIpv6),
+			Ipv6CIDR:         utils.SecStringValue(s.Ipv6CIDR),
+			Ipv6Start:        utils.SecStringValue(s.Ipv6Start),
+			Ipv6End:          utils.SecStringValue(s.Ipv6End),
+			Ipv6GatewayIP:    utils.SecStringValue(s.Ipv6GatewayIP),
+			Type:             types.Int32Value(s.RawType),
+			UpdatedAt:        utils.SecStringValue(s.UpdatedAt),
 		}
+		item.AvailabilityZones, _ = types.SetValueFrom(ctx, types.StringType, s.AvailabilityZones)
+		item.DnsList, _ = types.SetValueFrom(ctx, types.StringType, s.DnsList)
+		item.NtpList, _ = types.SetValueFrom(ctx, types.StringType, s.NtpList)
 		config.Subnets = append(config.Subnets, item)
 	}
 	// 保存到state

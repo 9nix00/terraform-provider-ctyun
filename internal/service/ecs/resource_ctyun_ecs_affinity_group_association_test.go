@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccNewCtyunAffinityGroupAssociation(t *testing.T) {
+func TestAccCtyunAffinityGroupAssociation(t *testing.T) {
 	resourceName := "ctyun_ecs_affinity_group_association.test"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
