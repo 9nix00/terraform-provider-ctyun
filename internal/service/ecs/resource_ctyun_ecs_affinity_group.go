@@ -263,7 +263,7 @@ func (c *ctyunEcsAffinityGroup) getAndMerge(ctx context.Context, plan *CtyunEcsA
 	}
 	plan.AffinityGroupName = types.StringValue(resp.ReturnObj.Results[0].AffinityGroupName)
 	plan.AffinityGroupPolicy = types.StringValue(resp.ReturnObj.Results[0].AffinityGroupPolicy.PolicyTypeName)
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.AffinityGroupID.ValueString(), plan.RegionID.ValueString()))
+	plan.ID = plan.AffinityGroupID
 	return
 }
 

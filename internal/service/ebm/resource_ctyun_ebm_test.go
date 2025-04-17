@@ -1,10 +1,12 @@
 package ebm_test
 
 import (
+	"fmt"
 	"terraform-provider-ctyun/internal/service"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccCtyunEbm(t *testing.T) {
@@ -91,8 +93,15 @@ data "ctyun_ebms" "data_test" {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionID := ds.Attributes["region_id"]
+					azName := ds.Attributes["az_name"]
+					return fmt.Sprintf("%s,%s,%s", id, regionID, azName), nil
+				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"auto_renew_status", // 查询接口没返回

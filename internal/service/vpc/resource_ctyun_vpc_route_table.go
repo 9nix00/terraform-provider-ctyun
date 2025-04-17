@@ -278,7 +278,7 @@ func (c *ctyunVpcRouteTable) getAndMerge(ctx context.Context, plan *CtyunVpcRout
 	}
 	plan.VpcID = utils.SecStringValue(resp.ReturnObj.VpcID)
 	plan.Name = utils.SecStringValue(resp.ReturnObj.Name)
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", routeTableID, regionID))
+	plan.ID = plan.RouteTableID
 	return
 }
 

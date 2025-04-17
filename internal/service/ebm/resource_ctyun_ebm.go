@@ -1144,12 +1144,7 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 		diskList = append(diskList, item)
 	}
 	cfg.DiskList, _ = types.ListValueFrom(ctx, diskObj, diskList)
-	cfg.ID = types.StringValue(fmt.Sprintf(
-		"%s,%s,%s",
-		cfg.InstanceID.ValueString(),
-		cfg.RegionID.ValueString(),
-		cfg.AzName.ValueString(),
-	))
+	cfg.ID = cfg.InstanceID
 
 	return nil
 }

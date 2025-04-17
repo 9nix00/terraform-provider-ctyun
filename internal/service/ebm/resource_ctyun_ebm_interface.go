@@ -399,10 +399,7 @@ func (c *ctyunEbmInterface) getAndMerge(ctx context.Context, plan *CtyunEbmInter
 			}
 			plan.secGroupParams = secGroupIDs
 			plan.SecurityGroupIDs = ids
-			plan.ID = types.StringValue(fmt.Sprintf(
-				"%s,%s,%s,%s",
-				instanceID, interfaceID, regionID, azName,
-			))
+			plan.ID = plan.InterfaceID
 			return
 		}
 	}

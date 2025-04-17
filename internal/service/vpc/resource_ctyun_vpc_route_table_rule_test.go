@@ -1,11 +1,13 @@
 package vpc_test
 
 import (
+	"fmt"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccCtyunVpcRouteTableRule(t *testing.T) {
@@ -36,8 +38,15 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionID := ds.Attributes["region_id"]
+					tableID := ds.Attributes["route_table_id"]
+					return fmt.Sprintf("%s,%s,%s", id, tableID, regionID), nil
+				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},

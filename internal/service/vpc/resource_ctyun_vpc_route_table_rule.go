@@ -314,7 +314,7 @@ func (c *ctyunVpcRouteTableRule) getAndMerge(ctx context.Context, plan *CtyunVpc
 			plan.Description = utils.SecStringValue(r.Description)
 			plan.Destination = utils.SecStringValue(r.Destination)
 			plan.IpVersion = types.Int32Value(r.IpVersion)
-			plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", ruleID, routeTableID, regionID))
+			plan.ID = plan.RuleID
 		}
 	}
 	if !exist {

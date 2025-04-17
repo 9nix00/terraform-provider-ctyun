@@ -1,10 +1,12 @@
 package ecs_test
 
 import (
+	"fmt"
 	"terraform-provider-ctyun/internal/service"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccCtyunAffinityGroup(t *testing.T) {
@@ -72,8 +74,15 @@ data "ctyun_ecs_affinity_groups" "test" {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
+
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},

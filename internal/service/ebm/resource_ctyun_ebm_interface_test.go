@@ -1,10 +1,12 @@
 package ebm_test
 
 import (
+	"fmt"
 	"terraform-provider-ctyun/internal/service"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccCtyunEbmInterface(t *testing.T) {
@@ -53,8 +55,17 @@ resource "ctyun_ebm_interface" "test" {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
+
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionID := ds.Attributes["region_id"]
+					instanceID := ds.Attributes["instance_id"]
+					azName := ds.Attributes["az_name"]
+					return fmt.Sprintf("%s,%s,%s,%s", instanceID, id, regionID, azName), nil
+				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},
