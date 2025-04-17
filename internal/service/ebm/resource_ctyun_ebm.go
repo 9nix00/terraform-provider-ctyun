@@ -91,10 +91,12 @@ type CtyunEbmDiskList struct {
 }
 
 type CtyunEbmNetworkCardList struct {
-	FixedIP  types.String `tfsdk:"fixed_ip"`
-	Master   types.Bool   `tfsdk:"master"`
-	Ipv6     types.String `tfsdk:"ipv6"`
-	SubnetID types.String `tfsdk:"subnet_id"`
+	FixedIP     types.String `tfsdk:"fixed_ip"`
+	Master      types.Bool   `tfsdk:"master"`
+	Ipv6        types.String `tfsdk:"ipv6"`
+	SubnetID    types.String `tfsdk:"subnet_id"`
+	PortID      types.String `tfsdk:"port_id"`
+	InterfaceID types.String `tfsdk:"interface_id"`
 }
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -306,6 +308,14 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
+						"port_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "PORT UUID",
+						},
+						"interface_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "网卡UUID",
+						},
 						"fixed_ip": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
@@ -572,23 +582,11 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 	if err != nil {
 		return
 	}
-	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
-		RegionID:     state.RegionID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.InstanceID.ValueString(),
-		ClientToken:  uuid.NewString(),
-	})
+	err = c.delete(ctx, state)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	err = c.checkAfterDelete(ctx, state)
 	if err != nil {
 		return
 	}
@@ -1117,10 +1115,12 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 			cfg.SecurityGroupIDs, _ = types.SetValueFrom(ctx, types.StringType, secGroups)
 		}
 		item := CtyunEbmNetworkCardList{
-			FixedIP:  utils.SecStringValue(card.Ipv4),
-			Master:   master,
-			Ipv6:     utils.SecStringValue(card.Ipv6),
-			SubnetID: utils.SecStringValue(card.SubnetUUID),
+			FixedIP:     utils.SecStringValue(card.Ipv4),
+			Master:      master,
+			Ipv6:        utils.SecStringValue(card.Ipv6),
+			SubnetID:    utils.SecStringValue(card.SubnetUUID),
+			PortID:      utils.SecStringValue(card.PortUUID),
+			InterfaceID: utils.SecStringValue(card.InterfaceUUID),
 		}
 		cardList = append(cardList, item)
 	}
@@ -1418,4 +1418,64 @@ func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) 
 		state.RegionID.ValueString(),
 		state.AzName.ValueString(),
 	)
+}
+
+// delete 删除物理机
+func (c *ctyunEbm) delete(ctx context.Context, state CtyunEbmConfig) (err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
+		ClientToken:  uuid.NewString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// checkAfterDelete 删除后检查
+func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (err error) {
+	if state.NetworkCardList.IsNull() {
+		return
+	}
+	var networkCardList []CtyunEbmNetworkCardList
+	diags := state.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
+	if diags.HasError() { // 无需处理
+		return
+	}
+	var portID string
+	for _, card := range networkCardList {
+		if card.Master.ValueBool() {
+			portID = card.PortID.ValueString()
+		}
+	}
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	var exist bool
+	retryer.Start(
+		func(currentTime int) bool {
+			exist, err = business.NewPortService(c.meta).Exist(ctx, portID, state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if !exist {
+				return false
+			}
+			return true
+		})
+	if err != nil {
+		return
+	}
+	if exist {
+		err = fmt.Errorf("裸金属 %s 的主网卡 %s 残留", state.InstanceID.ValueString(), portID)
+	}
+	return
 }
