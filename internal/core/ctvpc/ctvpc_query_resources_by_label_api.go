@@ -32,13 +32,13 @@ func (a *CtvpcQueryResourcesByLabelApi) Do(ctx context.Context, credential core.
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.LabelID != nil {
-		ctReq.AddParam("labelID", req.LabelID)
+		ctReq.AddParam("labelID", *req.LabelID)
 	}
 	if req.LabelKey != nil {
-		ctReq.AddParam("labelKey", req.LabelKey)
+		ctReq.AddParam("labelKey", *req.LabelKey)
 	}
 	if req.LabelValue != nil {
-		ctReq.AddParam("labelValue", req.LabelValue)
+		ctReq.AddParam("labelValue", *req.LabelValue)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))
@@ -84,5 +84,5 @@ type CtvpcQueryResourcesByLabelReturnObjResponse struct {
 
 type CtvpcQueryResourcesByLabelReturnObjResultsResponse struct {
 	ResourceID   *string `json:"resourceID,omitempty"`   /*  资源ID  */
-	ResourceType *string `json:"resourceType,omitempty"` /*  资源类型，vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb / private_nat / ctvpc / listener，network表示eip、bandwidth、ipv6_bandwidth类型  */
+	ResourceType *string `json:"resourceType,omitempty"` /*  资源类型，vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb / private_nat / nat / listener，network表示eip、bandwidth、ipv6_bandwidth类型  */
 }

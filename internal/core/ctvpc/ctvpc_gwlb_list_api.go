@@ -32,10 +32,10 @@ func (a *CtvpcGwlbListApi) Do(ctx context.Context, credential core.Credential, r
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	if req.GwLbID != nil {
-		ctReq.AddParam("gwLbID", req.GwLbID)
+		ctReq.AddParam("gwLbID", *req.GwLbID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

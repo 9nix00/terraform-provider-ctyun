@@ -32,13 +32,13 @@ func (a *CtvpcVniaListInstanceDiagnosisApi) Do(ctx context.Context, credential c
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ResourceID != nil {
-		ctReq.AddParam("resourceID", req.ResourceID)
+		ctReq.AddParam("resourceID", *req.ResourceID)
 	}
 	if req.ResourceType != nil {
-		ctReq.AddParam("resourceType", req.ResourceType)
+		ctReq.AddParam("resourceType", *req.ResourceType)
 	}
 	if req.DiagnosisRecordID != nil {
-		ctReq.AddParam("diagnosisRecordID", req.DiagnosisRecordID)
+		ctReq.AddParam("diagnosisRecordID", *req.DiagnosisRecordID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

@@ -32,13 +32,13 @@ func (a *CtvpcListAclApi) Do(ctx context.Context, credential core.Credential, re
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.AclID != nil {
-		ctReq.AddParam("aclID", req.AclID)
+		ctReq.AddParam("aclID", *req.AclID)
 	}
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	if req.Name != nil {
-		ctReq.AddParam("name", req.Name)
+		ctReq.AddParam("name", *req.Name)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

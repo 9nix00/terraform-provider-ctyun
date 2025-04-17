@@ -32,10 +32,10 @@ func (a *CtvpcPrefixlistQueryApi) Do(ctx context.Context, credential core.Creden
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.PrefixListID != nil {
-		ctReq.AddParam("prefixListID", req.PrefixListID)
+		ctReq.AddParam("prefixListID", *req.PrefixListID)
 	}
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

@@ -19,7 +19,7 @@ func NewCtvpcCreateNatGatewayApi(client *core.CtyunClient) *CtvpcCreateNatGatewa
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/vpc/create-ctvpc-gateway",
+			UrlPath:      "/v4/vpc/create-nat-gateway",
 			ContentType:  "application/json",
 		},
 	}
@@ -74,5 +74,5 @@ type CtvpcCreateNatGatewayReturnObjResponse struct {
 	MasterResourceStatus *string `json:"masterResourceStatus,omitempty"` /*  资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）  */
 	MasterResourceID     *string `json:"masterResourceID,omitempty"`     /*  可以为 null。  */
 	RegionID             *string `json:"regionID,omitempty"`             /*  可用区id。  */
-	NatGatewayID         *string `json:"natGatewayID,omitempty"`         /*  ctvpc 网关 ID，当 masterResourceStatus 不为 started，该字段为空字符串  */
+	NatGatewayID         *string `json:"natGatewayID,omitempty"`         /*  nat 网关 ID，当 masterResourceStatus 不为 started，该字段为空字符串  */
 }

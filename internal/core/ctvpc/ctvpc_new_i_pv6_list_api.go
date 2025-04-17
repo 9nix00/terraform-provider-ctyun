@@ -32,13 +32,13 @@ func (a *CtvpcNewIPv6ListApi) Do(ctx context.Context, credential core.Credential
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.SubnetID != nil {
-		ctReq.AddParam("subnetID", req.SubnetID)
+		ctReq.AddParam("subnetID", *req.SubnetID)
 	}
 	if req.IpAddress != nil {
-		ctReq.AddParam("ipAddress", req.IpAddress)
+		ctReq.AddParam("ipAddress", *req.IpAddress)
 	}
 	if req.Page != 0 {
 		ctReq.AddParam("page", strconv.FormatInt(int64(req.Page), 10))

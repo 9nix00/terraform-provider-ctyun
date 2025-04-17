@@ -19,7 +19,7 @@ func NewCtvpcDeleteNatGatewayApi(client *core.CtyunClient) *CtvpcDeleteNatGatewa
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/vpc/delete-ctvpc-gateway",
+			UrlPath:      "/v4/vpc/delete-nat-gateway",
 			ContentType:  "application/json",
 		},
 	}

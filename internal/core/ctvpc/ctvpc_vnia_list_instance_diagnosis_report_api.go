@@ -34,10 +34,10 @@ func (a *CtvpcVniaListInstanceDiagnosisReportApi) Do(ctx context.Context, creden
 	ctReq.AddParam("resourceID", req.ResourceID)
 	ctReq.AddParam("resourceType", req.ResourceType)
 	if req.DiagnosisReportID != nil {
-		ctReq.AddParam("diagnosisReportID", req.DiagnosisReportID)
+		ctReq.AddParam("diagnosisReportID", *req.DiagnosisReportID)
 	}
 	if req.DiagnosisRecordID != nil {
-		ctReq.AddParam("diagnosisRecordID", req.DiagnosisRecordID)
+		ctReq.AddParam("diagnosisRecordID", *req.DiagnosisRecordID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

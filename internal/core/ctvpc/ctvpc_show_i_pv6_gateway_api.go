@@ -31,7 +31,7 @@ func (a *CtvpcShowIPv6GatewayApi) Do(ctx context.Context, credential core.Creden
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	ctReq.AddParam("ipv6GatewayID", req.Ipv6GatewayID)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)

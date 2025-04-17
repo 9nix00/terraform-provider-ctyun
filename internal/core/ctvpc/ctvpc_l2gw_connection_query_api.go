@@ -32,10 +32,10 @@ func (a *CtvpcL2gwConnectionQueryApi) Do(ctx context.Context, credential core.Cr
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.L2gwID != nil {
-		ctReq.AddParam("l2gwID", req.L2gwID)
+		ctReq.AddParam("l2gwID", *req.L2gwID)
 	}
 	if req.L2ConnectionID != nil {
-		ctReq.AddParam("l2ConnectionID", req.L2ConnectionID)
+		ctReq.AddParam("l2ConnectionID", *req.L2ConnectionID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

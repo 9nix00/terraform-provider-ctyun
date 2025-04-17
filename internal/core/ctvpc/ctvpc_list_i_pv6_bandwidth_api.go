@@ -32,10 +32,10 @@ func (a *CtvpcListIPv6BandwidthApi) Do(ctx context.Context, credential core.Cred
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.BandwidthID != nil {
-		ctReq.AddParam("bandwidthID", req.BandwidthID)
+		ctReq.AddParam("bandwidthID", *req.BandwidthID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

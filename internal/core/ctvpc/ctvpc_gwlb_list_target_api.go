@@ -33,7 +33,7 @@ func (a *CtvpcGwlbListTargetApi) Do(ctx context.Context, credential core.Credent
 	ctReq.AddParam("regionID", req.RegionID)
 	ctReq.AddParam("targetGroupID", req.TargetGroupID)
 	if req.TargetID != nil {
-		ctReq.AddParam("targetID", req.TargetID)
+		ctReq.AddParam("targetID", *req.TargetID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

@@ -38,10 +38,10 @@ func (a *CtvpcQueryCtyunServiceApi) Do(ctx context.Context, credential core.Cred
 		ctReq.AddParam("pageSize", strconv.FormatInt(int64(req.PageSize), 10))
 	}
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.EndpointServiceID != nil {
-		ctReq.AddParam("endpointServiceID", req.EndpointServiceID)
+		ctReq.AddParam("endpointServiceID", *req.EndpointServiceID)
 	}
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)
 	if err != nil {

@@ -31,7 +31,7 @@ func (a *CtvpcListIPv6GatewayApi) Do(ctx context.Context, credential core.Creden
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

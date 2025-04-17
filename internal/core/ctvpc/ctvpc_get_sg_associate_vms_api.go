@@ -33,7 +33,7 @@ func (a *CtvpcGetSgAssociateVmsApi) Do(ctx context.Context, credential core.Cred
 	ctReq.AddParam("regionID", req.RegionID)
 	ctReq.AddParam("securityGroupID", req.SecurityGroupID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	if req.PageNo != 0 {
 		ctReq.AddParam("pageNo", strconv.FormatInt(int64(req.PageNo), 10))

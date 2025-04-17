@@ -31,7 +31,7 @@ func (a *CtvpcShowBandwidthApi) Do(ctx context.Context, credential core.Credenti
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	ctReq.AddParam("bandwidthID", req.BandwidthID)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)

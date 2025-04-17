@@ -32,7 +32,7 @@ func (a *CtvpcIplistenerListApi) Do(ctx context.Context, credential core.Credent
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.IpListenerID != nil {
-		ctReq.AddParam("ipListenerID", req.IpListenerID)
+		ctReq.AddParam("ipListenerID", *req.IpListenerID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

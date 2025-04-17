@@ -32,10 +32,10 @@ func (a *CtvpcListFlowSessionsApi) Do(ctx context.Context, credential core.Crede
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.MirrorFilterID != nil {
-		ctReq.AddParam("mirrorFilterID", req.MirrorFilterID)
+		ctReq.AddParam("mirrorFilterID", *req.MirrorFilterID)
 	}
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

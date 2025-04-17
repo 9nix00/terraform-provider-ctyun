@@ -30,11 +30,11 @@ func (a *CtvpcCheckEipAddressApi) Do(ctx context.Context, credential core.Creden
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	if req.ClientToken != nil {
-		ctReq.AddParam("clientToken", req.ClientToken)
+		ctReq.AddParam("clientToken", *req.ClientToken)
 	}
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	ctReq.AddParam("eipAddress", req.EipAddress)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)

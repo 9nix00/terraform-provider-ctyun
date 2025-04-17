@@ -32,13 +32,13 @@ func (a *CtvpcListPrivateZoneRecordApi) Do(ctx context.Context, credential core.
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ZoneRecordName != nil {
-		ctReq.AddParam("zoneRecordName", req.ZoneRecordName)
+		ctReq.AddParam("zoneRecordName", *req.ZoneRecordName)
 	}
 	if req.ZoneID != nil {
-		ctReq.AddParam("zoneID", req.ZoneID)
+		ctReq.AddParam("zoneID", *req.ZoneID)
 	}
 	if req.ZoneRecordID != nil {
-		ctReq.AddParam("zoneRecordID", req.ZoneRecordID)
+		ctReq.AddParam("zoneRecordID", *req.ZoneRecordID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

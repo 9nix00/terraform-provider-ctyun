@@ -32,16 +32,16 @@ func (a *CtvpcListSecurityGroupsApi) Do(ctx context.Context, credential core.Cre
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	if req.InstanceID != nil {
-		ctReq.AddParam("instanceID", req.InstanceID)
+		ctReq.AddParam("instanceID", *req.InstanceID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

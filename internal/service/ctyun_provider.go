@@ -22,6 +22,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
+	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -36,6 +37,7 @@ import (
 	"terraform-provider-ctyun/internal/service/ecs"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/nat"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/utils"
 )
@@ -273,12 +275,13 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-			CtEbsApis:   ctebs.NewApis(client),
-			CtEcsApis:   ctecs.NewApis(client),
-			CtIamApis:   ctiam.NewApis(client),
-			CtImageApis: ctimage.NewApis(client),
-			CtVpcApis:   ctvpc.NewApis(client),
-			CtEbmApis:   ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			CtEbsApis:    ctebs.NewApis(client),
+			CtEcsApis:    ctecs.NewApis(client),
+			CtIamApis:    ctiam.NewApis(client),
+			CtImageApis:  ctimage.NewApis(client),
+			CtVpcApis:    ctvpc.NewApis(client),
+			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			SdkCtVpcApis: sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -301,6 +304,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbms(),
 		ebm.NewCtyunEbmDeviceRaids(),
 		ebm.NewCtyunEbmDeviceImages(),
+		nat.NewCtyunNats(),
 	)
 }
 
@@ -328,7 +332,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
-		ebm.NewCtyunEbm())
+		ebm.NewCtyunEbm(),
+		nat.NewCtyunNatResource(),
+	)
 }
 
 // buildDataSource 构建datasource

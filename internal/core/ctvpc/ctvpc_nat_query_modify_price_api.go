@@ -19,7 +19,7 @@ func NewCtvpcNatQueryModifyPriceApi(client *core.CtyunClient) *CtvpcNatQueryModi
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/ctvpc/query-modify-price",
+			UrlPath:      "/v4/nat/query-modify-price",
 			ContentType:  "application/json",
 		},
 	}

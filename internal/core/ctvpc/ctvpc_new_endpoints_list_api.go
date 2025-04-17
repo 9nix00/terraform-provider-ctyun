@@ -41,13 +41,13 @@ func (a *CtvpcNewEndpointsListApi) Do(ctx context.Context, credential core.Crede
 		ctReq.AddParam("pageSize", strconv.FormatInt(int64(req.PageSize), 10))
 	}
 	if req.EndpointName != nil {
-		ctReq.AddParam("endpointName", req.EndpointName)
+		ctReq.AddParam("endpointName", *req.EndpointName)
 	}
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.EndpointID != nil {
-		ctReq.AddParam("endpointID", req.EndpointID)
+		ctReq.AddParam("endpointID", *req.EndpointID)
 	}
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)
 	if err != nil {

@@ -32,10 +32,10 @@ func (a *CtvpcNewVpcListApi) Do(ctx context.Context, credential core.Credential,
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.VpcName != nil {
-		ctReq.AddParam("vpcName", req.VpcName)
+		ctReq.AddParam("vpcName", *req.VpcName)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))
@@ -47,7 +47,7 @@ func (a *CtvpcNewVpcListApi) Do(ctx context.Context, credential core.Credential,
 		ctReq.AddParam("pageSize", strconv.FormatInt(int64(req.PageSize), 10))
 	}
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)
 	if err != nil {

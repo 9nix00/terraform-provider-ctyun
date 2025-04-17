@@ -31,14 +31,14 @@ func (a *CtvpcNewSubnetListApi) Do(ctx context.Context, credential core.Credenti
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	if req.ClientToken != nil {
-		ctReq.AddParam("clientToken", req.ClientToken)
+		ctReq.AddParam("clientToken", *req.ClientToken)
 	}
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.SubnetID != nil {
-		ctReq.AddParam("subnetID", req.SubnetID)
+		ctReq.AddParam("subnetID", *req.SubnetID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

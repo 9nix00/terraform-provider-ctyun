@@ -32,7 +32,7 @@ func (a *CtvpcVniaListNetworkPathApi) Do(ctx context.Context, credential core.Cr
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.NetworkPathID != nil {
-		ctReq.AddParam("networkPathID", req.NetworkPathID)
+		ctReq.AddParam("networkPathID", *req.NetworkPathID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

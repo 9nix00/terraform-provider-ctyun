@@ -31,14 +31,14 @@ func (a *CtvpcNewPrivateZoneListApi) Do(ctx context.Context, credential core.Cre
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	if req.ClientToken != nil {
-		ctReq.AddParam("clientToken", req.ClientToken)
+		ctReq.AddParam("clientToken", *req.ClientToken)
 	}
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ZoneID != nil {
-		ctReq.AddParam("zoneID", req.ZoneID)
+		ctReq.AddParam("zoneID", *req.ZoneID)
 	}
 	if req.ZoneName != nil {
-		ctReq.AddParam("zoneName", req.ZoneName)
+		ctReq.AddParam("zoneName", *req.ZoneName)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

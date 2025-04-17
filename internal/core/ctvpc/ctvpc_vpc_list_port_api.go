@@ -32,13 +32,13 @@ func (a *CtvpcVpcListPortApi) Do(ctx context.Context, credential core.Credential
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.DeviceID != nil {
-		ctReq.AddParam("deviceID", req.DeviceID)
+		ctReq.AddParam("deviceID", *req.DeviceID)
 	}
 	if req.SubnetID != nil {
-		ctReq.AddParam("subnetID", req.SubnetID)
+		ctReq.AddParam("subnetID", *req.SubnetID)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

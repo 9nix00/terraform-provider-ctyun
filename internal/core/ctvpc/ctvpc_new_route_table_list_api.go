@@ -32,13 +32,13 @@ func (a *CtvpcNewRouteTableListApi) Do(ctx context.Context, credential core.Cred
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.VpcID != nil {
-		ctReq.AddParam("vpcID", req.VpcID)
+		ctReq.AddParam("vpcID", *req.VpcID)
 	}
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.RouteTableID != nil {
-		ctReq.AddParam("routeTableID", req.RouteTableID)
+		ctReq.AddParam("routeTableID", *req.RouteTableID)
 	}
 	if req.RawType != 0 {
 		ctReq.AddParam("type", strconv.FormatInt(int64(req.RawType), 10))

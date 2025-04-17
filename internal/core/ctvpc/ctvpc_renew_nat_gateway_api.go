@@ -19,7 +19,7 @@ func NewCtvpcRenewNatGatewayApi(client *core.CtyunClient) *CtvpcRenewNatGatewayA
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/vpc/renew-ctvpc-gateway",
+			UrlPath:      "/v4/vpc/renew-nat-gateway",
 			ContentType:  "application/json",
 		},
 	}

@@ -31,7 +31,7 @@ func (a *CtvpcShowIPv4GwApi) Do(ctx context.Context, credential core.Credential,
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.Id != nil {
-		ctReq.AddParam("id", req.Id)
+		ctReq.AddParam("id", *req.Id)
 	}
 	ctReq.AddParam("ipv4GwID", req.Ipv4GwID)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)

@@ -31,7 +31,7 @@ func (a *CtvpcGwlbShowApi) Do(ctx context.Context, credential core.Credential, r
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	ctReq.AddParam("gwLbID", req.GwLbID)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)

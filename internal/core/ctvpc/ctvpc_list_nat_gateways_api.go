@@ -20,7 +20,7 @@ func NewCtvpcListNatGatewaysApi(client *core.CtyunClient) *CtvpcListNatGatewaysA
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodGet,
-			UrlPath:      "/v4/vpc/describe-ctvpc-gateways",
+			UrlPath:      "/v4/vpc/describe-nat-gateways",
 			ContentType:  "application/json",
 		},
 	}
@@ -76,11 +76,11 @@ type CtvpcListNatGatewaysResponse struct {
 }
 
 type CtvpcListNatGatewaysReturnObjResponse struct {
-	ID           *string `json:"ID,omitempty"`           /*  ctvpc 网关 id  */
-	Name         *string `json:"name,omitempty"`         /*  ctvpc 网关名字  */
-	Description  *string `json:"description,omitempty"`  /*  ctvpc 网关描述  */
-	Status       int32   `json:"status"`                 /*  ctvpc 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结  */
-	NatGatewayID *string `json:"natGatewayID,omitempty"` /*  ctvpc 网关 id  */
+	ID           *string `json:"ID,omitempty"`           /*  nat 网关 id  */
+	Name         *string `json:"name,omitempty"`         /*  nat 网关名字  */
+	Description  *string `json:"description,omitempty"`  /*  nat 网关描述  */
+	Status       int32   `json:"status"`                 /*  nat 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结  */
+	NatGatewayID *string `json:"natGatewayID,omitempty"` /*  nat 网关 id  */
 	ZoneID       *string `json:"zoneID,omitempty"`       /*  可用区 ID  */
 	State        *string `json:"state,omitempty"`        /*  NAT网关运行状态: running 表示运行中, creating 表示创建中, expired 表示已过期, freeze 表示已冻结  */
 	VpcID        *string `json:"vpcID,omitempty"`        /*  虚拟私有云 id  */

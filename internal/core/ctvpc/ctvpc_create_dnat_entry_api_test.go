@@ -21,7 +21,7 @@ func TestCtvpcCreateDnatEntryApi_Do(t *testing.T) {
 	var description string = "test"
 	request := &CtvpcCreateDnatEntryRequest{
 		RegionID:           "79fa97e3-c48b-xxxx-9f46-6a13d8163678",
-		NatGatewayID:       "ctvpc 网关 ID",
+		NatGatewayID:       "nat 网关 ID",
 		ExternalID:         "eip-3ubjeszr3a",
 		ExternalPort:       80,
 		VirtualMachineID:   &virtualMachineID,

@@ -32,7 +32,7 @@ func (a *CtvpcListMirrorFlowFilterApi) Do(ctx context.Context, credential core.C
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.QueryContent != nil {
-		ctReq.AddParam("queryContent", req.QueryContent)
+		ctReq.AddParam("queryContent", *req.QueryContent)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

@@ -33,7 +33,7 @@ func (a *CtvpcListSubnetUsedIPsApi) Do(ctx context.Context, credential core.Cred
 	ctReq.AddParam("regionID", req.RegionID)
 	ctReq.AddParam("subnetID", req.SubnetID)
 	if req.Ip != nil {
-		ctReq.AddParam("ip", req.Ip)
+		ctReq.AddParam("ip", *req.Ip)
 	}
 	if req.PageNumber != 0 {
 		ctReq.AddParam("pageNumber", strconv.FormatInt(int64(req.PageNumber), 10))

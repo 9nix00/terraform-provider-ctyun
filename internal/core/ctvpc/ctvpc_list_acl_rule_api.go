@@ -31,7 +31,7 @@ func (a *CtvpcListAclRuleApi) Do(ctx context.Context, credential core.Credential
 	ctReq := builder.Build()
 	ctReq.AddParam("regionID", req.RegionID)
 	if req.ProjectID != nil {
-		ctReq.AddParam("projectID", req.ProjectID)
+		ctReq.AddParam("projectID", *req.ProjectID)
 	}
 	ctReq.AddParam("aclID", req.AclID)
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)
