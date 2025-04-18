@@ -7,15 +7,11 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "%[1]s" {
   vpc_id = ctyun_vpc.vpc_test.id
-  name        = "%[3]s"
+  name        = "%[2]s"
   cidr        = "192.168.1.0/24"
-  description = "%[4]s"
+  description = "%[3]s"
   dns         = [
-    "%[5]s",
+    "%[4]s",
   ]
   enable_ipv6 = true
-}
-
-data "ctyun_subnets" "%[2]s" {
-  subnet_id = ctyun_subnet.%[1]s.id
 }

@@ -15,7 +15,9 @@ func TestAccCtyunSubnet(t *testing.T) {
 	dnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_subnet." + rnd
-	datasourcName := "data.ctyun_subnets." + dnd
+	datasourceName := "data.ctyun_subnets." + dnd
+	resourceFile := "resource_ctyun_subnet.tf"
+	datasourceFile := "datasource_ctyun_subnets.tf"
 
 	initName := "init"
 	initDescription := "description"
@@ -24,21 +26,30 @@ func TestAccCtyunSubnet(t *testing.T) {
 	updatedDescription := "updated-description"
 	updatedDns := "8.8.8.8"
 
+	var id string
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase("ctyun_subnet.tf", rnd, dnd, initName, initDescription, initDns),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckTypeSetElemAttr(resourceName, "dns.*", initDns),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					func(state *terraform.State) error {
+						rs, ok := state.RootModule().Resources[resourceName]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+						id = rs.Primary.ID
+						return nil
+					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_subnet.tf", rnd, dnd, updatedName, updatedDescription, updatedDns),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -47,12 +58,13 @@ func TestAccCtyunSubnet(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_subnet.tf", rnd, dnd, updatedName, updatedDescription, updatedDns),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourcName, "subnets.#", "1"),
-					resource.TestCheckResourceAttr(datasourcName, "subnets.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourcName, "subnets.0.description", updatedDescription),
-					resource.TestCheckTypeSetElemAttr(datasourcName, "subnets.0.dns_list.*", updatedDns),
+					resource.TestCheckResourceAttr(datasourceName, "subnets.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "subnets.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "subnets.0.description", updatedDescription),
+					resource.TestCheckTypeSetElemAttr(datasourceName, "subnets.0.dns_list.*", updatedDns),
 				),
 			},
 			{
@@ -73,6 +85,18 @@ func TestAccCtyunSubnet(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"project_id",
 				},
+			},
+		},
+	})
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "subnets.#", "0"),
+				),
 			},
 		},
 	})

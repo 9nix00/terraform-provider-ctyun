@@ -15,27 +15,38 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 	dnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_security_group." + rnd
-	datasourcName := "data.ctyun_security_groups." + dnd
+	datasourceName := "data.ctyun_security_groups." + dnd
+	resourceFile := "resource_ctyun_security_group.tf"
+	datasourceFile := "datasource_ctyun_security_groups.tf"
 
 	initName := "init"
 	initDescription := "description"
 	updatedName := "updated"
 	updatedDescription := "updated-description"
 
+	var id string
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, initName, initDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					func(state *terraform.State) error {
+						rs, ok := state.RootModule().Resources[resourceName]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+						id = rs.Primary.ID
+						return nil
+					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, updatedName, updatedDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -43,11 +54,12 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_security_group.tf", rnd, dnd, updatedName, updatedDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourcName, "security_groups.#", "1"),
-					resource.TestCheckResourceAttr(datasourcName, "security_groups.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourcName, "security_groups.0.description", updatedDescription),
+					resource.TestCheckResourceAttr(datasourceName, "security_groups.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "security_groups.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "security_groups.0.description", updatedDescription),
 				),
 			},
 			{
@@ -67,6 +79,19 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"project_id",
 				},
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "security_groups.#", "0"),
+				),
 			},
 		},
 	})

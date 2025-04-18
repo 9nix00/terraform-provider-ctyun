@@ -508,8 +508,22 @@ func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, respo
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		if strings.Contains(err.Error(), "instance is not found") {
+			// 查下主网卡是否存在
+			var exist bool
+			portID := c.getMasterPortID(ctx, state)
+			exist, err = business.NewPortService(c.meta).Exist(ctx, portID, state.RegionID.ValueString())
+			if err != nil {
+				return
+			}
+			// 主网卡存在，则监听到主网卡删除为止
+			if exist {
+				err = c.checkAfterDelete(ctx, state)
+				if err != nil {
+					return
+				}
+			}
+			// 主网卡不存在，清理state
 			response.State.RemoveResource(ctx)
-			err = nil
 		}
 		return
 	}
@@ -1444,20 +1458,7 @@ func (c *ctyunEbm) delete(ctx context.Context, state CtyunEbmConfig) (err error)
 
 // checkAfterDelete 删除后检查
 func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (err error) {
-	if state.NetworkCardList.IsNull() {
-		return
-	}
-	var networkCardList []CtyunEbmNetworkCardList
-	diags := state.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
-	if diags.HasError() { // 无需处理
-		return
-	}
-	var portID string
-	for _, card := range networkCardList {
-		if card.Master.ValueBool() {
-			portID = card.PortID.ValueString()
-		}
-	}
+	portID := c.getMasterPortID(ctx, state)
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	var exist bool
 	retryer.Start(
@@ -1476,6 +1477,24 @@ func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (
 	}
 	if exist {
 		err = fmt.Errorf("裸金属 %s 的主网卡 %s 残留", state.InstanceID.ValueString(), portID)
+	}
+	return
+}
+
+// getMasterPortID 获取主网卡id
+func (c *ctyunEbm) getMasterPortID(ctx context.Context, state CtyunEbmConfig) (portID string) {
+	if state.NetworkCardList.IsNull() {
+		return
+	}
+	var networkCardList []CtyunEbmNetworkCardList
+	diags := state.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
+	if diags.HasError() { // 无需处理
+		return
+	}
+	for _, card := range networkCardList {
+		if card.Master.ValueBool() {
+			portID = card.PortID.ValueString()
+		}
 	}
 	return
 }

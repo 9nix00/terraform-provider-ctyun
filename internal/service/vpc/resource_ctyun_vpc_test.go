@@ -15,6 +15,8 @@ func TestAccCtyunVpc(t *testing.T) {
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_vpc." + rnd
 	datasourceName := "data.ctyun_vpcs." + dnd
+	resourceFile := "resource_ctyun_vpc.tf"
+	datasourceFile := "datasource_ctyun_vpcs.tf"
 
 	initName := utils.GenerateRandomString()
 	initCidr := "192.168.0.0/16"
@@ -23,21 +25,30 @@ func TestAccCtyunVpc(t *testing.T) {
 	updatedName := utils.GenerateRandomString()
 	updatedDescription := utils.GenerateRandomString()
 
+	var id string
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, initName, initDescription, initCidr),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initCidr),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "cidr", initCidr),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					func(state *terraform.State) error {
+						rs, ok := state.RootModule().Resources[resourceName]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+						id = rs.Primary.ID
+						return nil
+					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, updatedName, updatedDescription, initCidr),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, initCidr),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cidr", initCidr),
@@ -46,7 +57,8 @@ func TestAccCtyunVpc(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_vpc.tf", rnd, dnd, updatedName, updatedDescription, initCidr),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, initCidr) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "vpcs.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "vpcs.0.name", updatedName),
@@ -55,7 +67,6 @@ func TestAccCtyunVpc(t *testing.T) {
 				),
 			},
 			{
-
 				ResourceName: resourceName,
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
@@ -70,6 +81,19 @@ func TestAccCtyunVpc(t *testing.T) {
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "vpcs.#", "0"),
+				),
 			},
 		},
 	})

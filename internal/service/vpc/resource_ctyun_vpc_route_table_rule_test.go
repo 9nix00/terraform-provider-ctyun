@@ -2,6 +2,7 @@ package vpc_test
 
 import (
 	"fmt"
+	"strconv"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
@@ -12,31 +13,66 @@ import (
 
 func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
 	resourceName := "ctyun_vpc_route_table_rule." + rnd
+	datasourceName := "data.ctyun_vpc_route_table_rules." + dnd
+	resourceFile := "resource_ctyun_vpc_route_table_rule.tf"
+	datasourceFile := "datasource_ctyun_vpc_route_table_rules.tf"
+
 	initDestination := "188.188.0.0/16"
 	initDescription := "test"
 	updatedDescription := "updated"
 
+	var id string
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase("ctyun_vpc_route_table_rule.tf", rnd, initDestination, initDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, initDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "rule_id"),
+					func(state *terraform.State) error {
+						rs, ok := state.RootModule().Resources[resourceName]
+						if !ok {
+							return fmt.Errorf("resource not found")
+						}
+						id = rs.Primary.ID
+						return nil
+					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase("ctyun_vpc_route_table_rule.tf", rnd, initDestination, updatedDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
 				),
 			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription) +
+					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(s *terraform.State) error {
+						ds := s.RootModule().Resources[datasourceName].Primary
+
+						count, err := strconv.Atoi(ds.Attributes["rules.#"])
+						if err != nil || count == 0 {
+							return fmt.Errorf("rules 无效: %v", ds.Attributes)
+						}
+
+						for i := 0; i < count; i++ {
+							if ds.Attributes[fmt.Sprintf("rules.%d.rule_id", i)] == id {
+								return nil
+							}
+						}
+						return fmt.Errorf("未找到目标元素")
+					},
+				)},
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
@@ -49,6 +85,34 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
+			},
+		},
+	})
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription) +
+					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					func(s *terraform.State) error {
+						ds := s.RootModule().Resources[datasourceName].Primary
+
+						count, err := strconv.Atoi(ds.Attributes["rules.#"])
+						if err != nil || count == 0 {
+							return fmt.Errorf("rules 无效: %v", ds.Attributes)
+						}
+
+						for i := 0; i < count; i++ {
+							if ds.Attributes[fmt.Sprintf("rules.%d.rule_id", i)] == id {
+								return fmt.Errorf("删除失败 %s", id)
+							}
+						}
+						return nil
+					},
+				),
 			},
 		},
 	})

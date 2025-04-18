@@ -184,6 +184,14 @@ func (c *ctyunVpcRouteTables) Read(ctx context.Context, request datasource.ReadR
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
+		if *resp.ErrorCode == common.OpenapiRouterTableAccessFailed {
+			config.RouteTables = []CtyunVpcRouteTablesModel{}
+			config.TotalPage = types.Int32Value(0)
+			config.TotalCount = types.Int32Value(0)
+			config.CurrentCount = types.Int32Value(0)
+			response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+			return
+		}
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return
 	} else if resp.ReturnObj == nil {

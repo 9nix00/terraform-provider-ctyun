@@ -11,7 +11,7 @@ resource "ctyun_vpc_route_table" "route" {
 }
 
 data "ctyun_vpc_route_table_rules" "rtest" {
-  route_table_id = ctyun_vpc_route_table.route.route_table_id
+  route_table_id = ctyun_vpc_route_table.route.id
 }
 
 locals {
@@ -24,6 +24,6 @@ resource "ctyun_vpc_route_table_rule" "%[1]s"{
   description = "%[3]s"
   next_hop_id = local.igw_id
   next_hop_type = "igw"
-  route_table_id = ctyun_vpc_route_table.route.route_table_id
+  route_table_id = ctyun_vpc_route_table.route.id
   ip_version = 4
 }

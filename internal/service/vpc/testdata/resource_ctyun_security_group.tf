@@ -7,10 +7,6 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_security_group" "%[1]s" {
   vpc_id = ctyun_vpc.vpc_test.id
-  name        = "%[3]s"
-  description = "%[4]s"
-}
-
-data "ctyun_security_groups" "%[2]s" {
-  security_group_id = ctyun_security_group.%[1]s.id
+  name        = "%[2]s"
+  description = "%[3]s"
 }

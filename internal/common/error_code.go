@@ -19,8 +19,10 @@ const (
 	OpenapiVpcNotFound               = "Openapi.Vpc.NotFound"
 	OpenapiSubnetNotFound            = "Openapi.Subnet.NotFound"
 	EcsAffinityGroupNotBound         = "Ecs.AffinityGroup.NotBound"
-	CtiamNoPermission                = "CTIAM_0005"
-	CtiamNoPrivilege                 = "CTIAM_1044"
+	OpenapiRouterTableAccessFailed   = "Openapi.RouterTable.AccessFailed"
+
+	CtiamNoPermission = "CTIAM_0005"
+	CtiamNoPrivilege  = "CTIAM_1044"
 
 	ErrorStatusCode = 900
 )
