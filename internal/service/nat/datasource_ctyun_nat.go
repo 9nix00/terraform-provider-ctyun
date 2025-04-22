@@ -146,18 +146,11 @@ func (c *ctyunNats) Read(ctx context.Context, request datasource.ReadRequest, re
 		}
 	}()
 	var config CtyunNatsConfig
-	//这是一个用于存储诊断信息的字段，通常用于记录错误、警告、或其他调试信息。在 Terraform 中，Diagnostics 是一种用于反馈给用户的消息机制，通常用于报告配置或验证中的问题。
-	//response.Diagnostics 通常是一个 []diagnostic.Diagnostic 类型的切片（数组）。
-	// Get(ctx, &config) 是一个方法，用来从 request.Config 中获取配置的值并将其存储到 config 变量中。
-	// ... 展开切片（或其他类型的集合）并将其元素作为独立的参数传递
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 获取字段值，需要考虑是否为空等情况。
 
-	// 疑惑点：GetExtraIfEmpty方法功能是如果目标值为空，获取默认设置的值，若目标值非空则返回目标值。
-	// 那么 c.extra[extraKey]这个默认值在哪里设置？
 	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
 	if regionId == "" {
 		msg := "regionID不能为空"

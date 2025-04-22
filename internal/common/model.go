@@ -4,6 +4,7 @@ import (
 	"sync"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
+	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
 	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
@@ -61,4 +62,5 @@ type Apis struct {
 	CtVpcApis    *ctvpc.Apis
 	CtEbmApis    *ctebm.Apis
 	SdkCtVpcApis *sdkCtvpc.Apis
+	SdkCtElbApis *sdkCtelb.Apis
 }

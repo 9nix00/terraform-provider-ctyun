@@ -165,151 +165,6 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 				Computed:    true,
 				Description: "NAT网关实例的过期时间",
 			},
-			"snat_table": schema.ListNestedAttribute{
-				Computed: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Computed:    true,
-							Description: "snat id",
-						},
-						"snat_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "snat id",
-						},
-						"description": schema.StringAttribute{
-							Computed:    true,
-							Description: "描述信息",
-						},
-						"status": schema.StringAttribute{
-							Computed:    true,
-							Description: "状态: ACTIVE 表示运行中，Creating 表示创建中，Freezing 表示冻结",
-							Validators: []validator.String{
-								stringvalidator.OneOf(business.SNatStatus...),
-							},
-						},
-						"vpc_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "要查询的NAT网关所属VPC的ID",
-						},
-						"vpc_name": schema.StringAttribute{
-							Computed:    true,
-							Description: "要查询的NAT网关所属VPC的名称",
-						},
-						"vpc_cidr": schema.StringAttribute{
-							Computed:    true,
-							Description: "要查询的NAT网关所属VPC的cidr",
-						},
-						"subnet_cidr": schema.StringAttribute{
-							Computed:    true,
-							Description: "要查询的NAT网关所属VPC子网的cidr",
-						},
-						"subnet_type": schema.Int32Attribute{
-							Computed:    true,
-							Description: "子网类型：1-有vpcID的子网，0-自定义",
-							Validators: []validator.Int32{
-								int32validator.Between(0, 1),
-							},
-						},
-						"creation_time": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "创建时间",
-						},
-						"ip_address": schema.ListNestedAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "eip地址信息",
-							NestedObject: schema.NestedAttributeObject{
-								Attributes: map[string]schema.Attribute{
-									"id": schema.StringAttribute{
-										Computed:    true,
-										Description: "弹性 IP id",
-									},
-									"ip_address": schema.StringAttribute{
-										Computed:    true,
-										Description: "eip所属的ip地址",
-									},
-								},
-							},
-						},
-						"subnet_name": schema.StringAttribute{
-							Computed:    true,
-							Description: "子网名字",
-						},
-					},
-				},
-			},
-			"dnat_table": schema.ListNestedAttribute{
-				Computed: true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Computed:    true,
-							Description: "dnat id",
-						},
-						"dnat_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "dnat id",
-						},
-						"creation_time": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "创建时间",
-						},
-						"description": schema.StringAttribute{
-							Computed:    true,
-							Description: "描述信息",
-						},
-						"ip_expire_time": schema.StringAttribute{
-							Computed:    true,
-							Description: "ip到期时间",
-						},
-						"external_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "弹性公网id",
-						},
-						"external_port": schema.StringAttribute{
-							Computed:    true,
-							Description: "公网端口",
-						},
-						"external_ip": schema.StringAttribute{
-							Computed:    true,
-							Description: "弹性公网ip",
-						},
-						"protocol": schema.StringAttribute{
-							Computed:    true,
-							Description: "TCP:转发TCP协议的报文 UDP：转发UDP协议的报文。",
-							Validators: []validator.String{
-								stringvalidator.OneOf(business.SNatProtocols...),
-							},
-						},
-						"internal_port": schema.StringAttribute{
-							Computed:    true,
-							Description: "私网端口",
-						},
-						"internal_ip": schema.StringAttribute{
-							Computed:    true,
-							Description: "内网 IP 地址",
-						},
-						"state": schema.StringAttribute{
-							Computed:    true,
-							Description: "运行状态: ACTIVE / FREEZING / CREATING",
-							Validators: []validator.String{
-								stringvalidator.OneOf(business.DNatStates...),
-							},
-						},
-						"virtual_machine_name": schema.StringAttribute{
-							Computed:    true,
-							Description: "虚拟机名称",
-						},
-						"virtual_machine_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "虚拟机id",
-						},
-					},
-				},
-			},
 		},
 	}
 }
@@ -452,12 +307,19 @@ func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRe
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 	}
-
-	// ctvpc 更新操作 sdk: ctvpc_update_nat_gateway_attribute_api.go
+	// 更新nat基础信息
 	err = c.updateNatInfo(ctx, state, plan)
 	if err != nil {
 		return
 	}
+	//todo nat变配操作，规格(1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)的修改
+	// modify-nat-gateway-spec
+
+	//todo nat续费，on_demand无法续订
+	// renew-nat-gateway
+
+	// todo 转成包年包月
+
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
@@ -505,13 +367,9 @@ func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRe
 
 	}
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderNO)
+	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
 	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
-			return
-		} else {
-			err = nil
-		}
+		return
 	}
 
 }
@@ -540,7 +398,6 @@ func (c *ctyunNatResource) checkBeforeCreateNat(ctx context.Context, plan CtyunN
 	if cycleType == business.OrderCycleTypeMonth && cycleCount > 11 || cycleType == business.OrderCycleTypeYear && cycleCount > 3 {
 		return fmt.Errorf("创建包周期NAT时，以月为单位，支持1-11个月订购或续订；以年为单位，支持1-3年订购或续订")
 	}
-
 	//
 	return nil
 }
@@ -628,64 +485,6 @@ func (c *ctyunNatResource) getAndMergeNat(ctx context.Context, cfg *CtyunNatConf
 	cfg.CreationTime = utils.SecStringValue(natObj.CreationTime)
 	cfg.ExpiredTime = utils.SecStringValue(natObj.ExpiredTime)
 
-	// todo ReturnObj中还包含了Snat和Dnat的信息列表，考虑下是否需要同步保存
-	var snats []SnatTableModel
-	if natObj.SnatTable != nil && len(*natObj.SnatTable) > 0 {
-		for _, snatItem := range *natObj.SnatTable {
-			snat := SnatTableModel{}
-			snat.ID = utils.SecStringValue(snatItem.Id)
-			snat.SNatID = utils.SecStringValue(snatItem.SNatID)
-			snat.Description = utils.SecStringValue(snatItem.Description)
-			snat.Status = utils.SecStringValue(snatItem.Status)
-			snat.VpcID = utils.SecStringValue(snatItem.VpcID)
-			snat.VpcName = utils.SecStringValue(snatItem.VpcName)
-			snat.VpcCidr = utils.SecStringValue(snatItem.VpcCidr)
-			snat.SubnetType = types.Int32Value(snatItem.SubnetType)
-			snat.CreationTime = utils.SecStringValue(snatItem.CreationTime)
-			snat.SubnetName = utils.SecStringValue(snatItem.SubnetName)
-			var ipAddress []IpAddressModel
-			if snatItem.IpAddress != nil && len(snatItem.IpAddress) > 0 {
-				for _, ipItem := range snatItem.IpAddress {
-					var ip IpAddressModel
-					ip.ID = utils.SecStringValue(ipItem.ID)
-					ip.IpAddress = utils.SecStringValue(ipItem.IpAddress)
-					ipAddress = append(ipAddress, ip)
-				}
-			}
-			ipAddressType := utils.StructToTFObjectTypes(ipAddress)
-			snat.IpAddress, _ = types.ListValueFrom(ctx, ipAddressType, ipAddress)
-			snats = append(snats, snat)
-		}
-		//cfg.SNatTable = snats
-	}
-	SnatListTypes := utils.StructToTFObjectTypes(SnatTableModel{})
-	snatTable, _ := types.ListValueFrom(ctx, SnatListTypes, snats)
-	cfg.SNatTable = snatTable
-
-	var dnats []DnatTableModel
-	if natObj.DnatTable != nil && len(*natObj.DnatTable) > 0 {
-		for _, dnatItem := range *natObj.DnatTable {
-			dnat := DnatTableModel{}
-			dnat.ID = utils.SecStringValue(dnatItem.Id)
-			dnat.DNatID = utils.SecStringValue(dnatItem.DNatID)
-			dnat.Description = utils.SecStringValue(dnatItem.Description)
-			dnat.CreationTime = utils.SecStringValue(dnatItem.CreationTime)
-			dnat.IpExpireTime = utils.SecStringValue(dnatItem.IpExpireTime)
-			dnat.ExternalIP = utils.SecStringValue(dnatItem.ExternalIp)
-			dnat.ExternalPort = utils.SecStringValue(dnatItem.ExternalPort)
-			dnat.Protocol = utils.SecStringValue(dnatItem.Protocol)
-			dnat.InternalPort = utils.SecStringValue(dnatItem.InternalPort)
-			dnat.InternalIp = utils.SecStringValue(dnatItem.InternalIp)
-			dnat.State = utils.SecStringValue(dnatItem.State)
-			dnat.VirtualMachineName = utils.SecStringValue(dnatItem.VirtualMachineName)
-			dnat.VirtualMachineID = utils.SecStringValue(dnatItem.VirtualMachineID)
-			dnats = append(dnats, dnat)
-		}
-	}
-	DNatsListTypes := utils.StructToTFObjectTypes(DnatTableModel{})
-	dnatTable, _ := types.ListValueFrom(ctx, DNatsListTypes, dnats)
-	cfg.DNatTable = dnatTable
-
 	return nil
 }
 
@@ -713,16 +512,38 @@ func (c *ctyunNatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context
 	response.State.Set(ctx, state)
 	return true
 }
-
-func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
-	if state.NatGatewayID != plan.NatGatewayID {
-		err = fmt.Errorf("when updating NatGateway Information, the Planned Nat GatewayID needs to remain the same as the original")
+func (c *ctyunNatResource) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
+	if state.Spec == state.Spec {
+		err = fmt.Errorf("需要修改的规格与原规格一致，无需修改")
 		return
 	}
+	// 调用变配nat接口，规格(可传值：1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcModifyNatSpecApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcModifyNatSpecRequest{
+		RegionID:        state.RegionID.ValueString(),
+		NatGatewayID:    state.RegionID.ValueString(),
+		Spec:            plan.Spec.ValueInt32(),
+		ClientToken:     uuid.NewString(),
+		PayVoucherPrice: plan.PayVoucherPrice.ValueStringPointer(),
+	})
+	if err != nil {
+		return err
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	c.OrderLoop(ctx)
+
+}
+
+func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
+
 	if !c.checkNatInfoIsSame(state, plan) {
 		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateNatGatewayAttributeApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
 			RegionID:     plan.RegionID.ValueString(),
-			NatGatewayID: plan.NatGatewayID.ValueString(),
+			NatGatewayID: state.NatGatewayID.ValueString(),
 			Name:         plan.Name.ValueStringPointer(),
 			Description:  plan.Description.ValueStringPointer(),
 			ClientToken:  uuid.NewString(),
@@ -836,8 +657,6 @@ type CtyunNatConfig struct {
 	VpcCidr              types.String `tfsdk:"vpc_cidr"`               //当前网关所属的vpc cidr
 	CreationTime         types.String `tfsdk:"creation_time"`          //NAT网关的创建时间
 	ExpiredTime          types.String `tfsdk:"expired_time"`           //NAT网关实例的过期时间
-	SNatTable            types.List   `tfsdk:"snat_table"`             //SNAT列表信息
-	DNatTable            types.List   `tfsdk:"dnat_table"`             //DNAT列表的信息
 }
 type LoopOrderResponse struct {
 	NatGatewayId         types.String
@@ -846,40 +665,4 @@ type LoopOrderResponse struct {
 	MasterResourceStatus types.String
 	MasterResourceID     types.String
 	RegionID             types.String
-}
-
-type DnatTableModel struct {
-	ID                 types.String `tfsdk:"id"`                   //dnat id
-	DNatID             types.String `tfsdk:"dnat_id"`              //dnat id
-	CreationTime       types.String `tfsdk:"creation_time"`        //创建时间
-	Description        types.String `tfsdk:"description"`          //描述信息
-	IpExpireTime       types.String `tfsdk:"ip_expire_time"`       //ip到期时间
-	ExternalID         types.String `tfsdk:"external_id"`          //弹性公网id
-	ExternalPort       types.String `tfsdk:"external_port"`        //公网端口
-	ExternalIP         types.String `tfsdk:"external_ip"`          //弹性公网ip
-	Protocol           types.String `tfsdk:"protocol"`             //TCP:转发TCP协议的报文 UDP：转发UDP协议的报文。
-	InternalPort       types.String `tfsdk:"internal_port"`        //私网端口
-	InternalIp         types.String `tfsdk:"internal_ip"`          //内网 IP 地址
-	State              types.String `tfsdk:"state"`                //运行状态: ACTIVE / FREEZING / CREATING
-	VirtualMachineName types.String `tfsdk:"virtual_machine_name"` //虚拟机名称
-	VirtualMachineID   types.String `tfsdk:"virtual_machine_id"`   //虚拟机id
-}
-
-type SnatTableModel struct {
-	ID           types.String `tfsdk:"id"`            //snat id
-	SNatID       types.String `tfsdk:"snat_id"`       //snat id
-	Description  types.String `tfsdk:"description"`   //描述信息
-	Status       types.String `tfsdk:"status"`        //状态: ACTIVE 表示运行中，Creating 表示创建中，Freezing 表示冻结
-	VpcID        types.String `tfsdk:"vpc_id"`        //要查询的NAT网关所属VPC的ID
-	VpcName      types.String `tfsdk:"vpc_name"`      //要查询的NAT网关所属VPC的名称
-	VpcCidr      types.String `tfsdk:"vpc_cidr"`      //要查询的NAT网关所属VPC的cidr
-	SubnetCidr   types.String `tfsdk:"subnet_cidr"`   //要查询的NAT网关所属VPC子网的cidr
-	SubnetType   types.Int32  `tfsdk:"subnet_type"`   //子网类型：1-有vpcID的子网，0-自定义
-	CreationTime types.String `tfsdk:"creation_time"` //创建时间
-	IpAddress    types.List   `tfsdk:"ip_address"`    //eip地址信息
-	SubnetName   types.String `tfsdk:"subnet_name"`   //子网名字
-}
-type IpAddressModel struct {
-	ID        types.String `tfsdk:"id"`
-	IpAddress types.String `tfsdk:"ip_address"`
 }
