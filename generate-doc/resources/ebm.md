@@ -115,6 +115,11 @@ Optional:
 - `fixed_ip` (String) 内网IPv4地址
 - `ipv6` (String) 内网IPv6地址
 
+Read-Only:
+
+- `interface_id` (String) 网卡UUID
+- `port_id` (String) PORT UUID
+
 
 <a id="nestedatt--disk_list"></a>
 ### Nested Schema for `disk_list`

@@ -230,6 +230,7 @@ func (c *ctyunEips) Read(ctx context.Context, request datasource.ReadRequest, re
 		err = fmt.Errorf("regionId不能为空")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 	params := &ctvpc.CtvpcNewEipListRequest{
 		RegionID:    regionId,
 		Status:      config.Status.ValueStringPointer(),
@@ -250,6 +251,7 @@ func (c *ctyunEips) Read(ctx context.Context, request datasource.ReadRequest, re
 	}
 	if projectId != "" {
 		params.ProjectID = &projectId
+		config.ProjectID = types.StringValue(projectId)
 	}
 	if len(ids) > 0 {
 		params.Ids = utils.StrArrayToStrPointerArray(strings.Split(ids, ","))

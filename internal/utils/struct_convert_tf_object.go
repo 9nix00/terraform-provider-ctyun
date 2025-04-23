@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"reflect"
@@ -17,7 +18,7 @@ func StructToTFObjectTypes(s interface{}) types.ObjectType {
 		field := t.Field(i)
 		tag := field.Tag.Get("tfsdk")
 		if tag == "" {
-			continue
+			panic(fmt.Sprintf("StructToTFObjectTypes %s must have tfsdk tag", field.Name))
 		}
 		var fieldType attr.Type
 		switch field.Type {
@@ -29,14 +30,12 @@ func StructToTFObjectTypes(s interface{}) types.ObjectType {
 			fieldType = types.Int64Type
 		case reflect.TypeOf(types.Float64{}):
 			fieldType = types.Float64Type
-		case reflect.TypeOf(types.List{}):
-			// 这里假设列表元素类型为 String，实际可能需要更复杂处理
-			fieldType = types.ListType{ElemType: types.StringType}
-		case reflect.TypeOf(types.Map{}):
-			// 这里假设映射元素类型为 String，实际可能需要更复杂处理
-			fieldType = types.MapType{ElemType: types.StringType}
+		//case reflect.TypeOf(types.List{}):
+		//  fieldType = types.ListType{ElemType: types.StringType}
+		//case reflect.TypeOf(types.Map{}):
+		//  fieldType = types.MapType{ElemType: types.StringType}
 		default:
-			continue
+			panic(fmt.Sprintf("StructToTFObjectTypes not support %s", field.Type.String()))
 		}
 		result[tag] = fieldType
 	}
