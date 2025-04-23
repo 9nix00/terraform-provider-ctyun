@@ -315,6 +315,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunSecurityGroups(),
 		vpc.NewCtyunVpcRouteTables(),
 		vpc.NewCtyunVpcRouteTableRules(),
+		vpc.NewCtyunEips(),
 	)
 }
 

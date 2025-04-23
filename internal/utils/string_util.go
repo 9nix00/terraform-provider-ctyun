@@ -70,6 +70,15 @@ func StrPointerArrayToStrArray(array []*string) []string {
 	return ret
 }
 
+// StrArrayToStrPointerArray []string转[]*string
+func StrArrayToStrPointerArray(array []string) []*string {
+	ret := []*string{}
+	for _, str := range array {
+		ret = append(ret, &str)
+	}
+	return ret
+}
+
 // DifferenceStrArray 获取两个字符串数组的差集并去重
 func DifferenceStrArray(a, b []string) (diffA []string, diffB []string) {
 	mb := make(map[string]struct{}, len(b))

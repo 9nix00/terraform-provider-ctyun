@@ -49,9 +49,8 @@ type CtvpcNewEipListRequest struct {
 	ClientToken string    `json:"clientToken,omitempty"` /*  客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一  */
 	RegionID    string    `json:"regionID,omitempty"`    /*  资源池 ID  */
 	ProjectID   *string   `json:"projectID,omitempty"`   /*  企业项目 ID，默认为"0"  */
-	Page        int32     `json:"page"`                  /*  分页参数  */
-	PageNo      int32     `json:"pageNo"`                /*  列表的页码，默认值为 1, 推荐使用该字段, page 后续会废弃  */
-	PageSize    int32     `json:"pageSize"`              /*  每页数据量大小，取值 1-50  */
+	PageNo      int32     `json:"pageNo,omitempty"`      /*  列表的页码，默认值为 1, 推荐使用该字段, page 后续会废弃  */
+	PageSize    int32     `json:"pageSize,omitempty"`    /*  每页数据量大小，取值 1-50  */
 	Ids         []*string `json:"ids"`                   /*  是 Array 类型，里面的内容是 String  */
 	Status      *string   `json:"status,omitempty"`      /*  eip状态 ACTIVE（已绑定）/ DOWN（未绑定）/ FREEZING（已冻结）/ EXPIRED（已过期），不传是查询所有状态的 EIP  */
 	IpType      *string   `json:"ipType,omitempty"`      /*  ip类型 ipv4 / ipv6  */
@@ -60,11 +59,11 @@ type CtvpcNewEipListRequest struct {
 }
 
 type CtvpcNewEipListResponse struct {
-	StatusCode  int32                               `json:"statusCode"`            /*  返回状态码（800为成功，900为失败）  */
-	Message     *string                             `json:"message,omitempty"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
-	Description *string                             `json:"description,omitempty"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
-	ErrorCode   *string                             `json:"errorCode,omitempty"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
-	ReturnObj   []*CtvpcNewEipListReturnObjResponse `json:"returnObj"`             /*  返回结果  */
+	StatusCode  int32                             `json:"statusCode"`            /*  返回状态码（800为成功，900为失败）  */
+	Message     *string                           `json:"message,omitempty"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
+	Description *string                           `json:"description,omitempty"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
+	ErrorCode   *string                           `json:"errorCode,omitempty"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
+	ReturnObj   *CtvpcNewEipListReturnObjResponse `json:"returnObj"`             /*  返回结果  */
 }
 
 type CtvpcNewEipListReturnObjResponse struct {

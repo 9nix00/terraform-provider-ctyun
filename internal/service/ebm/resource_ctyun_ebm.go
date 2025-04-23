@@ -1008,16 +1008,12 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 				return false
 			}
 			switch status {
-			case business.EbmStatusStarting:
-				// 执行中
-				return true
 			case business.EbmStatusRunning:
 				// 执行成功
 				executeSuccessFlag = true
 				return false
 			default:
-				// 默认为执行失败
-				return false
+				return true
 			}
 		},
 	)
@@ -1056,16 +1052,12 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 				return false
 			}
 			switch status {
-			case business.EbmStatusStopping:
-				// 执行中
-				return true
 			case business.EbmStatusStopped:
 				// 执行成功
 				executeSuccessFlag = true
 				return false
-			default:
-				// 默认为执行失败
-				return false
+			default: // 其他状态持续轮询
+				return true
 			}
 		})
 	if err != nil {

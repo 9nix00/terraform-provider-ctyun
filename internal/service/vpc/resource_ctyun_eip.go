@@ -2,8 +2,9 @@ package vpc
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,8 +17,10 @@ import (
 	"regexp"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
@@ -29,6 +32,23 @@ func NewCtyunEip() resource.Resource {
 
 type ctyunEip struct {
 	meta *common.CtyunMetadata
+}
+
+type CtyunEipConfig struct {
+	Id                types.String `tfsdk:"id"`
+	Name              types.String `tfsdk:"name"`
+	CycleType         types.String `tfsdk:"cycle_type"`
+	CycleCount        types.Int64  `tfsdk:"cycle_count"`
+	Bandwidth         types.Int32  `tfsdk:"bandwidth"`
+	CurrentBandwidth  types.Int32  `tfsdk:"current_bandwidth"`
+	BandwidthType     types.String `tfsdk:"bandwidth_type"`
+	DemandBillingType types.String `tfsdk:"demand_billing_type"`
+	Address           types.String `tfsdk:"address"`
+	Status            types.String `tfsdk:"status"`
+	ExpireTime        types.String `tfsdk:"expire_time"`
+	MasterOrderId     types.String `tfsdk:"master_order_id"`
+	ProjectId         types.String `tfsdk:"project_id"`
+	RegionId          types.String `tfsdk:"region_id"`
 }
 
 func (c *ctyunEip) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -51,14 +71,14 @@ func (c *ctyunEip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "子网名称不符合规则"),
 				},
 			},
-			"bandwidth": schema.Int64Attribute{
+			"bandwidth": schema.Int32Attribute{
 				Required:    true,
 				Description: "原始弹性ip的带宽峰值，1-1024Mbps",
-				Validators: []validator.Int64{
-					int64validator.Between(1, 1024),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 1024),
 				},
 			},
-			"current_bandwidth": schema.Int64Attribute{
+			"current_bandwidth": schema.Int32Attribute{
 				Computed:    true,
 				Description: "当前实际的带宽大小，如果绑定了共享带宽，此值显示为共享带宽的值，否则此值与bandwidth一致",
 			},
@@ -151,61 +171,33 @@ func (c *ctyunEip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 }
 
 func (c *ctyunEip) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunEipConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-	regionId := plan.RegionId.ValueString()
-	projectId := plan.ProjectId.ValueString()
-	resp, err := c.meta.Apis.CtVpcApis.EipCreateApi.Do(ctx, c.meta.Credential, &ctvpc.EipCreateRequest{
-		ClientToken:       uuid.NewString(),
-		RegionId:          regionId,
-		CycleType:         plan.CycleType.ValueString(),
-		CycleCount:        int(plan.CycleCount.ValueInt64()),
-		Name:              plan.Name.ValueString(),
-		Bandwidth:         int(plan.Bandwidth.ValueInt64()),
-		DemandBillingType: plan.DemandBillingType.ValueString(),
-		ProjectId:         projectId,
-	})
-
-	var id, masterOrderId string
-	if err == nil {
-		id = resp.EipId
-		masterOrderId = resp.MasterOrderId
-	} else {
-		// 判断返回信息是否需要轮询
-		if err.ErrorCode() != common.OpenapiOrderInprogress {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-		// 获取主订单
-		moi, err := c.getMasterOrderIdIfOrderInProgress(err)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-		// 轮询结果
-		helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-		loop, err := helper.OrderLoop(ctx, c.meta.Credential, moi)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-		id = loop.Uuid[0]
-		masterOrderId = moi
-	}
-
-	plan.Id = types.StringValue(id)
-	plan.RegionId = types.StringValue(regionId)
-	plan.ProjectId = types.StringValue(projectId)
-	plan.MasterOrderId = types.StringValue(masterOrderId)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
+	masterOrderID, err := c.create(ctx, plan)
+	if err != nil {
 		return
 	}
+	plan.MasterOrderId = types.StringValue(masterOrderID)
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	// 轮询结果
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	if err != nil {
+		return
+	}
+	id := loop.Uuid[0]
+
+	plan.Id = types.StringValue(id)
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 
 	instance, ctyunRequestError := c.getAndMergeEip(ctx, plan)
 	if ctyunRequestError != nil {
@@ -272,7 +264,7 @@ func (c *ctyunEip) Update(ctx context.Context, request resource.UpdateRequest, r
 			EipId:       state.Id.ValueString(),
 			RegionId:    state.RegionId.ValueString(),
 			ClientToken: uuid.NewString(),
-			Bandwidth:   int(plan.Bandwidth.ValueInt64()),
+			Bandwidth:   int(plan.Bandwidth.ValueInt32()),
 		})
 
 		var masterOrderId string
@@ -331,6 +323,27 @@ func (c *ctyunEip) Delete(ctx context.Context, request resource.DeleteRequest, r
 	}
 }
 
+// 导入命令：terraform import [配置标识].[导入配置名称] [eipId],[regionId]
+func (c *ctyunEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var cfg CtyunEipConfig
+	var eipId, regionId string
+	err := terraform_extend.Split(request.ID, &eipId, &regionId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	cfg.Id = types.StringValue(eipId)
+	cfg.RegionId = types.StringValue(regionId)
+
+	instance, err := c.getAndMergeEip(ctx, cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+}
+
 func (c *ctyunEip) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
@@ -365,7 +378,7 @@ func (c *ctyunEip) getAndMergeEip(ctx context.Context, cfg CtyunEipConfig) (*Cty
 	}
 
 	// 带宽大小
-	bandwidth := types.Int64Value(int64(resp.Bandwidth))
+	bandwidth := types.Int32Value(int32(resp.Bandwidth))
 	if bandwidthType == business.EipBandwidthTypeStandalone {
 		// 独享带宽才更新bandwidth的值
 		cfg.Bandwidth = bandwidth
@@ -430,19 +443,28 @@ func (c *ctyunEip) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 	return true
 }
 
-type CtyunEipConfig struct {
-	Id                types.String `tfsdk:"id"`
-	Name              types.String `tfsdk:"name"`
-	CycleType         types.String `tfsdk:"cycle_type"`
-	CycleCount        types.Int64  `tfsdk:"cycle_count"`
-	Bandwidth         types.Int64  `tfsdk:"bandwidth"`
-	CurrentBandwidth  types.Int64  `tfsdk:"current_bandwidth"`
-	BandwidthType     types.String `tfsdk:"bandwidth_type"`
-	DemandBillingType types.String `tfsdk:"demand_billing_type"`
-	Address           types.String `tfsdk:"address"`
-	Status            types.String `tfsdk:"status"`
-	ExpireTime        types.String `tfsdk:"expire_time"`
-	MasterOrderId     types.String `tfsdk:"master_order_id"`
-	ProjectId         types.String `tfsdk:"project_id"`
-	RegionId          types.String `tfsdk:"region_id"`
+// 创建eip
+func (c *ctyunEip) create(ctx context.Context, plan CtyunEipConfig) (masterOrderID string, err error) {
+	params := &ctvpc2.CtvpcCreateEipRequest{
+		ClientToken:       uuid.NewString(),
+		RegionID:          plan.RegionId.ValueString(),
+		CycleType:         plan.CycleType.ValueString(),
+		CycleCount:        int32(plan.CycleCount.ValueInt64()),
+		Name:              plan.Name.ValueString(),
+		Bandwidth:         plan.Bandwidth.ValueInt32(),
+		DemandBillingType: plan.DemandBillingType.ValueStringPointer(),
+		ProjectID:         plan.ProjectId.ValueStringPointer(),
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreateEipApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	masterOrderID = utils.SecString(resp.ReturnObj.MasterOrderID)
+	return
 }
