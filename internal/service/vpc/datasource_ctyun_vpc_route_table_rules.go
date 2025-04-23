@@ -3,8 +3,10 @@ package vpc
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
@@ -63,13 +65,14 @@ func (c *ctyunVpcRouteTableRules) Schema(_ context.Context, _ datasource.SchemaR
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "列表的页码，默认值为1",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "分页查询时每页的行数，最大值为50，默认值为10。",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 50),
+				},
 			},
 			"current_count": schema.Int32Attribute{
 				Computed:    true,

@@ -85,12 +85,10 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "列表的页码，默认值为1,推荐使用该字段",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "每页数据量大小，取值1-50",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
@@ -98,12 +96,10 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"ids": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "使用,连接",
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "弹性ip状态，取值范围：active：有效，down：未绑定，error：出错，updating：更新中，banding_or_unbangding：绑定解绑中，deleting：删除中，deleted：已删除，expired：已过期",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.EipStatus...),
@@ -111,7 +107,6 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"ip_type": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "ip类型ipv4/ipv6",
 				Validators: []validator.String{
 					stringvalidator.OneOf("ipv4", "ipv6"),
@@ -119,7 +114,6 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"eip_type": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "eip类型normal/cn2",
 				Validators: []validator.String{
 					stringvalidator.OneOf("normal", "cn2"),
@@ -127,7 +121,6 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"ip": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "弹性IP的ip地址",
 			},
 			"current_count": schema.Int32Attribute{

@@ -3,8 +3,10 @@ package vpc
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
@@ -66,18 +68,18 @@ func (c *ctyunVpcs) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"vpc_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "多个VPC的ID之间用半角逗号（,）隔开。",
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "列表的页码，默认值为1",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "分页查询时每页的行数，最大值为50，默认值为10。",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 50),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
