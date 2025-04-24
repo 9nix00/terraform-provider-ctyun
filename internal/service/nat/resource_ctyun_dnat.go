@@ -18,6 +18,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
+	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
@@ -36,7 +37,7 @@ func (c *ctyunDnatResource) Metadata(ctx context.Context, request resource.Metad
 	response.TypeName = request.ProviderTypeName + "_nat_dnat"
 }
 
-func NewCtyunDnatResource(metadata *common.CtyunMetadata) resource.Resource {
+func NewCtyunDnatResource() resource.Resource {
 	return &ctyunDnatResource{}
 }
 
@@ -48,8 +49,9 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "区域id",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(), // todo需要搞懂意思
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"nat_gateway_id": schema.StringAttribute{
@@ -66,7 +68,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "弹性公网id",
 			},
 			"external_ip": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "弹性公网ip",
 			},
 			"external_port": schema.Int32Attribute{
@@ -107,7 +109,6 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"state": schema.StringAttribute{
-				Required:    true,
 				Computed:    true,
 				Description: "运行状态: ACTIVE / FREEZING / CREATING",
 				Validators: []validator.String{
@@ -131,16 +132,14 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"virtual_machine_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "虚拟机id",
 			},
 			"virtual_machine_type": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机类型1-选择云主机，serverType字段必传 2-自定义，internalIp必传",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 2),
-				},
+				//Validators: []validator.Int32{
+				//	int32validator.Between(1, 2),
+				//},
 			},
 			"server_type": schema.StringAttribute{
 				Optional:    true,
@@ -226,19 +225,19 @@ func (c *ctyunDnatResource) Read(ctx context.Context, request resource.ReadReque
 	params := &ctvpc.CtvpcCreateDnatEntryRequest{
 		RegionID:           state.RegionID.ValueString(),
 		NatGatewayID:       state.NatGatewayID.ValueString(),
-		ExternalID:         state.ExternalIP.String(),
+		ExternalID:         state.ExternalID.String(),
 		ExternalPort:       state.ExternalPort.ValueInt32(),
 		VirtualMachineID:   state.VirtualMachineID.ValueStringPointer(),
-		VirtualMachineType: state.virtualMachineType.ValueInt32(),
+		VirtualMachineType: state.VirtualMachineType.ValueInt32(),
 		InternalPort:       state.InternalPort.ValueInt32(),
 		Protocol:           state.Protocol.ValueString(),
-		ClientToken:        state.ClientToken.ValueString(),
+		ClientToken:        uuid.NewString(),
 		Description:        state.Description.ValueStringPointer(),
 	}
-	if state.virtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
+	if state.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
 		// 如果云主机类型为1-选择云主机，传参数serverType
 		params.ServerType = state.ServerType.ValueStringPointer()
-	} else if state.virtualMachineType.ValueInt32() == business.VirtualMachineTypeCustom {
+	} else if state.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCustom {
 		// 如果云主机类型为2 - 自定义，internalIp必传
 		params.InternalIp = state.InternalIP.ValueStringPointer()
 	}
@@ -428,7 +427,7 @@ func (c *ctyunDnatResource) checkBeforeCreateDnat(_ context.Context, plan CtyunD
 		return fmt.Errorf("nat Gateway ID is empty")
 	}
 	//当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
-	virtualMachineType := plan.virtualMachineType.ValueInt32()
+	virtualMachineType := plan.VirtualMachineType.ValueInt32()
 	if virtualMachineType == business.VirtualMachineTypeCloud {
 		if plan.ServerType.IsNull() || plan.ServerType.ValueString() == "" {
 			return fmt.Errorf("server Type is empty")
@@ -469,10 +468,10 @@ func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig
 	params := &ctvpc.CtvpcCreateDnatEntryRequest{
 		RegionID:           plan.RegionID.ValueString(),
 		NatGatewayID:       plan.NatGatewayID.ValueString(),
-		ExternalID:         plan.ExternalIP.String(),
+		ExternalID:         plan.ExternalID.ValueString(),
 		ExternalPort:       plan.ExternalPort.ValueInt32(),
 		VirtualMachineID:   plan.VirtualMachineID.ValueStringPointer(),
-		VirtualMachineType: plan.virtualMachineType.ValueInt32(),
+		VirtualMachineType: plan.VirtualMachineType.ValueInt32(),
 
 		InternalPort: plan.InternalPort.ValueInt32(),
 		Protocol:     plan.Protocol.ValueString(),
@@ -480,10 +479,10 @@ func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig
 		Description:  plan.Description.ValueStringPointer(),
 	}
 
-	if plan.virtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
+	if plan.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
 		// 如果云主机类型为1-选择云主机，传参数serverType
 		params.ServerType = plan.ServerType.ValueStringPointer()
-	} else if plan.virtualMachineType.ValueInt32() == business.VirtualMachineTypeCustom {
+	} else if plan.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCustom {
 		// 如果云主机类型为2 - 自定义，internalIp必传
 		params.InternalIp = plan.InternalIP.ValueStringPointer()
 	}
@@ -606,17 +605,13 @@ func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfi
 		err = fmt.Errorf("when updating Dnat Information, the Planned Dnat regionId needs to remain the same as the original")
 		return
 	}
-	if state.DNatID.ValueString() != plan.DNatID.ValueString() {
-		err = fmt.Errorf("when updating Dnat Information, the Planned Dnat Id needs to remain the same as the original")
-		return
-	}
 
 	params := &ctvpc.CtvpcUpdateDnatEntryAttributeRequest{
 		RegionID:           plan.RegionID.ValueString(),
-		DNatID:             plan.DNatID.ValueString(),
+		DNatID:             state.DNatID.ValueString(),
 		ExternalID:         plan.ExternalID.ValueStringPointer(),
 		VirtualMachineID:   plan.ExternalID.ValueStringPointer(),
-		VirtualMachineType: plan.virtualMachineType.ValueInt32(),
+		VirtualMachineType: plan.VirtualMachineType.ValueInt32(),
 		InternalIp:         plan.InternalIP.ValueStringPointer(),
 		Protocol:           plan.Protocol.ValueString(),
 		ClientToken:        uuid.NewString(),
@@ -672,9 +667,8 @@ type CtyunDnatConfig struct {
 	IpExpireTime       types.String `tfsdk:"ip_expire_time"`       //ip到期时间
 	Description        types.String `tfsdk:"description"`          //描述
 	VirtualMachineID   types.String `tfsdk:"virtual_machine_id"`   //云主机
-	virtualMachineType types.Int32  `tfsdk:"virtual_machine_type"` //云主机类型1-选择云主机，serverType字段必传 ;2-自定义，internalIp必传
+	VirtualMachineType types.Int32  `tfsdk:"virtual_machine_type"` //云主机类型1-选择云主机，serverType字段必传 ;2-自定义，internalIp必传
 	ServerType         types.String `tfsdk:"server_type"`          //当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
-	ClientToken        types.String `tfsdk:"client_token"`         //客户端存根，用于保证订单幂等性, 长度 1 - 64
 	Status             types.String `tfsdk:"status"`               //绑定状态，取值 in_progress / done
 }
 

@@ -41,6 +41,7 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "资源池id，如果不填这默认使用provider ctyun总region_id 或者环境变量",
 			},
 			"nat_gateway_id": schema.StringAttribute{
@@ -85,10 +86,10 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Computed:    true,
 							Description: "nat 网关名字",
 						},
-						"description": schema.StringAttribute{
-							Computed:    true,
-							Description: "nat网关描述",
-						},
+						//"description": schema.StringAttribute{
+						//	Computed:    true,
+						//	Description: "nat网关描述",
+						//},
 						"status": schema.Int32Attribute{
 							Computed:    true,
 							Description: "nat 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结",
@@ -194,9 +195,9 @@ func (c *ctyunNats) Read(ctx context.Context, request datasource.ReadRequest, re
 	var nats []CtyunNatsModel
 	for _, natObj := range resp.ReturnObj {
 		natItem := CtyunNatsModel{
-			ID:           utils.SecStringValue(natObj.ID),
-			Name:         utils.SecStringValue(natObj.Name),
-			Description:  utils.SecStringValue(natObj.Description),
+			ID:   utils.SecStringValue(natObj.ID),
+			Name: utils.SecStringValue(natObj.Name),
+			//Description:  utils.SecStringValue(natObj.Description),
 			Status:       types.Int32Value(natObj.Status), // 还需要测一下，如果types.Int32Value传参为空的话结果如何？
 			NatGatewayID: utils.SecStringValue(natObj.NatGatewayID),
 			ZoneID:       utils.SecStringValue(natObj.ZoneID),
@@ -217,7 +218,7 @@ func (c *ctyunNats) Read(ctx context.Context, request datasource.ReadRequest, re
 	}
 }
 
-func (c *ctyunNats) Configure(_ context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
+func (c *ctyunNats) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -244,9 +245,9 @@ type CtyunNatsConfig struct {
 }
 
 type CtyunNatsModel struct {
-	ID           types.String `tfsdk:"id"`             //nat网关id
-	Name         types.String `tfsdk:"name"`           //nat网关名称
-	Description  types.String `tfsdk:"description"`    //ctvpc 网关描述
+	ID   types.String `tfsdk:"id"`   //nat网关id
+	Name types.String `tfsdk:"name"` //nat网关名称
+	//Description  types.String `tfsdk:"description"`    //ctvpc 网关描述
 	Status       types.Int32  `tfsdk:"status"`         //ctvpc 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结
 	NatGatewayID types.String `tfsdk:"nat_gateway_id"` //ctvpc 网关 id
 	ZoneID       types.String `tfsdk:"zone_id"`        //可用区 ID

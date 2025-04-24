@@ -5,14 +5,19 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
+	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
@@ -27,7 +32,7 @@ type ctyunSnatResource struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunSnatResource(metadata *common.CtyunMetadata) resource.Resource {
+func NewCtyunSnatResource() resource.Resource {
 	return &ctyunSnatResource{}
 }
 
@@ -66,56 +71,74 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://work.ctyun.cn/git/vnet/openapi-docs/src/branch/master/network/ctvpc/%E5%88%9B%E5%BB%BASNAT%E8%A7%84%E5%88%99%E6%8E%A5%E5%8F%A3.md`,
 		Attributes: map[string]schema.Attribute{
-			"RegionID": schema.StringAttribute{
+			"region_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
 				Description: "区域id",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"NatGatewayID": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
+			"nat_gateway_id": schema.StringAttribute{
+				Required:    true,
 				Description: "NAT网关ID",
 			},
-			"SourceSubnetID": schema.StringAttribute{
+			"source_subnet_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d\t",
+				Computed:    true,
+				Description: "子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"SourceCIDR": schema.StringAttribute{
+			"source_cidr": schema.StringAttribute{
+				Computed:    true,
 				Optional:    true,
-				Description: "自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】\t",
+				Description: "自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
-			"SnatIps": schema.StringAttribute{
+			"snat_ips": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性公网IP集合",
 			},
-			"ClientToken": schema.StringAttribute{
-				Required:    true,
-				Computed:    true,
-				Description: "客户端存根，用于保证订单幂等性, 长度 1 - 64",
-			},
-			"Description": schema.StringAttribute{
+			"description": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "SNAT描述",
 			},
-			"SNatID": schema.StringAttribute{
+			"snat_id": schema.StringAttribute{
 				Computed:    true,
-				Optional:    true,
 				Description: "snat id, 当 status != done 时，snatID 为 null",
 			},
-			"SubnetType": schema.StringAttribute{
-				Optional:    true,
+			"subnet_type": schema.Int32Attribute{
 				Computed:    true,
 				Description: "子网类型：1-有vpcID的子网，0-自定义",
+				Validators: []validator.Int32{
+					int32validator.Between(0, 1),
+				},
 			},
-			"CreateTime": schema.StringAttribute{
-				Optional:    true,
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
 			},
-			"Eips": schema.StringAttribute{
-				Required:    true,
+			"eips": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "绑定的 eip 信息",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"eip_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "弹性 IP id",
+						},
+						"ip_address": schema.StringAttribute{
+							Computed:    true,
+							Description: "弹性 IP 地址",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -146,7 +169,7 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 	if err != nil {
 		return
 	}
-	// todo 跟订单无关的配置如何轮询查询?
+	// 轮询创建请求，直到创建成功
 	loopResp, err := c.CreateLoop(ctx, createParams, 600)
 	if err != nil {
 		return
@@ -157,10 +180,6 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 
 	//business.NewOrderLooper(c.meta.)
 	//plan.SNatID = utils.SecStringValue(returnObj.Snat.SnatID)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
 
 	// 反查信息
 	err = c.getAndMergeSnat(ctx, &plan)
@@ -169,6 +188,9 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 
 }
 
@@ -187,7 +209,6 @@ func (c *ctyunSnatResource) Read(ctx context.Context, request resource.ReadReque
 	}
 
 	//通过SNatId查询同步
-	// todo 需要做到轮询查询
 
 	if !c.acquireAndSetIdIfOrderNotFinished(ctx, &state, response) {
 		return
@@ -230,7 +251,7 @@ func (c *ctyunSnatResource) Update(ctx context.Context, request resource.UpdateR
 	if err != nil {
 		return
 	}
-	// todo更新/删除snat eip
+
 	err = c.addAndDeleteSnatEips(ctx, state, plan)
 	if err != nil {
 		return
@@ -331,6 +352,9 @@ func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSn
 		}
 		eipList = append(eipList, eipItem)
 	}
+	eipObj := utils.StructToTFObjectTypes(CtyunSnatEipsList{})
+
+	config.Eips, _ = types.ListValueFrom(ctx, eipObj, eipList)
 	return nil
 }
 
@@ -351,7 +375,8 @@ func (c *ctyunSnatResource) checkBeforeCreateSnat(ctx context.Context, plan Ctyu
 	}
 
 	//弹性公网IP集合 不能为空
-	snatIps := plan.SnatIps
+
+	snatIps := c.stringToList(plan.SnatIps.ValueString())
 	if len(snatIps) == 0 {
 		err := fmt.Errorf("the snat ips cannot be null")
 		return err
@@ -365,10 +390,7 @@ func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig
 	natGatewayId := plan.NatGatewayID.ValueString()
 	sourceSubnetId := plan.SourceSubnetID.ValueString()
 	sourceCIDR := plan.SourceCIDR.ValueString()
-	var snatIps []string
-	for _, ip := range plan.SnatIps {
-		snatIps = append(snatIps, ip.ValueString())
-	}
+	var snatIps []string = c.stringToList(plan.SnatIps.ValueString())
 
 	params := &ctvpc.CtvpcCreateSnatEntryRequest{
 		RegionID:     regionId,
@@ -376,11 +398,14 @@ func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig
 		SnatIps:      snatIps,
 		ClientToken:  uuid.NewString(),
 	}
-	if sourceCIDR == "" {
+	if sourceSubnetId != "" {
 		params.SourceSubnetID = &sourceSubnetId
-	} else if sourceSubnetId == "" {
+	}
+	if sourceCIDR != "" {
 		params.SourceCIDR = &sourceCIDR
-	} else {
+	}
+
+	if sourceCIDR == "" && sourceSubnetId == "" {
 		err = fmt.Errorf("sourceCIDR and sourceSubnetId cannot both be nil")
 		return
 	}
@@ -434,9 +459,9 @@ func (c *ctyunSnatResource) updateSnatInfo(ctx context.Context, state CtyunSnatC
 			SNatID:         plan.SNatID.ValueString(),
 			SourceSubnetID: plan.SourceSubnetID.ValueStringPointer(),
 			SourceCIDR:     plan.SourceCIDR.ValueStringPointer(),
-			Description:    plan.Description.ValueStringPointer(),
 			ClientToken:    uuid.NewString(),
 		})
+
 		if err2 != nil {
 			return
 		} else if resp.StatusCode == common.ErrorStatusCode {
@@ -448,8 +473,8 @@ func (c *ctyunSnatResource) updateSnatInfo(ctx context.Context, state CtyunSnatC
 }
 
 func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) (err error) {
-	planSnatIps := plan.SnatIps
-	stateSnatIps := state.SnatIps
+	planSnatIps := c.stringToList(plan.SnatIps.ValueString())
+	stateSnatIps := c.stringToList(state.SnatIps.ValueString())
 
 	// 先筛选出哪些是需要删除的，哪些是需要添加的Eip
 	// plan中有，state中没有的，需要添加
@@ -582,17 +607,17 @@ func (c *ctyunSnatResource) checkSNatInfoIsSame(_ context.Context, state CtyunSn
 }
 
 // 求差集，left数组有，但是right数组中没有的集合
-func (c *ctyunSnatResource) difference(left []types.String, right []types.String, result *[]string) {
+func (c *ctyunSnatResource) difference(left []string, right []string, result *[]string) {
 	for _, lIp := range left {
 		flag := false
 		for _, rIp := range right {
-			if lIp.ValueString() == rIp.ValueString() {
+			if lIp == rIp {
 				flag = true
 				break
 			}
 		}
 		if !flag {
-			*result = append(*result, lIp.ValueString())
+			*result = append(*result, lIp)
 		}
 	}
 }
@@ -606,18 +631,30 @@ func (c *ctyunSnatResource) inRange(ranges []int32, num int32) bool {
 	return false
 }
 
+func (c *ctyunSnatResource) stringToList(listString string) (list []string) {
+	startIdx := 0
+	endIdx := len(listString) - 1
+	if listString[startIdx] == '[' {
+		startIdx = 1
+	}
+	if listString[endIdx] == ']' {
+		endIdx = endIdx - 1
+	}
+	list = strings.Split(listString[startIdx:endIdx+1], ",")
+	return list
+}
+
 type CtyunSnatConfig struct {
-	RegionID       types.String        `tfsdk:"region_id"`        //区域id
-	NatGatewayID   types.String        `tfsdk:"nat_gateway_id"`   //NAT网关ID
-	SourceSubnetID types.String        `tfsdk:"source_subnet_id"` //子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d
-	SourceCIDR     types.String        `tfsdk:"source_cidr"`      //自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】
-	SnatIps        []types.String      `tfsdk:"snat_ips"`         //弹性公网IP集合
-	ClientToken    types.String        `tfsdk:"client_token"`     //客户端存根，用于保证订单幂等性, 长度 1 - 64
-	Description    types.String        `tfsdk:"description"`      //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&()_-+= <>?:"{},./;'[]·~！@#￥%……&（） ——-+={}
-	SNatID         types.String        `tfsdk:"nat_id"`           //snat id
-	SubnetType     types.Int32         `tfsdk:"subnet_type"`      //子网类型：1-有vpcID的子网，0-自定义
-	CreateTime     types.String        `tfsdk:"create_time"`      //创建时间
-	Eips           []CtyunSnatEipsList `tfsdk:"eips"`             //绑定的 eip 信息
+	RegionID       types.String `tfsdk:"region_id"`        //区域id
+	NatGatewayID   types.String `tfsdk:"nat_gateway_id"`   //NAT网关ID
+	SourceSubnetID types.String `tfsdk:"source_subnet_id"` //子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d
+	SourceCIDR     types.String `tfsdk:"source_cidr"`      //自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】
+	SnatIps        types.String `tfsdk:"snat_ips"`         //弹性公网IP集合
+	Description    types.String `tfsdk:"description"`      //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&()_-+= <>?:"{},./;'[]·~！@#￥%……&（） ——-+={}
+	SNatID         types.String `tfsdk:"snat_id"`          //snat id
+	SubnetType     types.Int32  `tfsdk:"subnet_type"`      //子网类型：1-有vpcID的子网，0-自定义
+	CreateTime     types.String `tfsdk:"create_time"`      //创建时间
+	Eips           types.List   `tfsdk:"eips"`             //绑定的 eip 信息
 }
 
 type CtyunSnatEipsList struct {

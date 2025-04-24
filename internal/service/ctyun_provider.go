@@ -309,6 +309,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbmDeviceImages(),
 		nat.NewCtyunNats(),
 		elb.NewElbLoadBalancers(),
+		nat.NewCtyunSNats(),
+		nat.NewCtyunDNats(),
 	)
 }
 
@@ -338,6 +340,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
 		ebm.NewCtyunEbm(),
 		nat.NewCtyunNatResource(),
+		nat.NewCtyunSnatResource(),
+		nat.NewCtyunDnatResource(),
 	)
 }
 

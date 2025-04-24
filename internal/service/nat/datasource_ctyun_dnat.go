@@ -3,8 +3,11 @@ package nat
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
@@ -19,6 +22,10 @@ var (
 
 type ctyunDNatDatasource struct {
 	meta *common.CtyunMetadata
+}
+
+func NewCtyunDNats() datasource.DataSource {
+	return &ctyunDNatDatasource{}
 }
 
 func (c *ctyunDNatDatasource) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
@@ -37,6 +44,83 @@ func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaReque
 			"nat_gateway_id": schema.StringAttribute{
 				Required:    true,
 				Description: "要查询的NAT网关的ID",
+			},
+			"dnats": schema.ListNestedAttribute{
+				Computed:    true,
+				Description: "dnats列表",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"create_time": schema.StringAttribute{
+							Computed:    true,
+							Description: "创建时间",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "描述信息",
+						},
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "dnatID 值",
+						},
+						"dnat_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "dnatID 值",
+						},
+						"ip_expire_time": schema.StringAttribute{
+							Computed:    true,
+							Description: "ip到期时间",
+						},
+						"extend_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "弹性 IP id",
+						},
+						"external_ip": schema.StringAttribute{
+							Computed:    true,
+							Description: "弹性 IP 地址",
+						},
+						"external_port": schema.Int64Attribute{
+							Computed:    true,
+							Description: "外部访问端口",
+							Validators: []validator.Int64{
+								int64validator.Between(1, 1024),
+							},
+						},
+						"internal_port": schema.Int64Attribute{
+							Computed:    true,
+							Description: "内部访问端口",
+							Validators: []validator.Int64{
+								int64validator.Between(1, 65535),
+							},
+						},
+						"internal_ip": schema.StringAttribute{
+							Computed:    true,
+							Description: "内网 IP 地址",
+						},
+						"protocol": schema.StringAttribute{
+							Computed:    true,
+							Description: "TCP:转发TCP协议的报文 UDP：转发UDP协议的报文",
+						},
+						"state": schema.StringAttribute{
+							Computed:    true,
+							Description: "运行状态: ACTIVE / FREEZING / CREATING",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.DNatStates...),
+							},
+						},
+						"virtual_machine_display_name": schema.StringAttribute{
+							Computed:    true,
+							Description: "虚拟机展示名称",
+						},
+						"virtual_machine_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "虚拟机id",
+						},
+						"virtual_machine_name": schema.StringAttribute{
+							Computed:    true,
+							Description: "虚拟机名称",
+						},
+					},
+				},
 			},
 		},
 	}
@@ -96,7 +180,6 @@ func (c *ctyunDNatDatasource) Read(ctx context.Context, request datasource.ReadR
 			//State:                     utils.SecStringValue(dnat.State),
 			//ExternalPort:              types.Int64Value(int64(dnat.ExternalPort)),
 			//InternalPort:              types.Int64Value(int64(dnat.InternalPort)),
-			// todo 需要验证下，是否有损
 		}
 		protocol := utils.SecStringValue(dnat.Protocol)
 		if c.contains(business.DNatProtocols, protocol.ValueString()) {
@@ -120,7 +203,11 @@ func (c *ctyunDNatDatasource) Read(ctx context.Context, request datasource.ReadR
 
 	config.RegionID = types.StringValue(regionId)
 	config.NatGateWayID = types.StringValue(natGatewayId)
-	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
+	config.Dnats = dnats
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 func (c *ctyunDNatDatasource) Configure(_ context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
@@ -156,8 +243,9 @@ func (c *ctyunDNatDatasource) isPort(port types.Int64) bool {
 }
 
 type CtyunDNatConfig struct {
-	RegionID     types.String `tfsdk:"region_id"`
-	NatGateWayID types.String `tfsdk:"nat_gateway_id"`
+	RegionID     types.String     `tfsdk:"region_id"`
+	NatGateWayID types.String     `tfsdk:"nat_gateway_id"`
+	Dnats        []CtyunDNatModel `tfsdk:"dnats"`
 }
 
 type CtyunDNatModel struct {

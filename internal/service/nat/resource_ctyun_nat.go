@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -103,6 +104,9 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 				Validators: []validator.Int64{
 					// todo 输入值验证模块，如果能做到与cycle_type联动
 					validator2.CycleCount(1, 11, 1, 3),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"az_name": schema.StringAttribute{
@@ -312,21 +316,27 @@ func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRe
 	if err != nil {
 		return
 	}
-	//todo nat变配操作，规格(1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)的修改
-	// modify-nat-gateway-spec
-
-	//todo nat续费，on_demand无法续订
-	// renew-nat-gateway
-
-	// todo 转成包年包月
-
+	//nat变配操作，规格(1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)的修改
+	err = c.modifyNatSpec(ctx, state, plan)
+	if err != nil {
+		return
+	}
+	// nat续费，on_demand无法续订
+	_, _, err = c.renewNat(ctx, state, plan)
+	if err != nil {
+		return
+	}
+	// 获取原来的nat过期时间，用于验证是否续订成功
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -514,8 +524,8 @@ func (c *ctyunNatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context
 }
 func (c *ctyunNatResource) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
 	if state.Spec == state.Spec {
-		err = fmt.Errorf("需要修改的规格与原规格一致，无需修改")
-		return
+		_ = fmt.Sprintf("需要修改的规格与原规格一致，无需修改")
+		return nil
 	}
 	// 调用变配nat接口，规格(可传值：1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcModifyNatSpecApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcModifyNatSpecRequest{
@@ -534,20 +544,78 @@ func (c *ctyunNatResource) modifyNatSpec(ctx context.Context, state CtyunNatConf
 		err = common.InvalidReturnObjError
 		return
 	}
-	c.OrderLoop(ctx)
 
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	_, err = helper.OrderLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID, 600)
+	if err != nil {
+		return
+	}
+
+	return nil
+}
+func (c *ctyunNatResource) renewNat(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (cycleType string, cycleCount int32, err error) {
+	if state.CycleType.ValueString() == business.OrderCycleTypeOnDemand {
+		_ = fmt.Sprintf("当前订购类型为按需，无法按周期续订。")
+		return
+	}
+
+	if state.CycleCount.ValueInt64() <= 0 {
+		_ = fmt.Sprintf("当前无需续订。")
+		return
+	}
+
+	params := &ctvpc.CtvpcRenewNatGatewayRequest{
+		RegionID:        state.RegionID.ValueString(),
+		NatGatewayID:    state.NatGatewayID.ValueString(),
+		ClientToken:     uuid.NewString(),
+		PayVoucherPrice: plan.PayVoucherPrice.ValueStringPointer(),
+	}
+	params.CycleType = plan.CycleType.ValueString()
+	cycleType = params.CycleType
+	// 判断续订，如果订购周期发生变化，直接按订购周期续期
+	if !state.CycleType.Equal(plan.CycleType) {
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
+	} else if plan.CycleCount.ValueInt64() > state.CycleCount.ValueInt64() {
+		// 若订购周期与原来一致，求plan和state差值，作为更新周期
+		params.CycleCount = int32(plan.CycleCount.ValueInt64() - state.CycleCount.ValueInt64())
+	} else {
+		_ = fmt.Sprintf("最新订购周期 <= 原订购周期，不予续费")
+		return
+	}
+
+	cycleCount = params.CycleCount
+
+	// 调用nat续期接口
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcRenewNatGatewayApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	// 轮询调用续期接口，确认该订单已经完成续订
+	_, err = c.renewLoop(ctx, params, 600)
+	if err != nil {
+		return
+	}
+
+	return cycleType, cycleCount, nil
 }
 
 func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
 
 	if !c.checkNatInfoIsSame(state, plan) {
-		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateNatGatewayAttributeApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
+		params := &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
 			RegionID:     plan.RegionID.ValueString(),
 			NatGatewayID: state.NatGatewayID.ValueString(),
 			Name:         plan.Name.ValueStringPointer(),
 			Description:  plan.Description.ValueStringPointer(),
 			ClientToken:  uuid.NewString(),
-		})
+		}
+		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateNatGatewayAttributeApi.Do(ctx, c.meta.SdkCredential, params)
 		if err2 != nil {
 			err = err2
 			return
@@ -559,6 +627,46 @@ func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConf
 		return
 	}
 	return
+}
+
+func (c *ctyunNatResource) renewLoop(ctx context.Context, params *ctvpc.CtvpcRenewNatGatewayRequest, loopCount ...int) (loopResponse *ctvpc.CtvpcRenewNatGatewayReturnObjResponse, err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcRenewNatGatewayApi.Do(ctx, c.meta.SdkCredential, params)
+			if err != nil {
+				return false
+			} else if resp.StatusCode == common.ErrorStatusCode {
+				err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+				return false
+			}
+			status := *resp.ReturnObj.MasterResourceStatus
+			switch status {
+			case business.NatStatusStarted:
+				// nat 已经续期成功，
+				loopResponse = resp.ReturnObj
+
+				return false
+			case business.NatStatusRenewed:
+				return true
+
+			default:
+				// 在开通的时候，其他状态是异常的，因此抛出异常，并跳出轮询
+				err = errors.New("Nat续订时，出现非renewed 和 started的异常状态。当前状态为： " + status)
+				return false
+			}
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return nil, errors.New("轮询已达最大次数，资源仍未续订成功！")
+	}
+	return loopResponse, nil
 }
 
 func (c *ctyunNatResource) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGatewayRequest, loopCount ...int) (loopResponse *LoopOrderResponse, err error) {
@@ -635,6 +743,31 @@ func (c *ctyunNatResource) checkNatInfoIsSame(state CtyunNatConfig, plan CtyunNa
 	}
 
 	return true
+}
+
+func (c *ctyunNatResource) isRenewSuccess(expiredTime string, newExpiredTime string, cycleType string, cycleCount int32) bool {
+	parsedExpiredTime, err := time.Parse(time.RFC3339, expiredTime)
+	if err != nil {
+		fmt.Println("解析日期失败:", err)
+		return false
+	}
+	parseNewExpiredTime, err := time.Parse(time.RFC3339, newExpiredTime)
+	if err != nil {
+		fmt.Println("解析日期失败:", err)
+		return false
+	}
+	// 计算时间间隔后的日期
+	var expectExpiredTime time.Time
+	if cycleType == business.OrderCycleTypeMonth {
+		expectExpiredTime = parsedExpiredTime.AddDate(0, int(cycleCount), 0)
+	} else if cycleType == business.OrderCycleTypeYear {
+		expectExpiredTime = parsedExpiredTime.AddDate(int(cycleCount), 0, 0)
+	}
+	if expectExpiredTime.Equal(parseNewExpiredTime) {
+		return true
+	}
+
+	return false
 }
 
 type CtyunNatConfig struct {

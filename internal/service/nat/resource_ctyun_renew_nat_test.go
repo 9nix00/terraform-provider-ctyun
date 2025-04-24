@@ -7,20 +7,22 @@ import (
 	"testing"
 )
 
-func TestAccNewCtyunNatResource(t *testing.T) {
+func TestAccNewCtyunRenewNatResource(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_nat." + rnd
 	datasourceName := "data.ctyun_nats." + dnd
 	initDescription := "terraform provider 开发测试"
-	resourceFile := "resource_ctyun_nat.tf"
+	resourceFile := "resource_ctyun_renew_nat.tf"
 	datasourceFile := "datasource_ctyun_nat.tf"
 
 	vpcId := "vpc-wf029jgx2d"
 	spec := "1"
-	updatedSpec := "2"
-	cycle_type := "on_demand"
+	updatedSpec := "1"
+	cycle_type := "month"
+	cycle_count := "1"
+	updated_cycle_count := "2"
 	az_name := "cn-huanan2-1A-public-ctcloud"
 	initName := utils.GenerateRandomString()
 
@@ -32,7 +34,7 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1.resource create验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, cycle_type, az_name),
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, cycle_type, cycle_count, az_name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
@@ -41,29 +43,28 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 			},
 			// 2. resource update验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, updatedName, updatedDescription, cycle_type, az_name),
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, updatedName, updatedDescription, cycle_type, cycle_count, az_name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
 				),
 			},
-			// 3. resource nat 变配验证
+			// 3. resource nat续费
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, updatedSpec, updatedName, updatedDescription, cycle_type, az_name),
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, updatedSpec, updatedName, updatedDescription, cycle_type, updated_cycle_count, az_name),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
-					resource.TestCheckResourceAttr(resourceName, "spec", updatedSpec),
+					//resource.TestCheckResourceAttr(resourceName, "expired_time", utils.getExpireTime()),
 					resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
 				),
 			},
 			// 4. datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, updatedName, updatedDescription, cycle_type, az_name) +
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, updatedName, updatedDescription, cycle_type, cycle_count, az_name) +
 					utils.LoadTestCase(datasourceFile, dnd),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					//resource.TestCheckResourceAttr(datasourceName, "nats.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "nats.0.name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "nats.0.description", updatedDescription),
 				),
