@@ -168,7 +168,6 @@ func (c *ctyunNats) Read(ctx context.Context, request datasource.ReadRequest, re
 
 	pageSize := c.ParseInt32IfEmpty(config.PageSize, 10)
 
-	// 请求openapi sdk,调用的sdk接口:ctvpc_list_nat_gateways_api.go
 	params := &ctvpc.CtvpcListNatGatewaysRequest{
 		RegionID:   regionId,
 		PageNumber: pageNumber,

@@ -147,7 +147,6 @@ func (c *ctyunDNatDatasource) Read(ctx context.Context, request datasource.ReadR
 		return
 	}
 	natGatewayId := config.NatGateWayID.ValueString()
-	// SDK文件： ctvpc_list_dnat_entries_api.go
 	params := &ctvpc.CtvpcListDnatEntriesRequest{
 		RegionID:     regionId,
 		NatGatewayID: natGatewayId,

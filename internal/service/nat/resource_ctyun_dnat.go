@@ -627,7 +627,6 @@ func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfi
 		params.InternalPort = plan.InternalPort.ValueInt32()
 	}
 
-	// 更新DNAT SDK文件ctvpc_update_dnat_entry_attribute_api.go
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateDnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err

@@ -315,7 +315,6 @@ func (c *ctyunSnatResource) Configure(ctx context.Context, request resource.Conf
 }
 
 func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSnatConfig) (err error) {
-	// 获取snat详情sdk ctvpc_show_snat_api.go
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowSnatRequest{
 		RegionID: config.RegionID.ValueString(),
 		SNatID:   config.SNatID.ValueString(),
@@ -502,7 +501,6 @@ func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state Ctyu
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *addResp.Message, *addResp.Description)
 		return
 	}
-	//SKD ctvpc_disassociate_eips_from_snat_api.go
 	deleteResp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDisassociateEipsFromSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcDisassociateEipsFromSnatRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		NatGatewayID: plan.NatGatewayID.ValueString(),

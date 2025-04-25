@@ -170,7 +170,6 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 		params.SubnetID = &subnetId
 	}
 
-	// 请求sdk,获取snat列表，list-snat接口返回值800为成功，900为失败
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcListSnatsApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
