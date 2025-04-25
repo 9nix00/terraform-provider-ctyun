@@ -281,7 +281,6 @@ func (c *ctyunNatResource) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
-		// 有待确定
 		if strings.Contains(err.Error(), "is not found") {
 			response.State.RemoveResource(ctx)
 			err = nil
@@ -509,7 +508,7 @@ func (c *ctyunNatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context
 		response.State.RemoveResource(ctx)
 		return false
 	}
-	// todo 我觉得这里轮询不应该传参数EcsOrderQueryUuidApi
+
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	resp, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId)
 	if err != nil || len(resp.Uuid) == 0 {

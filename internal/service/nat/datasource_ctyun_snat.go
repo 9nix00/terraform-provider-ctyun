@@ -82,10 +82,10 @@ func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 							Computed:    true,
 							Description: "snat id",
 						},
-						//"description": schema.StringAttribute{
-						//	Computed:    true,
-						//	Description: "描述信息",
-						//},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "描述信息",
+						},
 						"subnet_cidr": schema.StringAttribute{
 							Computed:    true,
 							Description: "要查询的NAT网关所属VPC子网的cidr",
@@ -187,8 +187,8 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 	for _, snat := range resp.ReturnObj.Results {
 
 		snatItem := CtyunSNatsModel{
-			SNatID: utils.SecStringValue(snat.SNatID),
-			//description:  types.StringValue("test"),
+			SNatID:       utils.SecStringValue(snat.SNatID),
+			Description:  types.StringValue("test"),
 			SubNetCidr:   utils.SecStringValue(snat.SubnetID),
 			SubNetType:   types.Int32Value(snat.SubnetType),
 			CreationTime: utils.SecStringValue(snat.CreationTime),
