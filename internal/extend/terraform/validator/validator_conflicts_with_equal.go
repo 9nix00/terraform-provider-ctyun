@@ -27,7 +27,7 @@ type conflictsWithEqualValidatorResponse struct {
 	Diagnostics diag.Diagnostics
 }
 
-func ConflictsWithEqualStrings(expression path.Expression, objs ...attr.Value) validator.String {
+func ConflictsWithEqualString(expression path.Expression, objs ...attr.Value) validator.String {
 	return &validatorConflictsWithEqual{
 		expression: expression,
 		objs:       objs,
@@ -49,6 +49,13 @@ func ConflictsWithEqualInt32(expression path.Expression, objs ...attr.Value) val
 }
 
 func ConflictsWithEqualBool(expression path.Expression, objs ...attr.Value) validator.Bool {
+	return &validatorConflictsWithEqual{
+		expression: expression,
+		objs:       objs,
+	}
+}
+
+func ConflictsWithEqualSet(expression path.Expression, objs ...attr.Value) validator.Set {
 	return &validatorConflictsWithEqual{
 		expression: expression,
 		objs:       objs,
@@ -138,6 +145,18 @@ func (v validatorConflictsWithEqual) ValidateInt32(ctx context.Context, req vali
 }
 
 func (v validatorConflictsWithEqual) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
+	validateReq := conflictsWithEqualValidatorRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &conflictsWithEqualValidatorResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorConflictsWithEqual) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
 	validateReq := conflictsWithEqualValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,

@@ -28,6 +28,8 @@ func StructToTFObjectTypes(s interface{}) types.ObjectType {
 			fieldType = types.BoolType
 		case reflect.TypeOf(types.Int64{}):
 			fieldType = types.Int64Type
+		case reflect.TypeOf(types.Int32{}):
+			fieldType = types.Int32Type
 		case reflect.TypeOf(types.Float64{}):
 			fieldType = types.Float64Type
 		//case reflect.TypeOf(types.List{}):
@@ -40,4 +42,33 @@ func StructToTFObjectTypes(s interface{}) types.ObjectType {
 		result[tag] = fieldType
 	}
 	return types.ObjectType{AttrTypes: result}
+}
+
+// DifferenceStructArray 获取两个结构体切片的差集
+func DifferenceStructArray[T comparable](a, b []T) ([]T, []T) {
+	setB := make(map[T]bool)
+	for _, item := range b {
+		setB[item] = true
+	}
+
+	var onlyInA []T
+	for _, item := range a {
+		if !setB[item] {
+			onlyInA = append(onlyInA, item)
+		}
+	}
+
+	setA := make(map[T]bool)
+	for _, item := range a {
+		setA[item] = true
+	}
+
+	var onlyInB []T
+	for _, item := range b {
+		if !setA[item] {
+			onlyInB = append(onlyInB, item)
+		}
+	}
+
+	return onlyInA, onlyInB
 }

@@ -40,6 +40,7 @@ import (
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
 	"terraform-provider-ctyun/internal/service/vpc"
+	"terraform-provider-ctyun/internal/service/vpce"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -317,6 +318,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunVpcRouteTableRules(),
 		vpc.NewCtyunEips(),
 		vpc.NewCtyunBandwidths(),
+		vpce.NewCtyunVpces(),
+		vpce.NewCtyunVpceServers(),
 	)
 }
 
@@ -351,6 +354,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsAffinityGroupAssociation(),
 		vpc.NewCtyunVpcRouteTable(),
 		vpc.NewCtyunVpcRouteTableRule(),
+		vpce.NewCtyunVpce(),
+		vpce.NewCtyunVpceServer(),
 	)
 }
 

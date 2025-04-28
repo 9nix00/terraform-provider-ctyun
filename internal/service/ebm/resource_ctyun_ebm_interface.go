@@ -132,9 +132,6 @@ func (c *ctyunEbmInterface) Create(ctx context.Context, request resource.CreateR
 		response.Diagnostics.Append(diags...)
 		return
 	}
-	if len(plan.secGroupParams) == 0 {
-		err = fmt.Errorf("至少要")
-	}
 	// 创建前检查
 	err = c.checkBeforeCreate(ctx, plan)
 	if err != nil {

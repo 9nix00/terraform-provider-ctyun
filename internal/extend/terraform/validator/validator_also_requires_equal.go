@@ -55,6 +55,13 @@ func AlsoRequiresEqualSet(expression path.Expression, objs ...attr.Value) valida
 	}
 }
 
+func AlsoRequiresEqualList(expression path.Expression, objs ...attr.Value) validator.List {
+	return &validatorAlsoRequiresEqual{
+		expression: expression,
+		objs:       objs,
+	}
+}
+
 func (v validatorAlsoRequiresEqual) Validate(ctx context.Context, req alsoRequiresEqualValidatorRequest, res *alsoRequiresEqualValidatorResponse) {
 	// if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 	// 	return
@@ -138,6 +145,18 @@ func (v validatorAlsoRequiresEqual) ValidateInt32(ctx context.Context, req valid
 }
 
 func (v validatorAlsoRequiresEqual) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	validateReq := alsoRequiresEqualValidatorRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &alsoRequiresEqualValidatorResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorAlsoRequiresEqual) ValidateList(ctx context.Context, req validator.ListRequest, resp *validator.ListResponse) {
 	validateReq := alsoRequiresEqualValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,

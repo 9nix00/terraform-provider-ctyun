@@ -67,7 +67,7 @@ func (c *ctyunBandwidths) Schema(_ context.Context, _ datasource.SchemaRequest, 
 			},
 			"bandwidth_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "资源池ID",
+				Description: "带宽ID",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,

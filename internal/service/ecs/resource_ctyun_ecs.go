@@ -448,6 +448,9 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 
+	if state.CycleType.ValueString() == business.OrderCycleTypeOnDemand {
+		return
+	}
 	// 销毁已退订的包周期云主机
 	if state.IsDestroyInstance.ValueBool() {
 		response.Diagnostics.AddWarning("释放已退订的包周期云主机", "已退订的包周期云主机具有保留期，确认释放后云主机直接销毁，请谨慎操作")

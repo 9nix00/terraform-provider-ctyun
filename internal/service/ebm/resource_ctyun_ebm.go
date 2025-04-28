@@ -241,7 +241,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpUseExist),
 					),
-					validator2.ConflictsWithEqualStrings(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpNotUse),
 						types.StringValue(business.EbmExtIpAutoAssign),
@@ -405,7 +405,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnCycle),
 					),
-					validator2.ConflictsWithEqualStrings(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnDemand),
 					),

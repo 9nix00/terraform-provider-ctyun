@@ -1,0 +1,96 @@
+package vpce_test
+
+import (
+	"fmt"
+	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+)
+
+func TestAccCtyunVpce(t *testing.T) {
+	if !initMain {
+		err := initSharedResources()
+		t.Error(err)
+		return
+	}
+
+	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_vpce." + rnd
+	datasourceName := "data.ctyun_vpces." + dnd
+	resourceFile := "resource_ctyun_vpce.tf"
+	datasourceFile := "datasource_ctyun_vpces.tf"
+
+	initName := "init"
+	initWhitelistFlag := "true"
+	initWhitelistCidr := `whitelist_cidr = ["192.168.1.0/24"]`
+	updatedName := "updated"
+	updatedWhitelistFlag := "false"
+	updatedWhitelistCidr := ``
+
+	var id string
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("资源未被销毁")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// Read testing
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initWhitelistFlag, initWhitelistCidr, sharedVpcID, sharedSubnetID, sharedVpceServerID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
+					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "true"),
+					resource.TestCheckTypeSetElemAttr(resourceName, "whitelist_cidr.*", "192.168.1.0/24"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedWhitelistFlag, updatedWhitelistCidr, sharedVpcID, sharedSubnetID, sharedVpceServerID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "false"),
+					resource.TestCheckResourceAttr(resourceName, "whitelist_cidr.#", "0"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, sharedVpcID, sharedSubnetID, sharedVpceServerID) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "vpces.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "vpces.0.name", updatedName),
+					resource.TestCheckTypeSetElemAttr(datasourceName, "vpces.0.whitelist_cidr.*", "192.168.1.0/24"),
+				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id = ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, sharedVpcID, sharedSubnetID, sharedVpceServerID) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
+			},
+		},
+	})
+}
