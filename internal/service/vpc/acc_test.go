@@ -23,9 +23,6 @@ func TestMain(m *testing.M) {
 
 	// 执行测试用例
 	code := m.Run()
-	if code != 0 {
-		os.Exit(code)
-	}
 
 	// 清理共享资源
 	err = terraform.DestroyResources(sharedDir)
@@ -33,6 +30,8 @@ func TestMain(m *testing.M) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+
+	os.Exit(code)
 }
 
 func initSharedResources() error {
