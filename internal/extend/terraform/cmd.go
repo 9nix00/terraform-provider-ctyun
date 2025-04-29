@@ -6,6 +6,37 @@ import (
 	"os/exec"
 )
 
+// ApplyResources terraform apply
+func ApplyResources(fileDir string) (outputs map[string]struct {
+	Value string `json:"value"`
+}, err error) {
+	// 应用配置
+	var out []byte
+	out, err = terraformApply(fileDir)
+	if err != nil {
+		return
+	}
+
+	// 获取输出值
+	out, err = terraformOutput(fileDir)
+	if err != nil {
+		return
+	}
+
+	// 解析输出
+	if err = json.Unmarshal(out, &outputs); err != nil {
+		err = fmt.Errorf("output parsing failed: %s", err)
+		return
+	}
+	return
+}
+
+// DestroyResources terraform destroy
+func DestroyResources(fileDir string) error {
+	_, err := terraformDestroy(fileDir)
+	return err
+}
+
 func terraformApply(fileDir string) (out []byte, err error) {
 	cmd := exec.Command("terraform", "apply", "-auto-approve", "-input=false")
 	cmd.Dir = fileDir
@@ -34,33 +65,4 @@ func terraformDestroy(fileDir string) (out []byte, err error) {
 		err = fmt.Errorf("destroy failed: %s", err)
 	}
 	return
-}
-
-func ApplyResources(fileDir string) (outputs map[string]struct {
-	Value string `json:"value"`
-}, err error) {
-	// 应用配置
-	var out []byte
-	out, err = terraformApply(fileDir)
-	if err != nil {
-		return
-	}
-
-	// 获取输出值
-	out, err = terraformOutput(fileDir)
-	if err != nil {
-		return
-	}
-
-	// 解析输出
-	if err = json.Unmarshal(out, &outputs); err != nil {
-		err = fmt.Errorf("output parsing failed: %s", err)
-		return
-	}
-	return
-}
-
-func DestroyResources(fileDir string) error {
-	_, err := terraformDestroy(fileDir)
-	return err
 }

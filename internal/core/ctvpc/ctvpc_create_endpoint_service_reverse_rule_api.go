@@ -63,4 +63,7 @@ type CtvpcCreateEndpointServiceReverseRuleResponse struct {
 	Description *string `json:"description,omitempty"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
 	ErrorCode   *string `json:"errorCode,omitempty"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
 	Error       *string `json:"error,omitempty"`       /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
+	ReturnObj   *struct {
+		ReverseRuleID string `json:"reverseRuleID"`
+	} `json:"returnObj"`
 }

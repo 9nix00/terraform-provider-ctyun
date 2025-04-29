@@ -6,7 +6,6 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
@@ -64,7 +63,7 @@ resource "ctyun_ecs" "ecs_test1" {
 
 
 resource "ctyun_vpce_server" "test" {
-  name  = "tf-vpce-server"
+  name  = "tf-vpce-server-sss"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
@@ -77,11 +76,5 @@ resource "ctyun_vpce_server" "test" {
     server_port = 2
   },
   ]
-  whitelist_email = [
-    "yunguan_ops@chinatelecom.cn",
-  ]
 }
 
-data "ctyun_vpce_servers" "test" {
-
-}

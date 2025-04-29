@@ -9,11 +9,9 @@ import (
 
 const sharedDir = "testdata/shared"
 
-var initMain bool
 var sharedVpcID string
 
 func TestMain(m *testing.M) {
-	initMain = true
 	// 初始化共享资源
 	err := initSharedResources()
 	if err != nil {

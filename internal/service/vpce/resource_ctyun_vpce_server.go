@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
@@ -91,7 +92,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Required:    true,
 				Description: "接口还是反向，interface:接口，reverse:反向",
 				Validators: []validator.String{
-					stringvalidator.OneOf("interface", "reverse"),
+					stringvalidator.OneOf(business.VpceServerTypeInterface, business.VpceServerTypeReverse),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -106,7 +107,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 					stringvalidator.OneOf("vm", "bm", "vip", "lb"),
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
-						types.StringValue("interface"),
+						types.StringValue(business.VpceServerTypeInterface),
 					),
 				},
 			},
@@ -117,7 +118,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
-						types.StringValue("interface"),
+						types.StringValue(business.VpceServerTypeInterface),
 					),
 				},
 			},
@@ -148,7 +149,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("type"),
-						types.StringValue("interface"),
+						types.StringValue(business.VpceServerTypeInterface),
 					),
 				},
 				Description: "节点服务规则,当type为interface时，必填",
@@ -394,7 +395,7 @@ func (c *ctyunVpceServer) checkAfterCreate(ctx context.Context, plan CtyunVpceSe
 		return
 	}
 	// 后端信息不正确
-	if len(endpointServer.Backends) == 0 {
+	if len(endpointServer.Backends) == 0 && plan.Type.ValueString() == business.VpceServerTypeInterface {
 		err = fmt.Errorf("终端节点服务创建成功，但后端服务不正确，请使用正确instance_id重新创建")
 		return
 	}
@@ -438,6 +439,9 @@ func (c *ctyunVpceServer) getAndMerge(ctx context.Context, plan *CtyunVpceServer
 		backend := endpointServer.Backends[0]
 		plan.InstanceType = utils.SecStringValue(backend.InstanceType)
 		plan.InstanceID = utils.SecStringValue(backend.InstanceID)
+	} else {
+		plan.InstanceType = types.StringNull()
+		plan.InstanceID = types.StringNull()
 	}
 
 	err = c.mergeRules(ctx, plan, endpointServer)

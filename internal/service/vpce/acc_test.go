@@ -9,14 +9,16 @@ import (
 
 const sharedDir = "testdata/shared"
 
-var initMain bool
 var sharedEcsID string
 var sharedVpcID string
 var sharedSubnetID string
 var sharedVpceServerID string
+var sharedReverseVpceServerID string
+var sharedVpceID string
+var sharedTransitIP string
+var sharedTargetIP string
 
 func TestMain(m *testing.M) {
-	initMain = true
 	// 初始化共享资源
 	err := initSharedResources()
 	if err != nil {
@@ -42,7 +44,9 @@ func initSharedResources() error {
 	if err != nil {
 		return err
 	}
-	sharedEcsID, sharedVpcID, sharedSubnetID, sharedVpceServerID =
-		outputs["ecs_id"].Value, outputs["vpc_id"].Value, outputs["subnet_id"].Value, outputs["vpce_server_id"].Value
+	sharedEcsID, sharedVpcID, sharedSubnetID, sharedVpceServerID = outputs["ecs_id"].Value, outputs["vpc_id"].Value, outputs["subnet_id"].Value, outputs["vpce_server_id"].Value
+	sharedReverseVpceServerID = outputs["reverse_vpce_server_id"].Value
+	sharedVpceID, sharedTransitIP, sharedTargetIP = outputs["vpce_id"].Value, outputs["vpce_server_transit_ip"].Value, outputs["ecs_fixed_ip"].Value
+
 	return nil
 }

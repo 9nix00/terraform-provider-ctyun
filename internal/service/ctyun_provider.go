@@ -320,6 +320,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunBandwidths(),
 		vpce.NewCtyunVpces(),
 		vpce.NewCtyunVpceServers(),
+		vpce.NewCtyunVpceServerTransitIPs(),
+		vpce.NewCtyunVpceServerReverseRules(),
 	)
 }
 
@@ -356,6 +358,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		vpc.NewCtyunVpcRouteTableRule(),
 		vpce.NewCtyunVpce(),
 		vpce.NewCtyunVpceServer(),
+		vpce.NewCtyunVpceServerTransitIP(),
+		vpce.NewCtyunVpceServerReverseRule(),
 	)
 }
 

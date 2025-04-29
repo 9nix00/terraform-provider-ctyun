@@ -11,12 +11,6 @@ import (
 )
 
 func TestAccCtyunSubnet(t *testing.T) {
-	if !initMain {
-		err := initSharedResources()
-		t.Error(err)
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

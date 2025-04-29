@@ -49,7 +49,7 @@ resource "ctyun_ecs" "ecs_test" {
 }
 
 resource "ctyun_vpce_server" "vpce_server_test" {
-  name  = "tf-vpces-for-vpce"
+  name  = "tf-vpce-server-for-vpce"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
@@ -61,4 +61,24 @@ resource "ctyun_vpce_server" "vpce_server_test" {
     endpoint_port = 999
     server_port = 999
   }]
+}
+
+resource "ctyun_vpce_server" "reverse_vpce_server_test" {
+  name  = "tf-reverse-vpce-server-for-vpce"
+  vpc_id = ctyun_vpc.vpc_test.id
+  subnet_id = ctyun_subnet.subnet_test.id
+  auto_connection = true
+  type = "reverse"
+}
+
+data "ctyun_vpce_server_transit_ips" "vpce_server_transit_ip_test" {
+  endpoint_server_id = ctyun_vpce_server.reverse_vpce_server_test.id
+}
+
+resource "ctyun_vpce" "vpce_test" {
+  name  = "tf-vpce-for-vpce"
+  endpoint_service_id = ctyun_vpce_server.reverse_vpce_server_test.id
+  vpc_id = ctyun_vpc.vpc_test.id
+  subnet_id = ctyun_subnet.subnet_test.id
+  whitelist_flag = false
 }

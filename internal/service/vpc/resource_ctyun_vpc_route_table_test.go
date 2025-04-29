@@ -11,12 +11,6 @@ import (
 )
 
 func TestAccCtyunVpcRouteTable(t *testing.T) {
-	if !initMain {
-		err := initSharedResources()
-		t.Error(err)
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_vpc_route_table." + rnd
