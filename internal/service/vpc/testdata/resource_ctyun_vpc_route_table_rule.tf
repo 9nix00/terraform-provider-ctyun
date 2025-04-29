@@ -1,13 +1,6 @@
-resource "ctyun_vpc" "vpc_test" {
-  name        = "for-route-rule"
-  cidr        = "192.168.0.0/16"
-  description = "terraform测试使用"
-  enable_ipv6 = true
-}
-
 resource "ctyun_vpc_route_table" "route" {
-  vpc_id = ctyun_vpc.vpc_test.id
-  name = "route-tf-1"
+  vpc_id = "%[4]s"
+  name = "tf-route-table-for-vpc"
 }
 
 data "ctyun_vpc_route_table_rules" "rtest" {

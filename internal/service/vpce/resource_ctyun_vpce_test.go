@@ -37,7 +37,7 @@ func TestAccCtyunVpce(t *testing.T) {
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
 			if exists {
-				return fmt.Errorf("资源未被销毁")
+				return fmt.Errorf("resource destroy failed")
 			}
 			return nil
 		},

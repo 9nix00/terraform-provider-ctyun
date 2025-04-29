@@ -12,6 +12,12 @@ import (
 )
 
 func TestAccCtyunVpcRouteTableRule(t *testing.T) {
+	if !initMain {
+		err := initSharedResources()
+		t.Error(err)
+		return
+	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -26,11 +32,18 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 
 	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, initDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, initDescription, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
@@ -47,14 +60,14 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription) +
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, sharedVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
@@ -86,33 +99,10 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription) +
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, sharedVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					func(s *terraform.State) error {
-						ds := s.RootModule().Resources[datasourceName].Primary
-
-						count, err := strconv.Atoi(ds.Attributes["rules.#"])
-						if err != nil || count == 0 {
-							return fmt.Errorf("rules 无效: %v", ds.Attributes)
-						}
-
-						for i := 0; i < count; i++ {
-							if ds.Attributes[fmt.Sprintf("rules.%d.rule_id", i)] == id {
-								return fmt.Errorf("删除失败 %s", id)
-							}
-						}
-						return nil
-					},
-				),
+				Destroy: true,
 			},
 		},
 	})

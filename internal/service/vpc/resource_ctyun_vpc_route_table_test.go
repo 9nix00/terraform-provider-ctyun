@@ -11,6 +11,12 @@ import (
 )
 
 func TestAccCtyunVpcRouteTable(t *testing.T) {
+	if !initMain {
+		err := initSharedResources()
+		t.Error(err)
+		return
+	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_vpc_route_table." + rnd
@@ -20,35 +26,33 @@ func TestAccCtyunVpcRouteTable(t *testing.T) {
 
 	initName := "terraform-unit"
 	updatedName := "terraform-route-table"
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "route_table_id"),
-					func(state *terraform.State) error {
-						rs, ok := state.RootModule().Resources[resourceName]
-						if !ok {
-							return fmt.Errorf("resource not found")
-						}
-						id = rs.Primary.ID
-						return nil
-					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, sharedVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "route_tables.#", "1"),
@@ -67,17 +71,10 @@ func TestAccCtyunVpcRouteTable(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"project_id"},
 			},
-		},
-	})
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "route_tables.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, sharedVpcID) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

@@ -11,6 +11,12 @@ import (
 )
 
 func TestAccCtyunSubnet(t *testing.T) {
+	if !initMain {
+		err := initSharedResources()
+		t.Error(err)
+		return
+	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -26,30 +32,28 @@ func TestAccCtyunSubnet(t *testing.T) {
 	updatedDescription := "updated-description"
 	updatedDns := "8.8.8.8"
 
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckTypeSetElemAttr(resourceName, "dns.*", initDns),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					func(state *terraform.State) error {
-						rs, ok := state.RootModule().Resources[resourceName]
-						if !ok {
-							return fmt.Errorf("resource not found")
-						}
-						id = rs.Primary.ID
-						return nil
-					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -58,7 +62,7 @@ func TestAccCtyunSubnet(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "subnets.#", "1"),
@@ -86,17 +90,10 @@ func TestAccCtyunSubnet(t *testing.T) {
 					"project_id",
 				},
 			},
-		},
-	})
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "subnets.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

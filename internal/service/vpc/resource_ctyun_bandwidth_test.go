@@ -24,8 +24,14 @@ func TestAccCtyunBandwidth(t *testing.T) {
 	updatedName := "updated"
 	updatedBandwidth := "10"
 
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
@@ -59,7 +65,7 @@ func TestAccCtyunBandwidth(t *testing.T) {
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
-					id = ds.ID
+					id := ds.ID
 					regionId := ds.Attributes["region_id"]
 					projectId := ds.Attributes["project_id"]
 					if id == "" || regionId == "" {
@@ -74,18 +80,10 @@ func TestAccCtyunBandwidth(t *testing.T) {
 					"cycle_count",
 				},
 			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "bandwidth.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedBandwidth) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

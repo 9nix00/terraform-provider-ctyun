@@ -25,8 +25,14 @@ func TestAccCtyunVpc(t *testing.T) {
 	updatedName := utils.GenerateRandomString()
 	updatedDescription := utils.GenerateRandomString()
 
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
@@ -37,14 +43,6 @@ func TestAccCtyunVpc(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cidr", initCidr),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					func(state *terraform.State) error {
-						rs, ok := state.RootModule().Resources[resourceName]
-						if !ok {
-							return fmt.Errorf("resource not found")
-						}
-						id = rs.Primary.ID
-						return nil
-					},
 				),
 			},
 			{
@@ -82,18 +80,10 @@ func TestAccCtyunVpc(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "vpcs.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, initCidr) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

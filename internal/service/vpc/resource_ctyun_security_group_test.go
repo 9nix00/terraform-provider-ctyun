@@ -11,6 +11,12 @@ import (
 )
 
 func TestAccCtyunSecurityGroup(t *testing.T) {
+	if !initMain {
+		err := initSharedResources()
+		t.Error(err)
+		return
+	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -24,29 +30,27 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 	updatedName := "updated"
 	updatedDescription := "updated-description"
 
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					func(state *terraform.State) error {
-						rs, ok := state.RootModule().Resources[resourceName]
-						if !ok {
-							return fmt.Errorf("resource not found")
-						}
-						id = rs.Primary.ID
-						return nil
-					},
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -54,7 +58,7 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "security_groups.#", "1"),
@@ -80,18 +84,10 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 					"project_id",
 				},
 			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "security_groups.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

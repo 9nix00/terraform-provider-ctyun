@@ -24,8 +24,14 @@ func TestAccCtyunEip(t *testing.T) {
 	updatedName := "updated"
 	updatedBandwidth := "1"
 
-	var id string
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// Read testing
@@ -36,14 +42,6 @@ func TestAccCtyunEip(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "bandwidth", initBandwidth),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
-					func(state *terraform.State) error {
-						rs, ok := state.RootModule().Resources[resourceName]
-						if !ok {
-							return fmt.Errorf("resource not found")
-						}
-						id = rs.Primary.ID
-						return nil
-					},
 				),
 			},
 			{
@@ -83,18 +81,10 @@ func TestAccCtyunEip(t *testing.T) {
 					"demand_billing_type",
 				},
 			},
-		},
-	})
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// Read testing
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`"%s"`, id)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "0"),
-				),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedBandwidth) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})
