@@ -14,7 +14,6 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: `
 provider "ctyun" {

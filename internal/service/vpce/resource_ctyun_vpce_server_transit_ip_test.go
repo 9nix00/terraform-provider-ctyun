@@ -31,7 +31,6 @@ func TestAccCtyunVpceServerTransitIP(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, sharedReverseVpceServerID, sharedSubnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(

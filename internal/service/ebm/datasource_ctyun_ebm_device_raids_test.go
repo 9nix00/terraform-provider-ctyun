@@ -11,7 +11,6 @@ func TestAccCtyunEbmDeviceRaids(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: `
 data "ctyun_ebm_device_raids" "test" {

@@ -36,7 +36,6 @@ func TestAccCtyunSubnet(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns, sharedVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
