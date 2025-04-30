@@ -22,36 +22,36 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunVpceServerReverseRule{}
-	_ resource.ResourceWithConfigure   = &ctyunVpceServerReverseRule{}
-	_ resource.ResourceWithImportState = &ctyunVpceServerReverseRule{}
+	_ resource.Resource                = &ctyunVpceServiceReverseRule{}
+	_ resource.ResourceWithConfigure   = &ctyunVpceServiceReverseRule{}
+	_ resource.ResourceWithImportState = &ctyunVpceServiceReverseRule{}
 )
 
-type ctyunVpceServerReverseRule struct {
+type ctyunVpceServiceReverseRule struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServerReverseRule() resource.Resource {
-	return &ctyunVpceServerReverseRule{}
+func NewCtyunVpceServiceReverseRule() resource.Resource {
+	return &ctyunVpceServiceReverseRule{}
 }
 
-func (c *ctyunVpceServerReverseRule) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_server_reverse_rule"
+func (c *ctyunVpceServiceReverseRule) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_service_reverse_rule"
 }
 
-type CtyunVpceServerReverseRuleConfig struct {
-	ID               types.String `tfsdk:"id"`
-	EndpointServerID types.String `tfsdk:"endpoint_server_id"`
-	EndpointID       types.String `tfsdk:"endpoint_id"`
-	RegionID         types.String `tfsdk:"region_id"`
-	TransitIP        types.String `tfsdk:"transit_ip"`
-	TransitPort      types.Int32  `tfsdk:"transit_port"`
-	TargetIP         types.String `tfsdk:"target_ip"`
-	TargetPort       types.Int32  `tfsdk:"target_port"`
-	Protocol         types.String `tfsdk:"protocol"`
+type CtyunVpceServiceReverseRuleConfig struct {
+	ID                types.String `tfsdk:"id"`
+	EndpointServiceID types.String `tfsdk:"endpoint_service_id"`
+	EndpointID        types.String `tfsdk:"endpoint_id"`
+	RegionID          types.String `tfsdk:"region_id"`
+	TransitIP         types.String `tfsdk:"transit_ip"`
+	TransitPort       types.Int32  `tfsdk:"transit_port"`
+	TargetIP          types.String `tfsdk:"target_ip"`
+	TargetPort        types.Int32  `tfsdk:"target_port"`
+	Protocol          types.String `tfsdk:"protocol"`
 }
 
-func (c *ctyunVpceServerReverseRule) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -68,7 +68,7 @@ func (c *ctyunVpceServerReverseRule) Schema(_ context.Context, _ resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"endpoint_server_id": schema.StringAttribute{
+			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务id",
 				PlanModifiers: []planmodifier.String{
@@ -136,14 +136,14 @@ func (c *ctyunVpceServerReverseRule) Schema(_ context.Context, _ resource.Schema
 	}
 }
 
-func (c *ctyunVpceServerReverseRule) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunVpceServiceReverseRule) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var plan CtyunVpceServerReverseRuleConfig
+	var plan CtyunVpceServiceReverseRuleConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -163,14 +163,14 @@ func (c *ctyunVpceServerReverseRule) Create(ctx context.Context, request resourc
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunVpceServerReverseRule) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunVpceServiceReverseRule) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerReverseRuleConfig
+	var state CtyunVpceServiceReverseRuleConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -184,18 +184,18 @@ func (c *ctyunVpceServerReverseRule) Read(ctx context.Context, request resource.
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunVpceServerReverseRule) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunVpceServiceReverseRule) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 
 }
 
-func (c *ctyunVpceServerReverseRule) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunVpceServiceReverseRule) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerReverseRuleConfig
+	var state CtyunVpceServiceReverseRuleConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -207,7 +207,7 @@ func (c *ctyunVpceServerReverseRule) Delete(ctx context.Context, request resourc
 	}
 }
 
-func (c *ctyunVpceServerReverseRule) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunVpceServiceReverseRule) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -215,22 +215,22 @@ func (c *ctyunVpceServerReverseRule) Configure(_ context.Context, request resour
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[endpointServerID],[regionID]
-func (c *ctyunVpceServerReverseRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+// 导入命令：terraform import [配置标识].[导入配置名称] [id],[endpointServiceID],[regionID]
+func (c *ctyunVpceServiceReverseRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunVpceServerReverseRuleConfig
-	var id, endpointServerID, regionID string
-	err = terraform_extend.Split(request.ID, &id, &endpointServerID, &regionID)
+	var cfg CtyunVpceServiceReverseRuleConfig
+	var id, endpointServiceID, regionID string
+	err = terraform_extend.Split(request.ID, &id, &endpointServiceID, &regionID)
 	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
-	cfg.EndpointServerID = types.StringValue(endpointServerID)
+	cfg.EndpointServiceID = types.StringValue(endpointServiceID)
 	cfg.ID = types.StringValue(id)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -241,11 +241,11 @@ func (c *ctyunVpceServerReverseRule) ImportState(ctx context.Context, request re
 }
 
 // create 创建
-func (c *ctyunVpceServerReverseRule) create(ctx context.Context, plan CtyunVpceServerReverseRuleConfig) (ruleID string, err error) {
+func (c *ctyunVpceServiceReverseRule) create(ctx context.Context, plan CtyunVpceServiceReverseRuleConfig) (ruleID string, err error) {
 	params := &ctvpc.CtvpcCreateEndpointServiceReverseRuleRequest{
 		ClientToken:       uuid.NewString(),
 		RegionID:          plan.RegionID.ValueString(),
-		EndpointServiceID: plan.EndpointServerID.ValueString(),
+		EndpointServiceID: plan.EndpointServiceID.ValueString(),
 		EndpointID:        plan.EndpointID.ValueString(),
 		TransitIPAddress:  plan.TransitIP.ValueString(),
 		TransitPort:       plan.TransitPort.ValueInt32(),
@@ -269,10 +269,10 @@ func (c *ctyunVpceServerReverseRule) create(ctx context.Context, plan CtyunVpceS
 }
 
 // getAndMerge 从远端查询
-func (c *ctyunVpceServerReverseRule) getAndMerge(ctx context.Context, plan *CtyunVpceServerReverseRuleConfig) (err error) {
+func (c *ctyunVpceServiceReverseRule) getAndMerge(ctx context.Context, plan *CtyunVpceServiceReverseRuleConfig) (err error) {
 	params := &ctvpc.CtvpcListEndpointServiceReverseRuleRequest{
 		RegionID:          plan.RegionID.ValueString(),
-		EndpointServiceID: plan.EndpointServerID.ValueString(),
+		EndpointServiceID: plan.EndpointServiceID.ValueString(),
 		PageNo:            1,
 		PageSize:          50,
 	}
@@ -306,7 +306,7 @@ func (c *ctyunVpceServerReverseRule) getAndMerge(ctx context.Context, plan *Ctyu
 }
 
 // delete 删除
-func (c *ctyunVpceServerReverseRule) delete(ctx context.Context, plan CtyunVpceServerReverseRuleConfig) (err error) {
+func (c *ctyunVpceServiceReverseRule) delete(ctx context.Context, plan CtyunVpceServiceReverseRuleConfig) (err error) {
 	params := &ctvpc.CtvpcDeleteEndpointServiceReverseRuleRequest{
 		RegionID:      plan.RegionID.ValueString(),
 		ReverseRuleID: plan.ID.ValueString(),

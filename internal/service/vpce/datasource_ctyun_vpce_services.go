@@ -15,53 +15,53 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &ctyunVpceServers{}
-	_ datasource.DataSourceWithConfigure = &ctyunVpceServers{}
+	_ datasource.DataSource              = &ctyunVpceServices{}
+	_ datasource.DataSourceWithConfigure = &ctyunVpceServices{}
 )
 
-type ctyunVpceServers struct {
+type ctyunVpceServices struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServers() datasource.DataSource {
-	return &ctyunVpceServers{}
+func NewCtyunVpceServices() datasource.DataSource {
+	return &ctyunVpceServices{}
 }
 
-func (c *ctyunVpceServers) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_servers"
+func (c *ctyunVpceServices) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_services"
 }
 
-type CtyunVpceServersRule struct {
+type CtyunVpceServicesRule struct {
 	Protocol     types.String `tfsdk:"protocol"`
 	ServerPort   types.Int32  `tfsdk:"server_port"`
 	EndpointPort types.Int32  `tfsdk:"endpoint_port"`
 }
-type CtyunVpceServersModel struct {
-	ID             types.String           `tfsdk:"id"`
-	Name           types.String           `tfsdk:"name"`
-	VpcID          types.String           `tfsdk:"vpc_id"`
-	Description    types.String           `tfsdk:"description"`
-	Type           types.String           `tfsdk:"type"`
-	AutoConnection types.Bool             `tfsdk:"auto_connection"`
-	Rules          []CtyunVpceServersRule `tfsdk:"rules"`
-	InstanceType   types.String           `tfsdk:"instance_type"`
-	InstanceID     types.String           `tfsdk:"instance_id"`
-	CreatedAt      types.String           `tfsdk:"created_at"`
-	UpdatedAt      types.String           `tfsdk:"updated_at"`
+type CtyunVpceServicesModel struct {
+	ID             types.String            `tfsdk:"id"`
+	Name           types.String            `tfsdk:"name"`
+	VpcID          types.String            `tfsdk:"vpc_id"`
+	Description    types.String            `tfsdk:"description"`
+	Type           types.String            `tfsdk:"type"`
+	AutoConnection types.Bool              `tfsdk:"auto_connection"`
+	Rules          []CtyunVpceServicesRule `tfsdk:"rules"`
+	InstanceType   types.String            `tfsdk:"instance_type"`
+	InstanceID     types.String            `tfsdk:"instance_id"`
+	CreatedAt      types.String            `tfsdk:"created_at"`
+	UpdatedAt      types.String            `tfsdk:"updated_at"`
 }
 
-type CtyunVpceServersConfig struct {
-	RegionID         types.String            `tfsdk:"region_id"`
-	PageNo           types.Int32             `tfsdk:"page_no"`
-	PageSize         types.Int32             `tfsdk:"page_size"`
-	EndpointServerID types.String            `tfsdk:"endpoint_server_id"`
-	CurrentCount     types.Int32             `tfsdk:"current_count"`
-	TotalCount       types.Int32             `tfsdk:"total_count"`
-	TotalPage        types.Int32             `tfsdk:"total_page"`
-	VpceServers      []CtyunVpceServersModel `tfsdk:"vpce_servers"`
+type CtyunVpceServicesConfig struct {
+	RegionID          types.String             `tfsdk:"region_id"`
+	PageNo            types.Int32              `tfsdk:"page_no"`
+	PageSize          types.Int32              `tfsdk:"page_size"`
+	EndpointServiceID types.String             `tfsdk:"endpoint_service_id"`
+	CurrentCount      types.Int32              `tfsdk:"current_count"`
+	TotalCount        types.Int32              `tfsdk:"total_count"`
+	TotalPage         types.Int32              `tfsdk:"total_page"`
+	VpceServices      []CtyunVpceServicesModel `tfsdk:"vpce_services"`
 }
 
-func (c *ctyunVpceServers) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+func (c *ctyunVpceServices) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -70,7 +70,7 @@ func (c *ctyunVpceServers) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"endpoint_server_id": schema.StringAttribute{
+			"endpoint_service_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "终端节点服务id",
 			},
@@ -97,7 +97,7 @@ func (c *ctyunVpceServers) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Computed:    true,
 				Description: "总页数。",
 			},
-			"vpce_servers": schema.ListNestedAttribute{
+			"vpce_services": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -170,14 +170,14 @@ func (c *ctyunVpceServers) Schema(_ context.Context, _ datasource.SchemaRequest,
 	}
 }
 
-func (c *ctyunVpceServers) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (c *ctyunVpceServices) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var config CtyunVpceServersConfig
+	var config CtyunVpceServicesConfig
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -194,7 +194,7 @@ func (c *ctyunVpceServers) Read(ctx context.Context, request datasource.ReadRequ
 	}
 	pageNo := config.PageNo.ValueInt32()
 	pageSize := config.PageSize.ValueInt32()
-	id := config.EndpointServerID.ValueString()
+	id := config.EndpointServiceID.ValueString()
 	if pageNo > 0 {
 		params.PageNo = pageNo
 	}
@@ -217,12 +217,12 @@ func (c *ctyunVpceServers) Read(ctx context.Context, request datasource.ReadRequ
 	}
 
 	// 解析返回值
-	config.VpceServers = []CtyunVpceServersModel{}
+	config.VpceServices = []CtyunVpceServicesModel{}
 	config.TotalPage = types.Int32Value(resp.ReturnObj.TotalPage)
 	config.TotalCount = types.Int32Value(resp.ReturnObj.TotalCount)
 	config.CurrentCount = types.Int32Value(resp.ReturnObj.CurrentCount)
 	for _, e := range resp.ReturnObj.EndpointServices {
-		item := CtyunVpceServersModel{
+		item := CtyunVpceServicesModel{
 			ID:             utils.SecStringValue(e.ID),
 			AutoConnection: utils.SecBoolValue(e.AutoConnection),
 			Type:           utils.SecStringValue(e.RawType),
@@ -237,7 +237,7 @@ func (c *ctyunVpceServers) Read(ctx context.Context, request datasource.ReadRequ
 		}
 
 		for _, r := range e.Rules {
-			rule := CtyunVpceServersRule{
+			rule := CtyunVpceServicesRule{
 				Protocol:     utils.SecStringValue(r.Protocol),
 				EndpointPort: types.Int32Value(r.EndpointPort),
 				ServerPort:   types.Int32Value(r.ServerPort),
@@ -245,13 +245,13 @@ func (c *ctyunVpceServers) Read(ctx context.Context, request datasource.ReadRequ
 			item.Rules = append(item.Rules, rule)
 		}
 
-		config.VpceServers = append(config.VpceServers, item)
+		config.VpceServices = append(config.VpceServices, item)
 	}
 	// 保存到state
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
-func (c *ctyunVpceServers) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+func (c *ctyunVpceServices) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}

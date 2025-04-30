@@ -6,13 +6,10 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
 
-
-
-data "ctyun_vpce_servers" "test" {
-
+data "ctyun_vpce_service_transit_ips" "test" {
+  endpoint_service_id = "endpser-pe60y2rtu6"
 }

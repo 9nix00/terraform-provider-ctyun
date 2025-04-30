@@ -9,14 +9,14 @@ import (
 	"testing"
 )
 
-func TestAccCtyunVpceServer(t *testing.T) {
+func TestAccCtyunVpceService(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
-	resourceName := "ctyun_vpce_server." + rnd
-	datasourceName := "data.ctyun_vpce_servers." + dnd
-	resourceFile := "resource_ctyun_vpce_server.tf"
-	datasourceFile := "datasource_ctyun_vpce_servers.tf"
+	resourceName := "ctyun_vpce_service." + rnd
+	datasourceName := "data.ctyun_vpce_services." + dnd
+	resourceFile := "resource_ctyun_vpce_service.tf"
+	datasourceFile := "datasource_ctyun_vpce_services.tf"
 
 	initName := "init"
 	initEndpointPort := "1"
@@ -42,25 +42,27 @@ func TestAccCtyunVpceServer(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "rules.0.endpoint_port", initEndpointPort),
 					resource.TestCheckTypeSetElemAttr(resourceName, "whitelist_email.*", initWhitelistEmail),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", dependence.ecsID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "rules.0.endpoint_port", updatedEndpointPort),
 					resource.TestCheckTypeSetElemAttr(resourceName, "whitelist_email.*", updatedWhitelistEmail),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", dependence.ecsID2),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID2) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "vpce_servers.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "vpce_servers.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "vpce_servers.0.rules.0.endpoint_port", updatedEndpointPort),
+					resource.TestCheckResourceAttr(datasourceName, "vpce_services.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "vpce_services.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "vpce_services.0.rules.0.endpoint_port", updatedEndpointPort),
 				),
 			},
 			{
@@ -81,7 +83,7 @@ func TestAccCtyunVpceServer(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID2) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

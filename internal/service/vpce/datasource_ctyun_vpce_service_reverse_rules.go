@@ -14,23 +14,23 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &ctyunVpceServerReverseRules{}
-	_ datasource.DataSourceWithConfigure = &ctyunVpceServerReverseRules{}
+	_ datasource.DataSource              = &ctyunVpceServiceReverseRules{}
+	_ datasource.DataSourceWithConfigure = &ctyunVpceServiceReverseRules{}
 )
 
-type ctyunVpceServerReverseRules struct {
+type ctyunVpceServiceReverseRules struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServerReverseRules() datasource.DataSource {
-	return &ctyunVpceServerReverseRules{}
+func NewCtyunVpceServiceReverseRules() datasource.DataSource {
+	return &ctyunVpceServiceReverseRules{}
 }
 
-func (c *ctyunVpceServerReverseRules) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_server_reverse_rules"
+func (c *ctyunVpceServiceReverseRules) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_service_reverse_rules"
 }
 
-type CtyunVpceServerReverseRulesModel struct {
+type CtyunVpceServiceReverseRulesModel struct {
 	ID          types.String `tfsdk:"id"`
 	EndpointID  types.String `tfsdk:"endpoint_id"`
 	TransitIP   types.String `tfsdk:"transit_ip"`
@@ -41,19 +41,19 @@ type CtyunVpceServerReverseRulesModel struct {
 	CreatedAt   types.String `tfsdk:"created_at"`
 }
 
-type CtyunVpceServerReverseRulesConfig struct {
-	EndpointServerID types.String `tfsdk:"endpoint_server_id"`
-	RegionID         types.String `tfsdk:"region_id"`
-	PageNo           types.Int32  `tfsdk:"page_no"`
-	PageSize         types.Int32  `tfsdk:"page_size"`
+type CtyunVpceServiceReverseRulesConfig struct {
+	EndpointServiceID types.String `tfsdk:"endpoint_service_id"`
+	RegionID          types.String `tfsdk:"region_id"`
+	PageNo            types.Int32  `tfsdk:"page_no"`
+	PageSize          types.Int32  `tfsdk:"page_size"`
 
-	CurrentCount types.Int32                        `tfsdk:"current_count"`
-	TotalCount   types.Int32                        `tfsdk:"total_count"`
-	TotalPage    types.Int32                        `tfsdk:"total_page"`
-	Rules        []CtyunVpceServerReverseRulesModel `tfsdk:"rules"`
+	CurrentCount types.Int32                         `tfsdk:"current_count"`
+	TotalCount   types.Int32                         `tfsdk:"total_count"`
+	TotalPage    types.Int32                         `tfsdk:"total_page"`
+	Rules        []CtyunVpceServiceReverseRulesModel `tfsdk:"rules"`
 }
 
-func (c *ctyunVpceServerReverseRules) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+func (c *ctyunVpceServiceReverseRules) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -62,7 +62,7 @@ func (c *ctyunVpceServerReverseRules) Schema(_ context.Context, _ datasource.Sch
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"endpoint_server_id": schema.StringAttribute{
+			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务id",
 			},
@@ -132,14 +132,14 @@ func (c *ctyunVpceServerReverseRules) Schema(_ context.Context, _ datasource.Sch
 	}
 }
 
-func (c *ctyunVpceServerReverseRules) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (c *ctyunVpceServiceReverseRules) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var config CtyunVpceServerReverseRulesConfig
+	var config CtyunVpceServiceReverseRulesConfig
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -153,7 +153,7 @@ func (c *ctyunVpceServerReverseRules) Read(ctx context.Context, request datasour
 	// 组装请求体
 	params := &ctvpc.CtvpcListEndpointServiceReverseRuleRequest{
 		RegionID:          regionId,
-		EndpointServiceID: config.EndpointServerID.ValueString(),
+		EndpointServiceID: config.EndpointServiceID.ValueString(),
 	}
 	pageNo := config.PageNo.ValueInt32()
 	pageSize := config.PageSize.ValueInt32()
@@ -176,12 +176,12 @@ func (c *ctyunVpceServerReverseRules) Read(ctx context.Context, request datasour
 	}
 
 	// 解析返回值
-	config.Rules = []CtyunVpceServerReverseRulesModel{}
+	config.Rules = []CtyunVpceServiceReverseRulesModel{}
 	config.TotalPage = types.Int32Value(resp.ReturnObj.TotalPage)
 	config.TotalCount = types.Int32Value(resp.ReturnObj.TotalCount)
 	config.CurrentCount = types.Int32Value(resp.ReturnObj.CurrentCount)
 	for _, rule := range resp.ReturnObj.ReverseRules {
-		item := CtyunVpceServerReverseRulesModel{
+		item := CtyunVpceServiceReverseRulesModel{
 			ID:          utils.SecStringValue(rule.ID),
 			EndpointID:  utils.SecStringValue(rule.EndpointID),
 			TransitIP:   utils.SecStringValue(rule.TransitIPAddress),
@@ -197,7 +197,7 @@ func (c *ctyunVpceServerReverseRules) Read(ctx context.Context, request datasour
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
-func (c *ctyunVpceServerReverseRules) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+func (c *ctyunVpceServiceReverseRules) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}

@@ -1,5 +1,17 @@
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-vpce"
+  name        = "tf-vpc-tmp"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
@@ -7,7 +19,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-vpce"
+  name        = "tf-subnet-tmp"
   cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
   dns         = [
@@ -34,23 +46,8 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 }
 
 resource "ctyun_ecs" "ecs_test" {
-  instance_name       = "tf-ecs-for-vpce"
-  display_name        = "tf-ecs-for-vpce"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
-  image_id            = data.ctyun_images.image_test.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
-  cycle_type          = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
-  is_destroy_instance = false
-  monitor_service = false
-}
-
-resource "ctyun_ecs" "ecs_test2" {
-  instance_name       = "tf-ecs-for-vpce2"
-  display_name        = "tf-ecs-for-vpce2"
+  instance_name       = "tf-ecs-tmp"
+  display_name        = "tf-ecs-tmp"
   flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
   image_id            = data.ctyun_images.image_test.images[0].id
   system_disk_type    = "sata"
@@ -65,7 +62,7 @@ resource "ctyun_ecs" "ecs_test2" {
 
 
 resource "ctyun_vpce_service" "vpce_service_test" {
-  name  = "tf-vpce-server-for-vpce"
+  name  = "tf-vpce-server-tmp"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
@@ -79,22 +76,11 @@ resource "ctyun_vpce_service" "vpce_service_test" {
   }]
 }
 
-resource "ctyun_vpce_service" "reverse_vpce_service_test" {
-  name  = "tf-reverse-vpce-server-for-vpce"
-  vpc_id = ctyun_vpc.vpc_test.id
-  subnet_id = ctyun_subnet.subnet_test.id
-  auto_connection = true
-  type = "reverse"
-}
-
-data "ctyun_vpce_service_transit_ips" "vpce_service_transit_ip_test" {
-  endpoint_service_id = ctyun_vpce_service.reverse_vpce_service_test.id
-}
-
 resource "ctyun_vpce" "vpce_test" {
-  name  = "tf-vpce-for-vpce"
-  endpoint_service_id = ctyun_vpce_service.reverse_vpce_service_test.id
+  name  = "tf-vpce-tmp"
+  endpoint_service_id = ctyun_vpce_service.vpce_service_test.id
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   whitelist_flag = false
 }
+

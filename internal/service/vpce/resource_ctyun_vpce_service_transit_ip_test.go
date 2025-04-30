@@ -11,14 +11,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunVpceServerTransitIP(t *testing.T) {
+func TestAccCtyunVpceServiceTransitIP(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
-	resourceName := "ctyun_vpce_server_transit_ip." + rnd
-	datasourceName := "data.ctyun_vpce_server_transit_ips." + dnd
-	resourceFile := "resource_ctyun_vpce_server_transit_ip.tf"
-	datasourceFile := "datasource_ctyun_vpce_server_transit_ips.tf"
+	resourceName := "ctyun_vpce_service_transit_ip." + rnd
+	datasourceName := "data.ctyun_vpce_service_transit_ips." + dnd
+	resourceFile := "resource_ctyun_vpce_service_transit_ip.tf"
+	datasourceFile := "datasource_ctyun_vpce_service_transit_ips.tf"
 
 	var id string
 	resource.Test(t, resource.TestCase{
@@ -32,9 +32,9 @@ func TestAccCtyunVpceServerTransitIP(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.subnetID),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServiceID, dependence.subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "endpoint_server_id", dependence.reverseVpceServerID),
+					resource.TestCheckResourceAttr(resourceName, "endpoint_service_id", dependence.reverseVpceServiceID),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", dependence.subnetID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					func(state *terraform.State) error {
@@ -48,8 +48,8 @@ func TestAccCtyunVpceServerTransitIP(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.subnetID) +
-					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServiceID, dependence.subnetID) +
+					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServiceID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.ComposeAggregateTestCheckFunc(
 						func(s *terraform.State) error {
@@ -76,18 +76,18 @@ func TestAccCtyunVpceServerTransitIP(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					id = ds.ID
 					regionId := ds.Attributes["region_id"]
-					endpointServerID := ds.Attributes["endpoint_server_id"]
+					endpointServiceID := ds.Attributes["endpoint_service_id"]
 					if id == "" || regionId == "" {
-						return "", fmt.Errorf("id or region_id or endpoint_server_id is required")
+						return "", fmt.Errorf("id or region_id or endpoint_service_id is required")
 					}
-					return fmt.Sprintf("%s,%s,%s", id, endpointServerID, regionId), nil
+					return fmt.Sprintf("%s,%s,%s", id, endpointServiceID, regionId), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.subnetID) +
-					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServiceID, dependence.subnetID) +
+					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServiceID),
 				Destroy: true,
 			},
 		},

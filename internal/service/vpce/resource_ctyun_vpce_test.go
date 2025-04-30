@@ -38,7 +38,7 @@ func TestAccCtyunVpce(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "true"),
@@ -47,7 +47,7 @@ func TestAccCtyunVpce(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedWhitelistFlag, updatedWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedWhitelistFlag, updatedWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "false"),
@@ -56,7 +56,7 @@ func TestAccCtyunVpce(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServerID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "vpces.#", "1"),
@@ -80,7 +80,7 @@ func TestAccCtyunVpce(t *testing.T) {
 				ImportStateVerifyIgnore: []string{},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServerID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

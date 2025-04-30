@@ -1,6 +1,9 @@
 package business
 
 const (
-	VpceServerTypeInterface = "interface"
-	VpceServerTypeReverse   = "reverse"
+	VpceServiceTypeInterface = "interface"
+	VpceServiceTypeReverse   = "reverse"
+
+	VpceServiceConnectionUp   = "up"
+	VpceServiceConnectionDown = "down"
 )

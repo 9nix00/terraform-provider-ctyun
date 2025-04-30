@@ -30,7 +30,7 @@ resource "ctyun_subnet" "subnet_test" {
   enable_ipv6 = true
 }
 
-resource "ctyun_vpce_server" "test" {
+resource "ctyun_vpce_service" "test" {
   name  = "tf-vpce-server-tmp"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
@@ -38,7 +38,7 @@ resource "ctyun_vpce_server" "test" {
   type = "reverse"
 }
 
-resource "ctyun_vpce_server_transit_ip" "test" {
-  endpoint_server_id = ctyun_vpce_server.test.id
+resource "ctyun_vpce_service_transit_ip" "test" {
+  endpoint_service_id = ctyun_vpce_service.test.id
   subnet_id = ctyun_subnet.subnet_test.id
 }

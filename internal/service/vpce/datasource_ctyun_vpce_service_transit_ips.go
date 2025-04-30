@@ -14,42 +14,42 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &ctyunVpceServerTransitIPs{}
-	_ datasource.DataSourceWithConfigure = &ctyunVpceServerTransitIPs{}
+	_ datasource.DataSource              = &ctyunVpceServiceTransitIPs{}
+	_ datasource.DataSourceWithConfigure = &ctyunVpceServiceTransitIPs{}
 )
 
-type ctyunVpceServerTransitIPs struct {
+type ctyunVpceServiceTransitIPs struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServerTransitIPs() datasource.DataSource {
-	return &ctyunVpceServerTransitIPs{}
+func NewCtyunVpceServiceTransitIPs() datasource.DataSource {
+	return &ctyunVpceServiceTransitIPs{}
 }
 
-func (c *ctyunVpceServerTransitIPs) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_server_transit_ips"
+func (c *ctyunVpceServiceTransitIPs) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_service_transit_ips"
 }
 
-type CtyunVpceServerTransitIPsModel struct {
+type CtyunVpceServiceTransitIPsModel struct {
 	ID        types.String `tfsdk:"id"`
 	SubnetID  types.String `tfsdk:"subnet_id"`
 	TransitIP types.String `tfsdk:"transit_ip"`
 	CreatedAt types.String `tfsdk:"created_at"`
 }
 
-type CtyunVpceServerTransitIPsConfig struct {
-	EndpointServerID types.String `tfsdk:"endpoint_server_id"`
-	RegionID         types.String `tfsdk:"region_id"`
-	PageNo           types.Int32  `tfsdk:"page_no"`
-	PageSize         types.Int32  `tfsdk:"page_size"`
+type CtyunVpceServiceTransitIPsConfig struct {
+	EndpointServiceID types.String `tfsdk:"endpoint_service_id"`
+	RegionID          types.String `tfsdk:"region_id"`
+	PageNo            types.Int32  `tfsdk:"page_no"`
+	PageSize          types.Int32  `tfsdk:"page_size"`
 
-	CurrentCount types.Int32                      `tfsdk:"current_count"`
-	TotalCount   types.Int32                      `tfsdk:"total_count"`
-	TotalPage    types.Int32                      `tfsdk:"total_page"`
-	IPs          []CtyunVpceServerTransitIPsModel `tfsdk:"ips"`
+	CurrentCount types.Int32                       `tfsdk:"current_count"`
+	TotalCount   types.Int32                       `tfsdk:"total_count"`
+	TotalPage    types.Int32                       `tfsdk:"total_page"`
+	IPs          []CtyunVpceServiceTransitIPsModel `tfsdk:"ips"`
 }
 
-func (c *ctyunVpceServerTransitIPs) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+func (c *ctyunVpceServiceTransitIPs) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -58,7 +58,7 @@ func (c *ctyunVpceServerTransitIPs) Schema(_ context.Context, _ datasource.Schem
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"endpoint_server_id": schema.StringAttribute{
+			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务id",
 			},
@@ -112,14 +112,14 @@ func (c *ctyunVpceServerTransitIPs) Schema(_ context.Context, _ datasource.Schem
 	}
 }
 
-func (c *ctyunVpceServerTransitIPs) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (c *ctyunVpceServiceTransitIPs) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var config CtyunVpceServerTransitIPsConfig
+	var config CtyunVpceServiceTransitIPsConfig
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -133,7 +133,7 @@ func (c *ctyunVpceServerTransitIPs) Read(ctx context.Context, request datasource
 	// 组装请求体
 	params := &ctvpc.CtvpcListEndpointServiceTransitIPRequest{
 		RegionID:          regionId,
-		EndpointServiceID: config.EndpointServerID.ValueString(),
+		EndpointServiceID: config.EndpointServiceID.ValueString(),
 	}
 	pageNo := config.PageNo.ValueInt32()
 	pageSize := config.PageSize.ValueInt32()
@@ -156,12 +156,12 @@ func (c *ctyunVpceServerTransitIPs) Read(ctx context.Context, request datasource
 	}
 
 	// 解析返回值
-	config.IPs = []CtyunVpceServerTransitIPsModel{}
+	config.IPs = []CtyunVpceServiceTransitIPsModel{}
 	config.TotalPage = types.Int32Value(resp.ReturnObj.TotalPage)
 	config.TotalCount = types.Int32Value(resp.ReturnObj.TotalCount)
 	config.CurrentCount = types.Int32Value(resp.ReturnObj.CurrentCount)
 	for _, e := range resp.ReturnObj.TransitIPs {
-		item := CtyunVpceServerTransitIPsModel{
+		item := CtyunVpceServiceTransitIPsModel{
 			ID:        utils.SecStringValue(e.TransitIP),
 			SubnetID:  utils.SecStringValue(e.SubnetID),
 			TransitIP: utils.SecStringValue(e.TransitIP),
@@ -173,7 +173,7 @@ func (c *ctyunVpceServerTransitIPs) Read(ctx context.Context, request datasource
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
-func (c *ctyunVpceServerTransitIPs) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+func (c *ctyunVpceServiceTransitIPs) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}

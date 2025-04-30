@@ -189,7 +189,7 @@ type CtecsQueryCustomerQuotasInRegionV41ReturnObjQuotasResponse struct {
 	Vpn_gate_count_limit                     int32  `json:"vpn_gate_count_limit,omitempty"`                     /*  VPN网关个数上限  */
 	Route_limit_per_table                    int32  `json:"route_limit_per_table,omitempty"`                    /*  路由规则  */
 	Vpce_limit_per_vpc                       int32  `json:"vpce_limit_per_vpc,omitempty"`                       /*  单个VPC下终端节点个数上限  */
-	Vpce_server_limit_per_vpc                int32  `json:"vpce_server_limit_per_vpc,omitempty"`                /*  单个VPC下终端服务节点个数上限  */
+	Vpce_server_limit_per_vpc                int32  `json:"vpce_service_limit_per_vpc,omitempty"`               /*  单个VPC下终端服务节点个数上限  */
 	Total_traffic_mirror_limit               int32  `json:"total_traffic_mirror_limit,omitempty"`               /*  流量镜像产品筛选条件配额  */
 	Total_traffic_session_limit              int32  `json:"total_traffic_session_limit,omitempty"`              /*  流量镜像产品镜像会话配额  */
 	Volume_limit_each_vm_ElasticPM           int32  `json:"volume_limit_each_vm_ElasticPM,omitempty"`           /*  裸金属单块磁盘创建时可选的最小容量(GB)  */

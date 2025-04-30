@@ -62,13 +62,28 @@ resource "ctyun_ecs" "ecs_test1" {
 }
 
 
-resource "ctyun_vpce_server" "test" {
+resource "ctyun_ecs" "ecs_test2" {
+  instance_name       = "tf2-ecs-test"
+  display_name        = "tf2-ecs-test"
+  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
+  image_id            = data.ctyun_images.image_test1.images[0].id
+  system_disk_type    = "sata"
+  system_disk_size    = 40
+  vpc_id = ctyun_vpc.vpc_test.id
+  password            = "P@ssW0rd_1"
+  cycle_type          = "on_demand"
+  subnet_id = ctyun_subnet.subnet_test.id
+  is_destroy_instance = false
+  monitor_service = false
+}
+
+resource "ctyun_vpce_service" "test" {
   name  = "tf-vpce-server-sss"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
   type = "interface"
-  instance_id = ctyun_ecs.ecs_test1.id
+  instance_id = ctyun_ecs.ecs_test2.id
   instance_type = "vm"
   rules = [{
     protocol = "TCP"

@@ -1,4 +1,4 @@
-resource "ctyun_vpce_server" "%[1]s" {
+resource "ctyun_vpce_service" "%[1]s" {
   name  = "%[2]s"
   vpc_id = "%[5]s"
   subnet_id = "%[6]s"

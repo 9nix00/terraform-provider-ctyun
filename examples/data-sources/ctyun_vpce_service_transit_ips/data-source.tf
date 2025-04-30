@@ -10,6 +10,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_vpce_server_transit_ips" "test" {
-  endpoint_server_id = "endpser-pe60y2rtu6"
+data "ctyun_vpce_service_transit_ips" "test" {
+  endpoint_service_id = "endpser-pe60y2rtu6"
 }

@@ -25,24 +25,24 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunVpceServer{}
-	_ resource.ResourceWithConfigure   = &ctyunVpceServer{}
-	_ resource.ResourceWithImportState = &ctyunVpceServer{}
+	_ resource.Resource                = &ctyunVpceService{}
+	_ resource.ResourceWithConfigure   = &ctyunVpceService{}
+	_ resource.ResourceWithImportState = &ctyunVpceService{}
 )
 
-type ctyunVpceServer struct {
+type ctyunVpceService struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServer() resource.Resource {
-	return &ctyunVpceServer{}
+func NewCtyunVpceService() resource.Resource {
+	return &ctyunVpceService{}
 }
 
-func (c *ctyunVpceServer) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_server"
+func (c *ctyunVpceService) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_service"
 }
 
-type CtyunVpceServerConfig struct {
+type CtyunVpceServiceConfig struct {
 	ID             types.String `tfsdk:"id"`
 	RegionID       types.String `tfsdk:"region_id"`
 	VpcID          types.String `tfsdk:"vpc_id"`
@@ -55,16 +55,16 @@ type CtyunVpceServerConfig struct {
 	Rules          types.Set    `tfsdk:"rules"`
 	WhitelistEmail types.Set    `tfsdk:"whitelist_email"`
 	whitelist      []string
-	rules          []CtyunVpceServerRule
+	rules          []CtyunVpceServiceRule
 }
 
-type CtyunVpceServerRule struct {
+type CtyunVpceServiceRule struct {
 	Protocol     types.String `tfsdk:"protocol"`
 	ServerPort   types.Int32  `tfsdk:"server_port"`
 	EndpointPort types.Int32  `tfsdk:"endpoint_port"`
 }
 
-func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -92,7 +92,10 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Required:    true,
 				Description: "接口还是反向，interface:接口，reverse:反向",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.VpceServerTypeInterface, business.VpceServerTypeReverse),
+					stringvalidator.OneOf(business.VpceServiceTypeInterface, business.VpceServiceTypeReverse),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -107,7 +110,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 					stringvalidator.OneOf("vm", "bm", "vip", "lb"),
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
-						types.StringValue(business.VpceServerTypeInterface),
+						types.StringValue(business.VpceServiceTypeInterface),
 					),
 				},
 			},
@@ -118,7 +121,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
-						types.StringValue(business.VpceServerTypeInterface),
+						types.StringValue(business.VpceServiceTypeInterface),
 					),
 				},
 			},
@@ -149,7 +152,7 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("type"),
-						types.StringValue(business.VpceServerTypeInterface),
+						types.StringValue(business.VpceServiceTypeInterface),
 					),
 				},
 				Description: "节点服务规则,当type为interface时，必填",
@@ -183,24 +186,24 @@ func (c *ctyunVpceServer) Schema(_ context.Context, _ resource.SchemaRequest, re
 	}
 }
 
-func (c *ctyunVpceServer) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunVpceService) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var plan CtyunVpceServerConfig
+	var plan CtyunVpceServiceConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 	// 创建
-	endpointServerID, err := c.create(ctx, plan)
+	endpointServiceID, err := c.create(ctx, plan)
 	if err != nil {
 		return
 	}
-	plan.ID = types.StringValue(endpointServerID)
+	plan.ID = types.StringValue(endpointServiceID)
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 
 	err = c.checkAfterCreate(ctx, plan)
@@ -225,14 +228,14 @@ func (c *ctyunVpceServer) Create(ctx context.Context, request resource.CreateReq
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunVpceServer) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunVpceService) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerConfig
+	var state CtyunVpceServiceConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -250,7 +253,7 @@ func (c *ctyunVpceServer) Read(ctx context.Context, request resource.ReadRequest
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunVpceServer) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunVpceService) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -258,13 +261,13 @@ func (c *ctyunVpceServer) Update(ctx context.Context, request resource.UpdateReq
 		}
 	}()
 	// tf文件中的
-	var plan CtyunVpceServerConfig
+	var plan CtyunVpceServiceConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 	// state中的
-	var state CtyunVpceServerConfig
+	var state CtyunVpceServiceConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -287,6 +290,12 @@ func (c *ctyunVpceServer) Update(ctx context.Context, request resource.UpdateReq
 		return
 	}
 
+	// 更新后端服务
+	err = c.updateBackend(ctx, plan, state)
+	if err != nil {
+		return
+	}
+
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -296,14 +305,14 @@ func (c *ctyunVpceServer) Update(ctx context.Context, request resource.UpdateReq
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunVpceServer) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunVpceService) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerConfig
+	var state CtyunVpceServiceConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -316,7 +325,7 @@ func (c *ctyunVpceServer) Delete(ctx context.Context, request resource.DeleteReq
 	response.State.RemoveResource(ctx)
 }
 
-func (c *ctyunVpceServer) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunVpceService) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -324,22 +333,22 @@ func (c *ctyunVpceServer) Configure(_ context.Context, request resource.Configur
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [endpointServerID],[regionID]
-func (c *ctyunVpceServer) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+// 导入命令：terraform import [配置标识].[导入配置名称] [endpointServiceID],[regionID]
+func (c *ctyunVpceService) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunVpceServerConfig
-	var endpointServerID, regionID string
-	err = terraform_extend.Split(request.ID, &endpointServerID, &regionID)
+	var cfg CtyunVpceServiceConfig
+	var endpointServiceID, regionID string
+	err = terraform_extend.Split(request.ID, &endpointServiceID, &regionID)
 	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
-	cfg.ID = types.StringValue(endpointServerID)
+	cfg.ID = types.StringValue(endpointServiceID)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {
@@ -349,7 +358,7 @@ func (c *ctyunVpceServer) ImportState(ctx context.Context, request resource.Impo
 }
 
 // create 创建
-func (c *ctyunVpceServer) create(ctx context.Context, plan CtyunVpceServerConfig) (endpointSeverID string, err error) {
+func (c *ctyunVpceService) create(ctx context.Context, plan CtyunVpceServiceConfig) (endpointSeverID string, err error) {
 	params := &ctvpc.CtvpcCreateEndpointServiceRequest{
 		ClientToken:    uuid.NewString(),
 		RegionID:       plan.RegionID.ValueString(),
@@ -389,13 +398,13 @@ func (c *ctyunVpceServer) create(ctx context.Context, plan CtyunVpceServerConfig
 }
 
 // checkAfterCreate 创建后检查
-func (c *ctyunVpceServer) checkAfterCreate(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
-	endpointServer, err := c.show(ctx, plan)
+func (c *ctyunVpceService) checkAfterCreate(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
+	endpointService, err := c.show(ctx, plan)
 	if err != nil {
 		return
 	}
 	// 后端信息不正确
-	if len(endpointServer.Backends) == 0 && plan.Type.ValueString() == business.VpceServerTypeInterface {
+	if len(endpointService.Backends) == 0 && plan.Type.ValueString() == business.VpceServiceTypeInterface {
 		err = fmt.Errorf("终端节点服务创建成功，但后端服务不正确，请使用正确instance_id重新创建")
 		return
 	}
@@ -403,11 +412,11 @@ func (c *ctyunVpceServer) checkAfterCreate(ctx context.Context, plan CtyunVpceSe
 }
 
 // buildRules 构造终端节点服务规则
-func (c *ctyunVpceServer) buildRules(ctx context.Context, plan CtyunVpceServerConfig) (rulesReq []*ctvpc.CtvpcCreateEndpointServiceRulesRequest, err error) {
+func (c *ctyunVpceService) buildRules(ctx context.Context, plan CtyunVpceServiceConfig) (rulesReq []*ctvpc.CtvpcCreateEndpointServiceRulesRequest, err error) {
 	if plan.Rules.IsUnknown() || plan.Rules.IsNull() {
 		return
 	}
-	var rules []CtyunVpceServerRule
+	var rules []CtyunVpceServiceRule
 	diags := plan.Rules.ElementsAs(ctx, &rules, false)
 	if diags.HasError() {
 		err = fmt.Errorf(diags.Errors()[0].Detail())
@@ -425,18 +434,18 @@ func (c *ctyunVpceServer) buildRules(ctx context.Context, plan CtyunVpceServerCo
 }
 
 // getAndMerge 从远端查询
-func (c *ctyunVpceServer) getAndMerge(ctx context.Context, plan *CtyunVpceServerConfig) (err error) {
-	endpointServer, err := c.show(ctx, *plan)
+func (c *ctyunVpceService) getAndMerge(ctx context.Context, plan *CtyunVpceServiceConfig) (err error) {
+	endpointService, err := c.show(ctx, *plan)
 	if err != nil {
 		return
 	}
-	plan.VpcID = utils.SecStringValue(endpointServer.VpcID)
-	plan.Name = utils.SecStringValue(endpointServer.Name)
-	plan.Type = utils.SecStringValue(endpointServer.RawType)
-	plan.AutoConnection = utils.SecBoolValue(endpointServer.AutoConnection)
+	plan.VpcID = utils.SecStringValue(endpointService.VpcID)
+	plan.Name = utils.SecStringValue(endpointService.Name)
+	plan.Type = utils.SecStringValue(endpointService.RawType)
+	plan.AutoConnection = utils.SecBoolValue(endpointService.AutoConnection)
 
-	if len(endpointServer.Backends) != 0 {
-		backend := endpointServer.Backends[0]
+	if len(endpointService.Backends) != 0 {
+		backend := endpointService.Backends[0]
 		plan.InstanceType = utils.SecStringValue(backend.InstanceType)
 		plan.InstanceID = utils.SecStringValue(backend.InstanceID)
 	} else {
@@ -444,7 +453,7 @@ func (c *ctyunVpceServer) getAndMerge(ctx context.Context, plan *CtyunVpceServer
 		plan.InstanceID = types.StringNull()
 	}
 
-	err = c.mergeRules(ctx, plan, endpointServer)
+	err = c.mergeRules(ctx, plan, endpointService)
 	if err != nil {
 		return
 	}
@@ -458,11 +467,11 @@ func (c *ctyunVpceServer) getAndMerge(ctx context.Context, plan *CtyunVpceServer
 }
 
 // update 更新
-func (c *ctyunVpceServer) update(ctx context.Context, plan, state CtyunVpceServerConfig) (err error) {
-	endpointServerID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
+func (c *ctyunVpceService) update(ctx context.Context, plan, state CtyunVpceServiceConfig) (err error) {
+	endpointServiceID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
 	params := &ctvpc.CtvpcModifyEndpointServiceRequest{
 		RegionID:          regionID,
-		EndpointServiceID: endpointServerID,
+		EndpointServiceID: endpointServiceID,
 		Name:              plan.Name.ValueStringPointer(),
 		AutoConnection:    plan.AutoConnection.ValueBoolPointer(),
 	}
@@ -478,11 +487,11 @@ func (c *ctyunVpceServer) update(ctx context.Context, plan, state CtyunVpceServe
 }
 
 // delete 删除
-func (c *ctyunVpceServer) delete(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
-	endpointServerID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+func (c *ctyunVpceService) delete(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
+	endpointServiceID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
 	params := &ctvpc.CtvpcDeleteEndpointServiceRequest{
 		RegionID:    regionID,
-		ID:          endpointServerID,
+		ID:          endpointServiceID,
 		ClientToken: uuid.NewString(),
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDeleteEndpointServiceApi.Do(ctx, c.meta.SdkCredential, params)
@@ -496,11 +505,11 @@ func (c *ctyunVpceServer) delete(ctx context.Context, plan CtyunVpceServerConfig
 }
 
 // show 查询VPCEs详情
-func (c *ctyunVpceServer) show(ctx context.Context, plan CtyunVpceServerConfig) (endpointServer ctvpc.CtvpcShowEndpointServiceReturnObjResponse, err error) {
-	endpointServerID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+func (c *ctyunVpceService) show(ctx context.Context, plan CtyunVpceServiceConfig) (endpointService ctvpc.CtvpcShowEndpointServiceReturnObjResponse, err error) {
+	endpointServiceID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
 	params := &ctvpc.CtvpcShowEndpointServiceRequest{
 		RegionID:          regionID,
-		EndpointServiceID: endpointServerID,
+		EndpointServiceID: endpointServiceID,
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowEndpointServiceApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -513,12 +522,12 @@ func (c *ctyunVpceServer) show(ctx context.Context, plan CtyunVpceServerConfig) 
 		return
 	}
 
-	endpointServer = *resp.ReturnObj
+	endpointService = *resp.ReturnObj
 	return
 }
 
 // calcWhitelist 将types.Set类型的白名单转换为[]string
-func (c *ctyunVpceServer) calcWhitelist(ctx context.Context, plan *CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) calcWhitelist(ctx context.Context, plan *CtyunVpceServiceConfig) (err error) {
 	if plan.WhitelistEmail.IsNull() || plan.WhitelistEmail.IsUnknown() {
 		return
 	}
@@ -531,7 +540,7 @@ func (c *ctyunVpceServer) calcWhitelist(ctx context.Context, plan *CtyunVpceServ
 }
 
 // addWhitelist 添加白名单
-func (c *ctyunVpceServer) addWhitelist(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
 	for _, email := range plan.whitelist {
 		params := &ctvpc.CtvpcCreateEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
@@ -552,7 +561,7 @@ func (c *ctyunVpceServer) addWhitelist(ctx context.Context, plan CtyunVpceServer
 }
 
 // delWhitelist 删除白名单
-func (c *ctyunVpceServer) delWhitelist(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) delWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
 	for _, email := range plan.whitelist {
 		params := &ctvpc.CtvpcDeleteEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
@@ -573,7 +582,7 @@ func (c *ctyunVpceServer) delWhitelist(ctx context.Context, plan CtyunVpceServer
 }
 
 // updateWhitelist 更新白名单
-func (c *ctyunVpceServer) updateWhitelist(ctx context.Context, plan, state CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) updateWhitelist(ctx context.Context, plan, state CtyunVpceServiceConfig) (err error) {
 	err = c.calcWhitelist(ctx, &plan)
 	if err != nil {
 		return
@@ -598,7 +607,7 @@ func (c *ctyunVpceServer) updateWhitelist(ctx context.Context, plan, state Ctyun
 }
 
 // mergeWhitelist 查询当前白名单
-func (c *ctyunVpceServer) mergeWhitelist(ctx context.Context, plan *CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) mergeWhitelist(ctx context.Context, plan *CtyunVpceServiceConfig) (err error) {
 	params := ctvpc.CtvpcNewEndpointServiceWhiteListRequest{
 		RegionID:          plan.RegionID.ValueString(),
 		EndpointServiceID: plan.ID.ValueString(),
@@ -627,7 +636,7 @@ func (c *ctyunVpceServer) mergeWhitelist(ctx context.Context, plan *CtyunVpceSer
 }
 
 // addRule 新增端口映射
-func (c *ctyunVpceServer) addRule(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) addRule(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
 	for _, rule := range plan.rules {
 		params := &ctvpc.CtvpcCreateEndpointServiceRuleRequest{
 			ClientToken:       uuid.NewString(),
@@ -650,7 +659,7 @@ func (c *ctyunVpceServer) addRule(ctx context.Context, plan CtyunVpceServerConfi
 }
 
 // delRule 删除端口映射
-func (c *ctyunVpceServer) delRule(ctx context.Context, plan CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) delRule(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
 	for _, rule := range plan.rules {
 		params := &ctvpc.CtvpcDeleteEndpointServiceRuleRequest{
 			ClientToken:       uuid.NewString(),
@@ -673,11 +682,11 @@ func (c *ctyunVpceServer) delRule(ctx context.Context, plan CtyunVpceServerConfi
 }
 
 // delRule 删除端口映射
-func (c *ctyunVpceServer) calcRule(ctx context.Context, plan *CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) calcRule(ctx context.Context, plan *CtyunVpceServiceConfig) (err error) {
 	if plan.Rules.IsUnknown() || plan.Rules.IsNull() {
 		return
 	}
-	plan.rules = []CtyunVpceServerRule{}
+	plan.rules = []CtyunVpceServiceRule{}
 	diags := plan.Rules.ElementsAs(ctx, &plan.rules, false)
 	if diags.HasError() {
 		err = fmt.Errorf(diags.Errors()[0].Detail())
@@ -687,7 +696,7 @@ func (c *ctyunVpceServer) calcRule(ctx context.Context, plan *CtyunVpceServerCon
 }
 
 // updateRule 更新端口映射
-func (c *ctyunVpceServer) updateRule(ctx context.Context, plan, state CtyunVpceServerConfig) (err error) {
+func (c *ctyunVpceService) updateRule(ctx context.Context, plan, state CtyunVpceServiceConfig) (err error) {
 	err = c.calcRule(ctx, &plan)
 	if err != nil {
 		return
@@ -697,7 +706,7 @@ func (c *ctyunVpceServer) updateRule(ctx context.Context, plan, state CtyunVpceS
 		return
 	}
 
-	add, del := utils.DifferenceStructArray[CtyunVpceServerRule](plan.rules, state.rules)
+	add, del := utils.DifferenceStructArray[CtyunVpceServiceRule](plan.rules, state.rules)
 	plan.rules = del
 	err = c.delRule(ctx, plan)
 	if err != nil {
@@ -712,18 +721,18 @@ func (c *ctyunVpceServer) updateRule(ctx context.Context, plan, state CtyunVpceS
 }
 
 // mergeRules 计算当前rules
-func (c *ctyunVpceServer) mergeRules(ctx context.Context, plan *CtyunVpceServerConfig, endpointServer ctvpc.CtvpcShowEndpointServiceReturnObjResponse) (err error) {
-	rules := []CtyunVpceServerRule{}
-	for _, item := range endpointServer.Rules {
+func (c *ctyunVpceService) mergeRules(ctx context.Context, plan *CtyunVpceServiceConfig, endpointService ctvpc.CtvpcShowEndpointServiceReturnObjResponse) (err error) {
+	rules := []CtyunVpceServiceRule{}
+	for _, item := range endpointService.Rules {
 		if item != nil {
-			rules = append(rules, CtyunVpceServerRule{
+			rules = append(rules, CtyunVpceServiceRule{
 				Protocol:     utils.SecStringValue(item.Protocol),
 				EndpointPort: types.Int32Value(item.EndpointPort),
 				ServerPort:   types.Int32Value(item.ServerPort),
 			})
 		}
 	}
-	ruleObj := utils.StructToTFObjectTypes(CtyunVpceServerRule{})
+	ruleObj := utils.StructToTFObjectTypes(CtyunVpceServiceRule{})
 	t, diags := types.SetValueFrom(ctx, ruleObj, rules)
 	if diags.HasError() {
 		err = fmt.Errorf(diags.Errors()[0].Detail())
@@ -731,5 +740,29 @@ func (c *ctyunVpceServer) mergeRules(ctx context.Context, plan *CtyunVpceServerC
 	}
 	plan.Rules = t
 	plan.rules = rules
+	return
+}
+
+// updateBackend 更新后端服务
+func (c *ctyunVpceService) updateBackend(ctx context.Context, plan, state CtyunVpceServiceConfig) (err error) {
+	if plan.InstanceType.Equal(state.InstanceType) && plan.InstanceID.Equal(state.InstanceID) {
+		return
+	}
+
+	endpointServiceID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
+	params := &ctvpc.CtvpcVpceUpdateBackendRequest{
+		RegionID:          regionID,
+		EndpointServiceID: endpointServiceID,
+		InstanceID:        plan.InstanceID.ValueString(),
+		InstanceType:      plan.InstanceType.ValueString(),
+	}
+
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcVpceUpdateBackendApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
 	return
 }

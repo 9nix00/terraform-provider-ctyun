@@ -319,9 +319,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunEips(),
 		vpc.NewCtyunBandwidths(),
 		vpce.NewCtyunVpces(),
-		vpce.NewCtyunVpceServers(),
-		vpce.NewCtyunVpceServerTransitIPs(),
-		vpce.NewCtyunVpceServerReverseRules(),
+		vpce.NewCtyunVpceServices(),
+		vpce.NewCtyunVpceServiceTransitIPs(),
+		vpce.NewCtyunVpceServiceReverseRules(),
 	)
 }
 
@@ -357,9 +357,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		vpc.NewCtyunVpcRouteTable(),
 		vpc.NewCtyunVpcRouteTableRule(),
 		vpce.NewCtyunVpce(),
-		vpce.NewCtyunVpceServer(),
-		vpce.NewCtyunVpceServerTransitIP(),
-		vpce.NewCtyunVpceServerReverseRule(),
+		vpce.NewCtyunVpceService(),
+		vpce.NewCtyunVpceServiceTransitIP(),
+		vpce.NewCtyunVpceServiceReverseRule(),
+		vpce.NewCtyunVpceServiceConnection(),
 	)
 }
 

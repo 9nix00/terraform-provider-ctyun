@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
@@ -19,32 +20,32 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunVpceServerTransitIP{}
-	_ resource.ResourceWithConfigure   = &ctyunVpceServerTransitIP{}
-	_ resource.ResourceWithImportState = &ctyunVpceServerTransitIP{}
+	_ resource.Resource                = &ctyunVpceServiceTransitIP{}
+	_ resource.ResourceWithConfigure   = &ctyunVpceServiceTransitIP{}
+	_ resource.ResourceWithImportState = &ctyunVpceServiceTransitIP{}
 )
 
-type ctyunVpceServerTransitIP struct {
+type ctyunVpceServiceTransitIP struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunVpceServerTransitIP() resource.Resource {
-	return &ctyunVpceServerTransitIP{}
+func NewCtyunVpceServiceTransitIP() resource.Resource {
+	return &ctyunVpceServiceTransitIP{}
 }
 
-func (c *ctyunVpceServerTransitIP) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_vpce_server_transit_ip"
+func (c *ctyunVpceServiceTransitIP) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_vpce_service_transit_ip"
 }
 
-type CtyunVpceServerTransitIPConfig struct {
-	ID               types.String `tfsdk:"id"`
-	EndpointServerID types.String `tfsdk:"endpoint_server_id"`
-	RegionID         types.String `tfsdk:"region_id"`
-	SubnetID         types.String `tfsdk:"subnet_id"`
-	TransitIP        types.String `tfsdk:"transit_ip"`
+type CtyunVpceServiceTransitIPConfig struct {
+	ID                types.String `tfsdk:"id"`
+	EndpointServiceID types.String `tfsdk:"endpoint_service_id"`
+	RegionID          types.String `tfsdk:"region_id"`
+	SubnetID          types.String `tfsdk:"subnet_id"`
+	TransitIP         types.String `tfsdk:"transit_ip"`
 }
 
-func (c *ctyunVpceServerTransitIP) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
@@ -61,7 +62,7 @@ func (c *ctyunVpceServerTransitIP) Schema(_ context.Context, _ resource.SchemaRe
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"endpoint_server_id": schema.StringAttribute{
+			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务id",
 				PlanModifiers: []planmodifier.String{
@@ -87,14 +88,14 @@ func (c *ctyunVpceServerTransitIP) Schema(_ context.Context, _ resource.SchemaRe
 	}
 }
 
-func (c *ctyunVpceServerTransitIP) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunVpceServiceTransitIP) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var plan CtyunVpceServerTransitIPConfig
+	var plan CtyunVpceServiceTransitIPConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -115,14 +116,14 @@ func (c *ctyunVpceServerTransitIP) Create(ctx context.Context, request resource.
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunVpceServerTransitIP) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunVpceServiceTransitIP) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerTransitIPConfig
+	var state CtyunVpceServiceTransitIPConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -130,24 +131,28 @@ func (c *ctyunVpceServerTransitIP) Read(ctx context.Context, request resource.Re
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "endpointServiceID ensure") {
+			response.State.RemoveResource(ctx)
+			err = nil
+		}
 		return
 	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunVpceServerTransitIP) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunVpceServiceTransitIP) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 
 }
 
-func (c *ctyunVpceServerTransitIP) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunVpceServiceTransitIP) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunVpceServerTransitIPConfig
+	var state CtyunVpceServiceTransitIPConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -159,7 +164,7 @@ func (c *ctyunVpceServerTransitIP) Delete(ctx context.Context, request resource.
 	}
 }
 
-func (c *ctyunVpceServerTransitIP) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunVpceServiceTransitIP) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -167,22 +172,22 @@ func (c *ctyunVpceServerTransitIP) Configure(_ context.Context, request resource
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [ip],[endpointServerID],[regionID]
-func (c *ctyunVpceServerTransitIP) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+// 导入命令：terraform import [配置标识].[导入配置名称] [ip],[endpointServiceID],[regionID]
+func (c *ctyunVpceServiceTransitIP) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunVpceServerTransitIPConfig
-	var ip, endpointServerID, regionID string
-	err = terraform_extend.Split(request.ID, &ip, &endpointServerID, &regionID)
+	var cfg CtyunVpceServiceTransitIPConfig
+	var ip, endpointServiceID, regionID string
+	err = terraform_extend.Split(request.ID, &ip, &endpointServiceID, &regionID)
 	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
-	cfg.EndpointServerID = types.StringValue(endpointServerID)
+	cfg.EndpointServiceID = types.StringValue(endpointServiceID)
 	cfg.ID = types.StringValue(ip)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -193,12 +198,12 @@ func (c *ctyunVpceServerTransitIP) ImportState(ctx context.Context, request reso
 }
 
 // create 创建
-func (c *ctyunVpceServerTransitIP) create(ctx context.Context, plan CtyunVpceServerTransitIPConfig) (ip string, err error) {
+func (c *ctyunVpceServiceTransitIP) create(ctx context.Context, plan CtyunVpceServiceTransitIPConfig) (ip string, err error) {
 	params := &ctvpc.CtvpcCreateEndpointServiceTransitIPRequest{
 		ClientToken:       uuid.NewString(),
 		RegionID:          plan.RegionID.ValueString(),
 		SubnetID:          plan.SubnetID.ValueString(),
-		EndpointServiceID: plan.EndpointServerID.ValueString(),
+		EndpointServiceID: plan.EndpointServiceID.ValueString(),
 	}
 	transitIP := plan.TransitIP.ValueString()
 	if transitIP != "" {
@@ -219,10 +224,10 @@ func (c *ctyunVpceServerTransitIP) create(ctx context.Context, plan CtyunVpceSer
 }
 
 // getAndMerge 从远端查询
-func (c *ctyunVpceServerTransitIP) getAndMerge(ctx context.Context, plan *CtyunVpceServerTransitIPConfig) (err error) {
+func (c *ctyunVpceServiceTransitIP) getAndMerge(ctx context.Context, plan *CtyunVpceServiceTransitIPConfig) (err error) {
 	params := &ctvpc.CtvpcListEndpointServiceTransitIPRequest{
 		RegionID:          plan.RegionID.ValueString(),
-		EndpointServiceID: plan.EndpointServerID.ValueString(),
+		EndpointServiceID: plan.EndpointServiceID.ValueString(),
 		PageSize:          50,
 		PageNo:            1,
 	}
@@ -253,10 +258,10 @@ func (c *ctyunVpceServerTransitIP) getAndMerge(ctx context.Context, plan *CtyunV
 }
 
 // delete 删除
-func (c *ctyunVpceServerTransitIP) delete(ctx context.Context, plan CtyunVpceServerTransitIPConfig) (err error) {
+func (c *ctyunVpceServiceTransitIP) delete(ctx context.Context, plan CtyunVpceServiceTransitIPConfig) (err error) {
 	params := &ctvpc.CtvpcDeleteEndpointServiceTransitIPRequest{
 		RegionID:          plan.RegionID.ValueString(),
-		EndpointServiceID: plan.EndpointServerID.ValueString(),
+		EndpointServiceID: plan.EndpointServiceID.ValueString(),
 		TransitIP:         plan.TransitIP.ValueString(),
 		ClientToken:       uuid.NewString(),
 	}
