@@ -37,7 +37,7 @@ func TestAccCtyunVpceServer(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initEndpointPort, initWhitelistEmail, sharedVpcID, sharedSubnetID, sharedEcsID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initEndpointPort, initWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "rules.0.endpoint_port", initEndpointPort),
@@ -46,7 +46,7 @@ func TestAccCtyunVpceServer(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, sharedVpcID, sharedSubnetID, sharedEcsID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "rules.0.endpoint_port", updatedEndpointPort),
@@ -55,7 +55,7 @@ func TestAccCtyunVpceServer(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, sharedVpcID, sharedSubnetID, sharedEcsID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "vpce_servers.#", "1"),
@@ -81,7 +81,7 @@ func TestAccCtyunVpceServer(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, sharedVpcID, sharedSubnetID, sharedEcsID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedEndpointPort, updatedWhitelistEmail, dependence.vpcID, dependence.subnetID, dependence.ecsID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

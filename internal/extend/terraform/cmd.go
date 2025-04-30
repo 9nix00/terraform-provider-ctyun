@@ -6,8 +6,8 @@ import (
 	"os/exec"
 )
 
-// ApplyResources terraform apply
-func ApplyResources(fileDir string) (outputs map[string]struct {
+// ApplyResource terraform apply
+func ApplyResource(fileDir string) (outputs map[string]struct {
 	Value string `json:"value"`
 }, err error) {
 	// 应用配置
@@ -31,8 +31,8 @@ func ApplyResources(fileDir string) (outputs map[string]struct {
 	return
 }
 
-// DestroyResources terraform destroy
-func DestroyResources(fileDir string) error {
+// DestroyResource terraform destroy
+func DestroyResource(fileDir string) error {
 	_, err := terraformDestroy(fileDir)
 	return err
 }

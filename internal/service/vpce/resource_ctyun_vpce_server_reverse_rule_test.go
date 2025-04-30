@@ -32,10 +32,10 @@ func TestAccCtyunVpceServerReverseRule(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sharedReverseVpceServerID, sharedVpceID, sharedTransitIP, sharedTargetIP),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.vpceID, dependence.transitIP, dependence.targetIP),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "endpoint_server_id", sharedReverseVpceServerID),
-					resource.TestCheckResourceAttr(resourceName, "endpoint_id", sharedVpceID),
+					resource.TestCheckResourceAttr(resourceName, "endpoint_server_id", dependence.reverseVpceServerID),
+					resource.TestCheckResourceAttr(resourceName, "endpoint_id", dependence.vpceID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					func(state *terraform.State) error {
 						rs, ok := state.RootModule().Resources[resourceName]
@@ -48,8 +48,8 @@ func TestAccCtyunVpceServerReverseRule(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sharedReverseVpceServerID, sharedVpceID, sharedTransitIP, sharedTargetIP) +
-					utils.LoadTestCase(datasourceFile, dnd, sharedReverseVpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.vpceID, dependence.transitIP, dependence.targetIP) +
+					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServerID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.ComposeAggregateTestCheckFunc(
 						func(s *terraform.State) error {
@@ -86,8 +86,8 @@ func TestAccCtyunVpceServerReverseRule(t *testing.T) {
 				ImportStateVerifyIgnore: []string{},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sharedReverseVpceServerID, sharedVpceID, sharedTransitIP, sharedTargetIP) +
-					utils.LoadTestCase(datasourceFile, dnd, sharedReverseVpceServerID),
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.reverseVpceServerID, dependence.vpceID, dependence.transitIP, dependence.targetIP) +
+					utils.LoadTestCase(datasourceFile, dnd, dependence.reverseVpceServerID),
 				Destroy: true,
 			},
 		},

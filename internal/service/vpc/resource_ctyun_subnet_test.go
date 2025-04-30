@@ -37,7 +37,7 @@ func TestAccCtyunSubnet(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns, sharedVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, initDns, dependenceVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
@@ -46,7 +46,7 @@ func TestAccCtyunSubnet(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, dependenceVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -55,7 +55,7 @@ func TestAccCtyunSubnet(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, dependenceVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "subnets.#", "1"),
@@ -84,7 +84,7 @@ func TestAccCtyunSubnet(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, sharedVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, updatedDns, dependenceVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

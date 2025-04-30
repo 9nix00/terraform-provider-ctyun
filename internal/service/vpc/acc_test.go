@@ -7,36 +7,28 @@ import (
 	"testing"
 )
 
-const sharedDir = "testdata/shared"
+const dependenceDir = "testdata/dependence"
 
-var sharedVpcID string
+var dependenceVpcID string
 
 func TestMain(m *testing.M) {
-	// 初始化共享资源
-	err := initSharedResources()
+	// 初始化依赖资源
+	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+	dependenceVpcID = outputs["vpc_id"].Value
 
 	// 执行测试用例
 	code := m.Run()
 
-	// 清理共享资源
-	err = terraform.DestroyResources(sharedDir)
+	// 清理依赖资源
+	err = terraform.DestroyResource(dependenceDir)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	os.Exit(code)
-}
-
-func initSharedResources() error {
-	outputs, err := terraform.ApplyResources(sharedDir)
-	if err != nil {
-		return err
-	}
-	sharedVpcID = outputs["vpc_id"].Value
-	return nil
 }

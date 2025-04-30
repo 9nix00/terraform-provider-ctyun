@@ -35,7 +35,7 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, sharedVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initDescription, dependenceVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
@@ -43,7 +43,7 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, dependenceVpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -51,7 +51,7 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, dependenceVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "security_groups.#", "1"),
@@ -78,7 +78,7 @@ func TestAccCtyunSecurityGroup(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, sharedVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription, dependenceVpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},
