@@ -31,6 +31,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ctzos"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	common2 "terraform-provider-ctyun/internal/service/common"
@@ -41,6 +42,7 @@ import (
 	"terraform-provider-ctyun/internal/service/image"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
+	"terraform-provider-ctyun/internal/service/zos"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -286,6 +288,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
 			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
 			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
+			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -322,6 +325,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpce.NewCtyunVpceServices(),
 		vpce.NewCtyunVpceServiceTransitIPs(),
 		vpce.NewCtyunVpceServiceReverseRules(),
+		zos.NewCtyunZosBuckets(),
+		zos.NewCtyunZosBucketObjects(),
 	)
 }
 
@@ -361,6 +366,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		vpce.NewCtyunVpceServiceTransitIP(),
 		vpce.NewCtyunVpceServiceReverseRule(),
 		vpce.NewCtyunVpceServiceConnection(),
+		zos.NewCtyunZosBucket(),
+		zos.NewCtyunZosBucketObject(),
 	)
 }
 
