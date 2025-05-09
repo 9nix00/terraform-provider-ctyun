@@ -18,12 +18,12 @@ func TestAccCtyunEbm(t *testing.T) {
 				Config: `
 provider "ctyun" {
   region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj1A-public-ctcloud"
+  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
   env                  = "prod"
 }
 
 resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.2xlarge1"
+  device_type = "physical.s5.xlarge3"
   instance_name = "ebm-0323-tf"
   hostname = "ebm-03221-tf"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
@@ -55,12 +55,12 @@ resource "ctyun_ebm" "test" {
 				Config: `
 provider "ctyun" {
   region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj1A-public-ctcloud"
+  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
   env                  = "prod"
 }
 
 resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.2xlarge1"
+  device_type = "physical.s5.xlarge3"
   instance_name = "ebm-tf-test-0402-1"
   hostname = "ebm-tf-test-0402-2"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
