@@ -21,7 +21,6 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	planmodifier2 "terraform-provider-ctyun/internal/extend/terraform/planmodifier"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -132,7 +131,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "指定缓存行为，对应S3协议Header中的Cache-Control",
 				PlanModifiers: []planmodifier.String{
-					planmodifier2.UseStateIfUnspecified{},
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"content_disposition": schema.StringAttribute{
@@ -140,7 +139,8 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "指定该对象的表示性信息，对应S3协议Header中的Content-Disposition",
 				PlanModifiers: []planmodifier.String{
-					planmodifier2.UseStateIfUnspecified{},
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				//Default: stringdefault.StaticString("attachment"),
 			},
@@ -149,7 +149,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "指定已对该对象应用哪些内容编码方式，对应S3协议Header中的Content-Encoding",
 				PlanModifiers: []planmodifier.String{
-					planmodifier2.UseStateIfUnspecified{},
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"content_type": schema.StringAttribute{
@@ -157,7 +157,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "描述对象类型，对应S3协议Header中的Content-Type",
 				PlanModifiers: []planmodifier.String{
-					planmodifier2.UseStateIfUnspecified{},
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"storage_type": schema.StringAttribute{

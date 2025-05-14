@@ -129,10 +129,9 @@ func (c *CtyunRequest) WriteJson(data interface{}, contentType string) (*CtyunRe
 	return c, nil
 }
 
-func (c *CtyunRequest) WriteString(data *string, contentType string) (*CtyunRequest, error) {
+func (c *CtyunRequest) WriteString(data, contentType string) (*CtyunRequest, error) {
 	if contentType == "text/plain" {
-		strValue := *data
-		c.body = []byte(strValue)
+		c.body = []byte(data)
 		c.AddHeader("Content-Type", contentType)
 	}
 	return c, nil

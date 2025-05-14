@@ -3,6 +3,7 @@ package ebm_test
 import (
 	"fmt"
 	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -10,86 +11,92 @@ import (
 )
 
 func TestAccCtyunEbm(t *testing.T) {
-	resourceName := "ctyun_ebm.test"
+	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_ebm." + rnd
+	datasourceName := "data.ctyun_ebms." + dnd
+	resourceFile := "resource_ctyun_ebm.tf"
+	datasourceFile := "datasource_ctyun_ebms.tf"
+
+	initName := "init"
+	initHostname := "init-hostname"
+	initPassword := "P@ss-" + utils.GenerateRandomString()
+	initStatus := "running"
+
+	updatedName := "updated"
+	updatedHostname := "updated-hostname"
+	updatedPassword := "P@sstf-" + utils.GenerateRandomString()
+	updatedStatus := "stopped"
+
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: `
-provider "ctyun" {
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-  env                  = "prod"
-}
-
-resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.xlarge3"
-  instance_name = "ebm-0323-tf"
-  hostname = "ebm-03221-tf"
-  image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss132345"
-  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
-  vpc_id = "vpc-6zxqwrg1r6"
-  ext_ip = "not_use"
-  system_volume_raid_uuid = ""
-  instance_charge_type = "order_on_demand"
-  status = "running"
-  disk_list = [{
-    disk_type = "system"
-    size = "100"
-    type = "sata"
-  }]
-  network_card_list = [{
-    master = true,
-    subnet_id = "subnet-43z7cqmjlp"
-  }]
-}
-`,
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					initName, initHostname, initPassword, initStatus,
+					dependence.deviceType,
+					dependence.imageUUID,
+					dependence.securityGroupID,
+					dependence.vpcID,
+					dependence.systemRaid,
+					dependence.dataRaid,
+					dependence.supportCloud,
+					dependence.subnetID,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "status", "running"),
+					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "hostname", initHostname),
+					resource.TestCheckResourceAttr(resourceName, "status", initStatus),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
-				Config: `
-provider "ctyun" {
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-  env                  = "prod"
-}
-
-resource "ctyun_ebm" "test" {
-  device_type = "physical.s5.xlarge3"
-  instance_name = "ebm-tf-test-0402-1"
-  hostname = "ebm-tf-test-0402-2"
-  image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss12345"
-  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
-  vpc_id = "vpc-6zxqwrg1r6"
-  ext_ip = "not_use"
-  system_volume_raid_uuid = ""
-  instance_charge_type = "order_on_demand"
-  status = "stopped"
-  disk_list = [{
-    disk_type = "system"
-    size = "100"
-    type = "sata"
-  }]
-  network_card_list = [{
-    master = true,
-    subnet_id = "subnet-43z7cqmjlp"
-  }]
-}
-
-data "ctyun_ebms" "data_test" {
-	instance_id_list = ctyun_ebm.test.instance_id
-}
-`,
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					updatedName, updatedHostname, updatedPassword, updatedStatus,
+					dependence.deviceType,
+					dependence.imageUUID,
+					dependence.securityGroupID,
+					dependence.vpcID,
+					dependence.systemRaid,
+					dependence.dataRaid,
+					dependence.supportCloud,
+					dependence.subnetID,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.ctyun_ebms.data_test", "instances.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "instance_name", "ebm-tf-test-0402-1"),
-					resource.TestCheckResourceAttr(resourceName, "hostname", "ebm-tf-test-0402-2"),
+					resource.TestCheckResourceAttr(resourceName, "instance_name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "hostname", updatedHostname),
+					resource.TestCheckResourceAttr(resourceName, "status", updatedStatus),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					updatedName, updatedHostname, updatedPassword, updatedStatus,
+					dependence.deviceType,
+					dependence.imageUUID,
+					dependence.securityGroupID,
+					dependence.vpcID,
+					dependence.systemRaid,
+					dependence.dataRaid,
+					dependence.supportCloud,
+					dependence.subnetID,
+				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "instances.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.instance_name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.hostname", updatedHostname),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.status", updatedStatus),
 				),
 			},
 			{
@@ -113,6 +120,21 @@ data "ctyun_ebms" "data_test" {
 					"project_id",        // 查询接口没返回
 					"user_data",
 				},
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					updatedName, updatedHostname, updatedPassword, updatedStatus,
+					dependence.deviceType,
+					dependence.imageUUID,
+					dependence.securityGroupID,
+					dependence.vpcID,
+					dependence.systemRaid,
+					dependence.dataRaid,
+					dependence.supportCloud,
+					dependence.subnetID,
+				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

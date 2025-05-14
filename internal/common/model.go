@@ -1,6 +1,7 @@
 package common
 
 import (
+	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
@@ -61,4 +62,5 @@ type Apis struct {
 	SdkCtEcsApis *ctecs2.Apis
 	SdkCtVpcApis *ctvpc2.Apis
 	SdkCtZosApis *ctzos.Apis
+	SdkCcseApis  *ccse2.Apis
 }

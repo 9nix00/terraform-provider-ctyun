@@ -62,6 +62,13 @@ func ConflictsWithEqualSet(expression path.Expression, objs ...attr.Value) valid
 	}
 }
 
+func ConflictsWithEqualObject(expression path.Expression, objs ...attr.Value) validator.Object {
+	return &validatorConflictsWithEqual{
+		expression: expression,
+		objs:       objs,
+	}
+}
+
 func (v validatorConflictsWithEqual) Validate(ctx context.Context, req conflictsWithEqualValidatorRequest, res *conflictsWithEqualValidatorResponse) {
 	if req.ConfigValue.IsNull() || req.ConfigValue.IsUnknown() {
 		return
@@ -157,6 +164,18 @@ func (v validatorConflictsWithEqual) ValidateBool(ctx context.Context, req valid
 }
 
 func (v validatorConflictsWithEqual) ValidateSet(ctx context.Context, req validator.SetRequest, resp *validator.SetResponse) {
+	validateReq := conflictsWithEqualValidatorRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &conflictsWithEqualValidatorResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorConflictsWithEqual) ValidateObject(ctx context.Context, req validator.ObjectRequest, resp *validator.ObjectResponse) {
 	validateReq := conflictsWithEqualValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,

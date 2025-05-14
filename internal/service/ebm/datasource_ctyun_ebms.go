@@ -33,7 +33,7 @@ type CtyunEbmsModel struct {
 	InstanceID           types.String               `tfsdk:"instance_id"`
 	DeviceType           types.String               `tfsdk:"device_type"`
 	InstanceName         types.String               `tfsdk:"instance_name"`
-	HostName             types.String               `tfsdk:"host_name"`
+	Hostname             types.String               `tfsdk:"hostname"`
 	SystemVolumeRaidUUID types.String               `tfsdk:"system_volume_raid_uuid"`
 	DataVolumeRaidUUID   types.String               `tfsdk:"data_volume_raid_uuid"`
 	ImageUUID            types.String               `tfsdk:"image_uuid"`
@@ -102,7 +102,7 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Computed:    true,
 							Description: "物理机实例展示名",
 						},
-						"host_name": schema.StringAttribute{
+						"hostname": schema.StringAttribute{
 							Computed:    true,
 							Description: "物理机主机名称(hostname)",
 						},
@@ -259,7 +259,7 @@ func (c *ctyunEbms) Read(ctx context.Context, request datasource.ReadRequest, re
 		item := CtyunEbmsModel{
 			InstanceID:           utils.SecStringValue(ebm.InstanceUUID),
 			DeviceType:           utils.SecStringValue(ebm.DeviceType),
-			HostName:             utils.SecStringValue(ebm.InstanceName),
+			Hostname:             utils.SecStringValue(ebm.InstanceName),
 			InstanceName:         utils.SecStringValue(ebm.DisplayName),
 			ImageUUID:            utils.SecStringValue(ebm.ImageID),
 			SystemVolumeRaidUUID: utils.SecStringValue(ebm.SystemVolumeRaidID),

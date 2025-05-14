@@ -303,18 +303,21 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"network_card_list": schema.ListNestedAttribute{
 				Required:    true,
 				Description: "网卡",
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
-				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"port_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "PORT UUID",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 						"interface_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "网卡UUID",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
 						},
 						"fixed_ip": schema.StringAttribute{
 							Optional:    true,
@@ -547,6 +550,11 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	var state CtyunEbmConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.NetworkCardList.Equal(state.NetworkCardList) {
+		err = fmt.Errorf("请使用其他能力修改网卡")
 		return
 	}
 	// 处理开关机

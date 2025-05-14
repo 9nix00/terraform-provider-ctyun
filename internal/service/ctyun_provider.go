@@ -20,6 +20,7 @@ import (
 	"slices"
 	"strings"
 	"terraform-provider-ctyun/internal/common"
+	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
@@ -34,6 +35,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctzos"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
+	"terraform-provider-ctyun/internal/service/ccse"
 	common2 "terraform-provider-ctyun/internal/service/common"
 	"terraform-provider-ctyun/internal/service/ebm"
 	"terraform-provider-ctyun/internal/service/ebs"
@@ -289,6 +291,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
 			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
 			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
+			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -368,6 +371,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		vpce.NewCtyunVpceServiceConnection(),
 		zos.NewCtyunZosBucket(),
 		zos.NewCtyunZosBucketObject(),
+		ccse.NewCtyunCcseCluster(),
 	)
 }
 

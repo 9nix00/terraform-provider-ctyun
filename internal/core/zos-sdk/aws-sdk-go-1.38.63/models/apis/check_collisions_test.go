@@ -1,6 +1,7 @@
+//go:build awsinclude
 // +build awsinclude
 
-package apis
+package ccse
 
 import (
 	"os/exec"

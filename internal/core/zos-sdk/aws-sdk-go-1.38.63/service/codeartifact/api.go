@@ -671,7 +671,7 @@ func (c *CodeArtifact) DeletePackageVersionsRequest(input *DeletePackageVersions
 // be restored in your repository. If you want to remove a package version from
 // your repository and be able to restore it later, set its status to Archived.
 // Archived packages cannot be downloaded from a repository and don't show up
-// with list package APIs (for example, ListackageVersions (https://docs.aws.amazon.com/codeartifact/latest/APIReference/API_ListPackageVersions.html)),
+// with list package ccse (for example, ListackageVersions (https://docs.aws.amazon.com/codeartifact/latest/APIReference/API_ListPackageVersions.html)),
 // but you can restore them using UpdatePackageVersionsStatus (https://docs.aws.amazon.com/codeartifact/latest/APIReference/API_UpdatePackageVersionsStatus.html).
 //
 // Returns awserr.Error for service API and SDK errors. Use runtime type assertions
