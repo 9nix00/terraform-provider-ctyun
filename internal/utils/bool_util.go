@@ -2,7 +2,15 @@ package utils
 
 import "github.com/hashicorp/terraform-plugin-framework/types"
 
-// SecBoolValue 避免nil
+// SecBool *bool转bool
+func SecBool(b *bool) bool {
+	if b == nil {
+		return false
+	}
+	return true
+}
+
+// SecBoolValue  *bool转types.Bool
 func SecBoolValue(b *bool) types.Bool {
 	if b == nil {
 		return types.BoolValue(false)

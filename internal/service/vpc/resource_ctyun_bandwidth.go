@@ -2,10 +2,11 @@ package vpc
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -17,15 +18,29 @@ import (
 	"regexp"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
 type ctyunBandwidth struct {
 	meta *common.CtyunMetadata
+}
+
+type CtyunBandwidthConfig struct {
+	CycleType  types.String `tfsdk:"cycle_type"`
+	Bandwidth  types.Int32  `tfsdk:"bandwidth"`
+	CycleCount types.Int64  `tfsdk:"cycle_count"`
+	Name       types.String `tfsdk:"name"`
+	Id         types.String `tfsdk:"id"`
+	Status     types.String `tfsdk:"status"`
+	ProjectId  types.String `tfsdk:"project_id"`
+	RegionId   types.String `tfsdk:"region_id"`
 }
 
 func NewCtyunBandwidth() resource.Resource {
@@ -52,11 +67,11 @@ func (c *ctyunBandwidth) Schema(_ context.Context, _ resource.SchemaRequest, res
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "共享带宽名称不符合规则"),
 				},
 			},
-			"bandwidth": schema.Int64Attribute{
+			"bandwidth": schema.Int32Attribute{
 				Required:    true,
 				Description: "共享带宽的带宽峰值（Mbit/s），必须大于等于5",
-				Validators: []validator.Int64{
-					int64validator.AtLeast(5),
+				Validators: []validator.Int32{
+					int32validator.AtLeast(5),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
@@ -118,59 +133,22 @@ func (c *ctyunBandwidth) Schema(_ context.Context, _ resource.SchemaRequest, res
 }
 
 func (c *ctyunBandwidth) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunBandwidthConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-	regionId := plan.RegionId.ValueString()
-	projectId := plan.ProjectId.ValueString()
-	createRequest := ctvpc.BandwidthCreateRequest{
-		RegionId:    regionId,
-		ProjectId:   projectId,
-		ClientToken: uuid.NewString(),
-		CycleType:   plan.CycleType.ValueString(),
-		Bandwidth:   plan.Bandwidth.ValueInt64(),
-		Name:        plan.Name.ValueString(),
-		CycleCount:  plan.CycleCount.ValueInt64(),
-	}
-
-	var resp *ctvpc.BandwidthCreateResponse
-	var err error
-	retryer, _ := business.NewRetryer(time.Second*5, 20)
-	retryerResult := retryer.Start(
-		func(currentTime int) bool {
-			do, requestError := c.meta.Apis.CtVpcApis.BandwidthCreateApi.Do(ctx, c.meta.Credential, &createRequest)
-			if requestError != nil {
-				// 接口如果出现异常，且不等于配置的重复轮询的异常码时 则退出轮询
-				if requestError.ErrorCode() != common.OpenapiOrderInprogress {
-					err = requestError
-					return false
-				}
-				return true
-			}
-			resp = do
-			return false
-		},
-	)
+	id, err := c.loopCreate(ctx, plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	if retryerResult.ReturnReason == business.ReachMaxLoopTime {
-		msg := "创建带宽下单已达到最大的轮询次数"
-		response.Diagnostics.Append(diag.NewErrorDiagnostic(msg, msg))
-		return
-	}
-
-	plan.Id = types.StringValue(resp.BandwidthId)
-	plan.RegionId = types.StringValue(regionId)
-	plan.ProjectId = types.StringValue(projectId)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
+	plan.Id = types.StringValue(id)
 
 	instance, ctyunRequestError := c.getAndMergeBandwidth(ctx, plan)
 	if ctyunRequestError != nil {
@@ -231,7 +209,7 @@ func (c *ctyunBandwidth) Update(ctx context.Context, request resource.UpdateRequ
 			BandwidthId: state.Id.ValueString(),
 			RegionId:    state.RegionId.ValueString(),
 			ClientToken: uuid.NewString(),
-			Bandwidth:   int(plan.Bandwidth.ValueInt64()),
+			Bandwidth:   int(plan.Bandwidth.ValueInt32()),
 		})
 
 		var masterOrderId string
@@ -299,6 +277,28 @@ func (c *ctyunBandwidth) Configure(_ context.Context, request resource.Configure
 	c.meta = meta
 }
 
+// 导入命令：terraform import [配置标识].[导入配置名称] [bandwidthId],[regionId],[projectId]
+func (c *ctyunBandwidth) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var cfg CtyunBandwidthConfig
+	var bandwidthId, regionId, projectId string
+	err := terraform_extend.Split(request.ID, &bandwidthId, &regionId, &projectId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	cfg.Id = types.StringValue(bandwidthId)
+	cfg.RegionId = types.StringValue(regionId)
+	cfg.ProjectId = types.StringValue(projectId)
+
+	instance, err := c.getAndMergeBandwidth(ctx, cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+}
+
 // getMasterOrderIdIfOrderInProgress 获取masterOrderId
 func (c *ctyunBandwidth) getMasterOrderIdIfOrderInProgress(err ctyunsdk.CtyunRequestError) (string, error) {
 	resp := struct {
@@ -334,18 +334,58 @@ func (c *ctyunBandwidth) getAndMergeBandwidth(ctx context.Context, cfg CtyunBand
 		return nil, err2
 	}
 	cfg.Status = types.StringValue(statusResp.(string))
-	cfg.Bandwidth = types.Int64Value(int64(resp.Bandwidth))
+	cfg.Bandwidth = types.Int32Value(int32(resp.Bandwidth))
 	cfg.Name = types.StringValue(resp.Name)
 	return &cfg, nil
 }
 
-type CtyunBandwidthConfig struct {
-	CycleType  types.String `tfsdk:"cycle_type"`
-	Bandwidth  types.Int64  `tfsdk:"bandwidth"`
-	CycleCount types.Int64  `tfsdk:"cycle_count"`
-	Name       types.String `tfsdk:"name"`
-	Id         types.String `tfsdk:"id"`
-	Status     types.String `tfsdk:"status"`
-	ProjectId  types.String `tfsdk:"project_id"`
-	RegionId   types.String `tfsdk:"region_id"`
+// loopCreate 循环执行create
+func (c *ctyunBandwidth) loopCreate(ctx context.Context, plan CtyunBandwidthConfig) (id string, err error) {
+	clientToken := uuid.NewString()
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			id, err = c.create(ctx, clientToken, plan)
+			if err != nil {
+				return false
+			}
+			if id != "" {
+				executeSuccessFlag = true
+				return false
+			}
+			return true
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = errors.New("创建时未获取到共享带宽id")
+	}
+	return
+}
+
+// create 创建共享带宽
+func (c *ctyunBandwidth) create(ctx context.Context, clientToken string, plan CtyunBandwidthConfig) (id string, err error) {
+	params := &ctvpc2.CtvpcCreateBandwidthRequest{
+		ClientToken: clientToken,
+		RegionID:    plan.RegionId.ValueString(),
+		CycleType:   plan.CycleType.ValueString(),
+		CycleCount:  int32(plan.CycleCount.ValueInt64()),
+		Name:        plan.Name.ValueString(),
+		Bandwidth:   plan.Bandwidth.ValueInt32(),
+		ProjectID:   plan.ProjectId.ValueStringPointer(),
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreateBandwidthApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	id = utils.SecString(resp.ReturnObj.BandwidthID)
+	return
 }

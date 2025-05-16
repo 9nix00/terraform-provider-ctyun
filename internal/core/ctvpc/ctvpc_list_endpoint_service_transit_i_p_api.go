@@ -76,8 +76,8 @@ type CtvpcListEndpointServiceTransitIPResponse struct {
 type CtvpcListEndpointServiceTransitIPReturnObjResponse struct {
 	TransitIPs   []*CtvpcListEndpointServiceTransitIPReturnObjTransitIPsResponse `json:"transitIPs"`             /*  接口业务数据  */
 	TotalCount   int32                                                           `json:"totalCount"`             /*  总条数  */
-	TotalPage    *string                                                         `json:"totalPage,omitempty"`    /*  总页数  */
-	CurrentCount *string                                                         `json:"currentCount,omitempty"` /*  当前条目  */
+	TotalPage    int32                                                           `json:"totalPage,omitempty"`    /*  总页数  */
+	CurrentCount int32                                                           `json:"currentCount,omitempty"` /*  当前条目  */
 }
 
 type CtvpcListEndpointServiceTransitIPReturnObjTransitIPsResponse struct {

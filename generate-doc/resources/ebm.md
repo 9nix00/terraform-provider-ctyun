@@ -15,29 +15,49 @@ terraform {
 }
 
 provider "ctyun" {
-  region_id            = "bb9fdb42056f11eda1610242ac110002"
-  az_name              = "cn-huadong1-jsnj1A-public-ctcloud"
+  region_id            = "200000001852"
+  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
   env                  = "prod"
 }
 
+data "ctyun_ebm_device_types" "test" {
+}
+
+data "ctyun_ebm_device_raids" "system_raid" {
+  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  volume_type = "system"
+}
+
+
+data "ctyun_ebm_device_raids" "data_raid" {
+  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  volume_type = "data"
+}
+
 resource "ctyun_ebm" "ebm_test" {
-  device_type = "physical.s5.2xlarge4"
-  instance_name = "ebm-0312-tf"
-  hostname = "ebm-0317-tf"
+  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  instance_name = "ebm-0411-tf"
+  hostname = "ebm-0411-tf"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss132345"
-  security_group_id = "sg-vrp4x1lm7p"
-  vpc_id = "vpc-5o8oe0oci6"
-  ext_ip = "0"
-  system_volume_raid_uuid = "r-wtzluqacgzzxgunnabdkpnpjew3d"
-  data_volume_raid_uuid = "r-qytwf9r5h0yn9x4evjkyr0n1cwyb"
-  instance_charge_type = "ORDER_ON_DEMAND"
-  cycle_count = 1
-  cycle_type = "MONTH"
-  status = "STOPPED"
+  password = "P@ss12345"
+  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
+  vpc_id = "vpc-6zxqwrg1r6"
+  ext_ip = "not_use"
+  system_volume_raid_uuid = length(data.ctyun_ebm_device_raids.system_raid.raids) > 0 ? data.ctyun_ebm_device_raids.system_raid.raids[0].uuid : ""
+  data_volume_raid_uuid = length(data.ctyun_ebm_device_raids.data_raid.raids) > 0 ? data.ctyun_ebm_device_raids.data_raid.raids[0].uuid : ""
+  instance_charge_type = "order_on_demand"
+  status = "running"
+  # cycle_type = "month"
+  # cycle_count = 3
+  # band_width = "100"
+  disk_list = data.ctyun_ebm_device_types.test.device_types[0].cloud_boot ? [{
+    disk_type = "system"
+    size = "100"
+    type = "sata"
+  }] : []
   network_card_list = [{
     master = true,
-    subnet_id = "subnet-n7zbsy4b91"
+    subnet_id = "subnet-43z7cqmjlp"
   }]
 }
 ```
@@ -48,10 +68,10 @@ resource "ctyun_ebm" "ebm_test" {
 ### Required
 
 - `device_type` (String) 物理机套餐类型
-- `ext_ip` (String) 是否使用弹性公网IP，取值范围:[1=自动分配,0=不使用,2=使用已有]
+- `ext_ip` (String) 是否使用弹性公网IP，取值范围:[自动分配:auto_assign,不使用:not_use,使用已有:use_exist]
 - `hostname` (String) hostname，linux系统2到63位长度；windows系统2-15位长度；<br/>允许使用大小写字母、数字、连字符'-'、点号'.'，不能连续使用'-'或者'.'，'-'和'.'不能用于开头或结尾，不能仅使用数字
 - `image_uuid` (String) 物理机镜像id
-- `instance_charge_type` (String) 实例计费类型 <br/>*ORDER_ON_CYCLE：包年包月<br/>*ORDER_ON_DEMAND：按量付费
+- `instance_charge_type` (String) 实例计费类型 <br/>*order_on_cycle：包年包月<br/>*order_on_demand：按量付费
 - `instance_name` (String) 物理机名称，长度为2-31位
 - `network_card_list` (Attributes List) 网卡 (see [below for nested schema](#nestedatt--network_card_list))
 - `vpc_id` (String) 主网卡网络ID
@@ -61,25 +81,25 @@ resource "ctyun_ebm" "ebm_test" {
 - `auto_renew_status` (Number) 是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费），<br/>注：按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年
 - `az_name` (String) 可用区名称
 - `band_width` (Number) 带宽，取值范围:[1~2000]，默认值:100
-- `cycle_count` (Number) 订购时长，该参数需要与cycleType一同使用<br/>注：最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费（即instanceChargeType为ORDER_ON_DEMAND）时，无需填写该参数（填写无效）
-- `cycle_type` (String) 订购周期类型，取值范围:[MONTH=按月,YEAR=按年]<br/>注：cycleType与cycleCount一起填写；按量付费（即instanceChargeType为ORDER_ON_DEMAND）时，无需填写该参数（填写无效）
+- `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数
+- `cycle_type` (String) 订购周期类型，取值范围:[month=按月,year=按年]，cycleType与cycleCount一起填写；按量付费时，无需填写该参数
 - `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填
 - `disk_list` (Attributes List) 云盘信息列表，套餐中supportCloud为true表示支持云盘 (see [below for nested schema](#nestedatt--disk_list))
 - `ip_type` (String) 弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4
 - `key_name` (String) 密钥对名词
 - `password` (String, Sensitive) 密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password
-- `pay_voucher_price` (Number) 代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券
 - `project_id` (String) 企业项目ID
 - `public_ip` (String) 弹性公网IP的id
-- `region_id` (String) 区域ID
-- `security_group_id` (String) 安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID
+- `region_id` (String) 资源池ID
+- `security_group_ids` (Set of String) 安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID
 - `status` (String) 物理机状态
 - `system_volume_raid_uuid` (String) 本地系统盘raid类型，如果有本地盘则必填
 - `user_data` (String) 用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符
 
 ### Read-Only
 
-- `id` (String) id
+- `id` (String) ID
+- `instance_id` (String) 物理机UUID
 - `master_order_id` (String) 订购的受理单id
 
 <a id="nestedatt--network_card_list"></a>
@@ -94,7 +114,11 @@ Optional:
 
 - `fixed_ip` (String) 内网IPv4地址
 - `ipv6` (String) 内网IPv6地址
-- `title` (String) 网卡名称
+
+Read-Only:
+
+- `interface_id` (String) 网卡UUID
+- `port_id` (String) PORT UUID
 
 
 <a id="nestedatt--disk_list"></a>

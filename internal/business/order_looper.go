@@ -27,6 +27,7 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 	if len(loopCount) > 0 {
 		c = loopCount[0]
 	}
+	var cnt int
 	retryer, _ := NewRetryer(time.Second*5, c)
 	result := retryer.Start(
 		func(currentTime int) bool {
@@ -48,6 +49,10 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 				// 开通中状态
 				return true
 			case OrderStatusFinish:
+				if len(detail.InstanceIDList) == 0 && cnt < 3 {
+					cnt++
+					return true
+				}
 				// 开通完成状态
 				resp = &LoopOrderResponse{
 					Uuid:          detail.InstanceIDList,

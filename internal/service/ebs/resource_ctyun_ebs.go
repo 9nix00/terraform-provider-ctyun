@@ -329,7 +329,7 @@ func (c *ctyunEbs) Delete(ctx context.Context, request resource.DeleteRequest, r
 	}
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	err2 := helper.RefundLoop(ctx, c.meta.Credential, resp.MasterOrderId)
-	if err != nil {
+	if err2 != nil {
 		response.Diagnostics.AddError(err2.Error(), err2.Error())
 		return
 	}

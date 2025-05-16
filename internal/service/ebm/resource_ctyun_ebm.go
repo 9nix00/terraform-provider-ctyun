@@ -5,14 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -53,6 +53,7 @@ func (c *ctyunEbm) Metadata(_ context.Context, request resource.MetadataRequest,
 
 type CtyunEbmConfig struct {
 	ID                   types.String `tfsdk:"id"`
+	InstanceID           types.String `tfsdk:"instance_id"`
 	RegionID             types.String `tfsdk:"region_id"`
 	AzName               types.String `tfsdk:"az_name"`
 	DeviceType           types.String `tfsdk:"device_type"`
@@ -66,17 +67,17 @@ type CtyunEbmConfig struct {
 	VpcID                types.String `tfsdk:"vpc_id"`
 	ExtIP                types.String `tfsdk:"ext_ip"`
 	IpType               types.String `tfsdk:"ip_type"`
-	BandWidth            types.Int64  `tfsdk:"band_width"`
+	BandWidth            types.Int32  `tfsdk:"band_width"`
 	PublicIP             types.String `tfsdk:"public_ip"`
-	SecurityGroupID      types.String `tfsdk:"security_group_id"`
+	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
 	DiskList             types.List   `tfsdk:"disk_list"`
 	NetworkCardList      types.List   `tfsdk:"network_card_list"`
 	UserData             types.String `tfsdk:"user_data"`
 	KeyName              types.String `tfsdk:"key_name"`
 	//PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
-	AutoRenewStatus    types.Int64  `tfsdk:"auto_renew_status"`
+	AutoRenewStatus    types.Int32  `tfsdk:"auto_renew_status"`
 	InstanceChargeType types.String `tfsdk:"instance_charge_type"`
-	CycleCount         types.Int64  `tfsdk:"cycle_count"`
+	CycleCount         types.Int32  `tfsdk:"cycle_count"`
 	CycleType          types.String `tfsdk:"cycle_type"`
 	MasterOrderID      types.String `tfsdk:"master_order_id"`
 	Status             types.String `tfsdk:"status"`
@@ -90,10 +91,12 @@ type CtyunEbmDiskList struct {
 }
 
 type CtyunEbmNetworkCardList struct {
-	FixedIP  types.String `tfsdk:"fixed_ip"`
-	Master   types.Bool   `tfsdk:"master"`
-	Ipv6     types.String `tfsdk:"ipv6"`
-	SubnetID types.String `tfsdk:"subnet_id"`
+	FixedIP     types.String `tfsdk:"fixed_ip"`
+	Master      types.Bool   `tfsdk:"master"`
+	Ipv6        types.String `tfsdk:"ipv6"`
+	SubnetID    types.String `tfsdk:"subnet_id"`
+	PortID      types.String `tfsdk:"port_id"`
+	InterfaceID types.String `tfsdk:"interface_id"`
 }
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -102,10 +105,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Description: "ID",
+			},
+			"instance_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "物理机UUID",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -117,7 +121,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -177,6 +181,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "本地系统盘raid类型，如果有本地盘则必填",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -185,6 +190,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "本地数据盘raid类型，如果有本地盘则必填",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -208,22 +214,22 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Description: "弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4",
 				Default:     stringdefault.StaticString("ipv4"),
 			},
-			"band_width": schema.Int64Attribute{
+			"band_width": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "带宽，取值范围:[1~2000]，默认值:100",
-				Default:     int64default.StaticInt64(0),
-				Validators: []validator.Int64{
-					validator2.AlsoRequiresEqualInt64(
+				Default:     int32default.StaticInt32(0),
+				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpAutoAssign),
 					),
-					validator2.ConflictsWithEqualInt64(
+					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpNotUse),
 						types.StringValue(business.EbmExtIpUseExist),
 					),
-					int64validator.Between(1, 2000),
+					int32validator.Between(1, 2000),
 				},
 			},
 			"public_ip": schema.StringAttribute{
@@ -235,7 +241,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpUseExist),
 					),
-					validator2.ConflictsWithEqualStrings(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("ext_ip"),
 						types.StringValue(business.EbmExtIpNotUse),
 						types.StringValue(business.EbmExtIpAutoAssign),
@@ -245,13 +251,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"security_group_id": schema.StringAttribute{
+			"security_group_ids": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				ElementType: types.StringType,
 			},
 			"disk_list": schema.ListNestedAttribute{
 				Optional:    true,
@@ -299,11 +303,22 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"network_card_list": schema.ListNestedAttribute{
 				Required:    true,
 				Description: "网卡",
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
-				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
+						"port_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "PORT UUID",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+						},
+						"interface_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "网卡UUID",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.UseStateForUnknown(),
+							},
+						},
 						"fixed_ip": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
@@ -350,11 +365,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			//	Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券",
 			//	Default:     float64default.StaticFloat64(0.00),
 			//},
-			"auto_renew_status": schema.Int64Attribute{
+			"auto_renew_status": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费），<br/>注：按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年",
-				Default:     int64default.StaticInt64(0),
+				Default:     int32default.StaticInt32(0),
 			},
 			"instance_charge_type": schema.StringAttribute{
 				Required:    true,
@@ -366,24 +381,22 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"cycle_count": schema.Int64Attribute{
+			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.UseStateForUnknown(),
 				},
-				Validators: []validator.Int64{
-					validator2.AlsoRequiresEqualInt64(
+				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnCycle),
 					),
-					validator2.ConflictsWithEqualInt64(
+					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnDemand),
 					),
-					// 上限设置高是为了续期
-					validator2.CycleCount(1, 1000, 1, 100),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
@@ -395,7 +408,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnCycle),
 					),
-					validator2.ConflictsWithEqualStrings(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("instance_charge_type"),
 						types.StringValue(business.EbmOrderOnDemand),
 					),
@@ -448,7 +461,7 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	// 先保存订单号
 	masterOrderId := *returnObj.MasterOrderID
 	plan.MasterOrderID = types.StringValue(masterOrderId)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -459,8 +472,8 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	if err != nil {
 		return
 	}
-	plan.ID = types.StringValue(loop.Uuid[0])
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	plan.InstanceID = types.StringValue(loop.Uuid[0])
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -470,11 +483,11 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 		return
 	}
 	// 反查信息
-	err = c.getAndMergeEbm(ctx, &plan)
+	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
 
 func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
@@ -495,11 +508,25 @@ func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, respo
 		return
 	}
 	// 查询远端
-	err = c.getAndMergeEbm(ctx, &state)
+	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		if strings.Contains(err.Error(), "instance is not found") {
+			// 查下主网卡是否存在
+			var exist bool
+			portID := c.getMasterPortID(ctx, state)
+			exist, err = business.NewPortService(c.meta).Exist(ctx, portID, state.RegionID.ValueString())
+			if err != nil {
+				return
+			}
+			// 主网卡存在，则监听到主网卡删除为止
+			if exist {
+				err = c.checkAfterDelete(ctx, state)
+				if err != nil {
+					return
+				}
+			}
+			// 主网卡不存在，清理state
 			response.State.RemoveResource(ctx)
-			err = nil
 		}
 		return
 	}
@@ -525,6 +552,11 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	if !plan.NetworkCardList.Equal(state.NetworkCardList) {
+		err = fmt.Errorf("请使用其他能力修改网卡")
+		return
+	}
 	// 处理开关机
 	err = c.handleInstance(ctx, state, state.Status.ValueString(), plan.Status.ValueString())
 	if err != nil {
@@ -548,7 +580,7 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	}
 	state.CycleCount = plan.CycleCount
 	// 查询远端信息
-	err = c.getAndMergeEbm(ctx, &state)
+	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		return
 	}
@@ -572,23 +604,11 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 	if err != nil {
 		return
 	}
-	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
-		RegionID:     state.RegionID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
-		ClientToken:  uuid.NewString(),
-	})
+	err = c.delete(ctx, state)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	err = c.checkAfterDelete(ctx, state)
 	if err != nil {
 		return
 	}
@@ -602,7 +622,7 @@ func (c *ctyunEbm) Configure(_ context.Context, request resource.ConfigureReques
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [uuid]
+// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[regionID],[azName]
 func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -610,23 +630,21 @@ func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportState
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunEbmConfig
-	var id string
-	err = terraform_extend.Split(request.ID, &id)
+	var plan CtyunEbmConfig
+	var instanceUUID, regionID, azName string
+	err = terraform_extend.Split(request.ID, &instanceUUID, &regionID, &azName)
 	if err != nil {
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
-	cfg.RegionID = types.StringValue(regionId)
-	azName := c.meta.GetExtraIfEmpty(cfg.AzName.ValueString(), common.ExtraAzName)
-	cfg.AzName = types.StringValue(azName)
 
-	cfg.ID = types.StringValue(id)
-	err = c.getAndMergeEbm(ctx, &cfg)
+	plan.InstanceID = types.StringValue(instanceUUID)
+	plan.AzName = types.StringValue(azName)
+	plan.RegionID = types.StringValue(regionID)
+	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
 
 // createInstance 创建物理机
@@ -639,14 +657,15 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	systemVolumeRaidUUID := plan.SystemVolumeRaidUUID.ValueString()
 	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
 	ipType := plan.IpType.ValueString()
-	securityGroupID := plan.SecurityGroupID.ValueString()
 	userData := plan.UserData.ValueString()
 	keyName := plan.KeyName.ValueString()
 	instanceChargeType := strings.ToUpper(plan.InstanceChargeType.ValueString())
 	cycleType := strings.ToUpper(plan.CycleType.ValueString())
-	bandwidth := plan.BandWidth.ValueInt64()
-	diskList := c.buildDiskList(ctx, plan)
-	networkCardList := c.buildNetworkCardList(ctx, plan)
+	bandwidth := plan.BandWidth.ValueInt32()
+	securityGroupIDs, _ := c.buildSecGroupList(ctx, plan)
+	securityGroupStr := strings.Join(securityGroupIDs, ",")
+	diskList, _ := c.buildDiskList(ctx, plan)
+	networkCardList, _ := c.buildNetworkCardList(ctx, plan)
 	extIp, _ := business.EbmExtIpMap.FromOriginalScene(plan.ExtIP.ValueString(), business.EbmExtIpMapScene1)
 	params := &ctebm.EbmCreateInstanceV4plusRequest{
 		RegionID:           regionID,
@@ -662,12 +681,13 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		DiskList:           diskList,
 		NetworkCardList:    networkCardList,
 		UserData:           &userData,
-		AutoRenewStatus:    int32(plan.AutoRenewStatus.ValueInt64()),
+		AutoRenewStatus:    plan.AutoRenewStatus.ValueInt32(),
 		InstanceChargeType: &instanceChargeType,
-		CycleCount:         int32(plan.CycleCount.ValueInt64()),
+		CycleCount:         plan.CycleCount.ValueInt32(),
 		CycleType:          &cycleType,
 		ClientToken:        uuid.NewString(),
 		OrderCount:         1,
+		SecurityGroupID:    &securityGroupStr,
 	}
 	if password != "" {
 		params.Password = &password
@@ -685,11 +705,9 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	}
 
 	if bandwidth > 0 {
-		params.BandWidth = int32(bandwidth)
+		params.BandWidth = bandwidth
 	}
-	if securityGroupID != "" {
-		params.SecurityGroupID = &securityGroupID
-	}
+
 	if publicIP != "" {
 		params.PublicIP = &publicIP
 	}
@@ -710,7 +728,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 
 // checkBeforeCreateInstance 创建前检查
 func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmConfig) error {
-	cycleCount := plan.CycleCount.ValueInt64()
+	cycleCount := plan.CycleCount.ValueInt32()
 	cycleType := plan.CycleType.ValueString()
 	if cycleType == business.EbmCycleTypeMonth && cycleCount > 11 ||
 		cycleType == business.EbmCycleTypeYear && cycleCount > 5 {
@@ -729,8 +747,14 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 		return err
 	}
 
-	networkCardList := c.buildNetworkCardList(ctx, plan)
-	diskList := c.buildDiskList(ctx, plan)
+	networkCardList, err := c.buildNetworkCardList(ctx, plan)
+	if err != nil {
+		return err
+	}
+	diskList, err := c.buildDiskList(ctx, plan)
+	if err != nil {
+		return err
+	}
 	for _, card := range networkCardList {
 		if subnet, ok := subnets[card.SubnetID]; !ok {
 			return fmt.Errorf("子网 %s 不属于 %s", card.SubnetID, vpc)
@@ -742,17 +766,22 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 
 	}
 	// 弹性裸金属必须有安全组id，标准裸金属一定不能有安全组id
-	secGroup := plan.SecurityGroupID.ValueString()
-	if *deviceTypeConfig.SmartNicExist && secGroup == "" {
+	secGroup, err := c.buildSecGroupList(ctx, plan)
+	if err != nil {
+		return err
+	}
+	if *deviceTypeConfig.SmartNicExist && len(secGroup) == 0 {
 		return fmt.Errorf("该套餐 %s 为弹性裸金属，必须传递安全组ID", plan.DeviceType.ValueString())
 	}
-	if !*deviceTypeConfig.SmartNicExist && secGroup != "" {
+	if !*deviceTypeConfig.SmartNicExist && len(secGroup) != 0 {
 		return fmt.Errorf("该套餐 %s 为标准裸金属，不能传递安全组ID", plan.DeviceType.ValueString())
 	}
 	// 安全组必须存在
-	err = business.NewSecurityGroupService(c.meta).MustExist(ctx, plan.SecurityGroupID.ValueString(), plan.RegionID.ValueString())
-	if err != nil {
-		return err
+	for _, g := range secGroup {
+		err = business.NewSecurityGroupService(c.meta).MustExist(ctx, g, plan.RegionID.ValueString())
+		if err != nil {
+			return err
+		}
 	}
 
 	// 校验eip
@@ -854,7 +883,7 @@ func (c *ctyunEbm) checkStock(ctx context.Context, plan CtyunEbmConfig) (enough 
 }
 
 // getDeviceTypeConfig 查询套餐详情
-func (c *ctyunEbm) getDeviceTypeConfig(ctx context.Context, plan CtyunEbmConfig) (result ctebm.EbmDeviceTypeListReturnObjResultsResponse, error error) {
+func (c *ctyunEbm) getDeviceTypeConfig(ctx context.Context, plan CtyunEbmConfig) (result ctebm.EbmDeviceTypeListReturnObjResultsResponse, err error) {
 	deviceType := plan.DeviceType.ValueString()
 	params := &ctebm.EbmDeviceTypeListRequest{
 		RegionID:   plan.RegionID.ValueString(),
@@ -876,14 +905,29 @@ func (c *ctyunEbm) getDeviceTypeConfig(ctx context.Context, plan CtyunEbmConfig)
 	return
 }
 
+// buildSecGroup 构建安全组列表
+func (c *ctyunEbm) buildSecGroupList(ctx context.Context, plan CtyunEbmConfig) (secGroupIDs []string, err error) {
+	if plan.SecurityGroupIDs.IsNull() {
+		return
+	}
+	// 处理安全组集合
+	diags := plan.SecurityGroupIDs.ElementsAs(ctx, &secGroupIDs, true) // 第二个参数为是否忽略未知值
+	if diags.HasError() {
+		err = fmt.Errorf("invalid security group ids")
+		return
+	}
+	return
+}
+
 // buildDiskList 构建创建物理机时的云硬盘列表结构
-func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest) {
+func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest, err error) {
 	if plan.DiskList.IsNull() {
 		return
 	}
 	var diskList []CtyunEbmDiskList
 	diags := plan.DiskList.ElementsAs(ctx, &diskList, false)
 	if diags.HasError() {
+		err = fmt.Errorf("invalid disk list")
 		return
 	}
 	for _, disk := range diskList {
@@ -902,13 +946,16 @@ func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (disk
 }
 
 // buildNetworkCardList 构建创建物理机时的网卡结构
-func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest) {
+func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (
+	networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest,
+	err error) {
 	var networkCardList []CtyunEbmNetworkCardList
 	if plan.NetworkCardList.IsNull() {
 		return
 	}
 	diags := plan.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
 	if diags.HasError() {
+		err = fmt.Errorf("invalid network card list")
 		return
 	}
 	for _, card := range networkCardList {
@@ -948,7 +995,7 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 	resp, err := c.meta.Apis.CtEbmApis.EbmStartInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStartInstanceRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
-		InstanceUUID: plan.ID.ValueString(),
+		InstanceUUID: plan.InstanceID.ValueString(),
 	})
 	if err != nil {
 		return
@@ -960,29 +1007,29 @@ func (c *ctyunEbm) startInstance(ctx context.Context, plan CtyunEbmConfig) (err 
 		return
 	}
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 20)
+	var status string
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
+			status, err = c.getInstanceStatus(ctx, plan)
 			if err != nil {
 				return false
 			}
 			switch status {
-			case business.EbmStatusStarting:
-				// 执行中
-				return true
 			case business.EbmStatusRunning:
 				// 执行成功
 				executeSuccessFlag = true
 				return false
 			default:
-				// 默认为执行失败
-				return false
+				return true
 			}
 		},
 	)
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("执行开启ebm动作时，ebm状态异常")
+		return errors.New("执行开启ebm动作时，ebm状态异常：status")
 	}
 	return
 }
@@ -992,7 +1039,7 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 	resp, err := c.meta.Apis.CtEbmApis.EbmStopInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmStopInstanceRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
-		InstanceUUID: plan.ID.ValueString(),
+		InstanceUUID: plan.InstanceID.ValueString(),
 	})
 	if err != nil {
 		return
@@ -1004,37 +1051,37 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 		return
 	}
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 20)
+	var status string
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, plan)
+			status, err = c.getInstanceStatus(ctx, plan)
 			if err != nil {
 				return false
 			}
 			switch status {
-			case business.EbmStatusStopping:
-				// 执行中
-				return true
 			case business.EbmStatusStopped:
 				// 执行成功
 				executeSuccessFlag = true
 				return false
-			default:
-				// 默认为执行失败
-				return false
+			default: // 其他状态持续轮询
+				return true
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("执行关闭ebm动作时，ebm状态异常")
+		return errors.New("执行关闭ebm动作时，ebm状态异常，当前状态：" + status)
 	}
 	return
 }
 
-// getAndMergeEbm 查询ebm
-func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err error) {
+// getAndMerge 查询ebm
+func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err error) {
 	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
 		RegionID:     cfg.RegionID.ValueString(),
-		InstanceUUID: cfg.ID.ValueString(),
+		InstanceUUID: cfg.InstanceID.ValueString(),
 		AzName:       cfg.AzName.ValueString(),
 	})
 	if err != nil {
@@ -1048,7 +1095,7 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 	}
 
 	instance := resp.ReturnObj
-	cfg.ID = utils.SecStringValue(instance.InstanceUUID)
+	cfg.InstanceID = utils.SecStringValue(instance.InstanceUUID)
 	cfg.RegionID = utils.SecStringValue(instance.RegionID)
 	cfg.AzName = utils.SecStringValue(instance.AzName)
 	cfg.DeviceType = utils.SecStringValue(instance.DeviceType)
@@ -1062,7 +1109,7 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 	if *instance.OnDemand {
 		cfg.InstanceChargeType = types.StringValue(business.EbmOrderOnDemand)
 		cfg.CycleType = types.StringValue("")
-		cfg.CycleCount = types.Int64Value(0)
+		cfg.CycleCount = types.Int32Value(0)
 	} else {
 		cfg.InstanceChargeType = types.StringValue(business.EbmOrderOnCycle)
 	}
@@ -1074,14 +1121,20 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 	diskObj := utils.StructToTFObjectTypes(CtyunEbmDiskList{})
 	for _, card := range instance.Interfaces {
 		master := utils.SecBoolValue(card.Master)
-		if master.ValueBool() && cfg.SecurityGroupID.IsNull() && len(card.SecurityGroups) > 0 {
-			cfg.SecurityGroupID = utils.SecStringValue(card.SecurityGroups[0].SecurityGroupID)
+		if master.ValueBool() && len(card.SecurityGroups) > 0 {
+			var secGroups []string
+			for _, g := range card.SecurityGroups {
+				secGroups = append(secGroups, utils.SecString(g.SecurityGroupID))
+			}
+			cfg.SecurityGroupIDs, _ = types.SetValueFrom(ctx, types.StringType, secGroups)
 		}
 		item := CtyunEbmNetworkCardList{
-			FixedIP:  utils.SecStringValue(card.Ipv4),
-			Master:   master,
-			Ipv6:     utils.SecStringValue(card.Ipv6),
-			SubnetID: utils.SecStringValue(card.SubnetUUID),
+			FixedIP:     utils.SecStringValue(card.Ipv4),
+			Master:      master,
+			Ipv6:        utils.SecStringValue(card.Ipv6),
+			SubnetID:    utils.SecStringValue(card.SubnetUUID),
+			PortID:      utils.SecStringValue(card.PortUUID),
+			InterfaceID: utils.SecStringValue(card.InterfaceUUID),
 		}
 		cardList = append(cardList, item)
 	}
@@ -1105,6 +1158,7 @@ func (c *ctyunEbm) getAndMergeEbm(ctx context.Context, cfg *CtyunEbmConfig) (err
 		diskList = append(diskList, item)
 	}
 	cfg.DiskList, _ = types.ListValueFrom(ctx, diskObj, diskList)
+	cfg.ID = cfg.InstanceID
 
 	return nil
 }
@@ -1128,7 +1182,7 @@ func (c *ctyunEbm) getMasterOrderIdIfOrderInProgress(err ctyunsdk.CtyunRequestEr
 // acquireIdIfOrderNotFinished 重新获取id，如果前订单状态有问题需要重新轮询
 // 返回值：数据是否有效
 func (c *ctyunEbm) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state *CtyunEbmConfig, response *resource.ReadResponse) bool {
-	id := state.ID.ValueString()
+	id := state.InstanceID.ValueString()
 	masterOrderId := state.MasterOrderID.ValueString()
 	if id != "" {
 		// 数据是完整的，无需处理
@@ -1148,7 +1202,7 @@ func (c *ctyunEbm) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 	}
 
 	// 成功把id恢复出来
-	state.ID = types.StringValue(resp.Uuid[0])
+	state.InstanceID = types.StringValue(resp.Uuid[0])
 	response.State.Set(ctx, state)
 	return true
 }
@@ -1165,7 +1219,7 @@ func (c *ctyunEbm) updateInstanceName(ctx context.Context, state CtyunEbmConfig,
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
 		DisplayName:  &name,
-		InstanceUUID: state.ID.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
 	})
 	if err != nil {
 		return
@@ -1197,16 +1251,7 @@ func (c *ctyunEbm) updatePasswordOrHostname(ctx context.Context, state CtyunEbmC
 	if err != nil {
 		return
 	}
-	// 通过状态检查是否修改完成
-	err = c.checkAfterUpdatePasswordOrHostname(ctx, state)
-	if err != nil {
-		return
-	}
-	// 因为改完密码或主机名会默认开机，而改前一定是关机状态，这里要手动恢复到关机态
-	err = c.stopInstance(ctx, state)
-	if err != nil {
-		return
-	}
+
 	return
 }
 
@@ -1218,7 +1263,7 @@ func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, pla
 	resp, err := c.meta.Apis.CtEbmApis.EbmResetPasswordApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmResetPasswordRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
 		NewPassword:  plan.Password.ValueString(),
 	})
 	if err != nil {
@@ -1227,6 +1272,16 @@ func (c *ctyunEbm) updatePassword(ctx context.Context, state CtyunEbmConfig, pla
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
+	}
+	// 通过状态检查是否修改完成
+	err = c.checkAfterUpdatePasswordOrHostname(ctx, state)
+	if err != nil {
+		return
+	}
+	// 关机
+	err = c.stopInstance(ctx, state)
+	if err != nil {
+		return
 	}
 	return
 }
@@ -1239,7 +1294,7 @@ func (c *ctyunEbm) updateHostname(ctx context.Context, state CtyunEbmConfig, pla
 	resp, err := c.meta.Apis.CtEbmApis.EbmResetHostnameApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmResetHostnameRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
 		Hostname:     plan.Hostname.ValueString(),
 	})
 	if err != nil {
@@ -1249,16 +1304,28 @@ func (c *ctyunEbm) updateHostname(ctx context.Context, state CtyunEbmConfig, pla
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 	}
+	// 通过状态检查是否修改完成
+	err = c.checkAfterUpdatePasswordOrHostname(ctx, state)
+	if err != nil {
+		return
+	}
+	// 关机
+	err = c.stopInstance(ctx, state)
+	if err != nil {
+		return
+	}
 	return
 }
 
 // checkBeforeUpdatePasswordOrHostname 修改密码或主机名前对机器状态做检查
 func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, state CtyunEbmConfig) error {
 	var executeSuccessFlag bool
+	var status string
+	var err error
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
+			status, err = c.getInstanceStatus(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1272,8 +1339,11 @@ func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, stat
 				return false
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("修改物理机密码或hostname失败，请确认物理机状态，修改密码或hostname必须先关机")
+		return errors.New("修改物理机密码或hostname失败，请确认物理机状态，修改密码或hostname必须先关机，当前状态：" + status)
 	}
 	return nil
 }
@@ -1281,10 +1351,12 @@ func (c *ctyunEbm) checkBeforeUpdatePasswordOrHostname(ctx context.Context, stat
 // checkAfterUpdatePasswordOrHostname 修改后检查机器状态
 func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state CtyunEbmConfig) error {
 	var executeSuccessFlag bool
+	var status string
+	var err error
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getInstanceStatus(ctx, state)
+			status, err = c.getInstanceStatus(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1298,8 +1370,11 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 				return false
 			}
 		})
+	if err != nil {
+		return err
+	}
 	if !executeSuccessFlag {
-		return errors.New("修改物理机密码或hostname后，检查失败，请确认物理机状态")
+		return errors.New("修改物理机密码或hostname后，检查失败，请确认物理机状态：" + status)
 	}
 	return nil
 }
@@ -1318,7 +1393,7 @@ func (c *ctyunEbm) renewInstance(ctx context.Context, state CtyunEbmConfig, plan
 		return
 	}
 	cycleType := state.CycleType.ValueString()
-	cycleCount := plan.CycleCount.ValueInt64() - state.CycleCount.ValueInt64()
+	cycleCount := plan.CycleCount.ValueInt32() - state.CycleCount.ValueInt32()
 	if cycleCount < 0 { // 时长缩短了，报错
 		err = fmt.Errorf("包周期物理机不支持缩短时长")
 		return
@@ -1331,9 +1406,9 @@ func (c *ctyunEbm) renewInstance(ctx context.Context, state CtyunEbmConfig, plan
 	params := &ctebm.EbmRenewInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
 		CycleType:    strings.ToUpper(plan.CycleType.ValueString()),
-		CycleCount:   int32(cycleCount),
+		CycleCount:   cycleCount,
 		ClientToken:  uuid.NewString(),
 	}
 	resp, err := c.meta.Apis.CtEbmApis.EbmRenewInstanceApi.Do(ctx, c.meta.SdkCredential, params)
@@ -1351,19 +1426,75 @@ func (c *ctyunEbm) renewInstance(ctx context.Context, state CtyunEbmConfig, plan
 
 // getInstanceStatus 查询物理机状态
 func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) (status string, err error) {
-	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
+	return business.NewEbmService(c.meta).GetEbmStatus(
+		ctx,
+		state.InstanceID.ValueString(),
+		state.RegionID.ValueString(),
+		state.AzName.ValueString(),
+	)
+}
+
+// delete 删除物理机
+func (c *ctyunEbm) delete(ctx context.Context, state CtyunEbmConfig) (err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
-		InstanceUUID: state.ID.ValueString(),
 		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
+		ClientToken:  uuid.NewString(),
 	})
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
+	}
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	if err != nil {
 		return
 	}
-	return strings.ToLower(*resp.ReturnObj.EbmState), err
+	return
+}
+
+// checkAfterDelete 删除后检查
+func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (err error) {
+	portID := c.getMasterPortID(ctx, state)
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	var exist bool
+	retryer.Start(
+		func(currentTime int) bool {
+			exist, err = business.NewPortService(c.meta).Exist(ctx, portID, state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if !exist {
+				return false
+			}
+			return true
+		})
+	if err != nil {
+		return
+	}
+	if exist {
+		err = fmt.Errorf("裸金属 %s 的主网卡 %s 残留", state.InstanceID.ValueString(), portID)
+	}
+	return
+}
+
+// getMasterPortID 获取主网卡id
+func (c *ctyunEbm) getMasterPortID(ctx context.Context, state CtyunEbmConfig) (portID string) {
+	if state.NetworkCardList.IsNull() {
+		return
+	}
+	var networkCardList []CtyunEbmNetworkCardList
+	diags := state.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
+	if diags.HasError() { // 无需处理
+		return
+	}
+	for _, card := range networkCardList {
+		if card.Master.ValueBool() {
+			portID = card.PortID.ValueString()
+		}
+	}
+	return
 }

@@ -1,17 +1,21 @@
 package common
 
 import (
-	"sync"
+	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
 	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
+	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
+	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ctzos"
 )
 
 var once sync.Once
@@ -26,11 +30,7 @@ type CtyunMetadata struct {
 
 // InitCtyunMetadata 初始化
 func InitCtyunMetadata(apis *Apis, credential ctyunsdk.Credential, sdkCred core.Credential, extra map[string]string) {
-	if ctyunMetadata == nil {
-		ctyunMetadata = &CtyunMetadata{Apis: apis, Credential: credential, SdkCredential: sdkCred, extra: extra}
-	} else {
-		ctyunMetadata.extra = extra
-	}
+	ctyunMetadata = &CtyunMetadata{Apis: apis, Credential: credential, SdkCredential: sdkCred, extra: extra}
 }
 
 // AcquireCtyunMetadata 获取实例对象
@@ -61,6 +61,11 @@ type Apis struct {
 	CtImageApis  *ctimage.Apis
 	CtVpcApis    *ctvpc.Apis
 	CtEbmApis    *ctebm.Apis
+	SdkCtEbsApis *ctebs2.Apis
+	SdkCtEcsApis *ctecs2.Apis
+	SdkCtVpcApis *ctvpc2.Apis
+	SdkCtZosApis *ctzos.Apis
+	SdkCcseApis  *ccse2.Apis
 	SdkCtVpcApis *sdkCtvpc.Apis
 	SdkCtElbApis *sdkCtelb.Apis
 }

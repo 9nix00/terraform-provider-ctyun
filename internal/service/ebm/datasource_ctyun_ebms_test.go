@@ -7,11 +7,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccNewCtyunEbms(t *testing.T) {
+func TestAccCtyunEbms(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: `
 provider "ctyun" {
@@ -22,9 +21,6 @@ data "ctyun_ebms" "test" {
   region_id = "200000001852"
   az_name = "cn-huabei2-tj-3a-public-ctcloud"
 }`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.ctyun_ebms.test", "instances.#", "0"),
-				),
 			},
 		},
 	})

@@ -30,10 +30,10 @@ func (c *ctyunEbms) Metadata(_ context.Context, req datasource.MetadataRequest, 
 }
 
 type CtyunEbmsModel struct {
-	ID                   types.String               `tfsdk:"id"`
+	InstanceID           types.String               `tfsdk:"instance_id"`
 	DeviceType           types.String               `tfsdk:"device_type"`
 	InstanceName         types.String               `tfsdk:"instance_name"`
-	HostName             types.String               `tfsdk:"host_name"`
+	Hostname             types.String               `tfsdk:"hostname"`
 	SystemVolumeRaidUUID types.String               `tfsdk:"system_volume_raid_uuid"`
 	DataVolumeRaidUUID   types.String               `tfsdk:"data_volume_raid_uuid"`
 	ImageUUID            types.String               `tfsdk:"image_uuid"`
@@ -52,11 +52,12 @@ type CtyunEbmsModel struct {
 	InstanceChargeType   types.String               `tfsdk:"instance_charge_type"`
 }
 type CtyunEbmsNetworkCardList struct {
-	PortUUID types.String `tfsdk:"port_uuid"`
-	FixedIP  types.String `tfsdk:"fixed_ip"`
-	Master   types.Bool   `tfsdk:"master"`
-	Ipv6     types.String `tfsdk:"ipv6"`
-	SubnetID types.String `tfsdk:"subnet_id"`
+	InterfaceID types.String `tfsdk:"interface_id"`
+	PortUUID    types.String `tfsdk:"port_uuid"`
+	FixedIP     types.String `tfsdk:"fixed_ip"`
+	Master      types.Bool   `tfsdk:"master"`
+	Ipv6        types.String `tfsdk:"ipv6"`
+	SubnetID    types.String `tfsdk:"subnet_id"`
 }
 
 type CtyunEbmsConfig struct {
@@ -66,8 +67,8 @@ type CtyunEbmsConfig struct {
 	Instances      []CtyunEbmsModel `tfsdk:"instances"`
 }
 
-func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	resp.Schema = schema.Schema{
+func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027724/10040106**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
@@ -89,9 +90,9 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, resp *
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "物理机ID",
+							Description: "物理机UUID",
 						},
 						"device_type": schema.StringAttribute{
 							Computed:    true,
@@ -101,7 +102,7 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, resp *
 							Computed:    true,
 							Description: "物理机实例展示名",
 						},
-						"host_name": schema.StringAttribute{
+						"hostname": schema.StringAttribute{
 							Computed:    true,
 							Description: "物理机主机名称(hostname)",
 						},
@@ -143,10 +144,15 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, resp *
 							Description: "网卡信息",
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
+									"interface_id": schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: "物理机网卡id",
+									},
 									"port_uuid": schema.StringAttribute{
 										Optional:    true,
 										Computed:    true,
-										Description: "网卡id",
+										Description: "弹性网卡id",
 									},
 									"fixed_ip": schema.StringAttribute{
 										Optional:    true,
@@ -251,9 +257,9 @@ func (c *ctyunEbms) Read(ctx context.Context, request datasource.ReadRequest, re
 	model := []CtyunEbmsModel{}
 	for _, ebm := range resp.ReturnObj.Results {
 		item := CtyunEbmsModel{
-			ID:                   utils.SecStringValue(ebm.InstanceUUID),
+			InstanceID:           utils.SecStringValue(ebm.InstanceUUID),
 			DeviceType:           utils.SecStringValue(ebm.DeviceType),
-			HostName:             utils.SecStringValue(ebm.InstanceName),
+			Hostname:             utils.SecStringValue(ebm.InstanceName),
 			InstanceName:         utils.SecStringValue(ebm.DisplayName),
 			ImageUUID:            utils.SecStringValue(ebm.ImageID),
 			SystemVolumeRaidUUID: utils.SecStringValue(ebm.SystemVolumeRaidID),
@@ -276,11 +282,12 @@ func (c *ctyunEbms) Read(ctx context.Context, request datasource.ReadRequest, re
 		var networkCards []CtyunEbmsNetworkCardList
 		for _, card := range ebm.Interfaces {
 			networkCards = append(networkCards, CtyunEbmsNetworkCardList{
-				PortUUID: utils.SecStringValue(card.PortUUID),
-				Master:   utils.SecBoolValue(card.Master),
-				FixedIP:  utils.SecStringValue(card.Ipv4),
-				Ipv6:     utils.SecStringValue(card.Ipv6),
-				SubnetID: utils.SecStringValue(card.SubnetUUID),
+				PortUUID:    utils.SecStringValue(card.PortUUID),
+				Master:      utils.SecBoolValue(card.Master),
+				FixedIP:     utils.SecStringValue(card.Ipv4),
+				Ipv6:        utils.SecStringValue(card.Ipv6),
+				SubnetID:    utils.SecStringValue(card.SubnetUUID),
+				InterfaceID: utils.SecStringValue(card.InterfaceUUID),
 			})
 		}
 		item.NetworkCardList = networkCards

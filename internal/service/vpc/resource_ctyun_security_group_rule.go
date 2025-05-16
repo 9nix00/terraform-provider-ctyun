@@ -137,7 +137,7 @@ func (c *ctyunSecurityGroupRule) Schema(_ context.Context, _ resource.SchemaRequ
 						types.StringValue(business.SecurityGroupRuleProtocolTcp),
 						types.StringValue(business.SecurityGroupRuleProtocolUdp),
 					),
-					validator2.ConflictsWithEqualStrings(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("protocol"),
 						types.StringValue(business.SecurityGroupRuleProtocolAny),
 					),

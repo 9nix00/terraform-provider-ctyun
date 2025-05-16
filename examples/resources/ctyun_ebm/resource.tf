@@ -6,11 +6,9 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   region_id            = "200000001852"
-  # az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-  az_name =             "cn-huabei2-tj1A-public-ctcloud"
+  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
   env                  = "prod"
 }
 
@@ -30,11 +28,11 @@ data "ctyun_ebm_device_raids" "data_raid" {
 
 resource "ctyun_ebm" "ebm_test" {
   device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
-  instance_name = "ebm-0321-tf"
-  hostname = "ebm-03221-tf"
+  instance_name = "ebm-0411-tf"
+  hostname = "ebm-0411-tf"
   image_uuid = "im-xevpi6apqilz1bixmogofyref9qm"
-  password = "P@ss132345"
-  security_group_id = "sg-t0ae11aig1"
+  password = "P@ss12345"
+  security_group_ids = ["sg-hsqwzeythj","sg-t0ae11aig1"]
   vpc_id = "vpc-6zxqwrg1r6"
   ext_ip = "not_use"
   system_volume_raid_uuid = length(data.ctyun_ebm_device_raids.system_raid.raids) > 0 ? data.ctyun_ebm_device_raids.system_raid.raids[0].uuid : ""

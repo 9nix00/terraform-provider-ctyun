@@ -7,11 +7,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
-func TestAccNewCtyunEbmDeviceTypes(t *testing.T) {
+func TestAccCtyunEbmDeviceTypes(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// Read testing
 			{
 				Config: `
 provider "ctyun" {

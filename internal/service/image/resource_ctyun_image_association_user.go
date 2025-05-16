@@ -56,7 +56,7 @@ func (c *ctyunImageAssociationUser) Schema(_ context.Context, _ resource.SchemaR
 				},
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(path.MatchRoot("type"), types.StringValue(business.ImageAssociationUserTypeShare)),
-					validator2.ConflictsWithEqualStrings(path.MatchRoot("type"), types.StringValue(business.ImageAssociationUserTypeReceive)),
+					validator2.ConflictsWithEqualString(path.MatchRoot("type"), types.StringValue(business.ImageAssociationUserTypeReceive)),
 					validator2.Email(),
 				},
 			},

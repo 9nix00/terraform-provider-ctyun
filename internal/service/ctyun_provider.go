@@ -20,18 +20,24 @@ import (
 	"slices"
 	"strings"
 	"terraform-provider-ctyun/internal/common"
+	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
+	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
+	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ctzos"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
+	"terraform-provider-ctyun/internal/service/ccse"
 	common2 "terraform-provider-ctyun/internal/service/common"
 	"terraform-provider-ctyun/internal/service/ebm"
 	"terraform-provider-ctyun/internal/service/ebs"
@@ -41,6 +47,8 @@ import (
 	"terraform-provider-ctyun/internal/service/image"
 	"terraform-provider-ctyun/internal/service/nat"
 	"terraform-provider-ctyun/internal/service/vpc"
+	"terraform-provider-ctyun/internal/service/vpce"
+	"terraform-provider-ctyun/internal/service/zos"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -283,6 +291,17 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtImageApis:  ctimage.NewApis(client),
 			CtVpcApis:    ctvpc.NewApis(client),
 			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
+			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
+			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
+			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
+			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
+			CtEbsApis:    ctebs.NewApis(client),
+			CtEcsApis:    ctecs.NewApis(client),
+			CtIamApis:    ctiam.NewApis(client),
+			CtImageApis:  ctimage.NewApis(client),
+			CtVpcApis:    ctvpc.NewApis(client),
+			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
 			SdkCtVpcApis: sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
 			SdkCtElbApis: ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
 		},
@@ -311,6 +330,22 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		elb.NewElbLoadBalancers(),
 		nat.NewCtyunSNats(),
 		nat.NewCtyunDNats(),
+		ebs.NewCtyunEbsVolumes(),
+		ecs.NewCtyunEcsInstances(),
+		ecs.NewCtyunEcsAffinityGroups(),
+		vpc.NewCtyunVpcs(),
+		vpc.NewCtyunSubnets(),
+		vpc.NewCtyunSecurityGroups(),
+		vpc.NewCtyunVpcRouteTables(),
+		vpc.NewCtyunVpcRouteTableRules(),
+		vpc.NewCtyunEips(),
+		vpc.NewCtyunBandwidths(),
+		vpce.NewCtyunVpces(),
+		vpce.NewCtyunVpceServices(),
+		vpce.NewCtyunVpceServiceTransitIPs(),
+		vpce.NewCtyunVpceServiceReverseRules(),
+		zos.NewCtyunZosBuckets(),
+		zos.NewCtyunZosBucketObjects(),
 	)
 }
 
@@ -342,6 +377,21 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		nat.NewCtyunNatResource(),
 		nat.NewCtyunSnatResource(),
 		nat.NewCtyunDnatResource(),
+		ebm.NewCtyunEbm(),
+		ebm.NewCtyunEbmInterface(),
+		ebm.NewCtyunEbmAssociationEbs(),
+		ecs.NewCtyunEcsAffinityGroup(),
+		ecs.NewCtyunEcsAffinityGroupAssociation(),
+		vpc.NewCtyunVpcRouteTable(),
+		vpc.NewCtyunVpcRouteTableRule(),
+		vpce.NewCtyunVpce(),
+		vpce.NewCtyunVpceService(),
+		vpce.NewCtyunVpceServiceTransitIP(),
+		vpce.NewCtyunVpceServiceReverseRule(),
+		vpce.NewCtyunVpceServiceConnection(),
+		zos.NewCtyunZosBucket(),
+		zos.NewCtyunZosBucketObject(),
+		ccse.NewCtyunCcseCluster(),
 	)
 }
 

@@ -99,7 +99,7 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			"type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "子网类型，common：普通子网，cbm：裸金属子网，默认为普通子网common",
+				Description: "子网类型，common：普通子网，ebm：裸金属子网，默认为普通子网common",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
