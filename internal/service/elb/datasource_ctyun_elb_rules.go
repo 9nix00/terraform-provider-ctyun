@@ -135,7 +135,7 @@ func (c *ctyunElbRules) Schema(ctx context.Context, request datasource.SchemaReq
 										Computed:    true,
 										Description: "后端服务组ID",
 									},
-									"weight": schema.StringAttribute{
+									"weight": schema.Int32Attribute{
 										Computed:    true,
 										Description: "权重",
 									},

@@ -44,7 +44,6 @@ func (c *ctyunElbLoadBalancers) Schema(_ context.Context, _ datasource.SchemaReq
 				Description: "负载均衡ID列表，以,分隔",
 			},
 			"resource_type": schema.StringAttribute{
-				//Computed:    true,
 				Optional:    true,
 				Description: "负载均衡类型: external / internal",
 				Validators: []validator.String{
@@ -130,6 +129,21 @@ func (c *ctyunElbLoadBalancers) Schema(_ context.Context, _ datasource.SchemaReq
 						"updated_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "更新时间，为UTC格式",
+						},
+						"resource_type": schema.StringAttribute{
+							Computed:    true,
+							Description: "负载均衡类型: external / internal",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.LbResourceType...),
+							},
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "名称",
+						},
+						"region_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "区域id",
 						},
 						"eip_info": schema.ListNestedAttribute{
 							Computed: true,
@@ -231,7 +245,7 @@ func (c *ctyunElbLoadBalancers) Read(ctx context.Context, request datasource.Rea
 				var eipInfo EipInfoModel
 				eipInfo.ResourceID = types.StringValue(eipItem.ResourceID)
 				eipInfo.EipID = types.StringValue(eipItem.EipID)
-				eipInfo.Bandwidth = types.Int32Value(eipItem.Bandwidth)
+				eipInfo.Bandwidth = types.Float32Value(float32(eipItem.Bandwidth))
 				if eipItem.IsTalkOrder != nil {
 					eipInfo.IsTalkOrder = types.BoolValue(*eipItem.IsTalkOrder)
 				}
@@ -290,12 +304,4 @@ type CtyunElbLoadBalancersModel struct {
 	CreatedTime      types.String   `tfsdk:"created_time"`       //创建时间，为UTC格式
 	UpdatedTime      types.String   `tfsdk:"updated_time"`       //更新时间，为UTC格式
 	// 查询的参数
-
-}
-
-type EipInfoModel struct {
-	ResourceID  types.String `tfsdk:"resource_id"`
-	EipID       types.String `tfsdk:"eip_id"`
-	Bandwidth   types.Int32  `tfsdk:"bandwidth"`
-	IsTalkOrder types.Bool   `tfsdk:"is_talk_order"`
 }

@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -19,8 +19,9 @@ func NewCtelbCreateTargetGroupApi(client *core.CtyunClient) *CtelbCreateTargetGr
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/elb/create-target-group",
-			ContentType:  "application/json",
+			UrlPath: "/v4/elb/" +
+				"create-target-group",
+			ContentType: "application/json",
 		},
 	}
 }

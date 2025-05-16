@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -53,12 +53,12 @@ type CtelbShowHealthCheckRequest struct {
 }
 
 type CtelbShowHealthCheckResponse struct {
-	StatusCode  int32                                    `json:"statusCode,omitempty"`  /*  返回状态码（800为成功，900为失败）  */
-	Message     string                                   `json:"message,omitempty"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
-	Description string                                   `json:"description,omitempty"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
-	ErrorCode   string                                   `json:"errorCode,omitempty"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
-	ReturnObj   []*CtelbShowHealthCheckReturnObjResponse `json:"returnObj"`             /*  接口业务数据  */
-	Error       string                                   `json:"error,omitempty"`       /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
+	StatusCode  int32                                  `json:"statusCode,omitempty"`  /*  返回状态码（800为成功，900为失败）  */
+	Message     string                                 `json:"message,omitempty"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
+	Description string                                 `json:"description,omitempty"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
+	ErrorCode   string                                 `json:"errorCode,omitempty"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
+	ReturnObj   *CtelbShowHealthCheckReturnObjResponse `json:"returnObj"`             /*  接口业务数据  */
+	Error       string                                 `json:"error,omitempty"`       /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
 }
 
 type CtelbShowHealthCheckReturnObjResponse struct {
@@ -71,7 +71,7 @@ type CtelbShowHealthCheckReturnObjResponse struct {
 	Protocol          string `json:"protocol,omitempty"`          /*  健康检查协议: TCP / UDP / HTTP  */
 	ProtocolPort      int32  `json:"protocolPort,omitempty"`      /*  健康检查端口  */
 	Timeout           int32  `json:"timeout,omitempty"`           /*  健康检查响应的最大超时时间  */
-	Integererval      int32  `json:"Integererval,omitempty"`      /*  负载均衡进行健康检查的时间间隔  */
+	Interval          int32  `json:"interval,omitempty"`          /*  负载均衡进行健康检查的时间间隔  */
 	MaxRetry          int32  `json:"maxRetry,omitempty"`          /*  最大重试次数  */
 	HttpMethod        string `json:"httpMethod,omitempty"`        /*  HTTP请求的方法  */
 	HttpUrlPath       string `json:"httpUrlPath,omitempty"`       /*  HTTP请求url路径  */

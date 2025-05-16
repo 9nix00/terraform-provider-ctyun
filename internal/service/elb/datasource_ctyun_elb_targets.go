@@ -22,7 +22,7 @@ type ctyunElbTargets struct {
 	meta *common.CtyunMetadata
 }
 
-func NewElbTargets() datasource.DataSource {
+func NewCtyunElbTargets() datasource.DataSource {
 	return &ctyunElbTargets{}
 }
 
@@ -183,7 +183,7 @@ func (c *ctyunElbTargets) Read(ctx context.Context, request datasource.ReadReque
 		var elbTarget ElbTargetModel
 		elbTarget.RegionID = types.StringValue(elbTargetItem.RegionID)
 		elbTarget.AzName = types.StringValue(elbTargetItem.AzName)
-		elbTarget.projectID = types.StringValue(elbTargetItem.ProjectID)
+		elbTarget.ProjectID = types.StringValue(elbTargetItem.ProjectID)
 		elbTarget.ID = types.StringValue(elbTargetItem.ID)
 		elbTarget.TargetGroupID = types.StringValue(elbTargetItem.TargetGroupID)
 		elbTarget.Description = types.StringValue(elbTargetItem.Description)
@@ -215,7 +215,7 @@ type CtyunElbTargetsConfig struct {
 type ElbTargetModel struct {
 	RegionID              types.String `tfsdk:"region_id"`                //区域ID
 	AzName                types.String `tfsdk:"az_name"`                  //可用区名称
-	projectID             types.String `tfsdk:"project_id"`               //项目ID
+	ProjectID             types.String `tfsdk:"project_id"`               //项目ID
 	ID                    types.String `tfsdk:"id"`                       //后端服务ID
 	TargetGroupID         types.String `tfsdk:"target_group_id"`          //后端服务组ID
 	Description           types.String `tfsdk:"description"`              //描述

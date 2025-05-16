@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -22,12 +23,12 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
+	ctdas "terraform-provider-ctyun/internal/core/ctdas"
 	"terraform-provider-ctyun/internal/core/ctebm"
-	ctelb "terraform-provider-ctyun/internal/core/ctelb"
-	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
-	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
+	ctelb "terraform-provider-ctyun/internal/core/ctelb"
+	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -291,19 +292,13 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtImageApis:  ctimage.NewApis(client),
 			CtVpcApis:    ctvpc.NewApis(client),
 			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
-			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
-			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
-			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
-			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
-			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
-			CtEbsApis:    ctebs.NewApis(client),
-			CtEcsApis:    ctecs.NewApis(client),
-			CtIamApis:    ctiam.NewApis(client),
-			CtImageApis:  ctimage.NewApis(client),
-			CtVpcApis:    ctvpc.NewApis(client),
-			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
 			SdkCtVpcApis: sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
 			SdkCtElbApis: ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
+			//SdkCtMysqlApis: ctdas.NewAPIClient(mysqlConfiguration, ak, sk),
+			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
+			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
+			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
+			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -346,6 +341,13 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpce.NewCtyunVpceServiceReverseRules(),
 		zos.NewCtyunZosBuckets(),
 		zos.NewCtyunZosBucketObjects(),
+		elb.NewCtyunElbHealthChecks(),
+		elb.NewCtyunElbTargetGroups(),
+		elb.NewCtyunElbAcls(),
+		elb.NewCtyunElbTargets(),
+		elb.NewElbCertificates(),
+		elb.NewElbListeners(),
+		elb.NewCtyunElbRules(),
 	)
 }
 
@@ -373,7 +375,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
-		ebm.NewCtyunEbm(),
 		nat.NewCtyunNatResource(),
 		nat.NewCtyunSnatResource(),
 		nat.NewCtyunDnatResource(),
@@ -392,6 +393,14 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		zos.NewCtyunZosBucket(),
 		zos.NewCtyunZosBucketObject(),
 		ccse.NewCtyunCcseCluster(),
+		elb.NewCtyunElbLoadBalancer(),
+		elb.NewCtyunElbHealthCheck(),
+		elb.NewCtyunElbTargetGroup(),
+		elb.NewCtyunElbAcl(),
+		elb.NewCtyunElbTarget(),
+		elb.NewCtyunElbCertificate(),
+		elb.NewCtyunElbListener(),
+		elb.NewCtyunElbRule(),
 	)
 }
 
@@ -413,6 +422,24 @@ func (c *CtyunProvider) buildResource(resources ...resource.Resource) []func() r
 		result = append(result, terraform_extend.WrapResource(res, advices))
 	}
 	return result
+}
+func (c *CtyunProvider) buildMysqlConfiguration() *ctdas.Configuration {
+	// 创建一个新的 API 客户端实例
+	cfg := ctdas.NewConfiguration()
+	cfg.Scheme = "https"
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpClient := &http.Client{Transport: tr}
+	cfg.HTTPClient = httpClient
+	// 设置 API 服务器的基础 URL
+	cfg.Servers = ctdas.ServerConfigurations{
+		{
+			URL: "https://ctdas-global.ctapi.ctyun.cn/teledb-mysql",
+		},
+	}
+
+	return cfg
 }
 
 type CtyunProviderConfig struct {

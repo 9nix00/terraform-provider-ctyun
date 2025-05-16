@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -84,8 +84,8 @@ type CtelbShowLoadBalancerReturnObjResponse struct {
 }
 
 type CtelbShowLoadBalancerReturnObjEipInfoResponse struct {
-	ResourceID  string `json:"resourceID,omitempty"` /*  计费类资源ID  */
-	EipID       string `json:"eipID,omitempty"`      /*  弹性公网IP的ID  */
-	Bandwidth   int32  `json:"bandwidth,omitempty"`  /*  弹性公网IP的带宽  */
-	IsTalkOrder *bool  `json:"isTalkOrder"`          /*  是否按需资源  */
+	ResourceID  string  `json:"resourceID,omitempty"` /*  计费类资源ID  */
+	EipID       string  `json:"eipID,omitempty"`      /*  弹性公网IP的ID  */
+	Bandwidth   float32 `json:"bandwidth,omitempty"`  /*  弹性公网IP的带宽  */
+	IsTalkOrder *bool   `json:"isTalkOrder"`          /*  是否按需资源  */
 }

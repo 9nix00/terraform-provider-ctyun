@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"terraform-provider-ctyun/internal/core/core"

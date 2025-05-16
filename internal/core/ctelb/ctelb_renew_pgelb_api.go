@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -63,4 +63,10 @@ type CtelbRenewPgelbResponse struct {
 	Error       string                            `json:"error,omitempty"`       /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
 }
 
-type CtelbRenewPgelbReturnObjResponse struct{}
+type CtelbRenewPgelbReturnObjResponse struct {
+	MasterOrderID        string `json:"masterOrderID,omitempty"`        /*  订单id。  */
+	MasterOrderNO        string `json:"masterOrderNO,omitempty"`        /*  订单编号, 可以为 null。  */
+	MasterResourceStatus string `json:"masterResourceStatus,omitempty"` /*  资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）  */
+	MasterResourceID     string `json:"masterResourceID,omitempty"`     /*  资源 ID 可以为 null。  */
+	RegionID             string `json:"regionID,omitempty"`             /*  可用区id。  */
+}

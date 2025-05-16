@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -61,19 +61,20 @@ type CtelbShowTargetGroupResponse struct {
 }
 
 type CtelbShowTargetGroupReturnObjResponse struct {
-	RegionID      string                                                `json:"regionID,omitempty"`      /*  区域ID  */
-	AzName        string                                                `json:"azName,omitempty"`        /*  可用区名称  */
-	ProjectID     string                                                `json:"projectID,omitempty"`     /*  项目ID  */
-	ID            string                                                `json:"ID,omitempty"`            /*  后端服务组ID  */
-	Name          string                                                `json:"name,omitempty"`          /*  后端服务组名称  */
-	Description   string                                                `json:"description,omitempty"`   /*  描述  */
-	VpcID         string                                                `json:"vpcID,omitempty"`         /*  vpc ID  */
-	HealthCheckID string                                                `json:"healthCheckID,omitempty"` /*  健康检查ID  */
-	Algorithm     string                                                `json:"algorithm,omitempty"`     /*  调度算法  */
-	SessionSticky []*CtelbShowTargetGroupReturnObjSessionStickyResponse `json:"sessionSticky"`           /*  会话保持配置  */
-	Status        string                                                `json:"status,omitempty"`        /*  状态: DOWN / ACTIVE  */
-	CreatedTime   string                                                `json:"createdTime,omitempty"`   /*  创建时间，为UTC格式  */
-	UpdatedTime   string                                                `json:"updatedTime,omitempty"`   /*  更新时间，为UTC格式  */
+	RegionID      string                                              `json:"regionID,omitempty"`      /*  区域ID  */
+	AzName        string                                              `json:"azName,omitempty"`        /*  可用区名称  */
+	ProjectID     string                                              `json:"projectID,omitempty"`     /*  项目ID  */
+	ID            string                                              `json:"ID,omitempty"`            /*  后端服务组ID  */
+	Name          string                                              `json:"name,omitempty"`          /*  后端服务组名称  */
+	Description   string                                              `json:"description,omitempty"`   /*  描述  */
+	VpcID         string                                              `json:"vpcID,omitempty"`         /*  vpc ID  */
+	HealthCheckID string                                              `json:"healthCheckID,omitempty"` /*  健康检查ID  */
+	Algorithm     string                                              `json:"algorithm,omitempty"`     /*  调度算法  */
+	SessionSticky *CtelbShowTargetGroupReturnObjSessionStickyResponse `json:"sessionSticky"`           /*  会话保持配置  */
+	Status        string                                              `json:"status,omitempty"`        /*  状态: DOWN / ACTIVE  */
+	CreatedTime   string                                              `json:"createdTime,omitempty"`   /*  创建时间，为UTC格式  */
+	UpdatedTime   string                                              `json:"updatedTime,omitempty"`   /*  更新时间，为UTC格式  */
+	ProxyProtocol int32                                               `json:"proxyProtocol,omitempty"`
 }
 
 type CtelbShowTargetGroupReturnObjSessionStickyResponse struct {

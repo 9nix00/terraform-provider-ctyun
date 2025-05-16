@@ -1,4 +1,4 @@
-package apis
+package ctelb
 
 import (
 	"context"
@@ -62,25 +62,31 @@ type CtelbShowListenerResponse struct {
 }
 
 type CtelbShowListenerReturnObjResponse struct {
-	RegionID            string                                             `json:"regionID,omitempty"`            /*  区域ID  */
-	AzName              string                                             `json:"azName,omitempty"`              /*  可用区名称  */
-	ProjectID           string                                             `json:"projectID,omitempty"`           /*  项目ID  */
-	ID                  string                                             `json:"ID,omitempty"`                  /*  监听器ID  */
-	Name                string                                             `json:"name,omitempty"`                /*  监听器名称  */
-	Description         string                                             `json:"description,omitempty"`         /*  描述  */
-	LoadBalancerID      string                                             `json:"loadBalancerID,omitempty"`      /*  负载均衡实例ID  */
-	Protocol            string                                             `json:"protocol,omitempty"`            /*  监听协议: TCP / UDP / HTTP / HTTPS  */
-	ProtocolPort        int32                                              `json:"protocolPort,omitempty"`        /*  监听端口  */
-	CertificateID       string                                             `json:"certificateID,omitempty"`       /*  证书ID  */
-	CaEnabled           *bool                                              `json:"caEnabled"`                     /*  是否开启双向认证  */
-	ClientCertificateID string                                             `json:"clientCertificateID,omitempty"` /*  双向认证的证书ID  */
-	DefaultAction       []*CtelbShowListenerReturnObjDefaultActionResponse `json:"defaultAction"`                 /*  默认规则动作  */
-	AccessControlID     string                                             `json:"accessControlID,omitempty"`     /*  访问控制ID  */
-	AccessControlType   string                                             `json:"accessControlType,omitempty"`   /*  访问控制类型: Close / White / Black  */
-	ForwardedForEnabled *bool                                              `json:"forwardedForEnabled"`           /*  是否开启x forward for功能  */
-	Status              string                                             `json:"status,omitempty"`              /*  监听器状态: DOWN / ACTIVE  */
-	CreatedTime         string                                             `json:"createdTime,omitempty"`         /*  创建时间，为UTC格式  */
-	UpdatedTime         string                                             `json:"updatedTime,omitempty"`         /*  更新时间，为UTC格式  */
+	RegionID            string                                           `json:"regionID,omitempty"`            /*  区域ID  */
+	AzName              string                                           `json:"azName,omitempty"`              /*  可用区名称  */
+	ProjectID           string                                           `json:"projectID,omitempty"`           /*  项目ID  */
+	ID                  string                                           `json:"ID,omitempty"`                  /*  监听器ID  */
+	Name                string                                           `json:"name,omitempty"`                /*  监听器名称  */
+	Description         string                                           `json:"description,omitempty"`         /*  描述  */
+	LoadBalancerID      string                                           `json:"loadBalancerID,omitempty"`      /*  负载均衡实例ID  */
+	Protocol            string                                           `json:"protocol,omitempty"`            /*  监听协议: TCP / UDP / HTTP / HTTPS  */
+	ProtocolPort        int32                                            `json:"protocolPort,omitempty"`        /*  监听端口  */
+	CertificateID       string                                           `json:"certificateID,omitempty"`       /*  证书ID  */
+	CaEnabled           *bool                                            `json:"caEnabled"`                     /*  是否开启双向认证  */
+	ClientCertificateID string                                           `json:"clientCertificateID,omitempty"` /*  双向认证的证书ID  */
+	DefaultAction       *CtelbShowListenerReturnObjDefaultActionResponse `json:"defaultAction"`                 /*  默认规则动作  */
+	AccessControlID     string                                           `json:"accessControlID,omitempty"`     /*  访问控制ID  */
+	AccessControlType   string                                           `json:"accessControlType,omitempty"`   /*  访问控制类型: Close / White / Black  */
+	ForwardedForEnabled *bool                                            `json:"forwardedForEnabled"`           /*  是否开启x forward for功能  */
+	Status              string                                           `json:"status,omitempty"`              /*  监听器状态: DOWN / ACTIVE  */
+	CreatedTime         string                                           `json:"createdTime,omitempty"`         /*  创建时间，为UTC格式  */
+	UpdatedTime         string                                           `json:"updatedTime,omitempty"`         /*  更新时间，为UTC格式  */
+	Cps                 int32                                            `json:"cps,omitempty"`
+	Qps                 int32                                            `json:"qps,omitempty"`
+	ResponseTimeout     int32                                            `json:"responseTimeout,omitempty"`
+	EstablishTimeout    int32                                            `json:"establishTimeout,omitempty"`
+	IdleTimeout         int32                                            `json:"idleTimeout,omitempty"`
+	Nat64               int32                                            `json:"nat64,omitempty"`
 }
 
 type CtelbShowListenerReturnObjDefaultActionResponse struct {
@@ -89,4 +95,10 @@ type CtelbShowListenerReturnObjDefaultActionResponse struct {
 	RedirectListenerID string                                                        `json:"redirectListenerID,omitempty"` /*  重定向监听器ID  */
 }
 
-type CtelbShowListenerReturnObjDefaultActionForwardConfigResponse struct{}
+type CtelbShowListenerReturnObjDefaultActionForwardConfigResponse struct {
+	TargetGroups []CtelbShowListenerReturnObjTargetGroupResponse `json:"targetGroups"`
+}
+type CtelbShowListenerReturnObjTargetGroupResponse struct {
+	TargetGroupID string `json:"targetGroupID,omitempty"`
+	Weight        int32  `json:"weight,omitempty"`
+}
