@@ -7,21 +7,15 @@ import (
 	"testing"
 )
 
-func TestAccCtyunSNat(t *testing.T) {
+func TestAccCtyunSNatSubNet(t *testing.T) {
 
 	rnd1 := utils.GenerateRandomString()
-	rnd2 := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
 	resourceName1 := "ctyun_nat_snat." + rnd1
-	resourceName2 := "ctyun_nat_snat." + rnd2
 	datasourceName := "data.ctyun_nat_snats." + dnd
 	resourceFile1 := "resource_ctyun_nat_snat1.tf"
-	resourceFile2 := "resource_ctyun_nat_snat2.tf"
 	datasourceFile := "datasource_ctyun_snat.tf"
-
-	initSourceCidr := "192.168.0.0/24"
-	updatedSourceCidr := "192.168.128.0/25"
 	sourceSubnetId := "subnet-ysrcfdvli9"
 	updatedSubnetId := "subnet-syq0nr9yyq"
 
@@ -50,24 +44,6 @@ func TestAccCtyunSNat(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile1, rnd1, natGateWayId, updatedSubnetId, snatIps),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName1, "source_subnet_id", updatedSubnetId),
-				),
-			},
-			{
-				// 2.resource create验证2:
-				// subnetType = 0(自定义情况),sourceCIDR必传
-				Config: utils.LoadTestCase(resourceFile2, rnd2, natGateWayId, initSourceCidr, snatIps),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName2, "nat_gateway_id", natGateWayId),
-					resource.TestCheckResourceAttr(resourceName2, "source_cidr", initSourceCidr),
-					resource.TestCheckResourceAttr(resourceName2, "snat_ips", snatIps),
-					resource.TestCheckResourceAttrSet(resourceName2, "snat_id"),
-				),
-			},
-			{
-				// 4. resource update source_cidr验证
-				Config: utils.LoadTestCase(resourceFile2, rnd2, natGateWayId, updatedSourceCidr, snatIps),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName2, "source_cidr", updatedSourceCidr),
 				),
 			},
 			{

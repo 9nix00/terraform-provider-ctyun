@@ -9,12 +9,16 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
+	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 )
 
 var (
@@ -27,7 +31,7 @@ type ctyunElbTarget struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunNatResource() resource.Resource {
+func NewCtyunElbTarget() resource.Resource {
 	return &ctyunElbTarget{}
 }
 
@@ -55,6 +59,10 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				Optional:    true,
 				Computed:    true,
 				Description: "区域ID",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"target_group_id": schema.StringAttribute{
 				Required:    true,
@@ -78,13 +86,10 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"instance_ip": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "后端服务 ip",
 			},
 			"protocol_port": schema.Int32Attribute{
-				// 如果又必填，又可以修改怎么办？
 				Required:    true,
-				Computed:    true,
 				Description: "协议端口。取值范围：1-65535",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
@@ -222,7 +227,7 @@ func (c *ctyunElbTarget) Update(ctx context.Context, request resource.UpdateRequ
 	}
 
 	// 更新后端主机信息
-	err = c.updateElbTarget(ctx, state, plan)
+	err = c.updateElbTarget(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
@@ -317,15 +322,13 @@ func (c *ctyunElbTarget) CrateElbTarget(ctx context.Context, plan *CtyunElbTarge
 	} else if resp.ReturnObj == nil {
 		return
 	}
-	var ids []string
 
 	// 获取规则id
-	for _, returnOjbItem := range resp.ReturnObj {
-		ids = append(ids, returnOjbItem.ID)
+	if len(resp.ReturnObj) != 1 {
+		err = fmt.Errorf("创建后端主机时，返回id数量有误，当前id数量为：" + strconv.Itoa(len(resp.ReturnObj)))
+		return
 	}
-
-	idsTmp := strings.Join(ids, ",")
-	plan.ID = types.StringValue(idsTmp)
+	plan.ID = types.StringValue(resp.ReturnObj[0].ID)
 	return
 }
 
@@ -345,7 +348,7 @@ func (c *ctyunElbTarget) getAndMergeElbTarget(ctx context.Context, plan *CtyunEl
 		return
 	}
 	//解析返回值
-	returnObj := resp.ReturnObj[0]
+	returnObj := resp.ReturnObj
 
 	plan.Description = types.StringValue(returnObj.Description)
 	plan.AzName = types.StringValue(returnObj.AzName)
@@ -356,12 +359,13 @@ func (c *ctyunElbTarget) getAndMergeElbTarget(ctx context.Context, plan *CtyunEl
 	plan.Status = types.StringValue(returnObj.Status)
 	plan.CreatedTime = types.StringValue(returnObj.CreatedTime)
 	plan.UpdatedTime = types.StringValue(returnObj.UpdatedTime)
+	plan.Weight = types.Int32Value(returnObj.Weight)
 
 	return
 }
 
-func (c *ctyunElbTarget) updateElbTarget(ctx context.Context, state CtyunElbTargetConfig, plan CtyunElbTargetConfig) (err error) {
-	if state.ProtocolPort.ValueInt32() == plan.ProtocolPort.ValueInt32() {
+func (c *ctyunElbTarget) updateElbTarget(ctx context.Context, state *CtyunElbTargetConfig, plan *CtyunElbTargetConfig) (err error) {
+	if state.ProtocolPort.ValueInt32() == plan.ProtocolPort.ValueInt32() && state.Weight.ValueInt32() == plan.Weight.ValueInt32() {
 		return
 	}
 	if plan.ProtocolPort.IsNull() && plan.Weight.IsNull() {
@@ -376,7 +380,7 @@ func (c *ctyunElbTarget) updateElbTarget(ctx context.Context, state CtyunElbTarg
 	if !plan.ProtocolPort.IsNull() {
 		params.ProtocolPort = plan.ProtocolPort.ValueInt32()
 	}
-	if !plan.Weight.IsNull() {
+	if plan.Weight.ValueInt32() != 0 {
 		params.Weight = plan.Weight.ValueInt32()
 	}
 
@@ -402,20 +406,20 @@ func (c *ctyunElbTarget) acquireAndSetIdIfOrderNotFinished(ctx context.Context, 
 }
 
 type CtyunElbTargetConfig struct {
-	RegionID              types.String `ctyun:"region_id"`       //区域ID
-	TargetGroupID         types.String `ctyun:"target_group_id"` //后端服务组ID
-	Description           types.String `ctyun:"description"`     //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},
-	InstanceType          types.String `ctyun:"instance_type"`   //实例类型。取值范围：VM、BM、ECI、IP
-	InstanceID            types.String `ctyun:"instance_id"`     //实例ID
+	RegionID              types.String `tfsdk:"region_id"`       //区域ID
+	TargetGroupID         types.String `tfsdk:"target_group_id"` //后端服务组ID
+	Description           types.String `tfsdk:"description"`     //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},
+	InstanceType          types.String `tfsdk:"instance_type"`   //实例类型。取值范围：VM、BM、ECI、IP
+	InstanceID            types.String `tfsdk:"instance_id"`     //实例ID
 	InstanceIP            types.String `tfsdk:"instance_ip"`     //后端服务 ip
-	ProtocolPort          types.Int32  `ctyun:"protocol_port"`   //协议端口。取值范围：1-65535
-	Weight                types.Int32  `ctyun:"weight"`          //权重。取值范围：1-256，默认为100
-	ID                    types.String `ctyun:"id"`              //后端服务组ID
-	AzName                types.String `ctyun:"az_name"`
-	ProjectID             types.String `ctyun:"project_id"`
-	HealthCheckStatus     types.String `ctyun:"health_check_status"`
-	HealthCheckStatusIpv6 types.String `ctyun:"health_check_status_ipv6"`
-	Status                types.String `ctyun:"status"`
+	ProtocolPort          types.Int32  `tfsdk:"protocol_port"`   //协议端口。取值范围：1-65535
+	Weight                types.Int32  `tfsdk:"weight"`          //权重。取值范围：1-256，默认为100
+	ID                    types.String `tfsdk:"id"`              //后端服务组ID
+	AzName                types.String `tfsdk:"az_name"`
+	ProjectID             types.String `tfsdk:"project_id"`
+	HealthCheckStatus     types.String `tfsdk:"health_check_status"`
+	HealthCheckStatusIpv6 types.String `tfsdk:"health_check_status_ipv6"`
+	Status                types.String `tfsdk:"status"`
 	CreatedTime           types.String `tfsdk:"created_time"` //创建时间，为UTC格式
 	UpdatedTime           types.String `tfsdk:"updated_time"` //更新时间，为UTC格式
 }

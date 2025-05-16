@@ -9,12 +9,15 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	strings "strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
+	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -28,7 +31,7 @@ type CtyunElbRule struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunSnatResource() resource.Resource {
+func NewCtyunElbRule() resource.Resource {
 	return &CtyunElbRule{}
 }
 
@@ -57,6 +60,10 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				Computed:    true,
 				Optional:    true,
 				Description: "区域ID",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"listener_id": schema.StringAttribute{
 				Required:    true,
@@ -88,7 +95,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_server_name": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "服务名称",
+							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'",
 						},
 						"condition_url_paths": schema.StringAttribute{
 							Optional:    true,
@@ -124,6 +131,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						},
 						"weight": schema.Int32Attribute{
 							Optional:    true,
+							Computed:    true,
 							Description: "权重，取值范围：1-256。默认为100",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
@@ -134,6 +142,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"action_redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "重定向监听器ID，当type为redirect时，此字段必填",
 			},
 			"id": schema.StringAttribute{
@@ -209,6 +218,8 @@ func (c *CtyunElbRule) Read(ctx context.Context, request resource.ReadRequest, r
 		}
 	}()
 	var state CtyunElbRuleConfig
+	// 读取state状态
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -216,9 +227,9 @@ func (c *CtyunElbRule) Read(ctx context.Context, request resource.ReadRequest, r
 	if !c.acquireAndSetIdIfOrderNotFinished(ctx, &state, response) {
 		return
 	}
-
 	//查询远端并同步state
 	err = c.getAndMergeRule(ctx, &state)
+
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			response.State.RemoveResource(ctx)
@@ -300,12 +311,6 @@ func (c *CtyunElbRule) Delete(ctx context.Context, request resource.DeleteReques
 
 func (c *CtyunElbRule) createElbRule(ctx context.Context, plan *CtyunElbRuleConfig) (err error) {
 	//配置创建接口所需请求参数
-	regionId := c.meta.GetExtraIfEmpty(plan.RegionID.ValueString(), common.ExtraRegionId)
-
-	if regionId == "" {
-		err = errors.New("创建转发规则时，regionID不能为空")
-		return
-	}
 	if plan.ListenerID.IsNull() {
 		err = errors.New("创建转发规则时，ListenerID不能为空")
 		return
@@ -313,7 +318,7 @@ func (c *CtyunElbRule) createElbRule(ctx context.Context, plan *CtyunElbRuleConf
 
 	params := &ctelb.CtelbCreateRuleRequest{
 		ClientToken: uuid.NewString(),
-		RegionID:    regionId,
+		RegionID:    plan.RegionID.ValueString(),
 		ListenerID:  plan.ListenerID.ValueString(),
 		Priority:    100, //目前不支持配置此参数,只取默认值100
 	}
@@ -330,62 +335,79 @@ func (c *CtyunElbRule) createElbRule(ctx context.Context, plan *CtyunElbRuleConf
 		return
 	}
 	for _, conditionItem := range conditionList {
-		var condition ctelb.CtelbCreateRuleConditionsRequest
+		condition := &ctelb.CtelbCreateRuleConditionsRequest{}
 		if conditionItem.Type.IsNull() {
 			err = errors.New("创建转发规则时，condition_type不能为空")
+			return
 		}
-
 		condition.RawType = conditionItem.Type.ValueString()
-		if !conditionItem.ConditionServerName.IsNull() {
+		if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeServerName {
+			// 若conditionType = server_name,传递serverName参数
+			condition.ServerNameConfig = &ctelb.CtelbCreateRuleConditionsServerNameConfigRequest{}
+			if conditionItem.ConditionServerName.IsNull() {
+				err = errors.New("当condition type为server_name, server name必填")
+				return
+			}
 			condition.ServerNameConfig.ServerName = conditionItem.ConditionServerName.ValueString()
-		}
-		if !conditionItem.ConditionMatchType.IsNull() {
+		} else if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeUrlPath {
+			condition.UrlPathConfig = &ctelb.CtelbCreateRuleConditionsUrlPathConfigRequest{}
+			if !conditionItem.ConditionMatchType.IsNull() {
+				err = errors.New("当condition type = url_path时，urlPaths和matchType必填！")
+				return
+			}
+			if !conditionItem.ConditionUrlPaths.IsNull() {
+				err = errors.New("当condition type = url_path时，urlPaths和matchType必填！")
+				return
+			}
 			condition.UrlPathConfig.MatchType = conditionItem.ConditionMatchType.ValueString()
-		}
-		if !conditionItem.ConditionUrlPaths.IsNull() {
 			condition.UrlPathConfig.UrlPaths = conditionItem.ConditionUrlPaths.ValueString()
+		} else {
+			err = errors.New("condition type 取值有误！")
+			return
 		}
-		conditions = append(conditions, &condition)
+		conditions = append(conditions, condition)
 	}
 	params.Conditions = conditions
 
 	// 构建Action请求体
-	var action *ctelb.CtelbCreateRuleActionRequest
+	action := &ctelb.CtelbCreateRuleActionRequest{}
 	if plan.ActionType.IsNull() {
 		err = errors.New("创建转发规则时，action type不能为空")
 	}
-
 	action.RawType = plan.ActionType.ValueString()
-	if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect && plan.ActionRedirectListenerID.IsNull() {
-		err = errors.New("创建转发规则时，若action type = redirect, redirectListenerID不能为空")
-		return
-	}
-	if !plan.ActionRedirectListenerID.IsNull() {
-		action.RedirectListenerID = plan.ActionRedirectListenerID.ValueString()
-	}
-
-	// 构建action.forwardConfig请求体
-	var targetGroupList []TargetGroupModel
-	var targetGroups []*ctelb.CtelbCreateRuleActionForwardConfigTargetGroupsRequest
-	diags = plan.ActionTargetGroups.ElementsAs(ctx, &targetGroupList, false)
-	if diags.HasError() {
-		return
-	}
-	for _, targetGroupItem := range targetGroupList {
-		var targetGroup ctelb.CtelbCreateRuleActionForwardConfigTargetGroupsRequest
-		if targetGroupItem.TargetGroupID.IsNull() {
-			err = errors.New("创建转发规则时，targetGroupID不能为空")
+	if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect {
+		if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect && plan.ActionRedirectListenerID.IsNull() {
+			err = errors.New("创建转发规则时，若action type = redirect, redirectListenerID不能为空")
 			return
 		}
-		targetGroup.TargetGroupID = targetGroupItem.TargetGroupID.ValueString()
-		if !targetGroupItem.Weight.IsNull() {
-			targetGroup.Weight = targetGroupItem.Weight.ValueInt32()
+		if !plan.ActionRedirectListenerID.IsNull() {
+			action.RedirectListenerID = plan.ActionRedirectListenerID.ValueString()
 		}
-		targetGroups = append(targetGroups, &targetGroup)
-	}
-	action.ForwardConfig.TargetGroups = targetGroups
-	params.Action = action
 
+	} else if plan.ActionType.ValueString() == business.ElbRuleActionTypeForward {
+		// 构建action.forwardConfig请求体
+		action.ForwardConfig = &ctelb.CtelbCreateRuleActionForwardConfigRequest{}
+		var targetGroupList []TargetGroupModel
+		var targetGroups []*ctelb.CtelbCreateRuleActionForwardConfigTargetGroupsRequest
+		diags = plan.ActionTargetGroups.ElementsAs(ctx, &targetGroupList, false)
+		if diags.HasError() {
+			return
+		}
+		for _, targetGroupItem := range targetGroupList {
+			targetGroup := &ctelb.CtelbCreateRuleActionForwardConfigTargetGroupsRequest{}
+			if targetGroupItem.TargetGroupID.IsNull() {
+				err = errors.New("创建转发规则时，targetGroupID不能为空")
+				return
+			}
+			targetGroup.TargetGroupID = targetGroupItem.TargetGroupID.ValueString()
+			if !targetGroupItem.Weight.IsNull() {
+				targetGroup.Weight = targetGroupItem.Weight.ValueInt32()
+			}
+			targetGroups = append(targetGroups, targetGroup)
+		}
+		action.ForwardConfig.TargetGroups = targetGroups
+	}
+	params.Action = action
 	// 调用创建接口
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbCreateRuleApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -436,6 +458,7 @@ func (c *CtyunElbRule) getAndMergeRule(ctx context.Context, plan *CtyunElbRuleCo
 	var conditions []ConditionsModel
 	for _, conditionItem := range conditionList {
 		var condition ConditionsModel
+		condition.Type = types.StringValue(conditionItem.RawType)
 		condition.ConditionServerName = types.StringValue(conditionItem.ServerNameConfig.ServerName)
 		condition.ConditionUrlPaths = types.StringValue(conditionItem.UrlPathConfig.UrlPaths)
 		condition.ConditionMatchType = types.StringValue(conditionItem.UrlPathConfig.MatchType)
@@ -470,7 +493,6 @@ func (c *CtyunElbRule) updateElbRule(ctx context.Context, state CtyunElbRuleConf
 	// 处理condition更新值
 	var conditionList []ConditionsModel
 	var conditions []*ctelb.CtelbUpdateRuleConditionsRequest
-
 	// 将types.list->[]ConditionsModel
 	diags := plan.Conditions.ElementsAs(ctx, &conditionList, false)
 	if diags.HasError() {
@@ -478,61 +500,78 @@ func (c *CtyunElbRule) updateElbRule(ctx context.Context, state CtyunElbRuleConf
 	}
 	if len(conditionList) > 0 {
 		for _, conditionItem := range conditionList {
-			var condition ctelb.CtelbUpdateRuleConditionsRequest
+			condition := &ctelb.CtelbUpdateRuleConditionsRequest{}
 			if conditionItem.Type.IsNull() {
 				err = errors.New("更新转发规则时，condition_type不能为空")
+				return
 			}
+
 			condition.RawType = conditionItem.Type.ValueString()
-			if !conditionItem.ConditionServerName.IsNull() {
+			if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeServerName {
+				condition.ServerNameConfig = &ctelb.CtelbUpdateRuleConditionsServerNameConfigRequest{}
+
+				if conditionItem.ConditionServerName.IsNull() {
+					err = errors.New("当condition type为server_name, server name必填")
+				}
 				condition.ServerNameConfig.ServerName = conditionItem.ConditionServerName.ValueString()
-			}
-			if !conditionItem.ConditionMatchType.IsNull() {
+			} else if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeUrlPath {
+				condition.UrlPathConfig = &ctelb.CtelbUpdateRuleConditionsUrlPathConfigRequest{}
+
+				if conditionItem.ConditionMatchType.IsNull() || conditionItem.ConditionUrlPaths.IsNull() {
+					err = errors.New("当condition type = url_path时，urlPaths和matchType必填！")
+					return
+				}
 				condition.UrlPathConfig.MatchType = conditionItem.ConditionMatchType.ValueString()
-			}
-			if !conditionItem.ConditionUrlPaths.IsNull() {
 				condition.UrlPathConfig.UrlPaths = conditionItem.ConditionUrlPaths.ValueString()
+			} else {
+				err = errors.New("condition type 取值有误！")
+				return
 			}
-			conditions = append(conditions, &condition)
+
+			conditions = append(conditions, condition)
 		}
 		params.Conditions = conditions
 	}
 
 	// 处理action更新值
 
-	var action *ctelb.CtelbUpdateRuleActionRequest
+	action := &ctelb.CtelbUpdateRuleActionRequest{}
 	if plan.ActionType.IsNull() {
 		err = errors.New("修改转发规则时，action type不能为空")
 	}
-
 	action.RawType = plan.ActionType.ValueString()
-	if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect && plan.ActionRedirectListenerID.IsNull() {
-		err = errors.New("修改转发规则时，若action type = redirect, redirectListenerID不能为空")
-		return
-	}
-	if !plan.ActionRedirectListenerID.IsNull() {
-		action.RedirectListenerID = plan.ActionRedirectListenerID.ValueString()
-	}
-
-	// 构建action.forwardConfig请求体
-	var targetGroupList []TargetGroupModel
-	var targetGroups []*ctelb.CtelbUpdateRuleActionForwardConfigTargetGroupsRequest
-	diags = plan.ActionTargetGroups.ElementsAs(ctx, &targetGroupList, false)
-	if diags.HasError() {
-		return
-	}
-	for _, targetGroupItem := range targetGroupList {
-		var targetGroup ctelb.CtelbUpdateRuleActionForwardConfigTargetGroupsRequest
-		if targetGroupItem.TargetGroupID.IsNull() {
-			err = errors.New("修改转发规则时，targetGroupID不能为空")
+	if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect {
+		if plan.ActionType.ValueString() == business.ElbRuleActionTypeRedirect && plan.ActionRedirectListenerID.IsNull() {
+			err = errors.New("修改转发规则时，若action type = redirect, redirectListenerID不能为空")
 			return
 		}
-		targetGroup.TargetGroupID = targetGroupItem.TargetGroupID.ValueString()
-		if !targetGroupItem.Weight.IsNull() {
-			targetGroup.Weight = targetGroupItem.Weight.ValueInt32()
+		if !plan.ActionRedirectListenerID.IsNull() {
+			action.RedirectListenerID = plan.ActionRedirectListenerID.ValueString()
 		}
-		targetGroups = append(targetGroups, &targetGroup)
+	} else if plan.ActionType.ValueString() == business.ElbRuleActionTypeForward {
+		action.ForwardConfig = &ctelb.CtelbUpdateRuleActionForwardConfigRequest{}
+		// 构建action.forwardConfig请求体
+		var targetGroupList []TargetGroupModel
+		var targetGroups []*ctelb.CtelbUpdateRuleActionForwardConfigTargetGroupsRequest
+		diags = plan.ActionTargetGroups.ElementsAs(ctx, &targetGroupList, false)
+		if diags.HasError() {
+			return
+		}
+		for _, targetGroupItem := range targetGroupList {
+			var targetGroup ctelb.CtelbUpdateRuleActionForwardConfigTargetGroupsRequest
+			if targetGroupItem.TargetGroupID.IsNull() {
+				err = errors.New("修改转发规则时，targetGroupID不能为空")
+				return
+			}
+			targetGroup.TargetGroupID = targetGroupItem.TargetGroupID.ValueString()
+			if !targetGroupItem.Weight.IsNull() {
+				targetGroup.Weight = targetGroupItem.Weight.ValueInt32()
+			}
+			targetGroups = append(targetGroups, &targetGroup)
+		}
+		action.ForwardConfig.TargetGroups = targetGroups
 	}
-	action.ForwardConfig.TargetGroups = targetGroups
+
 	params.Action = action
 
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbUpdateRuleApi.Do(ctx, c.meta.SdkCredential, params)
