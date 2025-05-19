@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunccse_node_pool(t *testing.T) {
+func TestAccCtyunCcseNodePool(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
