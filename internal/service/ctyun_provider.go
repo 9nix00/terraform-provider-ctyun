@@ -330,6 +330,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpce.NewCtyunVpceServiceReverseRules(),
 		zos.NewCtyunZosBuckets(),
 		zos.NewCtyunZosBucketObjects(),
+		ccse.NewCtyunCcseClusters(),
+		ccse.NewCtyunCcseNodePools(),
 	)
 }
 
@@ -372,6 +374,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		zos.NewCtyunZosBucket(),
 		zos.NewCtyunZosBucketObject(),
 		ccse.NewCtyunCcseCluster(),
+		ccse.NewCtyunCcseNodePool(),
 	)
 }
 

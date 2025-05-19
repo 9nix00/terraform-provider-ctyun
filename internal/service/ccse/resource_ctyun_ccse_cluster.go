@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -23,9 +25,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunCcseCluster{}
-	_ resource.ResourceWithConfigure   = &ctyunCcseCluster{}
-	_ resource.ResourceWithImportState = &ctyunCcseCluster{}
+	_ resource.Resource              = &ctyunCcseCluster{}
+	_ resource.ResourceWithConfigure = &ctyunCcseCluster{}
 )
 
 type ctyunCcseCluster struct {
@@ -49,27 +50,29 @@ type CtyunCcseClusterConfig struct {
 }
 
 type CtyunCcseClusterBaseInfo struct {
-	ProjectID                 types.String `tfsdk:"project_id"`
-	VpcID                     types.String `tfsdk:"vpc_id"`
-	SubnetID                  types.String `tfsdk:"subnet_id"`
-	AutoGenerateSecurityGroup types.Bool   `tfsdk:"auto_generate_security_group"`
-	SecurityGroupID           types.String `tfsdk:"security_group_id"`
-	ClusterName               types.String `tfsdk:"cluster_name"`
-	ClusterDomain             types.String `tfsdk:"cluster_domain"`
-	NetworkPlugin             types.String `tfsdk:"network_plugin"`
-	StartPort                 types.Int32  `tfsdk:"start_port"`
-	EndPort                   types.Int32  `tfsdk:"end_port"`
-	ElbProdCode               types.String `tfsdk:"elb_prod_code"`
-	PodCidr                   types.String `tfsdk:"pod_cidr"`
-	PodSubnetIdList           []string     `tfsdk:"pod_subnet_id_list"`
-	CycleType                 types.String `tfsdk:"cycle_type"`
-	CycleCount                types.Int64  `tfsdk:"cycle_count"`
-	ContainerRuntime          types.String `tfsdk:"container_runtime"`
-	TimeZone                  types.String `tfsdk:"timezone"`
-	ClusterVersion            types.String `tfsdk:"cluster_version"`
-	DeployType                types.String `tfsdk:"deploy_type"`
-	KubeProxy                 types.String `tfsdk:"kube_proxy"`
-	ClusterSeries             types.String `tfsdk:"cluster_series"`
+	ProjectID types.String `tfsdk:"project_id"`
+	VpcID     types.String `tfsdk:"vpc_id"`
+	SubnetID  types.String `tfsdk:"subnet_id"`
+	//AutoGenerateSecurityGroup types.Bool   `tfsdk:"auto_generate_security_group"`
+	//SecurityGroupID           types.String `tfsdk:"security_group_id"`
+	ClusterName      types.String             `tfsdk:"cluster_name"`
+	ClusterDomain    types.String             `tfsdk:"cluster_domain"`
+	NetworkPlugin    types.String             `tfsdk:"network_plugin"`
+	StartPort        types.Int32              `tfsdk:"start_port"`
+	EndPort          types.Int32              `tfsdk:"end_port"`
+	ElbProdCode      types.String             `tfsdk:"elb_prod_code"`
+	PodCidr          types.String             `tfsdk:"pod_cidr"`
+	PodSubnetIdList  []string                 `tfsdk:"pod_subnet_id_list"`
+	CycleType        types.String             `tfsdk:"cycle_type"`
+	CycleCount       types.Int64              `tfsdk:"cycle_count"`
+	ContainerRuntime types.String             `tfsdk:"container_runtime"`
+	Timezone         types.String             `tfsdk:"timezone"`
+	ClusterVersion   types.String             `tfsdk:"cluster_version"`
+	DeployType       types.String             `tfsdk:"deploy_type"`
+	KubeProxy        types.String             `tfsdk:"kube_proxy"`
+	ClusterSeries    types.String             `tfsdk:"cluster_series"`
+	SeriesType       types.String             `tfsdk:"series_type"`
+	AzInfos          []CtyunCcseClusterAzInfo `tfsdk:"az_infos"`
 }
 
 type CtyunCcseClusterAzInfo struct {
@@ -77,10 +80,9 @@ type CtyunCcseClusterAzInfo struct {
 	Size   types.Int32  `tfsdk:"size"`
 }
 type CtyunCcseClusterMaster struct {
-	ItemDefName types.String             `tfsdk:"item_def_name"`
-	AzInfos     []CtyunCcseClusterAzInfo `tfsdk:"az_infos"`
-	SysDisk     CtyunCcseClusterDisk     `tfsdk:"sys_disk"`
-	DataDisks   []CtyunCcseClusterDisk   `tfsdk:"data_disks"`
+	ItemDefName types.String           `tfsdk:"item_def_name"`
+	SysDisk     CtyunCcseClusterDisk   `tfsdk:"sys_disk"`
+	DataDisks   []CtyunCcseClusterDisk `tfsdk:"data_disks"`
 }
 type CtyunCcseClusterSlave struct {
 	ItemDefName  types.String             `tfsdk:"item_def_name"`
@@ -100,7 +102,7 @@ type CtyunCcseClusterDisk struct {
 
 func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -142,23 +144,23 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
-					"auto_generate_security_group": schema.BoolAttribute{
-						Optional:    true,
-						Description: "是否自动生成安全组",
-					},
-					"security_group_id": schema.StringAttribute{
-						Optional:    true,
-						Description: "安全组ID",
-						Validators: []validator.String{
-							validator2.AlsoRequiresEqualString(
-								path.MatchRoot("base_info").AtName("auto_generate_security_group"),
-								types.BoolValue(false),
-							),
-						},
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplace(),
-						},
-					},
+					//"auto_generate_security_group": schema.BoolAttribute{
+					//	Optional:    true,
+					//	Description: "是否自动生成安全组",
+					//},
+					//"security_group_id": schema.StringAttribute{
+					//	Optional:    true,
+					//	Description: "安全组ID",
+					//	Validators: []validator.String{
+					//		validator2.AlsoRequiresEqualString(
+					//			path.MatchRoot("base_info").AtName("auto_generate_security_group"),
+					//			types.BoolValue(false),
+					//		),
+					//	},
+					//	PlanModifiers: []planmodifier.String{
+					//		stringplanmodifier.RequiresReplace(),
+					//	},
+					//},
 					"cluster_name": schema.StringAttribute{
 						Required:    true,
 						Description: "集群名字",
@@ -210,12 +212,18 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.String{
 							stringvalidator.OneOf("standardI", "standardII", "enhancedI", "enhancedII", "higherI"),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"pod_cidr": schema.StringAttribute{
 						Required:    true,
 						Description: "pod网络cidr，使用cubecni作为网络插件时，podCidr传值为vpc cidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。",
 						Validators: []validator.String{
 							validator2.Cidr(),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
 						},
 					},
 					"pod_subnet_id_list": schema.SetAttribute{
@@ -228,6 +236,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue("cubecni"),
 							),
 						},
+						PlanModifiers: []planmodifier.Set{
+							setplanmodifier.RequiresReplace(),
+						},
 					},
 					"cycle_type": schema.StringAttribute{
 						Required:    true,
@@ -235,10 +246,13 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.OrderCycleTypes...),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"cycle_count": schema.Int64Attribute{
 						Optional:    true,
-						Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+						Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-3年",
 						Validators: []validator.Int64{
 							validator2.AlsoRequiresEqualInt64(
 								path.MatchRoot("base_info").AtName("cycle_type"),
@@ -251,6 +265,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							),
 							validator2.CycleCount(1, 11, 1, 3),
 						},
+						PlanModifiers: []planmodifier.Int64{
+							int64planmodifier.RequiresReplace(),
+						},
 					},
 					"container_runtime": schema.StringAttribute{
 						Required:    true,
@@ -258,10 +275,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.String{
 							stringvalidator.OneOf("containerd", "docker"),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"timezone": schema.StringAttribute{
 						Required:    true,
 						Description: "时区，例如Asia/Shanghai (UTC+08:00)",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"cluster_version": schema.StringAttribute{
 						Required:    true,
@@ -276,6 +299,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.String{
 							stringvalidator.OneOf("single", "multi"),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"kube_proxy": schema.StringAttribute{
 						Required:    true,
@@ -283,12 +309,55 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.String{
 							stringvalidator.OneOf("iptables", "ipvs"),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"cluster_series": schema.StringAttribute{
 						Required:    true,
-						Description: "集群系列，cce.standard，cce.managed，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10892150\">产品定义</a>选择",
+						Description: "集群系列，cce.standard-专有版，cce.managed-托管版，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10892150\">产品定义</a>选择",
 						Validators: []validator.String{
 							stringvalidator.OneOf("cce.standard", "cce.managed"),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+					},
+					"series_type": schema.StringAttribute{
+						Optional:    true,
+						Description: "托管版集群规格，托管版集群必填，单实例-managedbase，多实例-managedpro。单/多实例指控制面是否高可用，生产环境建议使用多实例",
+						Validators: []validator.String{
+							stringvalidator.OneOf("managedbase", "managedpro"),
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("base_info").AtName("cluster_series"),
+								types.StringValue("cce.managed"),
+							),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+					},
+
+					"az_infos": schema.ListNestedAttribute{
+						Required:    true,
+						Description: "可用区信息",
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"az_name": schema.StringAttribute{
+									Required:    true,
+									Description: "可用区编码",
+									PlanModifiers: []planmodifier.String{
+										stringplanmodifier.RequiresReplace(),
+									},
+								},
+								"size": schema.Int32Attribute{
+									Required:    true,
+									Description: "节点数量",
+									PlanModifiers: []planmodifier.Int32{
+										int32planmodifier.RequiresReplace(),
+									},
+								},
+							},
 						},
 					},
 				},
@@ -300,23 +369,11 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"item_def_name": schema.StringAttribute{
 						Required:    true,
 						Description: "规格名称",
-					},
-					"az_infos": schema.ListNestedAttribute{
-						Required:    true,
-						Description: "可用区信息",
-						NestedObject: schema.NestedAttributeObject{
-							Attributes: map[string]schema.Attribute{
-								"az_name": schema.StringAttribute{
-									Required:    true,
-									Description: "可用区编码",
-								},
-								"size": schema.Int32Attribute{
-									Required:    true,
-									Description: "节点数量",
-								},
-							},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
 						},
 					},
+
 					"sys_disk": schema.SingleNestedAttribute{
 						Optional:    true,
 						Description: "系统盘",
@@ -327,10 +384,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								Validators: []validator.String{
 									stringvalidator.OneOf("SATA", "SAS", "SSD"),
 								},
+								PlanModifiers: []planmodifier.String{
+									stringplanmodifier.RequiresReplace(),
+								},
 							},
 							"size": schema.Int32Attribute{
 								Required:    true,
 								Description: "盘大小，单位为G",
+								PlanModifiers: []planmodifier.Int32{
+									int32planmodifier.RequiresReplace(),
+								},
 							},
 						},
 					},
@@ -345,10 +408,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 									Validators: []validator.String{
 										stringvalidator.OneOf("SATA", "SAS", "SSD"),
 									},
+									PlanModifiers: []planmodifier.String{
+										stringplanmodifier.RequiresReplace(),
+									},
 								},
 								"size": schema.Int32Attribute{
 									Required:    true,
 									Description: "盘大小，单位为G",
+									PlanModifiers: []planmodifier.Int32{
+										int32planmodifier.RequiresReplace(),
+									},
 								},
 							},
 						},
@@ -357,11 +426,11 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.Object{
 					validator2.AlsoRequiresEqualObject(
 						path.MatchRoot("base_info").AtName("cluster_series"),
-						types.StringValue("cce.standard-专有版"),
+						types.StringValue("cce.standard"),
 					),
 					validator2.ConflictsWithEqualObject(
 						path.MatchRoot("base_info").AtName("cluster_series"),
-						types.StringValue("cce.managed-托管版"),
+						types.StringValue("cce.managed"),
 					),
 				},
 			},
@@ -374,6 +443,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "实例类型， ecs 或 ebm",
 						Validators: []validator.String{
 							stringvalidator.OneOf("ecs", "ebm"),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
 						},
 					},
 					"mirror_id": schema.StringAttribute{
@@ -389,6 +461,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue("ebm"),
 							),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"mirror_name": schema.StringAttribute{
 						Optional:    true,
@@ -403,6 +478,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue("ecs"),
 							),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"mirror_type": schema.Int32Attribute{
 						Required:    true,
@@ -410,10 +488,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Validators: []validator.Int32{
 							int32validator.Between(0, 1),
 						},
+						PlanModifiers: []planmodifier.Int32{
+							int32planmodifier.RequiresReplace(),
+						},
 					},
 					"item_def_name": schema.StringAttribute{
 						Required:    true,
 						Description: "规格名称",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"az_infos": schema.ListNestedAttribute{
 						Required:    true,
@@ -423,7 +507,11 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								"az_name": schema.StringAttribute{
 									Required:    true,
 									Description: "可用区编码",
+									PlanModifiers: []planmodifier.String{
+										stringplanmodifier.RequiresReplace(),
+									},
 								},
+
 								"size": schema.Int32Attribute{
 									Required:    true,
 									Description: "节点数量",
@@ -445,6 +533,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							"size": schema.Int32Attribute{
 								Required:    true,
 								Description: "系统盘大小，单位为G",
+								PlanModifiers: []planmodifier.Int32{
+									int32planmodifier.RequiresReplace(),
+								},
 							},
 						},
 					},
@@ -463,6 +554,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								"size": schema.Int32Attribute{
 									Required:    true,
 									Description: "系统盘大小，单位为G",
+									PlanModifiers: []planmodifier.Int32{
+										int32planmodifier.RequiresReplace(),
+									},
 								},
 							},
 						},
@@ -539,30 +633,32 @@ func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRe
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	// tf文件中的
-	var plan CtyunCcseClusterConfig
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	// state中的
-	var state CtyunCcseClusterConfig
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	// 更新
-	err = c.update(ctx, plan, state)
-	if err != nil {
-		return
-	}
-	// 查询远端信息
-	err = c.getAndMerge(ctx, &state)
-	if err != nil {
-		return
-	}
+	err = fmt.Errorf("resource_ctyun_ccse_cluster 暂不支持任何更新")
 
-	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+	//// tf文件中的
+	//var plan CtyunCcseClusterConfig
+	//response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	//if response.Diagnostics.HasError() {
+	//	return
+	//}
+	//// state中的
+	//var state CtyunCcseClusterConfig
+	//response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	//if response.Diagnostics.HasError() {
+	//	return
+	//}
+	//// 更新
+	//err = c.update(ctx, plan, state)
+	//if err != nil {
+	//	return
+	//}
+	//// 查询远端信息
+	//err = c.getAndMerge(ctx, &state)
+	//if err != nil {
+	//	return
+	//}
+	//
+	//response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -586,6 +682,7 @@ func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRe
 	if err != nil {
 		return
 	}
+	response.Diagnostics.AddWarning("删除CCSE集群", "集群退订后，会有弹性负载均衡遗留在子网内，需要等待弹性负载均衡实例销毁后才可删除子网")
 	//response.State.RemoveResource(ctx)
 }
 
@@ -595,30 +692,6 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-}
-
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
-func (c *ctyunCcseCluster) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	err = fmt.Errorf("resource_ctyun_ccse_cluster 不支持 terraform import")
-	//var cfg CtyunCcseClusterConfig
-	//var id, regionID string
-	//err = terraform_extend.Split(request.ID, &id, &regionID)
-	//if err != nil {
-	//	return
-	//}
-	//cfg.RegionID = types.StringValue(regionID)
-	//// 查询远端
-	//err = c.getAndMerge(ctx, &cfg)
-	//if err != nil {
-	//	return
-	//}
-	//response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 // checkBeforeCreate 创建前检查
@@ -638,13 +711,13 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		RegionId:  plan.RegionID.ValueString(),
 		ResPoolId: plan.RegionID.ValueString(),
 	}
+	auto := true
 	// 处理 clusterBaseInfo
 	clusterBaseInfo := ccse2.CcseCreateClusterClusterBaseInfoRequest{
 		ProjectId:                 plan.BaseInfo.ProjectID.ValueString(),
 		VpcUuid:                   plan.BaseInfo.VpcID.ValueString(),
 		SubnetUuid:                plan.BaseInfo.SubnetID.ValueString(),
-		AutoGenerateSecurityGroup: plan.BaseInfo.AutoGenerateSecurityGroup.ValueBoolPointer(),
-		SecurityGroupUuid:         plan.BaseInfo.SecurityGroupID.ValueString(),
+		AutoGenerateSecurityGroup: &auto,
 		ClusterName:               plan.BaseInfo.ClusterName.ValueString(),
 		ClusterDomain:             plan.BaseInfo.ClusterDomain.ValueString(),
 		ClusterVersion:            plan.BaseInfo.ClusterVersion.ValueString(),
@@ -656,10 +729,18 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		PodSubnetUuidList:         plan.BaseInfo.PodSubnetIdList,
 		PodCidr:                   plan.BaseInfo.PodCidr.ValueString(),
 		ContainerRuntime:          plan.BaseInfo.ContainerRuntime.ValueString(),
-		Timezone:                  plan.BaseInfo.TimeZone.ValueString(),
+		Timezone:                  plan.BaseInfo.Timezone.ValueString(),
 		DeployType:                plan.BaseInfo.DeployType.ValueString(),
 		KubeProxy:                 plan.BaseInfo.KubeProxy.ValueString(),
-		AzInfos:                   []*ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{},
+		SeriesType:                plan.BaseInfo.SeriesType.ValueString(),
+	}
+	var totalSize int32
+	for _, az := range plan.BaseInfo.AzInfos {
+		clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
+			AzName: az.AzName.ValueString(),
+			Size:   az.Size.ValueInt32(),
+		})
+		totalSize += az.Size.ValueInt32()
 	}
 	switch plan.BaseInfo.CycleType.ValueString() {
 	case business.OnDemandCycleType:
@@ -691,18 +772,11 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 			Mem:         int32(flavor.FlavorRam),
 			ItemDefName: flavorName,
 			ItemDefType: flavor.FlavorType,
-			Size:        0,
+			Size:        totalSize,
 			SysDisk: &ccse2.CcseCreateClusterMasterHostSysDiskRequest{
 				ItemDefName: plan.MasterHost.SysDisk.Type.ValueString(),
 				Size:        plan.MasterHost.SysDisk.Size.ValueInt32(),
 			},
-		}
-		for _, az := range plan.MasterHost.AzInfos {
-			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
-				AzName: az.AzName.ValueString(),
-				Size:   az.Size.ValueInt32(),
-			})
-			masterHost.Size += az.Size.ValueInt32()
 		}
 		for _, disk := range plan.MasterHost.DataDisks {
 			masterHost.DataDisks = append(masterHost.DataDisks, &ccse2.CcseCreateClusterMasterHostDataDisksRequest{
@@ -714,31 +788,14 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 	}
 
 	// 处理slaveHost
-	flavorName := plan.SlaveHost.ItemDefName.ValueString()
-	flavor, err := business.NewEcsService(c.meta).GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
-	if err != nil {
-		return
-	}
 
 	slaveHost := ccse2.CcseCreateClusterSlaveHostRequest{
-		Cpu:         int32(flavor.FlavorCpu),
-		Mem:         int32(flavor.FlavorRam),
-		ItemDefName: flavorName,
-		ItemDefType: flavor.FlavorType,
-		Size:        0,
+		Size: 0,
 		SysDisk: &ccse2.CcseCreateClusterSlaveHostSysDiskRequest{
 			ItemDefName: plan.SlaveHost.SysDisk.Type.ValueString(),
 			Size:        plan.SlaveHost.SysDisk.Size.ValueInt32(),
 		},
 		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
-	}
-
-	for _, az := range plan.SlaveHost.AzInfos {
-		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse2.CcseCreateClusterSlaveHostAzInfosRequest{
-			AzName: az.AzName.ValueString(),
-			Size:   az.Size.ValueInt32(),
-		})
-		slaveHost.Size += az.Size.ValueInt32()
 	}
 
 	for _, disk := range plan.SlaveHost.DataDisks {
@@ -748,11 +805,41 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		})
 	}
 
+	var azName string
+	for _, az := range plan.SlaveHost.AzInfos {
+		if azName == "" {
+			azName = az.AzName.ValueString()
+		}
+		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse2.CcseCreateClusterSlaveHostAzInfosRequest{
+			AzName: az.AzName.ValueString(),
+			Size:   az.Size.ValueInt32(),
+		})
+		slaveHost.Size += az.Size.ValueInt32()
+	}
+
 	switch plan.SlaveHost.InstanceType.ValueString() {
 	case "ecs":
 		slaveHost.ForeignMirrorId = plan.SlaveHost.MirrorID.ValueString()
+		flavorName := plan.SlaveHost.ItemDefName.ValueString()
+		flavor, err := business.NewEcsService(c.meta).GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
+		if err != nil {
+			return err
+		}
+		slaveHost.Cpu = int32(flavor.FlavorCpu)
+		slaveHost.Mem = int32(flavor.FlavorRam)
+		slaveHost.ItemDefName = flavorName
+		slaveHost.ItemDefType = flavor.FlavorType
 	case "ebm":
 		slaveHost.MirrorName = plan.SlaveHost.MirrorName.ValueString()
+		deviceType := plan.SlaveHost.ItemDefName.ValueString()
+		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), azName)
+		if err != nil {
+			return err
+		}
+		slaveHost.Cpu = flavor.CpuAmount
+		slaveHost.Mem = flavor.MemAmount
+		slaveHost.ItemDefName = deviceType
+		slaveHost.ItemDefType = deviceType
 	}
 
 	params.ClusterBaseInfo = &clusterBaseInfo
@@ -777,7 +864,7 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	resp, err := c.meta.Apis.SdkCcseApis.CcseGetClusterApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -786,13 +873,11 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	}
 
 	instance := resp.ReturnObj
-	plan.BaseInfo.DeployType = types.StringValue(instance.DeployMode)
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
 	plan.BaseInfo.NetworkPlugin = types.StringValue(instance.NetworkPlugin)
 	plan.BaseInfo.PodCidr = types.StringValue(instance.PodCidr)
-	plan.BaseInfo.ContainerRuntime = types.StringValue(instance.ContainerRuntime)
-	plan.BaseInfo.TimeZone = types.StringValue(instance.Timezone)
+	plan.BaseInfo.Timezone = types.StringValue(instance.Timezone)
 	plan.BaseInfo.ClusterVersion = types.StringValue(instance.ClusterVersion)
 	plan.BaseInfo.KubeProxy = types.StringValue(instance.KubeProxyPattern)
 	switch instance.ClusterType {
@@ -808,20 +893,23 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 
 // update 更新
 func (c *ctyunCcseCluster) update(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
-	//if plan.BaseInfo.ClusterVersion .Equal(state.BaseInfo.ClusterVersion) {
-	//	return
-	//}
-	//params := ccse2.CcseUpgradeClusterRequest{
-	//	ClusterId:   state.ID.ValueString(),
-	//	RegionId:    state.RegionID.ValueString(),
-	//	NextVersion: plan.BaseInfo.ClusterVersion.ValueString(),
-	//	Version:     state.BaseInfo.ClusterVersion.ValueString(),
-	//	Concurrency: 1,
-	//}
-	//resp, err := c.meta.Apis.SdkCcseApis.CcseDeleteClusterApi.Do(ctx, c.meta.SdkCredential, params)
-	//if err != nil {
-	//	return
-	//}
+	if plan.BaseInfo.ClusterVersion.Equal(state.BaseInfo.ClusterVersion) {
+		return
+	}
+	params := &ccse2.CcseUpgradeClusterRequest{
+		ClusterId:   state.ID.ValueString(),
+		RegionId:    state.RegionID.ValueString(),
+		NextVersion: plan.BaseInfo.ClusterVersion.ValueString(),
+		Version:     state.BaseInfo.ClusterVersion.ValueString(),
+		Concurrency: 1,
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpgradeClusterApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
 	return
 }
 
@@ -835,7 +923,7 @@ func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConf
 	resp, err := c.meta.Apis.SdkCcseApis.CcseDeleteClusterApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
@@ -851,7 +939,7 @@ func (c *ctyunCcseCluster) listByName(ctx context.Context, plan CtyunCcseCluster
 	resp, err := c.meta.Apis.SdkCcseApis.CcseListClustersApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -873,7 +961,7 @@ func (c *ctyunCcseCluster) checkAfterCreate(ctx context.Context, plan CtyunCcseC
 			if err != nil {
 				return false
 			}
-			if len(clusters) == 0 || clusters[0].ClusterStatus == "creating" || clusters[0].Id == "" {
+			if len(clusters) == 0 || clusters[0].BizState != 1 || clusters[0].Id == "" {
 				return true
 			}
 
@@ -901,7 +989,7 @@ func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseC
 			if err != nil {
 				return false
 			}
-			if len(clusters) != 0 && clusters[0].ClusterStatus != "deleted" {
+			if len(clusters) != 0 && clusters[0].BizState != 4 {
 				return true
 			}
 			executeSuccessFlag = true

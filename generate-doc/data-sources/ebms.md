@@ -30,7 +30,7 @@ Read-Only:
 - `expired` (Boolean) 是否到期
 - `expired_time` (String) 到期时间
 - `freezing` (Boolean) 是否冻结
-- `host_name` (String) 物理机主机名称(hostname)
+- `hostname` (String) 物理机主机名称(hostname)
 - `image_uuid` (String) 镜像ID
 - `instance_charge_type` (String) 付费方式
 - `instance_id` (String) 物理机UUID
