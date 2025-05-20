@@ -33,6 +33,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctzos"
+	"terraform-provider-ctyun/internal/core/dcs2"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/service/ccse"
@@ -286,12 +287,13 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtIamApis:    ctiam.NewApis(client),
 			CtImageApis:  ctimage.NewApis(client),
 			CtVpcApis:    ctvpc.NewApis(client),
-			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
-			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
-			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
-			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
-			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
-			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
+			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
+			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
+			SdkCtVpcApis: ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
+			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
+			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
+			SdkDcs2Apis:  dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,

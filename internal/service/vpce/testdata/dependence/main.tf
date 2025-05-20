@@ -19,7 +19,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 data "ctyun_images" "image_test" {
-  name       = "CtyunOS 23"
+  name       = "CentOS Linux 8.4"
   visibility = "public"
   page_no = 1
   page_size = 10
