@@ -56,7 +56,7 @@ func (c *ctyunSnatResource) ImportState(ctx context.Context, request resource.Im
 	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
 	config.RegionID = types.StringValue(regionId)
 
-	err = c.getAndMergeSnat(ctx, &config)
+	err = c.getAndMergeSnat(ctx, &config, nil)
 	if err != nil {
 		return
 	}
@@ -88,20 +88,21 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				//PlanModifiers: []planmodifier.String{
+				//	stringplanmodifier.RequiresReplace(),
+				//},
 			},
 			"source_cidr": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
 				Description: "自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				//PlanModifiers: []planmodifier.String{
+				//	stringplanmodifier.UseStateForUnknown(),
+				//},
 			},
-			"snat_ips": schema.StringAttribute{
+			"snat_ips": schema.SetAttribute{
 				Required:    true,
+				ElementType: types.StringType,
 				Description: "弹性公网IP集合",
 			},
 			"description": schema.StringAttribute{
@@ -151,7 +152,6 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-
 	var plan CtyunSnatConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
@@ -182,7 +182,7 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 	//plan.SNatID = utils.SecStringValue(returnObj.Snat.SnatID)
 
 	// 反查信息
-	err = c.getAndMergeSnat(ctx, &plan)
+	err = c.getAndMergeSnat(ctx, &plan, nil)
 	if err != nil {
 		return
 	}
@@ -215,7 +215,7 @@ func (c *ctyunSnatResource) Read(ctx context.Context, request resource.ReadReque
 	}
 
 	// 远端查询
-	err = c.getAndMergeSnat(ctx, &state)
+	err = c.getAndMergeSnat(ctx, &state, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "not found") {
 			response.State.RemoveResource(ctx)
@@ -257,12 +257,14 @@ func (c *ctyunSnatResource) Update(ctx context.Context, request resource.UpdateR
 		return
 	}
 	// 查询远端信息并更新本地
-	err = c.getAndMergeSnat(ctx, &state)
+	err = c.getAndMergeSnat(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(request.State.Set(ctx, &state)...)
-
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (c *ctyunSnatResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -314,7 +316,7 @@ func (c *ctyunSnatResource) Configure(ctx context.Context, request resource.Conf
 	c.meta = meta
 }
 
-func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSnatConfig) (err error) {
+func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSnatConfig, plan *CtyunSnatConfig) (err error) {
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowSnatRequest{
 		RegionID: config.RegionID.ValueString(),
 		SNatID:   config.SNatID.ValueString(),
@@ -328,6 +330,11 @@ func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSn
 		err = common.InvalidReturnObjError
 		return
 	}
+	// 更新snat ips
+	if plan != nil && !plan.SnatIps.IsNull() && !plan.SnatIps.IsUnknown() {
+		config.SnatIps = plan.SnatIps
+	}
+
 	snat := resp.ReturnObj
 	config.SNatID = utils.SecStringValue(snat.SNatID)
 	config.Description = utils.SecStringValue(snat.Description)
@@ -339,10 +346,9 @@ func (c *ctyunSnatResource) getAndMergeSnat(ctx context.Context, config *CtyunSn
 		err = fmt.Errorf("the value of SubnetType %d is invaild ", snat.SubnetType)
 		return
 	}
-	config.SubnetType = types.Int32Value(snat.SubnetType)
 	config.CreateTime = utils.SecStringValue(snat.CreationTime)
 	config.SourceSubnetID = utils.SecStringValue(snat.SubnetID)
-	config.NatGatewayID = utils.SecStringValue(snat.NatGatewayID)
+
 	var eipList []CtyunSnatEipsList
 	for _, eip := range snat.Eips {
 		eipItem := CtyunSnatEipsList{
@@ -375,8 +381,7 @@ func (c *ctyunSnatResource) checkBeforeCreateSnat(ctx context.Context, plan Ctyu
 
 	//弹性公网IP集合 不能为空
 
-	snatIps := c.stringToList(plan.SnatIps.ValueString())
-	if len(snatIps) == 0 {
+	if plan.SnatIps.IsNull() {
 		err := fmt.Errorf("the snat ips cannot be null")
 		return err
 	}
@@ -389,8 +394,11 @@ func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig
 	natGatewayId := plan.NatGatewayID.ValueString()
 	sourceSubnetId := plan.SourceSubnetID.ValueString()
 	sourceCIDR := plan.SourceCIDR.ValueString()
-	var snatIps []string = c.stringToList(plan.SnatIps.ValueString())
-
+	var snatIps []string
+	diag := plan.SnatIps.ElementsAs(ctx, &snatIps, true)
+	if diag.HasError() {
+		return
+	}
 	params := &ctvpc.CtvpcCreateSnatEntryRequest{
 		RegionID:     regionId,
 		NatGatewayID: natGatewayId,
@@ -444,36 +452,55 @@ func (c *ctyunSnatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Contex
 }
 
 func (c *ctyunSnatResource) updateSnatInfo(ctx context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) (err error) {
-	if state.RegionID != plan.RegionID {
-		err = fmt.Errorf("when updating Snat Information, the Planned SNat RegionID needs to remain the same as the original")
+	if state.RegionID.ValueString() == "" {
+		err = fmt.Errorf("region id 不能为空")
 		return
 	}
-	if state.SNatID != plan.SNatID {
-		err = fmt.Errorf("when updating Snat Information, the Planned SNat ID needs to remain the same as the original")
+	if state.SNatID.ValueString() == "" {
+		err = fmt.Errorf("snat id 不能为空")
+		return
+	}
+	params := &ctvpc.CtvpcUpdateSnatEntryAttributeRequest{
+		RegionID:    state.RegionID.ValueString(),
+		SNatID:      state.SNatID.ValueString(),
+		ClientToken: uuid.NewString(),
+	}
+	if plan.SourceSubnetID.ValueString() != "" {
+		params.SourceSubnetID = plan.SourceSubnetID.ValueStringPointer()
+	}
+	if plan.SourceCIDR.ValueString() != "" {
+		params.SourceCIDR = plan.SourceCIDR.ValueStringPointer()
+	}
+	// 若source subnet id 和source cidr 为空，不调用更新接口
+	if plan.SourceSubnetID.ValueString() == "" && plan.SourceCIDR.ValueString() == "" {
 		return
 	}
 	if c.checkSNatInfoIsSame(ctx, state, plan) {
-		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateSnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcUpdateSnatEntryAttributeRequest{
-			RegionID:       plan.RegionID.ValueString(),
-			SNatID:         plan.SNatID.ValueString(),
-			SourceSubnetID: plan.SourceSubnetID.ValueStringPointer(),
-			SourceCIDR:     plan.SourceCIDR.ValueStringPointer(),
-			ClientToken:    uuid.NewString(),
-		})
-
+		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateSnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, params)
 		if err2 != nil {
 			return
 		} else if resp.StatusCode == common.ErrorStatusCode {
 			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 			return
 		}
+		// 轮询请求查看是否更新成功
+		err = c.updateLoop(ctx, &state, params)
 	}
 	return
 }
 
 func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) (err error) {
-	planSnatIps := c.stringToList(plan.SnatIps.ValueString())
-	stateSnatIps := c.stringToList(state.SnatIps.ValueString())
+
+	var planSnatIps []string
+	var stateSnatIps []string
+	diags := plan.SnatIps.ElementsAs(ctx, &planSnatIps, true)
+	if diags.HasError() {
+		return
+	}
+	diags = state.SnatIps.ElementsAs(ctx, &stateSnatIps, true)
+	if diags.HasError() {
+		return
+	}
 
 	// 先筛选出哪些是需要删除的，哪些是需要添加的Eip
 	// plan中有，state中没有的，需要添加
@@ -484,35 +511,40 @@ func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state Ctyu
 	c.difference(planSnatIps, stateSnatIps, &addIpAddressIds)
 	// 获取删除eip列表
 	c.difference(stateSnatIps, stateSnatIps, &deleteIpAddressIds)
-	// todo 疑问：如果在添加ip时成功了，但是删除ip时又失败了，怎么解决？
 
 	//snat添加eip
-	//SDK ctvpc_associate_eips_to_snat_api.go
-	addResp, err := c.meta.Apis.SdkCtVpcApis.CtvpcAssociateEipsToSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcAssociateEipsToSnatRequest{
-		RegionID:     plan.RegionID.ValueString(),
-		NatGatewayID: plan.NatGatewayID.ValueString(),
-		SNatID:       plan.SNatID.ValueString(),
-		IpAddressIds: addIpAddressIds,
-		ClientToken:  uuid.NewString(),
-	})
-	if err != nil {
-		return
-	} else if addResp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *addResp.Message, *addResp.Description)
-		return
+	if len(addIpAddressIds) > 0 {
+		addResp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcAssociateEipsToSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcAssociateEipsToSnatRequest{
+			RegionID:     state.RegionID.ValueString(),
+			NatGatewayID: state.NatGatewayID.ValueString(),
+			SNatID:       state.SNatID.ValueString(),
+			IpAddressIds: addIpAddressIds,
+			ClientToken:  uuid.NewString(),
+		})
+		if err2 != nil {
+			err = err2
+			return
+		} else if addResp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *addResp.Message, *addResp.Description)
+			return
+		}
 	}
-	deleteResp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDisassociateEipsFromSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcDisassociateEipsFromSnatRequest{
-		RegionID:     plan.RegionID.ValueString(),
-		NatGatewayID: plan.NatGatewayID.ValueString(),
-		SNatID:       plan.SNatID.ValueString(),
-		IpAddressIds: deleteIpAddressIds,
-		ClientToken:  uuid.NewString(),
-	})
-	if err != nil {
-		return
-	} else if deleteResp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *deleteResp.Message, *deleteResp.Description)
-		return
+	if len(deleteIpAddressIds) > 0 {
+
+		deleteResp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcDisassociateEipsFromSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcDisassociateEipsFromSnatRequest{
+			RegionID:     state.RegionID.ValueString(),
+			NatGatewayID: state.NatGatewayID.ValueString(),
+			SNatID:       state.SNatID.ValueString(),
+			IpAddressIds: deleteIpAddressIds,
+			ClientToken:  uuid.NewString(),
+		})
+		if err2 != nil {
+			err = err2
+			return
+		} else if deleteResp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *deleteResp.Message, *deleteResp.Description)
+			return
+		}
 	}
 	return nil
 }
@@ -562,6 +594,50 @@ func (c *ctyunSnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcC
 	return loopResponse, respError
 }
 
+func (c *ctyunSnatResource) updateLoop(ctx context.Context, state *CtyunSnatConfig, updatedParams *ctvpc.CtvpcUpdateSnatEntryAttributeRequest, loopCount ...int) (err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcShowSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowSnatRequest{
+				RegionID: state.RegionID.ValueString(),
+				SNatID:   state.SNatID.ValueString(),
+			})
+			if err != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode == common.ErrorStatusCode {
+				err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			snatInfo := resp.ReturnObj
+			if updatedParams.SourceSubnetID != nil && *updatedParams.SourceSubnetID != *snatInfo.SubnetID {
+				return true
+			}
+			if updatedParams.SourceCIDR != nil && *updatedParams.SourceCIDR != *snatInfo.SubnetCidr {
+				return true
+			}
+			if updatedParams.Description != nil && *updatedParams.Description != *snatInfo.Description {
+				return true
+			}
+			return false
+		})
+
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未更新完成!Snat: " + state.SNatID.ValueString())
+	}
+	return
+}
+
 func (c *ctyunSnatResource) DeleteLoop(ctx context.Context, state CtyunSnatConfig) (err error) {
 	var respErr error
 	retryer, err := business.NewRetryer(time.Second*5, 60)
@@ -592,13 +668,13 @@ func (c *ctyunSnatResource) DeleteLoop(ctx context.Context, state CtyunSnatConfi
 }
 
 func (c *ctyunSnatResource) checkSNatInfoIsSame(_ context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) bool {
-	if state.SourceSubnetID != plan.SourceSubnetID {
+	if state.SourceSubnetID.ValueString() != plan.SourceSubnetID.ValueString() {
 		return true
 	}
-	if state.SourceCIDR != plan.SourceCIDR {
+	if state.SourceCIDR.ValueString() != plan.SourceCIDR.ValueString() {
 		return true
 	}
-	if state.Description != plan.Description {
+	if state.Description.ValueString() != plan.Description.ValueString() {
 		return true
 	}
 	return false
@@ -607,6 +683,9 @@ func (c *ctyunSnatResource) checkSNatInfoIsSame(_ context.Context, state CtyunSn
 // 求差集，left数组有，但是right数组中没有的集合
 func (c *ctyunSnatResource) difference(left []string, right []string, result *[]string) {
 	for _, lIp := range left {
+		if lIp == "" {
+			continue
+		}
 		flag := false
 		for _, rIp := range right {
 			if lIp == rIp {
@@ -647,7 +726,7 @@ type CtyunSnatConfig struct {
 	NatGatewayID   types.String `tfsdk:"nat_gateway_id"`   //NAT网关ID
 	SourceSubnetID types.String `tfsdk:"source_subnet_id"` //子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d
 	SourceCIDR     types.String `tfsdk:"source_cidr"`      //自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】
-	SnatIps        types.String `tfsdk:"snat_ips"`         //弹性公网IP集合
+	SnatIps        types.Set    `tfsdk:"snat_ips"`         //弹性公网IP集合
 	Description    types.String `tfsdk:"description"`      //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&()_-+= <>?:"{},./;'[]·~！@#￥%……&（） ——-+={}
 	SNatID         types.String `tfsdk:"snat_id"`          //snat id
 	SubnetType     types.Int32  `tfsdk:"subnet_type"`      //子网类型：1-有vpcID的子网，0-自定义

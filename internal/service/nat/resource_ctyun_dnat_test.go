@@ -1,7 +1,10 @@
 package nat_test
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"os"
 	"strconv"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
@@ -9,6 +12,11 @@ import (
 )
 
 func TestAccCtyunDNat(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -18,8 +26,8 @@ func TestAccCtyunDNat(t *testing.T) {
 	resourceFile := "resource_ctyun_nat_dnat.tf"
 	datasourceFile := "datasource_ctyun_nat_dnat.tf"
 
-	natGatewayId := "natgw-asdsmh8scy"
-	externalId := "eip-s7vhil3y30"
+	natGatewayId := dependence.natID
+	externalId := dependence.eipID
 	virtualMachineType := 2
 	internalPort := utils.GenerateRandomPort(0, 65535)
 	updatedInternalPort := utils.GenerateRandomPort(0, 65535)
@@ -33,6 +41,13 @@ func TestAccCtyunDNat(t *testing.T) {
 	updatedProtocol := "udp"
 
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			// 1resource create/ delete 验证
@@ -61,8 +76,8 @@ func TestAccCtyunDNat(t *testing.T) {
 			},
 			{
 				// 3 datasource 验证
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
-					utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
+				//Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
+				Config: utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "dnats.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "dnats.0.internal_port", strconv.Itoa(updatedInternalPort)),
@@ -70,6 +85,10 @@ func TestAccCtyunDNat(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "dnats.0.protocol", updatedProtocol),
 					resource.TestCheckResourceAttr(datasourceName, "dnats.0.internal_ip", updatedInternalIp),
 				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol),
+				Destroy: true,
 			},
 		},
 	})

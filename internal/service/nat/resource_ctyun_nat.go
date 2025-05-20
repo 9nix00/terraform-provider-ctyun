@@ -7,10 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -26,24 +25,24 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunNatResource{}
-	_ resource.ResourceWithConfigure   = &ctyunNatResource{}
-	_ resource.ResourceWithImportState = &ctyunNatResource{}
+	_ resource.Resource                = &ctyunNat{}
+	_ resource.ResourceWithConfigure   = &ctyunNat{}
+	_ resource.ResourceWithImportState = &ctyunNat{}
 )
 
-type ctyunNatResource struct {
+type ctyunNat struct {
 	meta *common.CtyunMetadata
 }
 
 func NewCtyunNatResource() resource.Resource {
-	return &ctyunNatResource{}
+	return &ctyunNat{}
 }
 
-func (c *ctyunNatResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_nat"
 }
 
-func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=5778&data=94&isNormal=1&vid=88",
 		Attributes: map[string]schema.Attribute{
@@ -51,8 +50,7 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 				Optional:    true,
 				Computed:    true,
 				Description: "区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
-				// todo 了解下述方法作用
-				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -70,9 +68,9 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 					int32validator.Between(1, 4),
 				},
 				// 当规格升级/降配的时候，这个nat删除旧资源并创建新资源
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
-				},
+				//PlanModifiers: []planmodifier.Int32{
+				//	int32planmodifier.RequiresReplace(),
+				//},
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
@@ -102,11 +100,16 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 				Computed:    true,
 				Description: "订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年",
 				Validators: []validator.Int64{
-					// todo 输入值验证模块，如果能做到与cycle_type联动
+					validator2.AlsoRequiresEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+						types.StringValue(business.OrderCycleTypeYear),
+					),
+					validator2.ConflictsWithEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
 					validator2.CycleCount(1, 11, 1, 3),
-				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"az_name": schema.StringAttribute{
@@ -174,8 +177,7 @@ func (c *ctyunNatResource) Schema(_ context.Context, request resource.SchemaRequ
 }
 
 // Create 创建nat
-// 调用SDK：ctvpc_create_nat_gateway_api.go
-func (c *ctyunNatResource) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -250,7 +252,7 @@ func (c *ctyunNatResource) Create(ctx context.Context, request resource.CreateRe
 		return
 	}
 	// 创建后反查创建后的nat信息
-	err = c.getAndMergeNat(ctx, &plan)
+	err = c.getAndMergeNat(ctx, &plan, nil)
 	if err != nil {
 		return
 	}
@@ -260,7 +262,7 @@ func (c *ctyunNatResource) Create(ctx context.Context, request resource.CreateRe
 	}
 }
 
-func (c *ctyunNatResource) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunNat) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -279,7 +281,7 @@ func (c *ctyunNatResource) Read(ctx context.Context, request resource.ReadReques
 		return
 	}
 	// 查询远端
-	err = c.getAndMergeNat(ctx, &state)
+	err = c.getAndMergeNat(ctx, &state, nil)
 	if err != nil {
 		if strings.Contains(err.Error(), "is not found") {
 			response.State.RemoveResource(ctx)
@@ -291,7 +293,7 @@ func (c *ctyunNatResource) Read(ctx context.Context, request resource.ReadReques
 
 }
 
-func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunNat) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -309,6 +311,7 @@ func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRe
 	var state CtyunNatConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
+		return
 	}
 	// 更新nat基础信息
 	err = c.updateNatInfo(ctx, state, plan)
@@ -321,13 +324,12 @@ func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRe
 		return
 	}
 	// nat续费，on_demand无法续订
-	_, _, err = c.renewNat(ctx, state, plan)
+	_, _, err = c.renewNat(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
-	// 获取原来的nat过期时间，用于验证是否续订成功
 	// 更新远端后，查询远端并同步一下本地信息
-	err = c.getAndMergeNat(ctx, &state)
+	err = c.getAndMergeNat(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
@@ -338,7 +340,7 @@ func (c *ctyunNatResource) Update(ctx context.Context, request resource.UpdateRe
 	}
 }
 
-func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunNat) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -352,7 +354,6 @@ func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRe
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// SDK 接口：ctvpc_delete_nat_gateway_api.go
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDeleteNatGatewayApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcDeleteNatGatewayRequest{
 		RegionID:     state.RegionID.ValueString(),
 		NatGatewayID: state.NatGatewayID.ValueString(),
@@ -373,7 +374,6 @@ func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRe
 		if !(*resp.ReturnObj.MasterResourceStatus == business.NatStatusRefunded) {
 			err = fmt.Errorf("NatGatewayID :%s delete failed, MasterResourceStatus: %s", state.NatGatewayID, *resp.ReturnObj.MasterResourceStatus)
 		}
-
 	}
 	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
@@ -383,7 +383,7 @@ func (c *ctyunNatResource) Delete(ctx context.Context, request resource.DeleteRe
 
 }
 
-func (c *ctyunNatResource) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunNat) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -391,14 +391,14 @@ func (c *ctyunNatResource) Configure(_ context.Context, request resource.Configu
 	c.meta = meta
 }
 
-func (c *ctyunNatResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+func (c *ctyunNat) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	//从输入获取资源ID
 	//使用ID调用API查询远端数据
 	//用查询到的数据赋值State
 }
 
 // 在创建nat实例之前，进行检查
-func (c *ctyunNatResource) checkBeforeCreateNat(ctx context.Context, plan CtyunNatConfig) error {
+func (c *ctyunNat) checkBeforeCreateNat(ctx context.Context, plan CtyunNatConfig) error {
 	cycleCount := plan.CycleCount.ValueInt64()
 	cycleType := plan.CycleType.ValueString()
 	if cycleType != business.OrderCycleTypeOnDemand && cycleCount <= 0 {
@@ -411,7 +411,7 @@ func (c *ctyunNatResource) checkBeforeCreateNat(ctx context.Context, plan CtyunN
 	return nil
 }
 
-func (c *ctyunNatResource) createNat(ctx context.Context, plan *CtyunNatConfig) (returnObj ctvpc.CtvpcCreateNatGatewayReturnObjResponse, createParams *ctvpc.CtvpcCreateNatGatewayRequest, err error) {
+func (c *ctyunNat) createNat(ctx context.Context, plan *CtyunNatConfig) (returnObj ctvpc.CtvpcCreateNatGatewayReturnObjResponse, createParams *ctvpc.CtvpcCreateNatGatewayRequest, err error) {
 	regionID := plan.RegionID.ValueString()
 	vpcID := plan.VpcID.ValueString()
 	spec := plan.Spec.ValueInt32()
@@ -434,12 +434,12 @@ func (c *ctyunNatResource) createNat(ctx context.Context, plan *CtyunNatConfig) 
 		AzName:      azName,
 		ProjectID:   &projectID,
 	}
-	if cycleType == business.OrderCycleTypeOnDemand {
-		params.CycleCount = 1
-		plan.CycleCount = types.Int64Value(1)
-	}
+	//if cycleType == business.OrderCycleTypeOnDemand {
+	//	params.CycleCount = 1
+	//	plan.CycleCount = types.Int64Value(1)
+	//}
 	if cycleType != business.OrderCycleTypeOnDemand && cycleCount > 0 {
-		params.CycleCount = cycleCount
+		params.CycleCount = &cycleCount
 	}
 	if payVoucherPrice != "" {
 		params.PayVoucherPrice = &payVoucherPrice
@@ -463,7 +463,7 @@ func (c *ctyunNatResource) createNat(ctx context.Context, plan *CtyunNatConfig) 
 	return
 }
 
-func (c *ctyunNatResource) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig) (err error) {
+func (c *ctyunNat) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig, plan *CtyunNatConfig) (err error) {
 	//查看nat详情： ctvpc_show_nat_gateway_api.go
 	params := &ctvpc.CtvpcShowNatGatewayRequest{
 		RegionID:     cfg.RegionID.ValueString(),
@@ -484,7 +484,12 @@ func (c *ctyunNatResource) getAndMergeNat(ctx context.Context, cfg *CtyunNatConf
 	natObj := resp.ReturnObj
 	cfg.VpcID = utils.SecStringValue(natObj.VpcID)
 	//spec := utils.SecStringValue(natObj.Specs)
-	//cfg.Spec = types.Int32Value(int32(spec))
+	spec := c.parseNatSpec(*natObj.Specs)
+	if spec == 0 {
+		err = errors.New("nat spec 返回值有误！当前值为：" + *natObj.Specs)
+		return
+	}
+	cfg.Spec = types.Int32Value(spec)
 	cfg.ProjectID = utils.SecStringValue(natObj.ProjectID)
 	cfg.Name = utils.SecStringValue(natObj.Name)
 	cfg.NatGatewayID = utils.SecStringValue(natObj.NatGatewayID)
@@ -493,11 +498,19 @@ func (c *ctyunNatResource) getAndMergeNat(ctx context.Context, cfg *CtyunNatConf
 	cfg.VpcCidr = utils.SecStringValue(natObj.VpcCidr)
 	cfg.CreationTime = utils.SecStringValue(natObj.CreationTime)
 	cfg.ExpiredTime = utils.SecStringValue(natObj.ExpiredTime)
+	if plan != nil {
+		if !plan.CycleCount.IsUnknown() && !plan.CycleCount.IsNull() {
+			cfg.CycleCount = plan.CycleCount
+		}
+	}
+	if cfg.CycleCount.IsNull() || cfg.CycleCount.IsUnknown() {
+		cfg.CycleCount = types.Int64Value(1)
+	}
 
 	return nil
 }
 
-func (c *ctyunNatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state *CtyunNatConfig, response *resource.ReadResponse) bool {
+func (c *ctyunNat) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state *CtyunNatConfig, response *resource.ReadResponse) bool {
 	natGatewayId := state.NatGatewayID.ValueString()
 	masterOrderId := state.MasterOrderID.ValueString()
 	if natGatewayId != "" {
@@ -521,15 +534,15 @@ func (c *ctyunNatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context
 	response.State.Set(ctx, state)
 	return true
 }
-func (c *ctyunNatResource) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
-	if state.Spec == state.Spec {
+func (c *ctyunNat) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
+	if state.Spec == plan.Spec {
 		_ = fmt.Sprintf("需要修改的规格与原规格一致，无需修改")
 		return nil
 	}
 	// 调用变配nat接口，规格(可传值：1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcModifyNatSpecApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcModifyNatSpecRequest{
 		RegionID:        state.RegionID.ValueString(),
-		NatGatewayID:    state.RegionID.ValueString(),
+		NatGatewayID:    state.NatGatewayID.ValueString(),
 		Spec:            plan.Spec.ValueInt32(),
 		ClientToken:     uuid.NewString(),
 		PayVoucherPrice: plan.PayVoucherPrice.ValueStringPointer(),
@@ -552,13 +565,13 @@ func (c *ctyunNatResource) modifyNatSpec(ctx context.Context, state CtyunNatConf
 
 	return nil
 }
-func (c *ctyunNatResource) renewNat(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (cycleType string, cycleCount int32, err error) {
+func (c *ctyunNat) renewNat(ctx context.Context, state *CtyunNatConfig, plan *CtyunNatConfig) (cycleType string, cycleCount int32, err error) {
 	if state.CycleType.ValueString() == business.OrderCycleTypeOnDemand {
 		_ = fmt.Sprintf("当前订购类型为按需，无法按周期续订。")
 		return
 	}
 
-	if state.CycleCount.ValueInt64() <= 0 {
+	if plan.CycleCount.ValueInt64() <= 0 {
 		_ = fmt.Sprintf("当前无需续订。")
 		return
 	}
@@ -600,11 +613,11 @@ func (c *ctyunNatResource) renewNat(ctx context.Context, state CtyunNatConfig, p
 	if err != nil {
 		return
 	}
-
+	// 更新cycleCount，能到这步cycleType定为year or month
 	return cycleType, cycleCount, nil
 }
 
-func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
+func (c *ctyunNat) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
 
 	if !c.checkNatInfoIsSame(state, plan) {
 		params := &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
@@ -622,13 +635,19 @@ func (c *ctyunNatResource) updateNatInfo(ctx context.Context, state CtyunNatConf
 			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 			return
 		}
+		// 轮询详情接口，确认是否修改
+		err = c.updateLoop(ctx, state, params, 30)
+		if err != nil {
+			return err
+		}
 	} else {
 		return
 	}
+
 	return
 }
 
-func (c *ctyunNatResource) renewLoop(ctx context.Context, params *ctvpc.CtvpcRenewNatGatewayRequest, loopCount ...int) (loopResponse *ctvpc.CtvpcRenewNatGatewayReturnObjResponse, err error) {
+func (c *ctyunNat) renewLoop(ctx context.Context, params *ctvpc.CtvpcRenewNatGatewayRequest, loopCount ...int) (loopResponse *ctvpc.CtvpcRenewNatGatewayReturnObjResponse, err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -668,7 +687,46 @@ func (c *ctyunNatResource) renewLoop(ctx context.Context, params *ctvpc.CtvpcRen
 	return loopResponse, nil
 }
 
-func (c *ctyunNatResource) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGatewayRequest, loopCount ...int) (loopResponse *LoopOrderResponse, err error) {
+// 循环查询nat信息，确保更新成功
+func (c *ctyunNat) updateLoop(ctx context.Context, state CtyunNatConfig, updatedParams *ctvpc.CtvpcUpdateNatGatewayAttributeRequest, loopCount ...int) (err error) {
+	count := 10
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			params := &ctvpc.CtvpcShowNatGatewayRequest{
+				RegionID:     state.RegionID.ValueString(),
+				NatGatewayID: state.NatGatewayID.ValueString(),
+			}
+			resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcShowNatGatewayApi.Do(ctx, c.meta.SdkCredential, params)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode == common.ErrorStatusCode {
+				err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			if *resp.ReturnObj.Name == *updatedParams.Name && *resp.ReturnObj.Description == *updatedParams.Description {
+				return false
+			} else {
+				return true
+			}
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源信息仍未更新成功！")
+	}
+	return
+}
+
+func (c *ctyunNat) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGatewayRequest, loopCount ...int) (loopResponse *LoopOrderResponse, err error) {
 
 	count := 60
 	if len(loopCount) > 0 {
@@ -728,7 +786,7 @@ func (c *ctyunNatResource) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCre
 }
 
 // checkNatInfoIsSame 判断需要修改的nat信息中regionID,name和description是否与原来一直，若都一一致，则不修改
-func (c *ctyunNatResource) checkNatInfoIsSame(state CtyunNatConfig, plan CtyunNatConfig) bool {
+func (c *ctyunNat) checkNatInfoIsSame(state CtyunNatConfig, plan CtyunNatConfig) bool {
 
 	if state.RegionID != plan.RegionID {
 		return false
@@ -744,7 +802,7 @@ func (c *ctyunNatResource) checkNatInfoIsSame(state CtyunNatConfig, plan CtyunNa
 	return true
 }
 
-func (c *ctyunNatResource) isRenewSuccess(expiredTime string, newExpiredTime string, cycleType string, cycleCount int32) bool {
+func (c *ctyunNat) isRenewSuccess(expiredTime string, newExpiredTime string, cycleType string, cycleCount int32) bool {
 	parsedExpiredTime, err := time.Parse(time.RFC3339, expiredTime)
 	if err != nil {
 		fmt.Println("解析日期失败:", err)
@@ -767,6 +825,22 @@ func (c *ctyunNatResource) isRenewSuccess(expiredTime string, newExpiredTime str
 	}
 
 	return false
+}
+
+func (c *ctyunNat) parseNatSpec(spec string) (specInt int32) {
+	switch spec {
+	case "small":
+		specInt = 1
+	case "medium":
+		specInt = 2
+	case "large":
+		specInt = 3
+	case "xlarge":
+		specInt = 4
+	default:
+		specInt = 0
+	}
+	return specInt
 }
 
 type CtyunNatConfig struct {

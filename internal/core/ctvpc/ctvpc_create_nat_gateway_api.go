@@ -53,7 +53,7 @@ type CtvpcCreateNatGatewayRequest struct {
 	Description     *string `json:"description,omitempty"`     /*  支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}  */
 	ClientToken     string  `json:"clientToken,omitempty"`     /*  客户端存根，用于保证订单幂等性, 长度 1 - 64  */
 	CycleType       string  `json:"cycleType,omitempty"`       /*  订购类型：month（包月） / year（包年）/ on_demand（按需）  */
-	CycleCount      int32   `json:"cycleCount"`                /*  订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年  */
+	CycleCount      *int32  `json:"cycleCount"`                /*  订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年  */
 	AzName          string  `json:"azName,omitempty"`          /*  可用区名称  */
 	PayVoucherPrice *string `json:"payVoucherPrice,omitempty"` /*  代金券金额，支持到小数点后两位  */
 	ProjectID       *string `json:"projectID,omitempty"`       /*  企业项目，不传默认为 0  */

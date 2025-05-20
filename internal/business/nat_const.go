@@ -138,3 +138,7 @@ var SNatProtocols = []string{
 	ProtocolTCP,
 	ProtocolUDP,
 }
+var DnatStatus = []string{
+	NatCreateStatusING,
+	NatCreateStatusDone,
+}

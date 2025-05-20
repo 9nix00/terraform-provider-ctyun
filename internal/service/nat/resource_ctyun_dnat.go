@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -19,6 +20,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
@@ -80,7 +82,14 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"internal_ip": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "内部 IP,virtualMachineType=2(自定义),必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("virtual_machine_type"),
+						types.Int32Value(business.VirtualMachineTypeCustom),
+					),
+				},
 			},
 			"internal_port": schema.Int32Attribute{
 				Required:    true,
@@ -144,11 +153,20 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"server_type": schema.StringAttribute{
 				Optional:    true,
 				Description: "当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("virtual_machine_type"),
+						types.Int32Value(business.VirtualMachineTypeCloud),
+					),
+				},
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "绑定状态，取值 in_progress / done",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.DnatStatus...),
+				},
 			},
 		},
 	}
@@ -283,7 +301,6 @@ func (c *ctyunDnatResource) Update(ctx context.Context, request resource.UpdateR
 	if err != nil {
 		return
 	}
-	// todo 应该轮询查询更新情况
 	// 查询远端信息
 	err = c.getAndMergeDnat(ctx, &state)
 	if err != nil {
@@ -367,7 +384,6 @@ func (c *ctyunDnatResource) ImportState(ctx context.Context, request resource.Im
 }
 
 func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatConfig) (err error) {
-	// SDK文件：ctvpc_show_dnat_entry_api.go
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowDnatEntryApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowDnatEntryRequest{
 		RegionID:     cfg.RegionID.ValueString(),
 		NatGatewayID: cfg.NatGatewayID.ValueString(),
@@ -409,11 +425,11 @@ func (c *ctyunDnatResource) isPort(port types.Int32, flag string) bool {
 		return false
 	}
 	if flag == "internal" {
-		if port.ValueInt32() >= 0 && port.ValueInt32() <= 65535 {
+		if port.ValueInt32() > 0 && port.ValueInt32() <= 65535 {
 			return true
 		}
 	} else if flag == "external" {
-		if port.ValueInt32() >= 0 && port.ValueInt32() <= 1024 {
+		if port.ValueInt32() > 0 && port.ValueInt32() <= 1024 {
 		}
 		return true
 	}
@@ -472,11 +488,10 @@ func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig
 		ExternalPort:       plan.ExternalPort.ValueInt32(),
 		VirtualMachineID:   plan.VirtualMachineID.ValueStringPointer(),
 		VirtualMachineType: plan.VirtualMachineType.ValueInt32(),
-
-		InternalPort: plan.InternalPort.ValueInt32(),
-		Protocol:     plan.Protocol.ValueString(),
-		ClientToken:  uuid.NewString(),
-		Description:  plan.Description.ValueStringPointer(),
+		InternalPort:       plan.InternalPort.ValueInt32(),
+		Protocol:           plan.Protocol.ValueString(),
+		ClientToken:        uuid.NewString(),
+		Description:        plan.Description.ValueStringPointer(),
 	}
 
 	if plan.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
@@ -546,6 +561,56 @@ func (c *ctyunDnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcC
 	return loopResponse, respError
 }
 
+func (c *ctyunDnatResource) updateLoop(ctx context.Context, state *CtyunDnatConfig, updatedParams *ctvpc.CtvpcUpdateDnatEntryAttributeRequest, loopCount ...int) (err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(func(currentTime int) bool {
+		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcShowDnatEntryApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowDnatEntryRequest{
+			RegionID:     state.RegionID.ValueString(),
+			NatGatewayID: state.NatGatewayID.ValueString(),
+			DNatID:       state.DNatID.ValueString(),
+		})
+		if err2 != nil {
+			err = err2
+			return false
+		} else if resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return false
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
+			return false
+		}
+
+		dnatInfo := resp.ReturnObj
+		if updatedParams.ExternalID != nil && *dnatInfo.ExternalID != *updatedParams.ExternalID {
+			return true
+		}
+		if updatedParams.ExternalPort != 0 && dnatInfo.ExternalPort != updatedParams.ExternalPort {
+			return true
+		}
+		if updatedParams.InternalIp != nil && *dnatInfo.InternalIp != *updatedParams.InternalIp {
+			return true
+		}
+		if updatedParams.InternalPort != 0 && dnatInfo.InternalPort != updatedParams.InternalPort {
+			return true
+		}
+		if updatedParams.Description != nil && *dnatInfo.Description != *updatedParams.Description {
+			return true
+		}
+		return false
+	})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未更新!Dnat: " + state.DNatID.ValueString())
+	}
+	return
+}
+
 func (c *ctyunDnatResource) DeleteLoop(ctx context.Context, state CtyunDnatConfig) (err error) {
 	var respErr error
 	retryer, err := business.NewRetryer(time.Second*5, 60)
@@ -609,16 +674,14 @@ func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfi
 	params := &ctvpc.CtvpcUpdateDnatEntryAttributeRequest{
 		RegionID:           plan.RegionID.ValueString(),
 		DNatID:             state.DNatID.ValueString(),
-		ExternalID:         plan.ExternalID.ValueStringPointer(),
-		VirtualMachineID:   plan.ExternalID.ValueStringPointer(),
-		VirtualMachineType: plan.VirtualMachineType.ValueInt32(),
-		InternalIp:         plan.InternalIP.ValueStringPointer(),
 		Protocol:           plan.Protocol.ValueString(),
+		VirtualMachineType: plan.VirtualMachineType.ValueInt32(),
 		ClientToken:        uuid.NewString(),
-		Description:        plan.Description.ValueStringPointer(),
 		ServerType:         plan.Description.ValueStringPointer(),
 	}
-
+	if plan.ExternalID.ValueString() != "" {
+		params.ExternalID = plan.ExternalID.ValueStringPointer()
+	}
 	// 判断弹性IP公网端口和主机内网端口是否符合标准，如果需要更新的端口不符合标准，则不更新
 	if c.isPort(plan.ExternalPort, "external") {
 		params.ExternalPort = plan.ExternalPort.ValueInt32()
@@ -626,12 +689,26 @@ func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfi
 	if c.isPort(plan.InternalPort, "internal") {
 		params.InternalPort = plan.InternalPort.ValueInt32()
 	}
+	if plan.InternalIP.ValueString() != "" {
+		params.InternalIp = plan.InternalIP.ValueStringPointer()
+	}
+	if plan.Description.ValueString() != "" {
+		params.Description = plan.Description.ValueStringPointer()
+	}
+	if plan.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud && plan.ServerType.ValueString() != "" {
+		params.ServerType = plan.ServerType.ValueStringPointer()
+	}
 
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateDnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+	}
+	// 轮询确认已经更新完毕
+	err = c.updateLoop(ctx, &state, params, 50)
+	if err != nil {
+		return
 	}
 	return
 }

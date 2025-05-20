@@ -4,5 +4,5 @@ resource "ctyun_nat" "%[1]s"{
     name = "%[4]s"
     description = "%[5]s"
     cycle_type = "%[6]s"
-    az_name = "%[7]s"
+    %[7]s
 }
