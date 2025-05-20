@@ -657,7 +657,6 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	systemVolumeRaidUUID := plan.SystemVolumeRaidUUID.ValueString()
 	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
 	ipType := plan.IpType.ValueString()
-	userData := plan.UserData.ValueString()
 	keyName := plan.KeyName.ValueString()
 	instanceChargeType := strings.ToUpper(plan.InstanceChargeType.ValueString())
 	cycleType := strings.ToUpper(plan.CycleType.ValueString())
@@ -680,7 +679,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		IpType:             &ipType,
 		DiskList:           diskList,
 		NetworkCardList:    networkCardList,
-		UserData:           &userData,
+		UserData:           plan.UserData.ValueStringPointer(),
 		AutoRenewStatus:    plan.AutoRenewStatus.ValueInt32(),
 		InstanceChargeType: &instanceChargeType,
 		CycleCount:         plan.CycleCount.ValueInt32(),
