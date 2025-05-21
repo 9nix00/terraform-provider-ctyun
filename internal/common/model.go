@@ -4,7 +4,6 @@ import (
 	"sync"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
-	"terraform-provider-ctyun/internal/core/ctdas"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
@@ -56,17 +55,17 @@ func (c CtyunMetadata) GetExtraIfEmpty(target, extraKey string) string {
 }
 
 type Apis struct {
-	CtEbsApis      *ctebs.Apis
-	CtEcsApis      *ctecs.Apis
-	CtIamApis      *ctiam.Apis
-	CtImageApis    *ctimage.Apis
-	CtVpcApis      *ctvpc.Apis
-	CtEbmApis      *ctebm.Apis
-	SdkCtEbsApis   *ctebs2.Apis
-	SdkCtEcsApis   *ctecs2.Apis
-	SdkCtVpcApis   *ctvpc2.Apis
-	SdkCtZosApis   *ctzos.Apis
-	SdkCcseApis    *ccse2.Apis
-	SdkCtElbApis   *sdkCtelb.Apis
-	SdkCtMysqlApis *ctdas.APIClient
+	CtEbsApis    *ctebs.Apis
+	CtEcsApis    *ctecs.Apis
+	CtIamApis    *ctiam.Apis
+	CtImageApis  *ctimage.Apis
+	CtVpcApis    *ctvpc.Apis
+	CtEbmApis    *ctebm.Apis
+	SdkCtEbsApis *ctebs2.Apis
+	SdkCtEcsApis *ctecs2.Apis
+	SdkCtVpcApis *ctvpc2.Apis
+	SdkCtZosApis *ctzos.Apis
+	SdkCcseApis  *ccse2.Apis
+	SdkCtElbApis *sdkCtelb.Apis
+	//SdkCtMysqlApis *ctdas.APIClient
 }
