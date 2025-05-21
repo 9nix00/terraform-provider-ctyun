@@ -41,24 +41,24 @@ resource "ctyun_elb_loadbalancer" "listener_test" {
 }
 
 resource "ctyun_elb_health_check" "test" {
-  name     = "tf-hc-for-targetgroup10"
+  name     = "tf-hc-for-targetgroup12"
   protocol = "TCP"
 }
 
 resource "ctyun_elb_target_group" "test1" {
-  name      = "tf-tg-for-target1_10"
+  name      = "tf-tg-for-target1_12"
   vpc_id    = ctyun_vpc.vpc_test.id
   algorithm = "wrr"
 }
 
 resource "ctyun_elb_target_group" "test2" {
-  name      = "tf-tg-for-target2_10"
+  name      = "tf-tg-for-target2_12"
   vpc_id    = ctyun_vpc.vpc_test.id
   algorithm = "wrr"
 }
 
 resource "ctyun_elb_target_group" "test3" {
-  name      = "tf-tg-for-target3_1"
+  name      = "tf-tg-for-target3_3"
   vpc_id    = ctyun_vpc.vpc_test.id
   algorithm = "wrr"
 }
@@ -73,7 +73,7 @@ resource "ctyun_elb_listener" "test" {
 }
 
 data "ctyun_images" "image_test" {
-  name       = "CtyunOS 23"
+  name       = "CentOS Linux 8.4"
   visibility = "public"
   page_no = 1
   page_size = 10

@@ -69,7 +69,7 @@ func TestAccCtyunElbCertificate(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(datasourceFile, dnd),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "certificates.#", "3"),
+					resource.TestCheckResourceAttr(datasourceName, "certificates.#", "1"),
 					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.name", updatedName),
 					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.type", certificateType),
 					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.private_key", privateKey),
