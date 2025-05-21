@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -23,7 +22,6 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
-	ctdas "terraform-provider-ctyun/internal/core/ctdas"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
@@ -423,24 +421,25 @@ func (c *CtyunProvider) buildResource(resources ...resource.Resource) []func() r
 	}
 	return result
 }
-func (c *CtyunProvider) buildMysqlConfiguration() *ctdas.Configuration {
-	// 创建一个新的 API 客户端实例
-	cfg := ctdas.NewConfiguration()
-	cfg.Scheme = "https"
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	httpClient := &http.Client{Transport: tr}
-	cfg.HTTPClient = httpClient
-	// 设置 API 服务器的基础 URL
-	cfg.Servers = ctdas.ServerConfigurations{
-		{
-			URL: "https://ctdas-global.ctapi.ctyun.cn/teledb-mysql",
-		},
-	}
 
-	return cfg
-}
+//func (c *CtyunProvider) buildMysqlConfiguration() *ctdas.Configuration {
+//	// 创建一个新的 API 客户端实例
+//	cfg := ctdas.NewConfiguration()
+//	cfg.Scheme = "https"
+//	tr := &http.Transport{
+//		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+//	}
+//	httpClient := &http.Client{Transport: tr}
+//	cfg.HTTPClient = httpClient
+//	// 设置 API 服务器的基础 URL
+//	cfg.Servers = ctdas.ServerConfigurations{
+//		{
+//			URL: "https://ctdas-global.ctapi.ctyun.cn/teledb-mysql",
+//		},
+//	}
+//
+//	return cfg
+//}
 
 type CtyunProviderConfig struct {
 	Ak                 types.String `tfsdk:"ak"`
