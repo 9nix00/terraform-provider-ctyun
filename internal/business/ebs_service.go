@@ -82,3 +82,12 @@ func (c *EbsService) getMasterOrderIdIfOrderInProgress(err ctyunsdk.CtyunRequest
 	}
 	return resp.MasterOrderId, err
 }
+
+// GetEbsInfo 查询云盘信息
+func (c *EbsService) GetEbsInfo(ctx context.Context, diskId, regionId string) (resp *ctebs.EbsShowResponse, err error) {
+	resp, err = c.meta.Apis.CtEbsApis.EbsShowApi.Do(ctx, c.meta.Credential, &ctebs.EbsShowRequest{
+		RegionId: regionId,
+		DiskId:   diskId,
+	})
+	return
+}

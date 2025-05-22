@@ -31,3 +31,33 @@ func (v VpcService) MustExist(ctx context.Context, vpcId, regionId, projectId st
 	}
 	return nil
 }
+
+func (v VpcService) GetVpcSubnet(ctx context.Context, vpcId, regionId, projectId string) (map[string]ctvpc.SubnetListSubnetsResponse, error) {
+	resp, err := v.meta.Apis.CtVpcApis.VpcQueryApi.Do(ctx, v.meta.Credential, &ctvpc.VpcQueryRequest{
+		RegionId:    regionId,
+		ProjectId:   projectId,
+		ClientToken: uuid.NewString(),
+		VpcId:       vpcId,
+	})
+	if err != nil {
+		if err.ErrorCode() == common.OpenapiVpcNotFound {
+			return nil, fmt.Errorf("vpc %s 不存在", vpcId)
+		}
+		return nil, err
+	}
+	r, err := v.meta.Apis.CtVpcApis.SubnetListApi.Do(ctx, v.meta.Credential, &ctvpc.SubnetListRequest{
+		RegionId:   regionId,
+		VpcId:      vpcId,
+		SubnetIds:  resp.SubnetIds,
+		PageNumber: 1,
+		PageSize:   100,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[string]ctvpc.SubnetListSubnetsResponse)
+	for _, subnet := range r.Subnets {
+		result[subnet.SubnetId] = subnet
+	}
+	return result, nil
+}

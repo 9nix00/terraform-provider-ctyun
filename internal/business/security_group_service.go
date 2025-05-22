@@ -29,3 +29,21 @@ func (s SecurityGroupService) MustExist(ctx context.Context, SecurityGroupId, re
 	}
 	return nil
 }
+
+func (s SecurityGroupService) MustExistInVpc(ctx context.Context, vpcId, securityGroupId, regionId string) error {
+	resp, err := s.meta.Apis.CtVpcApis.SecurityGroupDescribeAttributeApi.Do(ctx, s.meta.Credential, &ctvpc.SecurityGroupDescribeAttributeRequest{
+		RegionId:        regionId,
+		SecurityGroupId: securityGroupId,
+		Direction:       "all",
+	})
+	if err != nil {
+		if err.ErrorCode() == common.OpenapiSecurityGroupNotFound {
+			return fmt.Errorf("安全组 %s 不存在", securityGroupId)
+		}
+		return err
+	}
+	if resp.VpcId != vpcId {
+		return fmt.Errorf("安全组 %s 不属于 %s", vpcId)
+	}
+	return nil
+}

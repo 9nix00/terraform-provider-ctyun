@@ -41,8 +41,8 @@ func (d LogHttpHook) AfterResponse(ctx context.Context, response *http.Response)
 type MetricHttpHook struct {
 }
 
-func (m MetricHttpHook) BeforeRequest(_ context.Context, _ *http.Request) {
-
+func (m MetricHttpHook) BeforeRequest(_ context.Context, request *http.Request) {
+	request.Header.Set("From-Terraform-Provider", "true")
 }
 
 func (m MetricHttpHook) AfterResponse(_ context.Context, _ *http.Response) {
