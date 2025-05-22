@@ -589,7 +589,6 @@ func (c *ctyunCcseCluster) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
@@ -924,7 +923,7 @@ func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConf
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
 	}
 	return

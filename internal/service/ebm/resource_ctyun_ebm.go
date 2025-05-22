@@ -75,7 +75,7 @@ type CtyunEbmConfig struct {
 	UserData             types.String `tfsdk:"user_data"`
 	KeyName              types.String `tfsdk:"key_name"`
 	//PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
-	AutoRenewStatus    types.Int32  `tfsdk:"auto_renew_status"`
+	AutoRenew          types.Bool   `tfsdk:"auto_renew"`
 	InstanceChargeType types.String `tfsdk:"instance_charge_type"`
 	CycleCount         types.Int32  `tfsdk:"cycle_count"`
 	CycleType          types.String `tfsdk:"cycle_type"`
@@ -365,11 +365,10 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			//	Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券",
 			//	Default:     float64default.StaticFloat64(0.00),
 			//},
-			"auto_renew_status": schema.Int32Attribute{
+			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费），<br/>注：按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年",
-				Default:     int32default.StaticInt32(0),
+				Description: "是否自动续订，默认非自动续订。",
 			},
 			"instance_charge_type": schema.StringAttribute{
 				Required:    true,
@@ -680,7 +679,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		IpType:             &ipType,
 		DiskList:           diskList,
 		NetworkCardList:    networkCardList,
-		AutoRenewStatus:    plan.AutoRenewStatus.ValueInt32(),
+		AutoRenewStatus:    map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
 		InstanceChargeType: &instanceChargeType,
 		CycleCount:         plan.CycleCount.ValueInt32(),
 		CycleType:          &cycleType,

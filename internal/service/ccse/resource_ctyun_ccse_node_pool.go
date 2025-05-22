@@ -9,7 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -50,7 +49,7 @@ type CtyunCcseNodePoolConfig struct {
 	NodePoolName             types.String            `tfsdk:"node_pool_name"`
 	CycleCount               types.Int64             `tfsdk:"cycle_count"`
 	CycleType                types.String            `tfsdk:"cycle_type"`
-	AutoRenewStatus          types.Int32             `tfsdk:"auto_renew_status"`
+	AutoRenew                types.Bool              `tfsdk:"auto_renew"`
 	VisibilityPostHostScript types.String            `tfsdk:"visibility_post_host_script"`
 	VisibilityHostScript     types.String            `tfsdk:"visibility_host_script"`
 	InstanceType             types.String            `tfsdk:"instance_type"`
@@ -124,11 +123,10 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 					validator2.CycleCount(1, 11, 1, 5),
 				},
 			},
-			"auto_renew_status": schema.Int32Attribute{
+			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费）",
-				Default:     int32default.StaticInt32(0),
+				Description: "是否自动续订，默认非自动续订",
 			},
 			"visibility_post_host_script": schema.StringAttribute{
 				Optional:    true,
@@ -438,7 +436,7 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 		ClusterId:                plan.ClusterID.ValueString(),
 		RegionId:                 plan.RegionID.ValueString(),
 		NodePoolName:             plan.NodePoolName.ValueString(),
-		AutoRenewStatus:          plan.AutoRenewStatus.ValueInt32(),
+		AutoRenewStatus:          map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
 		VisibilityPostHostScript: plan.VisibilityPostHostScript.ValueString(),
 		VisibilityHostScript:     plan.VisibilityHostScript.ValueString(),
 		UseAffinityGroup:         plan.UseAffinityGroup.ValueBoolPointer(),
@@ -567,7 +565,7 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 	plan.SysDisk.Type = types.StringValue(p.SysDiskType)
 	plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
 	plan.MaxPodNum = types.Int32Value(p.MaxPodNum)
-	plan.AutoRenewStatus = types.Int32Value(p.AutoRenewStatus)
+	plan.AutoRenew = types.BoolValue(map[int32]bool{0: false, 1: true}[p.AutoRenewStatus])
 	plan.MirrorID = types.StringValue(p.ImageUuid)
 	plan.MirrorName = types.StringValue(p.ImageName)
 	plan.ItemDefName = types.StringValue(p.VmSpecName)
@@ -604,7 +602,7 @@ func (c *ctyunCcseNodePool) update(ctx context.Context, plan, state CtyunCcseNod
 		NodePoolId:               state.ID.ValueString(),
 		RegionId:                 state.RegionID.ValueString(),
 		NodePoolName:             plan.NodePoolName.ValueString(),
-		AutoRenewStatus:          plan.AutoRenewStatus.ValueInt32(),
+		AutoRenewStatus:          map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
 		VisibilityPostHostScript: plan.VisibilityPostHostScript.ValueString(),
 		VisibilityHostScript:     plan.VisibilityHostScript.ValueString(),
 		SysDiskType:              plan.SysDisk.Type.ValueString(),

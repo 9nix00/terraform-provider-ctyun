@@ -21,7 +21,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ccse_node_pools.tf"
 
 	initName := "init-pool"
-	initAutoRenewStatus := 0
+	initAutoRenewStatus := false
 	initVisibilityPostHostScript := "YWJj"
 	initVisibilityHostScript := "MTIz"
 	initSysDiskType := "SATA"
@@ -32,7 +32,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	initCycleCount := ""
 
 	updatedName := "updated-pool"
-	updatedAutoRenewStatus := 1
+	updatedAutoRenewStatus := true
 	updatedVisibilityPostHostScript := "MTIz"
 	updatedVisibilityHostScript := "YWJj"
 	updatedSysDiskType := "SSD"
@@ -70,7 +70,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_pool_name", initName),
-					resource.TestCheckResourceAttr(resourceName, "auto_renew_status", strconv.Itoa(initAutoRenewStatus)),
+					resource.TestCheckResourceAttr(resourceName, "auto_renew", map[bool]string{true: "true", false: "false"}[initAutoRenewStatus]),
 					resource.TestCheckResourceAttr(resourceName, "visibility_post_host_script", initVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(resourceName, "visibility_host_script", initVisibilityHostScript),
 					resource.TestCheckResourceAttr(resourceName, "sys_disk.type", initSysDiskType),
@@ -98,7 +98,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_pool_name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "auto_renew_status", strconv.Itoa(updatedAutoRenewStatus)),
+					resource.TestCheckResourceAttr(resourceName, "auto_renew", map[bool]string{true: "true", false: "false"}[updatedAutoRenewStatus]),
 					resource.TestCheckResourceAttr(resourceName, "visibility_post_host_script", updatedVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(resourceName, "visibility_host_script", updatedVisibilityHostScript),
 					resource.TestCheckResourceAttr(resourceName, "sys_disk.type", updatedSysDiskType),
@@ -128,7 +128,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.node_pool_name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "records.0.auto_renew_status", strconv.Itoa(updatedAutoRenewStatus)),
+					resource.TestCheckResourceAttr(datasourceName, "records.0.auto_renew", map[bool]string{true: "true", false: "false"}[updatedAutoRenewStatus]),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.visibility_post_host_script", updatedVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.visibility_host_script", updatedVisibilityHostScript),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.sys_disk.type", updatedSysDiskType),

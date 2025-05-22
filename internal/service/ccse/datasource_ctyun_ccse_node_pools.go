@@ -37,7 +37,7 @@ type CtyunCcseNodePoolsModel struct {
 	NodePoolName             types.String `tfsdk:"node_pool_name"`
 	CycleCount               types.Int64  `tfsdk:"cycle_count"`
 	CycleType                types.String `tfsdk:"cycle_type"`
-	AutoRenewStatus          types.Int32  `tfsdk:"auto_renew_status"`
+	AutoRenew                types.Bool   `tfsdk:"auto_renew"`
 	VisibilityPostHostScript types.String `tfsdk:"visibility_post_host_script"`
 	VisibilityHostScript     types.String `tfsdk:"visibility_host_script"`
 	InstanceType             types.String `tfsdk:"instance_type"`
@@ -108,9 +108,9 @@ func (c *ctyunCcseNodePools) Schema(_ context.Context, _ datasource.SchemaReques
 							Computed:    true,
 							Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
 						},
-						"auto_renew_status": schema.Int32Attribute{
+						"auto_renew": schema.BoolAttribute{
 							Computed:    true,
-							Description: "是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费）",
+							Description: "是否自动续订，默认非自动续订。",
 						},
 						"visibility_post_host_script": schema.StringAttribute{
 							Computed:    true,
@@ -231,7 +231,7 @@ func (c *ctyunCcseNodePools) Read(ctx context.Context, request datasource.ReadRe
 		item := CtyunCcseNodePoolsModel{
 			ID:                       types.StringValue(p.Id),
 			NodePoolName:             types.StringValue(p.NodePoolName),
-			AutoRenewStatus:          types.Int32Value(p.AutoRenewStatus),
+			AutoRenew:                types.BoolValue(map[int32]bool{0: false, 1: true}[p.AutoRenewStatus]),
 			VisibilityPostHostScript: types.StringValue(p.VisibilityPostHostScript),
 			VisibilityHostScript:     types.StringValue(p.VisibilityHostScript),
 			MirrorID:                 types.StringValue(p.ImageUuid),
