@@ -384,7 +384,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数",
 				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
+					int32planmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
@@ -413,7 +413,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.OneOf(business.EbmCycleTypeMonth, business.EbmCycleTypeYear),
 				},
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"status": schema.StringAttribute{
@@ -1350,6 +1350,7 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 	var executeSuccessFlag bool
 	var status string
 	var err error
+	var cnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1363,6 +1364,12 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 			case business.EbmStatusRunning:
 				executeSuccessFlag = true
 				return false
+			case business.EbmStatusStopped:
+				cnt++
+				if cnt > 3 {
+					return false
+				}
+				return true
 			default:
 				return false
 			}
