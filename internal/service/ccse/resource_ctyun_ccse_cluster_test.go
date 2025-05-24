@@ -5,6 +5,7 @@ import (
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -19,7 +20,7 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 	resourceFile := "resource_ctyun_ccse_cluster_standard.tf"
 	datasourceFile := "datasource_ctyun_ccse_clusters.tf"
 
-	clusterName := "tf-" + rnd
+	clusterName := "tf-" + utils.GenerateRandomString()
 	clusterSeries := "cce.standard"
 
 	resource.Test(t, resource.TestCase{
@@ -47,6 +48,12 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_series", clusterSeries),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -95,6 +102,12 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_series", clusterSeries),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{

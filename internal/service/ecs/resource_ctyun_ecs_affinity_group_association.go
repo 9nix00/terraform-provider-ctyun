@@ -95,7 +95,7 @@ func (c *ctyunEcsAffinityGroupAssociation) Create(ctx context.Context, request r
 		return
 	}
 	// 创建
-	err = c.association(ctx, plan)
+	err = c.associate(ctx, plan)
 	if err != nil {
 		return
 	}
@@ -151,11 +151,11 @@ func (c *ctyunEcsAffinityGroupAssociation) Delete(ctx context.Context, request r
 	if response.Diagnostics.HasError() {
 		return
 	}
-	err = c.checkBeforeDissociation(ctx, state)
+	err = c.checkBeforeDissociate(ctx, state)
 	if err != nil {
 		return
 	}
-	err = c.dissociation(ctx, state)
+	err = c.dissociate(ctx, state)
 	if err != nil {
 		return
 	}
@@ -200,7 +200,7 @@ func (c *ctyunEcsAffinityGroupAssociation) ImportState(ctx context.Context, requ
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
-// checkBeforeAssociation 绑定前检查
+// checkBeforeAssociate 绑定前检查
 func (c *ctyunEcsAffinityGroupAssociation) checkBeforeAssociation(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
 	instanceID, groupID, regionID := plan.InstanceID.ValueString(), plan.AffinityGroupID.ValueString(), plan.RegionID.ValueString()
 	params := &ctecs2.CtecsAffinityGroupbindInstanceCheckV41Request{
@@ -233,8 +233,8 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeAssociation(ctx context.Co
 	return
 }
 
-// association 将云主机加入主机组
-func (c *ctyunEcsAffinityGroupAssociation) association(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
+// associate 将云主机加入主机组
+func (c *ctyunEcsAffinityGroupAssociation) associate(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
 	params := &ctecs2.CtecsAffinityGroupbindInstanceV41Request{
 		RegionID:        plan.RegionID.ValueString(),
 		InstanceID:      plan.InstanceID.ValueString(),
@@ -277,8 +277,8 @@ func (c *ctyunEcsAffinityGroupAssociation) checkAfterAssociation(ctx context.Con
 	return nil
 }
 
-// checkBeforeAssociation 解绑前检查
-func (c *ctyunEcsAffinityGroupAssociation) checkBeforeDissociation(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
+// checkBeforeDissociate 解绑前检查
+func (c *ctyunEcsAffinityGroupAssociation) checkBeforeDissociate(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
 	instanceID, groupID, regionID := plan.InstanceID.ValueString(), plan.AffinityGroupID.ValueString(), plan.RegionID.ValueString()
 	bindID, err := c.getEcsAffinityGroup(ctx, plan)
 	if err != nil {
@@ -299,8 +299,8 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeDissociation(ctx context.C
 	return
 }
 
-// dissociation 解绑云主机组
-func (c *ctyunEcsAffinityGroupAssociation) dissociation(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
+// dissociate 解绑云主机组
+func (c *ctyunEcsAffinityGroupAssociation) dissociate(ctx context.Context, plan CtyunEcsAffinityGroupAssociationConfig) (err error) {
 	params := &ctecs2.CtecsAffinityGroupUnbindInstanceV41Request{
 		RegionID:        plan.RegionID.ValueString(),
 		InstanceID:      plan.InstanceID.ValueString(),
