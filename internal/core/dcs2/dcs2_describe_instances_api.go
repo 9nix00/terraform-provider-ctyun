@@ -126,6 +126,9 @@ type Dcs2DescribeInstancesReturnObjRowsResponse struct {
 	OuterProjectId    string                                              `json:"outerProjectId,omitempty"`    /*  企业项目ID，企业项目管理服务提供统一的云资源按企业项目管理，以及企业项目内的资源管理，成员管理。您可以通过查看<a href="https://www.ctyun.cn/document/10017248/10017961">创建企业项目</a>了解如何创建企业项目<br>说明：默认值为"0"  */
 	OuterProjectName  string                                              `json:"outerProjectName,omitempty"`  /*  项目名  */
 	Description       string                                              `json:"description,omitempty"`       /*  实例描述信息  */
+	DataDiskType      string                                              `json:"dataDiskType"`
+	ShardMemSize      string                                              `json:"shardMemSize"`
+	Capacity          string                                              `json:"capacity"`
 }
 
 type Dcs2DescribeInstancesReturnObjRowsAzListResponse struct {

@@ -72,6 +72,12 @@ type Dcs2DescribeInstancesOverviewReturnObjRowsResponse struct {
 }
 
 type Dcs2DescribeInstancesOverviewReturnObjUserInfoResponse struct {
+	DataDiskType  string `json:"dataDiskType"`
+	ShardMemSize  string `json:"shardMemSize"`
+	PaasInstAttrs []struct {
+		AttrKey string `json:"attrKey"`
+		AttrVal string `json:"attrVal"`
+	} `json:"paasInstAttrs"`
 	ProdInstId            string                                                          `json:"prodInstId,omitempty"`            /*  实例ID  */
 	User                  string                                                          `json:"user,omitempty"`                  /*  产品实例标识  */
 	InstanceName          string                                                          `json:"instanceName,omitempty"`          /*  实例名称  */

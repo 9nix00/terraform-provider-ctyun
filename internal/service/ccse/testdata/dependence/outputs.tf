@@ -11,5 +11,5 @@ output "flavor_name" {
 }
 
 output "cluster_id" {
-  value = local.real_cluster_id
+  value = ctyun_ccse_cluster.test.id
 }

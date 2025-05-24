@@ -106,7 +106,7 @@ func (c *ctyunEbmAssociationEbs) Create(ctx context.Context, request resource.Cr
 		return
 	}
 	// 创建
-	err = c.association(ctx, plan)
+	err = c.associate(ctx, plan)
 	if err != nil {
 		return
 	}
@@ -164,11 +164,11 @@ func (c *ctyunEbmAssociationEbs) Delete(ctx context.Context, request resource.De
 		return
 	}
 	// 解绑
-	err = c.checkBeforeDissociation(ctx, state)
+	err = c.checkBeforeDissociate(ctx, state)
 	if err != nil {
 		return
 	}
-	err = c.dissociation(ctx, state)
+	err = c.dissociate(ctx, state)
 	if err != nil {
 		return
 	}
@@ -214,7 +214,7 @@ func (c *ctyunEbmAssociationEbs) ImportState(ctx context.Context, request resour
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
-// checkBeforeAssociation 绑定前检查
+// checkBeforeAssociate 绑定前检查
 func (c *ctyunEbmAssociationEbs) checkBeforeAssociation(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	// 校验物理机
 	instance, err := business.NewEbmService(c.meta).GetEbmInfo(
@@ -285,8 +285,8 @@ func (c *ctyunEbmAssociationEbs) checkAfterAssociation(ctx context.Context, plan
 	return nil
 }
 
-// association 将物理机和云硬盘绑定
-func (c *ctyunEbmAssociationEbs) association(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
+// associate 将物理机和云硬盘绑定
+func (c *ctyunEbmAssociationEbs) associate(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	params := &ctebm.EbmAttachVolumeRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
@@ -304,8 +304,8 @@ func (c *ctyunEbmAssociationEbs) association(ctx context.Context, plan CtyunEbmA
 	return
 }
 
-// checkBeforeAssociation 解绑前检查
-func (c *ctyunEbmAssociationEbs) checkBeforeDissociation(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
+// checkBeforeDissociate 解绑前检查
+func (c *ctyunEbmAssociationEbs) checkBeforeDissociate(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	// 校验物理机
 	instance, err := business.NewEbmService(c.meta).GetEbmInfo(
 		ctx,
@@ -325,8 +325,8 @@ func (c *ctyunEbmAssociationEbs) checkBeforeDissociation(ctx context.Context, pl
 	return
 }
 
-// dissociation 将物理机和云硬盘解绑
-func (c *ctyunEbmAssociationEbs) dissociation(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
+// dissociate 将物理机和云硬盘解绑
+func (c *ctyunEbmAssociationEbs) dissociate(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	params := &ctebm.EbmDetachVolumeRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		AzName:       plan.AzName.ValueString(),
@@ -343,7 +343,7 @@ func (c *ctyunEbmAssociationEbs) dissociation(ctx context.Context, plan CtyunEbm
 	return
 }
 
-// association 绑定后检查
+// checkAfterDissociation 绑定后检查
 func (c *ctyunEbmAssociationEbs) checkAfterDissociation(ctx context.Context, plan CtyunEbmAssociationEbsConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)

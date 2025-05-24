@@ -43,6 +43,7 @@ import (
 	"terraform-provider-ctyun/internal/service/ecs"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/redis"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
 	"terraform-provider-ctyun/internal/service/zos"
@@ -334,6 +335,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		zos.NewCtyunZosBucketObjects(),
 		ccse.NewCtyunCcseClusters(),
 		ccse.NewCtyunCcseNodePools(),
+		redis.NewCtyunRedisSpecs(),
+		redis.NewCtyunRedisInstances(),
 	)
 }
 
@@ -377,6 +380,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		zos.NewCtyunZosBucketObject(),
 		ccse.NewCtyunCcseCluster(),
 		ccse.NewCtyunCcseNodePool(),
+		redis.NewCtyunRedisInstance(),
+		redis.NewCtyunRedisAssociationEip(),
 	)
 }
 

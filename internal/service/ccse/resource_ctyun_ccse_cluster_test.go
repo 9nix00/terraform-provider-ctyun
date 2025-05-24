@@ -19,7 +19,7 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 	resourceFile := "resource_ctyun_ccse_cluster_standard.tf"
 	datasourceFile := "datasource_ctyun_ccse_clusters.tf"
 
-	clusterName := "tf-" + rnd
+	clusterName := "tf-" + utils.GenerateRandomString()
 	clusterSeries := "cce.standard"
 
 	resource.Test(t, resource.TestCase{

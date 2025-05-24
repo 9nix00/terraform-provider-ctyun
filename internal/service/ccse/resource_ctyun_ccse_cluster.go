@@ -144,23 +144,6 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
-					//"auto_generate_security_group": schema.BoolAttribute{
-					//	Optional:    true,
-					//	Description: "是否自动生成安全组",
-					//},
-					//"security_group_id": schema.StringAttribute{
-					//	Optional:    true,
-					//	Description: "安全组ID",
-					//	Validators: []validator.String{
-					//		validator2.AlsoRequiresEqualString(
-					//			path.MatchRoot("base_info").AtName("auto_generate_security_group"),
-					//			types.BoolValue(false),
-					//		),
-					//	},
-					//	PlanModifiers: []planmodifier.String{
-					//		stringplanmodifier.RequiresReplace(),
-					//	},
-					//},
 					"cluster_name": schema.StringAttribute{
 						Required:    true,
 						Description: "集群名字",
@@ -589,7 +572,6 @@ func (c *ctyunCcseCluster) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
@@ -627,14 +609,12 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 }
 
 func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	err = fmt.Errorf("resource_ctyun_ccse_cluster 暂不支持任何更新")
-
+	//var err error
+	//defer func() {
+	//	if err != nil {
+	//		response.Diagnostics.AddError(err.Error(), err.Error())
+	//	}
+	//}()
 	//// tf文件中的
 	//var plan CtyunCcseClusterConfig
 	//response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
@@ -891,27 +871,27 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	return
 }
 
-// update 更新
-func (c *ctyunCcseCluster) update(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
-	if plan.BaseInfo.ClusterVersion.Equal(state.BaseInfo.ClusterVersion) {
-		return
-	}
-	params := &ccse2.CcseUpgradeClusterRequest{
-		ClusterId:   state.ID.ValueString(),
-		RegionId:    state.RegionID.ValueString(),
-		NextVersion: plan.BaseInfo.ClusterVersion.ValueString(),
-		Version:     state.BaseInfo.ClusterVersion.ValueString(),
-		Concurrency: 1,
-	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseUpgradeClusterApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	}
-	return
-}
+//// updateVersion 更新版本，需要安装插件
+//func (c *ctyunCcseCluster) updateVersion(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+//	if plan.BaseInfo.ClusterVersion.Equal(state.BaseInfo.ClusterVersion) {
+//		return
+//	}
+//	params := &ccse2.CcseUpgradeClusterRequest{
+//		ClusterId:   state.ID.ValueString(),
+//		RegionId:    state.RegionID.ValueString(),
+//		NextVersion: plan.BaseInfo.ClusterVersion.ValueString(),
+//		Version:     state.BaseInfo.ClusterVersion.ValueString(),
+//		Concurrency: 1,
+//	}
+//	resp, err := c.meta.Apis.SdkCcseApis.CcseUpgradeClusterApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCode {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	}
+//	return
+//}
 
 // delete 删除
 func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
@@ -924,7 +904,7 @@ func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConf
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
 	}
 	return

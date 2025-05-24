@@ -65,6 +65,7 @@ type CcseDeleteClusterResponse struct {
 	Message    string                              `json:"message,omitempty"`    /*  提示信息  */
 	ReturnObj  *CcseDeleteClusterReturnObjResponse `json:"returnObj"`            /*  返回对象  */
 	Error      string                              `json:"error,omitempty"`      /*  返回错误码  */
+	RequestId  string                              `json:"requestId"`
 }
 
 type CcseDeleteClusterReturnObjResponse struct {
