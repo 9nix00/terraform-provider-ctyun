@@ -11,6 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
@@ -74,13 +76,12 @@ type CtyunEbmConfig struct {
 	NetworkCardList      types.List   `tfsdk:"network_card_list"`
 	UserData             types.String `tfsdk:"user_data"`
 	KeyName              types.String `tfsdk:"key_name"`
-	//PayVoucherPrice      types.Float64       `tfsdk:"pay_voucher_price"`
-	AutoRenew          types.Bool   `tfsdk:"auto_renew"`
-	InstanceChargeType types.String `tfsdk:"instance_charge_type"`
-	CycleCount         types.Int32  `tfsdk:"cycle_count"`
-	CycleType          types.String `tfsdk:"cycle_type"`
-	MasterOrderID      types.String `tfsdk:"master_order_id"`
-	Status             types.String `tfsdk:"status"`
+	AutoRenew            types.Bool   `tfsdk:"auto_renew"`
+	InstanceChargeType   types.String `tfsdk:"instance_charge_type"`
+	CycleCount           types.Int32  `tfsdk:"cycle_count"`
+	CycleType            types.String `tfsdk:"cycle_type"`
+	MasterOrderID        types.String `tfsdk:"master_order_id"`
+	Status               types.String `tfsdk:"status"`
 }
 
 type CtyunEbmDiskList struct {
@@ -359,16 +360,14 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Description: "密钥对名词",
 			},
-			//"pay_voucher_price": schema.Float64Attribute{
-			//	Optional:    true,
-			//	Computed:    true,
-			//	Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；字段为0时表示不使用代金券",
-			//	Default:     float64default.StaticFloat64(0.00),
-			//},
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "是否自动续订，默认非自动续订。",
+				Default:     booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"instance_charge_type": schema.StringAttribute{
 				Required:    true,
@@ -572,8 +571,6 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 		return
 	}
 	state.Password = plan.Password
-	// 续订
-	err = c.renewInstance(ctx, state, plan)
 	if err != nil {
 		return
 	}
@@ -1353,6 +1350,7 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 	var executeSuccessFlag bool
 	var status string
 	var err error
+	var cnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1366,6 +1364,12 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 			case business.EbmStatusRunning:
 				executeSuccessFlag = true
 				return false
+			case business.EbmStatusStopped:
+				cnt++
+				if cnt > 3 {
+					return false
+				}
+				return true
 			default:
 				return false
 			}
@@ -1377,51 +1381,6 @@ func (c *ctyunEbm) checkAfterUpdatePasswordOrHostname(ctx context.Context, state
 		return errors.New("修改物理机密码或hostname后，检查失败，请确认物理机状态：" + status)
 	}
 	return nil
-}
-
-// renewInstance 续订物理机
-func (c *ctyunEbm) renewInstance(ctx context.Context, state CtyunEbmConfig, plan CtyunEbmConfig) (err error) {
-	// 按需的没有续订
-	if state.InstanceChargeType.ValueString() == business.EbmOrderOnDemand {
-		return
-	}
-	if !state.CycleType.Equal(plan.CycleType) { // 单位变了
-		return fmt.Errorf("续订包周期物理机时，暂时不支持修改单位")
-	}
-	// 时长也没变，直接返回
-	if state.CycleCount.Equal(plan.CycleCount) {
-		return
-	}
-	cycleType := state.CycleType.ValueString()
-	cycleCount := plan.CycleCount.ValueInt32() - state.CycleCount.ValueInt32()
-	if cycleCount < 0 { // 时长缩短了，报错
-		err = fmt.Errorf("包周期物理机不支持缩短时长")
-		return
-	}
-
-	if cycleType == business.EbmCycleTypeMonth && cycleCount > 11 ||
-		cycleType == business.EbmCycleTypeYear && cycleCount > 5 {
-		return fmt.Errorf("续订包周期物理机时，以月为单位，最长支持11月；以年为单位，最长支持5年")
-	}
-	params := &ctebm.EbmRenewInstanceRequest{
-		RegionID:     state.RegionID.ValueString(),
-		AzName:       state.AzName.ValueString(),
-		InstanceUUID: state.InstanceID.ValueString(),
-		CycleType:    strings.ToUpper(plan.CycleType.ValueString()),
-		CycleCount:   cycleCount,
-		ClientToken:  uuid.NewString(),
-	}
-	resp, err := c.meta.Apis.CtEbmApis.EbmRenewInstanceApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
 }
 
 // getInstanceStatus 查询物理机状态
