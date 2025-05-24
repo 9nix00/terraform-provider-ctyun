@@ -2,7 +2,7 @@ resource "ctyun_ccse_node_pool" "%[1]s" {
   node_pool_name           = "%[2]s"
   cycle_type              = "%[10]s"
   %[11]s
-  auto_renew_status        = %[3]t
+  auto_renew               = %[3]t
   visibility_post_host_script = "%[4]s"
   visibility_host_script = "%[5]s"
   instance_type            = "ecs"

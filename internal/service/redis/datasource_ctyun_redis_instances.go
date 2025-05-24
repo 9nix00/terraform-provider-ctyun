@@ -31,10 +31,8 @@ func (c *ctyunRedisInstances) Metadata(_ context.Context, request datasource.Met
 }
 
 type CtyunRedisInstancesModel struct {
-	ID types.String `tfsdk:"id"`
-
-	InstanceName types.String `tfsdk:"instance_name"`
-
+	ID              types.String `tfsdk:"id"`
+	InstanceName    types.String `tfsdk:"instance_name"`
 	AzName          types.String `tfsdk:"az_name"`
 	SecondaryAzName types.String `tfsdk:"secondary_az_name"`
 	EngineVersion   types.String `tfsdk:"engine_version"`
@@ -92,10 +90,6 @@ func (c *ctyunRedisInstances) Schema(_ context.Context, _ datasource.SchemaReque
 						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例id",
-						},
-						"project_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "企业项目ID",
 						},
 						"az_name": schema.StringAttribute{
 							Computed:    true,

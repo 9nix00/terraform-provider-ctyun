@@ -36,17 +36,12 @@ func TestMain(m *testing.M) {
 
 	// 执行测试用例
 	code := m.Run()
-	terraform.DestroyResource(dependenceDir)
 
-	// ccse依赖的子网无法马上删除
-	//fmt.Println("开始清理依赖资源")
-	//// 清理依赖资源
-	//err = terraform.DestroyResource(dependenceDir)
-	//if err != nil {
-	//	fmt.Println(err)
-	//	os.Exit(1)
-	//}
-	//fmt.Println("依赖资源清理完毕")
+	// ccse依赖的子网无法马上删除, 所以不判断错误
+	fmt.Println("开始清理依赖资源")
+	// 清理依赖资源
+	terraform.DestroyResource(dependenceDir)
+	fmt.Println("依赖资源清理完毕")
 
 	os.Exit(code)
 }

@@ -6,19 +6,22 @@ terraform {
   }
 }
 
-resource "ctyun_redis_instance" "test" {
-  cycle_type = "on_demand"
+resource "ctyun_redis_instance" "tbidgqvfbs" {
+  instance_name = "tf-redis-cbppywerkb"
   version = "BASIC"
-  edition = "DirectCluster"
-  engine_version = "6.0"
-  shard_count = 3
-  copies_count = 2
-  vpc_id = "vpc-5o8oe0oci6"
+  edition = "StandardSingle"
+
+
+  password = "P@sssxdxxnsvgr"
+  engine_version = "7.0"
+  maintenance_time = "02:00-04:00"
+  protection_status = false
   shard_mem_size = 8
-  subnet_id = "subnet-nhfs93ju2w"
-  security_group_id = "sg-vrp4x1lm7p"
-  instance_name = "tf-redis-3"
-  password = "P@ss3edc"
-  # auto_renew = true
-  # auto_renew_cycle_count = 12
+  vpc_id = "vpc-ewivt5nhiz"
+  subnet_id = "subnet-vhyywu7mfe"
+  security_group_id = "sg-ed9i3c98t2"
+  cycle_type = "month"
+  cycle_count = 1
+  auto_renew = true
+  auto_renew_cycle_count = 12
 }

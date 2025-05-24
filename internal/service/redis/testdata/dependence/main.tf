@@ -1,27 +1,70 @@
+data "ctyun_vpcs" "vpc_test" {
+
+}
+
+locals {
+  vpcs = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-paas"]
+  data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
+}
+
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-redis"
+  for_each = local.data_vpc_id == "" ? toset(["create"]) : toset([])
+  name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
 }
 
+locals {
+  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test["create"].id, "") : local.data_vpc_id
+}
+
+data "ctyun_subnets" "subnet_test" {
+  vpc_id = local.real_vpc_id
+}
+
+locals {
+  subnets = [for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"]
+  data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
+}
+
 resource "ctyun_subnet" "subnet_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-redis"
-  cidr        = "192.168.1.0/24"
+  for_each = local.data_subnet_id == "" ? toset(["create"]) : toset([])
+  vpc_id      = local.real_vpc_id
+  name        = "tf-subnet-for-paas"
+  cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [
-    "114.114.114.114",
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
+}
+
+locals {
+  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test["create"].id, "") : local.data_subnet_id
+}
+
+data "ctyun_security_groups" "security_group_test" {
+  vpc_id = local.real_vpc_id
+}
+
+locals {
+  security_groups = [for security_group in data.ctyun_security_groups.security_group_test.security_groups : security_group if security_group.name == "tf-sg-for-paas"]
+  data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
 }
 
 resource "ctyun_security_group" "security_group_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
-  name        = "tf-sg-for-redis"
+  for_each = local.data_security_group_id == "" ? toset(["create"]) : toset([])
+  vpc_id      = local.real_vpc_id
+  name        = "tf-sg-for-paas"
   description = "terraform测试使用"
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+locals {
+  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test["create"].id, "") : local.data_security_group_id
 }
 
 resource "ctyun_eip" "eip_test" {

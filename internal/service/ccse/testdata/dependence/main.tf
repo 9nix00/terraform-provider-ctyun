@@ -3,13 +3,13 @@ data "ctyun_vpcs" "vpc_test" {
 }
 
 locals {
-  vpcs = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-ccse"]
+  vpcs = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-paas"]
   data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
 }
 
 resource "ctyun_vpc" "vpc_test" {
   for_each = local.data_vpc_id == "" ? toset(["create"]) : toset([])
-  name        = "tf-vpc-for-ccse"
+  name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
@@ -24,18 +24,17 @@ data "ctyun_subnets" "subnet_test" {
 }
 
 locals {
-  subnets = [for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-ccse"]
+  subnets = [for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"]
   data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
 }
 
 resource "ctyun_subnet" "subnet_test" {
   for_each = local.data_subnet_id == "" ? toset(["create"]) : toset([])
   vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-ccse"
+  name        = "tf-subnet-for-paas"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [
-    "114.114.114.114",
     "8.8.8.8",
     "8.8.4.4"
   ]
@@ -54,20 +53,10 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 }
 
 locals {
-  cluster_name = "tf-ccse-cluster"
-}
-
-data "ctyun_ccse_clusters" "cluster_test"{
-  cluster_name = local.cluster_name
-}
-
-locals {
-  clusters = [for cluster in data.ctyun_ccse_clusters.cluster_test.records : cluster if cluster.cluster_name ==local.cluster_name]
-  data_cluster_id = length(local.clusters) > 0 ? local.clusters[0].id : ""
+  cluster_name = "tf-ccse-cluster-${local.random_string}"
 }
 
 resource "ctyun_ccse_cluster" "test" {
-  for_each = local.data_cluster_id == "" ? toset(["create"]) : toset([])
   base_info = {
     vpc_id     = local.real_vpc_id
     subnet_id  = local.real_subnet_id
@@ -124,5 +113,16 @@ resource "ctyun_ccse_cluster" "test" {
 }
 
 locals {
-  real_cluster_id = local.data_cluster_id == "" ? try(ctyun_ccse_cluster.test["create"].id, "") : local.data_cluster_id
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
 }
