@@ -1089,7 +1089,6 @@ func (c *ctyunEcs) updateKeyPair(ctx context.Context, state CtyunEcsConfig, plan
 			} else if i != tryTimes-1 { // 失败，且不是最后一次尝试，则等待10秒
 				time.Sleep(10 * time.Second)
 			}
-
 		}
 		if err != nil {
 			return err
