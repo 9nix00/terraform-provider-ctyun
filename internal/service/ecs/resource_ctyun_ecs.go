@@ -129,6 +129,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.UTF8LengthBetween(2, 63),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$"), "不满足密钥对名称要求"),
 				},
+				Default: stringdefault.StaticString(""),
 			},
 			"password": schema.StringAttribute{
 				Optional:    true,
@@ -1378,6 +1379,4 @@ type CtyunEcsConfig struct {
 	AzName                 types.String  `tfsdk:"az_name"`
 	IsDestroyInstance      types.Bool    `tfsdk:"is_destroy_instance"`
 	PayVoucherPrice        types.Float64 `tfsdk:"pay_voucher_price"`
-
-	keyPairID string
 }
