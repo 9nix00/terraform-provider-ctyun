@@ -119,6 +119,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"password",        // 查询接口没返回
 					"project_id",      // 查询接口没返回
 					"user_data",
+					"cycle_type",
 				},
 			},
 			{

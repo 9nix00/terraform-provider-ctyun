@@ -61,8 +61,12 @@ type CtyunEbsVolumesAttachments struct {
 }
 
 type CtyunEbsVolumesConfig struct {
-	RegionID types.String           `tfsdk:"region_id"`
-	Volumes  []CtyunEbsVolumesModel `tfsdk:"volumes"`
+	RegionID  types.String           `tfsdk:"region_id"`
+	AzName    types.String           `tfsdk:"az_name"`
+	ProjectID types.String           `tfsdk:"project_id"`
+	PageNo    types.Int32            `tfsdk:"page_no"`
+	PageSize  types.Int32            `tfsdk:"page_size"`
+	Volumes   []CtyunEbsVolumesModel `tfsdk:"volumes"`
 }
 
 func (c *ctyunEbsVolumes) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
@@ -73,6 +77,26 @@ func (c *ctyunEbsVolumes) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID",
+			},
+			"az_name": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME",
+			},
+			"page_no": schema.Int32Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "页码，取值范围：正整数（≥1），注：默认值为1",
+			},
+			"page_size": schema.Int32Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "每页记录数目，取值范围：[1,300]，注：默认值为10",
+			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "企业项目ID",
 			},
 			"volumes": schema.ListNestedAttribute{
 				Computed: true,
@@ -211,10 +235,23 @@ func (c *ctyunEbsVolumes) Read(ctx context.Context, request datasource.ReadReque
 		err = fmt.Errorf("regionId不能为空")
 		return
 	}
+	projectID := c.meta.GetExtraIfEmpty(config.ProjectID.ValueString(), common.ExtraProjectId)
 	// 组装请求体
 	params := &ctebs2.EbsQueryEbsListRequest{
 		RegionID: regionId,
 	}
+	pageNo := config.PageNo.ValueInt32()
+	pageSize := config.PageSize.ValueInt32()
+	if pageNo > 0 {
+		params.PageNo = pageNo
+	}
+	if pageSize > 0 {
+		params.PageSize = pageSize
+	}
+	if projectID != "" {
+		params.ProjectID = &projectID
+	}
+
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEbsApis.EbsQueryEbsListApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
