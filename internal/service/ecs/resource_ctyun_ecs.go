@@ -1074,12 +1074,23 @@ func (c *ctyunEcs) updateKeyPair(ctx context.Context, state CtyunEcsConfig, plan
 	}
 
 	if state.KeyPairName.ValueString() != "" {
-		// 解绑旧的密钥对
-		_, err := c.meta.Apis.CtEcsApis.KeypairDetachApi.Do(ctx, c.meta.Credential, &ctecs.KeypairDetachRequest{
-			RegionId:    state.RegionId.ValueString(),
-			KeyPairName: state.KeyPairName.ValueString(),
-			InstanceId:  state.Id.ValueString(),
-		})
+		// 创建后马上更新密钥对，可能会因为qga没启动失败，在这里进行重试
+		var err error
+		tryTimes := 3
+		for i := 0; i < tryTimes; i++ {
+			// 解绑旧的密钥对
+			_, err = c.meta.Apis.CtEcsApis.KeypairDetachApi.Do(ctx, c.meta.Credential, &ctecs.KeypairDetachRequest{
+				RegionId:    state.RegionId.ValueString(),
+				KeyPairName: state.KeyPairName.ValueString(),
+				InstanceId:  state.Id.ValueString(),
+			})
+			if i == tryTimes-1 {
+				break
+			}
+			if err != nil {
+				time.Sleep(10 * time.Second)
+			}
+		}
 		if err != nil {
 			return err
 		}

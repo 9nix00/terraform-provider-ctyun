@@ -39,6 +39,7 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
@@ -93,6 +94,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{

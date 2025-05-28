@@ -51,6 +51,7 @@ func (c *ctyunRedisInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunRedisInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
 	CycleCount          types.Int32  `tfsdk:"cycle_count"`
@@ -84,9 +85,10 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+			},
+			"master_order_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -358,10 +360,11 @@ func (c *ctyunRedisInstance) Create(ctx context.Context, request resource.Create
 		return
 	}
 	// 创建
-	err = c.create(ctx, plan)
+	masterOrderID, err := c.create(ctx, plan)
 	if err != nil {
 		return
 	}
+	plan.MasterOrderID = types.StringValue(masterOrderID)
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
@@ -633,7 +636,7 @@ func (c *ctyunRedisInstance) checkSpecParams(ctx context.Context, plan CtyunRedi
 }
 
 // create 创建
-func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstanceConfig) (masterOrderID string, err error) {
 	autoPay := true
 	params := &dcs2.Dcs2CreateInstanceRequest{
 		RegionId:          plan.RegionID.ValueString(),
@@ -679,6 +682,7 @@ func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstance
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID = resp.ReturnObj.NewOrderId
 	return
 }
 
