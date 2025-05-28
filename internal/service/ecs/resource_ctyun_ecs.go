@@ -1084,12 +1084,12 @@ func (c *ctyunEcs) updateKeyPair(ctx context.Context, state CtyunEcsConfig, plan
 				KeyPairName: state.KeyPairName.ValueString(),
 				InstanceId:  state.Id.ValueString(),
 			})
-			if i == tryTimes-1 {
+			if err == nil { // 成功，则退出
 				break
-			}
-			if err != nil {
+			} else if i != tryTimes-1 { // 失败，且不是最后一次尝试，则等待10秒
 				time.Sleep(10 * time.Second)
 			}
+
 		}
 		if err != nil {
 			return err
