@@ -1,11 +1,13 @@
 package common
 
 import (
+	"sync"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
+	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
@@ -17,6 +19,7 @@ import (
 	"terraform-provider-ctyun/internal/core/dcs2"
 )
 
+var once sync.Once
 var ctyunMetadata *CtyunMetadata
 
 type CtyunMetadata struct {
@@ -65,4 +68,6 @@ type Apis struct {
 	SdkCtZosApis *ctzos.Apis
 	SdkCcseApis  *ccse2.Apis
 	SdkDcs2Apis  *dcs2.Apis
+	SdkCtElbApis *sdkCtelb.Apis
+	//SdkCtMysqlApis *ctdas.APIClient
 }

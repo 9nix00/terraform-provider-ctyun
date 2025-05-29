@@ -19,7 +19,7 @@ func NewCtvpcShowNatGatewayApi(client *core.CtyunClient) *CtvpcShowNatGatewayApi
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodGet,
-			UrlPath:      "/v4/vpc/get-ctvpc-gateway-attribute",
+			UrlPath:      "/v4/vpc/get-nat-gateway-attribute",
 			ContentType:  "application/json",
 		},
 	}
@@ -58,21 +58,21 @@ type CtvpcShowNatGatewayResponse struct {
 }
 
 type CtvpcShowNatGatewayReturnObjResponse struct {
-	Name         *string                                        `json:"name,omitempty"`         /*  NAT网关实例名称  */
-	Status       int32                                          `json:"status"`                 /*  NAT 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结  */
-	State        *string                                        `json:"state,omitempty"`        /*  NAT网关运行状态: running 表示运行中, creating 表示创建中, expired 表示已过期, freeze 表示已冻结  */
-	Specs        *string                                        `json:"specs,omitempty"`        /*  规格  */
-	ZoneID       *string                                        `json:"zoneID,omitempty"`       /*  NAT网关所在的可用区ID。  */
-	VpcID        *string                                        `json:"vpcID,omitempty"`        /*  要查询的NAT网关所属VPC的ID。  */
-	ProjectID    *string                                        `json:"projectID,omitempty"`    /*  项目类型：default-企业项目  */
-	VpcName      *string                                        `json:"vpcName,omitempty"`      /*  NAT所属的专有网络名字  */
-	VpcCidr      *string                                        `json:"vpcCidr,omitempty"`      /*  当前网关所属的vpc cidr  */
-	CreationTime *string                                        `json:"creationTime,omitempty"` /*  NAT网关的创建时间  */
-	ExpiredTime  *string                                        `json:"expiredTime,omitempty"`  /*  NAT网关实例的过期时间  */
-	NatGatewayID *string                                        `json:"natGatewayID,omitempty"` /*  NAT网关的ID  */
-	Description  *string                                        `json:"description,omitempty"`  /*  NAT网关实例的描述  */
-	SnatTable    *CtvpcShowNatGatewayReturnObjSnatTableResponse `json:"snatTable"`              /*  SNAT列表信息  */
-	DnatTable    *CtvpcShowNatGatewayReturnObjDnatTableResponse `json:"dnatTable"`              /*  DNAT列表的信息  */
+	Name         *string                                          `json:"name,omitempty"`         /*  NAT网关实例名称  */
+	Status       int32                                            `json:"status"`                 /*  NAT 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结  */
+	State        *string                                          `json:"state,omitempty"`        /*  NAT网关运行状态: running 表示运行中, creating 表示创建中, expired 表示已过期, freeze 表示已冻结  */
+	Specs        *string                                          `json:"specs,omitempty"`        /*  规格  */
+	ZoneID       *string                                          `json:"zoneID,omitempty"`       /*  NAT网关所在的可用区ID。  */
+	VpcID        *string                                          `json:"vpcID,omitempty"`        /*  要查询的NAT网关所属VPC的ID。  */
+	ProjectID    *string                                          `json:"projectID,omitempty"`    /*  项目类型：default-企业项目  */
+	VpcName      *string                                          `json:"vpcName,omitempty"`      /*  NAT所属的专有网络名字  */
+	VpcCidr      *string                                          `json:"vpcCidr,omitempty"`      /*  当前网关所属的vpc cidr  */
+	CreationTime *string                                          `json:"creationTime,omitempty"` /*  NAT网关的创建时间  */
+	ExpiredTime  *string                                          `json:"expiredTime,omitempty"`  /*  NAT网关实例的过期时间  */
+	NatGatewayID *string                                          `json:"natGatewayID,omitempty"` /*  NAT网关的ID  */
+	Description  *string                                          `json:"description,omitempty"`  /*  NAT网关实例的描述  */
+	SnatTable    *[]CtvpcShowNatGatewayReturnObjSnatTableResponse `json:"snatTable"`              /*  SNAT列表信息  */
+	DnatTable    *[]CtvpcShowNatGatewayReturnObjDnatTableResponse `json:"dnatTable"`              /*  DNAT列表的信息  */
 }
 
 type CtvpcShowNatGatewayReturnObjSnatTableResponse struct {

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 func LoadTestCase(filename string, parameters ...interface{}) string {
@@ -34,4 +35,11 @@ func GenerateRandomString() string {
 		builder.WriteByte(charset[randomIndex])
 	}
 	return builder.String()
+}
+func GenerateRandomPort(min int, max int) int {
+	// 使用当前时间作为种子
+	rand.Seed(time.Now().UnixNano())
+	// 生成一个 min 到 max 之间的随机数
+	randomNum := rand.Intn(max-min) + min // Intn(n) 返回一个范围是 [0, n) 的随机数
+	return randomNum
 }
