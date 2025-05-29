@@ -195,6 +195,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					"password",
 					"project_id",
 					"version",
+					"master_order_id",
 				},
 			},
 			{

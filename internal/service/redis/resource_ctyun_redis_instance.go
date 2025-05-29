@@ -73,9 +73,8 @@ type CtyunRedisInstanceConfig struct {
 	Password            types.String `tfsdk:"password"`               /*  实例密码<li>长度8-26字符</li><li>必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型</li><li>不能有空格</li>  */
 	AutoRenew           types.Bool   `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
 	AutoRenewCycleCount types.Int32  `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
-
-	MaintenanceTime  types.String `tfsdk:"maintenance_time"`
-	ProtectionStatus types.Bool   `tfsdk:"protection_status"`
+	MaintenanceTime     types.String `tfsdk:"maintenance_time"`
+	ProtectionStatus    types.Bool   `tfsdk:"protection_status"`
 }
 
 func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -747,6 +746,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 
 // update 更新
 func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	plan.ID = state.ID
 	if !plan.MaintenanceTime.Equal(state.MaintenanceTime) || !plan.ProtectionStatus.Equal(state.ProtectionStatus) {
 		err = c.updateAttr(ctx, plan)
 		if err != nil {
@@ -818,7 +818,7 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 0 {
+			if instance == nil || instance.Status != 0 || instance.ProdInstId == "" {
 				return true
 			}
 

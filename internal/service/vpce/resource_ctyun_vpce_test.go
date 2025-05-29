@@ -78,8 +78,10 @@ func TestAccCtyunVpce(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s", id, regionId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"master_order_id",
+				},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID) +
