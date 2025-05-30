@@ -34,6 +34,8 @@ func StructToTFObjectTypes(s interface{}) types.ObjectType {
 			fieldType = types.Float64Type
 		case reflect.TypeOf(types.Float32{}):
 			fieldType = types.Float32Type
+		case reflect.TypeOf(types.List{}):
+			fieldType = types.ListType{}
 		//case reflect.TypeOf(types.List{}):
 		//  fieldType = types.ListType{ElemType: types.StringType}
 		//case reflect.TypeOf(types.Map{}):

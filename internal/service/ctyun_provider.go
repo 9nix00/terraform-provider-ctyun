@@ -33,6 +33,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
@@ -44,6 +45,7 @@ import (
 	"terraform-provider-ctyun/internal/service/elb"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	mysql2 "terraform-provider-ctyun/internal/service/mysql"
 	"terraform-provider-ctyun/internal/service/nat"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
@@ -284,19 +286,19 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-			CtEbsApis:    ctebs.NewApis(client),
-			CtEcsApis:    ctecs.NewApis(client),
-			CtIamApis:    ctiam.NewApis(client),
-			CtImageApis:  ctimage.NewApis(client),
-			CtVpcApis:    ctvpc.NewApis(client),
-			CtEbmApis:    ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
-			SdkCtVpcApis: sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
-			SdkCtElbApis: ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
-			//SdkCtMysqlApis: ctdas.NewAPIClient(mysqlConfiguration, ak, sk),
-			SdkCtEbsApis: ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
-			SdkCtEcsApis: ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
-			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
-			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
+			CtEbsApis:      ctebs.NewApis(client),
+			CtEcsApis:      ctecs.NewApis(client),
+			CtIamApis:      ctiam.NewApis(client),
+			CtImageApis:    ctimage.NewApis(client),
+			CtVpcApis:      ctvpc.NewApis(client),
+			CtEbmApis:      ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
+			SdkCtVpcApis:   sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
+			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
+			SdkCtMysqlApis: mysql.NewApis(client),
+			SdkCtEbsApis:   ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
+			SdkCtEcsApis:   ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
+			SdkCtZosApis:   ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
+			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -346,6 +348,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		elb.NewElbCertificates(),
 		elb.NewElbListeners(),
 		elb.NewCtyunElbRules(),
+		mysql2.NewCtyunMysqlInstances(),
+		mysql2.NewCtyunMysqlAssociationEips(),
+		mysql2.NewCtyunMysqlSpecs(),
 	)
 }
 
@@ -399,6 +404,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		elb.NewCtyunElbCertificate(),
 		elb.NewCtyunElbListener(),
 		elb.NewCtyunElbRule(),
+		mysql2.NewCtyunMysqlInstance(),
+		mysql2.NewCtyunMysqlAssociationEip(),
 	)
 }
 
@@ -422,9 +429,9 @@ func (c *CtyunProvider) buildResource(resources ...resource.Resource) []func() r
 	return result
 }
 
-//func (c *CtyunProvider) buildMysqlConfiguration() *ctdas.Configuration {
+//func (c *CtyunProvider) buildMysqlConfiguration() *mysql.Configuration {
 //	// 创建一个新的 API 客户端实例
-//	cfg := ctdas.NewConfiguration()
+//	cfg := mysql.NewConfiguration()
 //	cfg.Scheme = "https"
 //	tr := &http.Transport{
 //		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -432,7 +439,7 @@ func (c *CtyunProvider) buildResource(resources ...resource.Resource) []func() r
 //	httpClient := &http.Client{Transport: tr}
 //	cfg.HTTPClient = httpClient
 //	// 设置 API 服务器的基础 URL
-//	cfg.Servers = ctdas.ServerConfigurations{
+//	cfg.Servers = mysql.ServerConfigurations{
 //		{
 //			URL: "https://ctdas-global.ctapi.ctyun.cn/teledb-mysql",
 //		},

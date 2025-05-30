@@ -670,7 +670,6 @@ func (c *ctyunNat) renewLoop(ctx context.Context, params *ctvpc.CtvpcRenewNatGat
 			case business.NatStatusStarted:
 				// nat 已经续期成功，
 				loopResponse = resp.ReturnObj
-
 				return false
 			case business.NatStatusRenewed:
 				return true
