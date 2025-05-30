@@ -3,6 +3,7 @@ package ecs_test
 import (
 	"fmt"
 	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -10,70 +11,59 @@ import (
 )
 
 func TestAccCtyunAffinityGroup(t *testing.T) {
-	resourceName := "ctyun_ecs_affinity_group.test"
+	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_ecs_affinity_group." + rnd
+	datasourceName := "data.ctyun_ecs_affinity_groups." + dnd
+	resourceFile := "resource_ctyun_ecs_affinity_group.tf"
+	datasourceFile := "datasource_ctyun_ecs_affinity_groups.tf"
+
+	initName := "init-affinity-group"
+	policy := "anti-affinity"
+	updatedName := "updated-affinity-group"
+
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+			// 创建
 			{
-				Config: `
-provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-}
-
-resource "ctyun_ecs_affinity_group" "test" {
-  affinity_group_name = "tf-test-group"
-  affinity_group_policy = "anti-affinity"
-}
-`,
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, policy),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", "tf-test-group"),
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", "anti-affinity"),
+					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", policy),
 					resource.TestCheckResourceAttrSet(resourceName, "affinity_group_id"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
+			// 更新
 			{
-				Config: `
-provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-}
-
-resource "ctyun_ecs_affinity_group" "test" {
-  affinity_group_name = "tf-test-group1"
-  affinity_group_policy = "anti-affinity"
-}
-`,
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, policy),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", "tf-test-group1"),
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", "anti-affinity"),
+					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", policy),
+					resource.TestCheckResourceAttrSet(resourceName, "affinity_group_id"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			// 查询
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, policy) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "groups.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "groups.0.affinity_group_name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "groups.0.affinity_group_policy", policy),
 				),
 			},
 			{
-				Config: `
-provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-}
-
-resource "ctyun_ecs_affinity_group" "test" {
-  affinity_group_name = "tf-test-group2"
-  affinity_group_policy = "anti-affinity"
-}
-
-data "ctyun_ecs_affinity_groups" "test" {
-  affinity_group_id = ctyun_ecs_affinity_group.test.affinity_group_id
-}
-`,
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.ctyun_ecs_affinity_groups.test", "groups.#", "1"),
-					resource.TestCheckResourceAttr("data.ctyun_ecs_affinity_groups.test", "groups.0.affinity_group_name", "tf-test-group2"),
-					resource.TestCheckResourceAttr("data.ctyun_ecs_affinity_groups.test", "groups.0.affinity_group_policy", "anti-affinity"),
-				),
-			},
-			{
-
 				ResourceName: resourceName,
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
@@ -84,6 +74,11 @@ data "ctyun_ecs_affinity_groups" "test" {
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, policy) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Destroy: true,
 			},
 		},
 	})

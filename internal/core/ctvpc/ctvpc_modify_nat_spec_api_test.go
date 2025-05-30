@@ -18,7 +18,7 @@ func TestCtvpcModifyNatSpecApi_Do(t *testing.T) {
 	var payVoucherPrice string = "1"
 	request := &CtvpcModifyNatSpecRequest{
 		RegionID:        "5A2CFF0E-5718-xxx5-9D4D-70B3FF3898",
-		NatGatewayID:    "ctvpc-dd349df",
+		NatGatewayID:    "nat-dd349df",
 		Spec:            1,
 		ClientToken:     "79fa97e3-c48b-xxxx-9f46-6a13d8163678",
 		PayVoucherPrice: &payVoucherPrice,

@@ -44,6 +44,7 @@ func TestAccCtyunVpce(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "true"),
 					resource.TestCheckTypeSetElemAttr(resourceName, "whitelist_cidr.*", "192.168.1.0/24"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
@@ -53,6 +54,7 @@ func TestAccCtyunVpce(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "whitelist_flag", "false"),
 					resource.TestCheckResourceAttr(resourceName, "whitelist_cidr.#", "0"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
@@ -76,8 +78,10 @@ func TestAccCtyunVpce(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s", id, regionId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"master_order_id",
+				},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, initWhitelistFlag, initWhitelistCidr, dependence.vpcID, dependence.subnetID, dependence.vpceServiceID) +

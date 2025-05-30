@@ -19,7 +19,7 @@ func NewCtvpcCreateNatGatewayApi(client *core.CtyunClient) *CtvpcCreateNatGatewa
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/vpc/create-ctvpc-gateway",
+			UrlPath:      "/v4/vpc/create-nat-gateway",
 			ContentType:  "application/json",
 		},
 	}
@@ -53,7 +53,7 @@ type CtvpcCreateNatGatewayRequest struct {
 	Description     *string `json:"description,omitempty"`     /*  支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}  */
 	ClientToken     string  `json:"clientToken,omitempty"`     /*  客户端存根，用于保证订单幂等性, 长度 1 - 64  */
 	CycleType       string  `json:"cycleType,omitempty"`       /*  订购类型：month（包月） / year（包年）/ on_demand（按需）  */
-	CycleCount      int32   `json:"cycleCount"`                /*  订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年  */
+	CycleCount      *int32  `json:"cycleCount"`                /*  订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年  */
 	AzName          string  `json:"azName,omitempty"`          /*  可用区名称  */
 	PayVoucherPrice *string `json:"payVoucherPrice,omitempty"` /*  代金券金额，支持到小数点后两位  */
 	ProjectID       *string `json:"projectID,omitempty"`       /*  企业项目，不传默认为 0  */
@@ -74,5 +74,5 @@ type CtvpcCreateNatGatewayReturnObjResponse struct {
 	MasterResourceStatus *string `json:"masterResourceStatus,omitempty"` /*  资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）  */
 	MasterResourceID     *string `json:"masterResourceID,omitempty"`     /*  可以为 null。  */
 	RegionID             *string `json:"regionID,omitempty"`             /*  可用区id。  */
-	NatGatewayID         *string `json:"natGatewayID,omitempty"`         /*  ctvpc 网关 ID，当 masterResourceStatus 不为 started，该字段为空字符串  */
+	NatGatewayID         *string `json:"natGatewayID,omitempty"`         /*  nat 网关 ID，当 masterResourceStatus 不为 started，该字段为空字符串  */
 }

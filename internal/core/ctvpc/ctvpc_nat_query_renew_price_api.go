@@ -19,7 +19,7 @@ func NewCtvpcNatQueryRenewPriceApi(client *core.CtyunClient) *CtvpcNatQueryRenew
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/ctvpc/query-renew-price",
+			UrlPath:      "/v4/nat/query-renew-price",
 			ContentType:  "application/json",
 		},
 	}

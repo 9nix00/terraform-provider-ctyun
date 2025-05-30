@@ -19,7 +19,7 @@ func NewCtvpcUpdateNatGatewayAttributeApi(client *core.CtyunClient) *CtvpcUpdate
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/vpc/modify-ctvpc-gateway-attribute",
+			UrlPath:      "/v4/vpc/modify-nat-gateway-attribute",
 			ContentType:  "application/json",
 		},
 	}

@@ -19,7 +19,7 @@ func NewCtvpcNatQueryCreatePriceApi(client *core.CtyunClient) *CtvpcNatQueryCrea
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
 			Method:       http.MethodPost,
-			UrlPath:      "/v4/ctvpc/query-create-price",
+			UrlPath:      "/v4/nat/query-create-price",
 			ContentType:  "application/json",
 		},
 	}

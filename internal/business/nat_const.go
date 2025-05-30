@@ -7,15 +7,16 @@ const (
 	OnDemandCycleType = "on_demand"
 
 	//资源状态常量
-	NatStatusStarted   = "started"   //启用
-	NatStatusRenewed   = "renewed"   //续订
-	NatStatusRefunded  = "refunded"  //退订
-	NatStatusDestroyed = "destroyed" //销毁
-	NatStatusFailed    = "failed"    //失败
-	NatStatusStarting  = "starting"  //正在启动
-	NatStatusChanged   = "changed"   //变配
-	NatStatusExpired   = "expired"   //过期
-	NatStatusUnknown   = "unknown"   //未知
+	NatStatusStarted    = "started"     //启用
+	NatStatusRenewed    = "renewed"     //续订
+	NatStatusRefunded   = "refunded"    //退订
+	NatStatusDestroyed  = "destroyed"   //销毁
+	NatStatusFailed     = "failed"      //失败
+	NatStatusStarting   = "starting"    //正在启动
+	NatStatusChanged    = "changed"     //变配
+	NatStatusExpired    = "expired"     //过期
+	NatStatusUnknown    = "unknown"     //未知
+	NatStatusInProgress = "in_progress" //
 
 	//  Nat规格
 	SpecSmall      = 1
@@ -27,17 +28,42 @@ const (
 	ProtocolTcp = "tcp"
 	ProtocolUdp = "udp"
 
+	ProtocolTCP      = "TCP"
+	ProtocolUDP      = "UDP"
+	NatStateRunning  = "running"  // 运行中
+	NatStateCreating = "creating" // 创建中
+	NatStateExpired  = "expired"  // 已过期
+	NatStateFreeze   = "freeze"   //已冻结
+
 	//DNAT运行状态
 	DNatStateActive   = "active"
 	DNatStateFreezing = "freezing"
 	DNatStateCreating = "creating"
 
+	//DNAT运行状态
+	DNatStateACTIVE   = "ACTIVE"
+	DNatStateFREEZING = "FREEZING"
+	DNatStateCREATING = "CREATING"
+
+	//SNAT状态
+	SNatStatusACTIVE   = "ACTIVE"
+	SNatStatusCreating = "Creating"
+	SNatStatusFreezing = "Freezing"
+
 	SubnetTypeVPC    = 1
 	SubnetTypeCustom = 2
 
 	// SNAT创建状态
-	SNatCreateStatusING  = "in_progress"
-	SnatCreateStatusDone = "done"
+	NatCreateStatusING  = "in_progress"
+	NatCreateStatusDone = "done"
+
+	// DNAT云主机类型
+	VirtualMachineTypeCloud  = 1 //云主机
+	VirtualMachineTypeCustom = 2 //自定义
+
+	// DNAT serverType
+	ServerTypeVM = "VM"
+	ServerTypeBM = "BM"
 )
 
 var NatOrderCycleTypes = []string{
@@ -74,8 +100,45 @@ var DNatStatus = []string{
 	DNatStateFreezing,
 	DNatStateCreating,
 }
+var DNatStates = []string{
+	DNatStateACTIVE,
+	DNatStateCREATING,
+	DNatStateFREEZING,
+}
 
 var SNatSubnetTypes = []int32{
 	SubnetTypeVPC,
 	SubnetTypeCustom,
+}
+
+var DNatVirtualMachineTypes = []int32{
+	VirtualMachineTypeCloud,
+	VirtualMachineTypeCustom,
+}
+
+var ServerTypes = []string{
+	ServerTypeVM,
+	ServerTypeBM,
+}
+
+var NatStates = []string{
+	NatStateRunning,
+	NatStateCreating,
+	NatStateExpired,
+	NatStateFreeze,
+}
+
+var SNatStatus = []string{
+	SNatStatusACTIVE,
+	SNatStatusCreating,
+	SNatStatusFreezing,
+}
+
+var SNatProtocols = []string{
+	ProtocolTCP,
+	ProtocolUDP,
+}
+var DnatStatus = []string{
+	NatCreateStatusING,
+	NatCreateStatusDone,
 }

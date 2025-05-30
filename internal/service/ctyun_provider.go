@@ -25,6 +25,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
+	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
@@ -41,8 +42,10 @@ import (
 	"terraform-provider-ctyun/internal/service/ebm"
 	"terraform-provider-ctyun/internal/service/ebs"
 	"terraform-provider-ctyun/internal/service/ecs"
+	"terraform-provider-ctyun/internal/service/elb"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/nat"
 	"terraform-provider-ctyun/internal/service/redis"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
@@ -295,6 +298,8 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
 			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
 			SdkDcs2Apis:  dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
+			SdkCtElbApis: ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
+			//SdkCtMysqlApis: ctdas.NewAPIClient(mysqlConfiguration, ak, sk),
 		},
 		*credential,
 		*SdkCredential,
@@ -317,6 +322,10 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbms(),
 		ebm.NewCtyunEbmDeviceRaids(),
 		ebm.NewCtyunEbmDeviceImages(),
+		nat.NewCtyunNats(),
+		elb.NewElbLoadBalancers(),
+		nat.NewCtyunSNats(),
+		nat.NewCtyunDNats(),
 		ebs.NewCtyunEbsVolumes(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
@@ -337,6 +346,13 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseNodePools(),
 		redis.NewCtyunRedisSpecs(),
 		redis.NewCtyunRedisInstances(),
+		elb.NewCtyunElbHealthChecks(),
+		elb.NewCtyunElbTargetGroups(),
+		elb.NewCtyunElbAcls(),
+		elb.NewCtyunElbTargets(),
+		elb.NewElbCertificates(),
+		elb.NewElbListeners(),
+		elb.NewCtyunElbRules(),
 	)
 }
 
@@ -364,6 +380,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
+		nat.NewCtyunNatResource(),
+		nat.NewCtyunSnatResource(),
+		nat.NewCtyunDnatResource(),
 		ebm.NewCtyunEbm(),
 		ebm.NewCtyunEbmInterface(),
 		ebm.NewCtyunEbmAssociationEbs(),
@@ -382,6 +401,14 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcseNodePool(),
 		redis.NewCtyunRedisInstance(),
 		redis.NewCtyunRedisAssociationEip(),
+		elb.NewCtyunElbLoadBalancer(),
+		elb.NewCtyunElbHealthCheck(),
+		elb.NewCtyunElbTargetGroup(),
+		elb.NewCtyunElbAcl(),
+		elb.NewCtyunElbTarget(),
+		elb.NewCtyunElbCertificate(),
+		elb.NewCtyunElbListener(),
+		elb.NewCtyunElbRule(),
 	)
 }
 
@@ -404,6 +431,25 @@ func (c *CtyunProvider) buildResource(resources ...resource.Resource) []func() r
 	}
 	return result
 }
+
+//func (c *CtyunProvider) buildMysqlConfiguration() *ctdas.Configuration {
+//	// 创建一个新的 API 客户端实例
+//	cfg := ctdas.NewConfiguration()
+//	cfg.Scheme = "https"
+//	tr := &http.Transport{
+//		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+//	}
+//	httpClient := &http.Client{Transport: tr}
+//	cfg.HTTPClient = httpClient
+//	// 设置 API 服务器的基础 URL
+//	cfg.Servers = ctdas.ServerConfigurations{
+//		{
+//			URL: "https://ctdas-global.ctapi.ctyun.cn/teledb-mysql",
+//		},
+//	}
+//
+//	return cfg
+//}
 
 type CtyunProviderConfig struct {
 	Ak                 types.String `tfsdk:"ak"`
