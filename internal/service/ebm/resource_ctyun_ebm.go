@@ -75,9 +75,8 @@ type CtyunEbmConfig struct {
 	DiskList             types.List   `tfsdk:"disk_list"`
 	NetworkCardList      types.List   `tfsdk:"network_card_list"`
 	UserData             types.String `tfsdk:"user_data"`
-	KeyName              types.String `tfsdk:"key_name"`
+	KeyPairName          types.String `tfsdk:"key_pair_name"`
 	AutoRenew            types.Bool   `tfsdk:"auto_renew"`
-	InstanceChargeType   types.String `tfsdk:"instance_charge_type"`
 	CycleCount           types.Int32  `tfsdk:"cycle_count"`
 	CycleType            types.String `tfsdk:"cycle_type"`
 	MasterOrderID        types.String `tfsdk:"master_order_id"`
@@ -167,6 +166,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Computed:    true,
 				Description: "密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot("key_pair_name"),
+					}...),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -356,9 +360,14 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.UTF8LengthBetween(1, 16384),
 				},
 			},
-			"key_name": schema.StringAttribute{
+			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "密钥对名词",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.Expressions{
+						path.MatchRoot("password"),
+					}...),
+				},
 			},
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
@@ -369,11 +378,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
-			"instance_charge_type": schema.StringAttribute{
+			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "实例计费类型 <br/>*order_on_cycle：包年包月<br/>*order_on_demand：按量付费",
+				Description: "订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]，cycleType与cycleCount一起填写",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.EbmOrderOnCycle, business.EbmOrderOnDemand),
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeYear, business.OrderCycleTypeMonth),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -381,39 +390,20 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数",
+				Description: "订购时长，最长订购周期为60个月（5年）；非按需时必填",
 				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.UseStateForUnknown(),
+					int32planmodifier.RequiresReplace(),
 				},
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
-						path.MatchRoot("instance_charge_type"),
-						types.StringValue(business.EbmOrderOnCycle),
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeYear),
+						types.StringValue(business.OrderCycleTypeMonth),
 					),
 					validator2.ConflictsWithEqualInt32(
-						path.MatchRoot("instance_charge_type"),
-						types.StringValue(business.EbmOrderOnDemand),
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
 					),
-				},
-			},
-			"cycle_type": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "订购周期类型，取值范围:[month=按月,year=按年]，cycleType与cycleCount一起填写；按量付费时，无需填写该参数",
-				Validators: []validator.String{
-					validator2.AlsoRequiresEqualString(
-						path.MatchRoot("instance_charge_type"),
-						types.StringValue(business.EbmOrderOnCycle),
-					),
-					validator2.ConflictsWithEqualString(
-						path.MatchRoot("instance_charge_type"),
-						types.StringValue(business.EbmOrderOnDemand),
-					),
-					stringvalidator.OneOf(business.EbmCycleTypeMonth, business.EbmCycleTypeYear),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"status": schema.StringAttribute{
@@ -654,9 +644,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
 	ipType := plan.IpType.ValueString()
 	userData := plan.UserData.ValueString()
-	keyName := plan.KeyName.ValueString()
-	instanceChargeType := strings.ToUpper(plan.InstanceChargeType.ValueString())
-	cycleType := strings.ToUpper(plan.CycleType.ValueString())
+	keyName := plan.KeyPairName.ValueString()
 	bandwidth := plan.BandWidth.ValueInt32()
 	securityGroupIDs, _ := c.buildSecGroupList(ctx, plan)
 	securityGroupStr := strings.Join(securityGroupIDs, ",")
@@ -664,25 +652,22 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	networkCardList, _ := c.buildNetworkCardList(ctx, plan)
 	extIp, _ := business.EbmExtIpMap.FromOriginalScene(plan.ExtIP.ValueString(), business.EbmExtIpMapScene1)
 	params := &ctebm.EbmCreateInstanceV4plusRequest{
-		RegionID:           regionID,
-		AzName:             azName,
-		DeviceType:         plan.DeviceType.ValueString(),
-		InstanceName:       plan.InstanceName.ValueString(),
-		Hostname:           plan.Hostname.ValueString(),
-		ImageUUID:          plan.ImageUUID.ValueString(),
-		VpcID:              plan.VpcID.ValueString(),
-		ExtIP:              extIp.(string),
-		ProjectID:          &projectID,
-		IpType:             &ipType,
-		DiskList:           diskList,
-		NetworkCardList:    networkCardList,
-		AutoRenewStatus:    map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
-		InstanceChargeType: &instanceChargeType,
-		CycleCount:         plan.CycleCount.ValueInt32(),
-		CycleType:          &cycleType,
-		ClientToken:        uuid.NewString(),
-		OrderCount:         1,
-		SecurityGroupID:    &securityGroupStr,
+		RegionID:        regionID,
+		AzName:          azName,
+		DeviceType:      plan.DeviceType.ValueString(),
+		InstanceName:    plan.InstanceName.ValueString(),
+		Hostname:        plan.Hostname.ValueString(),
+		ImageUUID:       plan.ImageUUID.ValueString(),
+		VpcID:           plan.VpcID.ValueString(),
+		ExtIP:           extIp.(string),
+		ProjectID:       &projectID,
+		IpType:          &ipType,
+		DiskList:        diskList,
+		NetworkCardList: networkCardList,
+		AutoRenewStatus: map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
+		ClientToken:     uuid.NewString(),
+		OrderCount:      1,
+		SecurityGroupID: &securityGroupStr,
 	}
 	if password != "" {
 		params.Password = &password
@@ -709,6 +694,15 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		params.PublicIP = &publicIP
 	}
 
+	switch plan.CycleType.ValueString() {
+	case business.OrderCycleTypeOnDemand:
+		params.InstanceChargeType = business.EbmOrderOnDemand
+	case business.OrderCycleTypeMonth, business.OrderCycleTypeYear:
+		params.InstanceChargeType = business.EbmOrderOnCycle
+		params.CycleType = strings.ToUpper(plan.CycleType.ValueString())
+		params.CycleCount = plan.CycleCount.ValueInt32()
+	}
+
 	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
@@ -727,8 +721,8 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmConfig) error {
 	cycleCount := plan.CycleCount.ValueInt32()
 	cycleType := plan.CycleType.ValueString()
-	if cycleType == business.EbmCycleTypeMonth && cycleCount > 11 ||
-		cycleType == business.EbmCycleTypeYear && cycleCount > 5 {
+	if cycleType == business.OrderCycleTypeMonth && cycleCount > 11 ||
+		cycleType == business.OrderCycleTypeYear && cycleCount > 5 {
 		return fmt.Errorf("创建包周期物理机时，以月为单位，最长支持11月；以年为单位，最长支持5年")
 	}
 
@@ -1103,13 +1097,6 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.DataVolumeRaidUUID = utils.SecStringValue(instance.DataVolumeRaidID)
 	cfg.VpcID = utils.SecStringValue(instance.VpcID)
 	cfg.Status = utils.SecLowerStringValue(instance.EbmState)
-	if *instance.OnDemand {
-		cfg.InstanceChargeType = types.StringValue(business.EbmOrderOnDemand)
-		cfg.CycleType = types.StringValue("")
-		cfg.CycleCount = types.Int32Value(0)
-	} else {
-		cfg.InstanceChargeType = types.StringValue(business.EbmOrderOnCycle)
-	}
 
 	cfg.PublicIP = utils.SecStringValue(instance.PublicIP)
 	cardList := []CtyunEbmNetworkCardList{}

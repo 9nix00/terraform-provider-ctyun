@@ -51,6 +51,7 @@ func (c *ctyunRedisInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunRedisInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
 	CycleCount          types.Int32  `tfsdk:"cycle_count"`
@@ -72,9 +73,8 @@ type CtyunRedisInstanceConfig struct {
 	Password            types.String `tfsdk:"password"`               /*  实例密码<li>长度8-26字符</li><li>必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型</li><li>不能有空格</li>  */
 	AutoRenew           types.Bool   `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
 	AutoRenewCycleCount types.Int32  `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
-
-	MaintenanceTime  types.String `tfsdk:"maintenance_time"`
-	ProtectionStatus types.Bool   `tfsdk:"protection_status"`
+	MaintenanceTime     types.String `tfsdk:"maintenance_time"`
+	ProtectionStatus    types.Bool   `tfsdk:"protection_status"`
 }
 
 func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -84,9 +84,10 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+			},
+			"master_order_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -358,10 +359,11 @@ func (c *ctyunRedisInstance) Create(ctx context.Context, request resource.Create
 		return
 	}
 	// 创建
-	err = c.create(ctx, plan)
+	masterOrderID, err := c.create(ctx, plan)
 	if err != nil {
 		return
 	}
+	plan.MasterOrderID = types.StringValue(masterOrderID)
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
@@ -633,7 +635,7 @@ func (c *ctyunRedisInstance) checkSpecParams(ctx context.Context, plan CtyunRedi
 }
 
 // create 创建
-func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstanceConfig) (masterOrderID string, err error) {
 	autoPay := true
 	params := &dcs2.Dcs2CreateInstanceRequest{
 		RegionId:          plan.RegionID.ValueString(),
@@ -679,6 +681,7 @@ func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstance
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID = resp.ReturnObj.NewOrderId
 	return
 }
 
@@ -743,6 +746,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 
 // update 更新
 func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	plan.ID = state.ID
 	if !plan.MaintenanceTime.Equal(state.MaintenanceTime) || !plan.ProtectionStatus.Equal(state.ProtectionStatus) {
 		err = c.updateAttr(ctx, plan)
 		if err != nil {
@@ -814,7 +818,7 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 0 {
+			if instance == nil || instance.Status != 0 || instance.ProdInstId == "" {
 				return true
 			}
 

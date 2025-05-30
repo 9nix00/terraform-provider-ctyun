@@ -47,7 +47,7 @@ func (a *CtvpcResourceUnbindLabelApi) Do(ctx context.Context, credential core.Cr
 
 type CtvpcResourceUnbindLabelRequest struct {
 	RegionID     string `json:"regionID,omitempty"`     /*  区域ID  */
-	ResourceType string `json:"resourceType,omitempty"` /*  资源类型，resourceType only support vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb /                private_nat / ctvpc / eip / bandwidth /ipv6_bandwidth  */
+	ResourceType string `json:"resourceType,omitempty"` /*  资源类型，resourceType only support vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb /                private_nat / nat / eip / bandwidth /ipv6_bandwidth  */
 	ResourceID   string `json:"resourceID,omitempty"`   /*  资源 ID  */
 	LabelID      string `json:"labelID,omitempty"`      /*  标签ID  */
 }

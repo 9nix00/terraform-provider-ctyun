@@ -64,7 +64,7 @@ type CtvpcShowSnatReturnObjResponse struct {
 	CreationTime *string                               `json:"creationTime,omitempty"` /*  创建时间  */
 	Eips         []*CtvpcShowSnatReturnObjEipsResponse `json:"eips"`                   /*  绑定的 eip 信息  */
 	SubnetID     *string                               `json:"subnetID,omitempty"`     /*  子网 ID  */
-	NatGatewayID *string                               `json:"natGatewayID,omitempty"` /*  ctvpc 网关 ID  */
+	NatGatewayID *string                               `json:"natGatewayID,omitempty"` /*  nat 网关 ID  */
 }
 
 type CtvpcShowSnatReturnObjEipsResponse struct {

@@ -80,6 +80,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "maintenance_time", initMaintenanceTime),
 					resource.TestCheckResourceAttr(resourceName, "protection_status", initProtectionStatus),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			// 更新属性，同时绑定eip
@@ -104,6 +105,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "engine_version", updatedEngineVersion),
 					resource.TestCheckResourceAttr(resourceName, "maintenance_time", updatedMaintenanceTime),
 					resource.TestCheckResourceAttr(resourceName, "protection_status", updatedProtectionStatus),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			// 通过查询进行检查
@@ -193,6 +195,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					"password",
 					"project_id",
 					"version",
+					"master_order_id",
 				},
 			},
 			{

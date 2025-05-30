@@ -15,7 +15,7 @@ func NewKeyPairService(meta *common.CtyunMetadata) *KeyPairService {
 	return &KeyPairService{meta: meta}
 }
 
-func (u KeyPairService) MustExist(ctx context.Context, keyPairName, regionId, projectId string) error {
+func (u KeyPairService) GetKeyPairIDByName(ctx context.Context, keyPairName, regionId, projectId string) (string, error) {
 	resp, err := u.meta.Apis.CtEcsApis.KeypairDetailApi.Do(ctx, u.meta.Credential, &ctecs.KeypairDetailRequest{
 		RegionId:    regionId,
 		KeyPairName: keyPairName,
@@ -24,10 +24,10 @@ func (u KeyPairService) MustExist(ctx context.Context, keyPairName, regionId, pr
 		PageSize:    1,
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 	if len(resp.Results) == 0 {
-		return errors.New("密钥对不存在：" + keyPairName)
+		return "", errors.New("密钥对不存在：" + keyPairName)
 	}
-	return nil
+	return resp.Results[0].KeyPairId, nil
 }

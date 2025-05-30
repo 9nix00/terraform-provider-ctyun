@@ -418,7 +418,6 @@ type Apis struct {
 	CtvpcShowVpcApi                              *CtvpcShowVpcApi
 	CtvpcVpcCreateSubnetApi                      *CtvpcVpcCreateSubnetApi
 	CtvpcCreateVpc1Api                           *CtvpcCreateVpc1Api
-	NewCtvpcShowSnatApi                          interface{}
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {

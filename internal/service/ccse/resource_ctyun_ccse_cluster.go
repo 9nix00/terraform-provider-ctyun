@@ -42,11 +42,12 @@ func (c *ctyunCcseCluster) Metadata(_ context.Context, request resource.Metadata
 }
 
 type CtyunCcseClusterConfig struct {
-	ID         types.String             `tfsdk:"id"`
-	RegionID   types.String             `tfsdk:"region_id"`
-	BaseInfo   CtyunCcseClusterBaseInfo `tfsdk:"base_info"`
-	SlaveHost  CtyunCcseClusterSlave    `tfsdk:"slave_host"`
-	MasterHost *CtyunCcseClusterMaster  `tfsdk:"master_host"`
+	ID            types.String             `tfsdk:"id"`
+	MasterOrderID types.String             `tfsdk:"master_order_id"`
+	RegionID      types.String             `tfsdk:"region_id"`
+	BaseInfo      CtyunCcseClusterBaseInfo `tfsdk:"base_info"`
+	SlaveHost     CtyunCcseClusterSlave    `tfsdk:"slave_host"`
+	MasterHost    *CtyunCcseClusterMaster  `tfsdk:"master_host"`
 }
 
 type CtyunCcseClusterBaseInfo struct {
@@ -107,6 +108,10 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"master_order_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -568,10 +573,11 @@ func (c *ctyunCcseCluster) Create(ctx context.Context, request resource.CreateRe
 		return
 	}
 	// 创建
-	err = c.create(ctx, plan)
+	masterOrderID, err := c.create(ctx, plan)
 	if err != nil {
 		return
 	}
+	plan.MasterOrderID = types.StringValue(masterOrderID)
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
@@ -686,7 +692,7 @@ func (c *ctyunCcseCluster) checkBeforeCreate(ctx context.Context, plan CtyunCcse
 }
 
 // create 创建
-func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConfig) (masterOrderID string, err error) {
 	params := &ccse2.CcseCreateClusterRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ResPoolId: plan.RegionID.ValueString(),
@@ -803,7 +809,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		flavorName := plan.SlaveHost.ItemDefName.ValueString()
 		flavor, err := business.NewEcsService(c.meta).GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
 		if err != nil {
-			return err
+			return "", err
 		}
 		slaveHost.Cpu = int32(flavor.FlavorCpu)
 		slaveHost.Mem = int32(flavor.FlavorRam)
@@ -814,7 +820,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		deviceType := plan.SlaveHost.ItemDefName.ValueString()
 		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), azName)
 		if err != nil {
-			return err
+			return "", err
 		}
 		slaveHost.Cpu = flavor.CpuAmount
 		slaveHost.Mem = flavor.MemAmount
@@ -832,6 +838,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan CtyunCcseClusterConf
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
+	masterOrderID = resp.ReturnObj.OrderId
 	return
 }
 

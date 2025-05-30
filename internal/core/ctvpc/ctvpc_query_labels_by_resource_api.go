@@ -53,7 +53,7 @@ func (a *CtvpcQueryLabelsByResourceApi) Do(ctx context.Context, credential core.
 
 type CtvpcQueryLabelsByResourceRequest struct {
 	RegionID     string /*  区域ID  */
-	ResourceType string /*  资源类型，resourceType only support vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb /  private_nat / ctvpc / eip / bandwidth /ipv6_bandwidth/listener/prefix_list  */
+	ResourceType string /*  资源类型，resourceType only support vpc / subnet / acl / security_group / route_table / havip / port  / multicast_domain / vpc_peer / vpce_endpoint / vpce_endpoint_service / ipv6_gateway / elb /  private_nat / nat / eip / bandwidth /ipv6_bandwidth/listener/prefix_list  */
 	ResourceID   string /*  资源 ID  */
 	PageNumber   int32  /*  列表的页码，默认值为 1  */
 	PageSize     int32  /*  分页查询时每页的行数，最大值为 50，默认值为 10  */

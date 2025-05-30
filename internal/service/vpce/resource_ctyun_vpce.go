@@ -44,6 +44,7 @@ func (c *ctyunVpce) Metadata(_ context.Context, request resource.MetadataRequest
 
 type CtyunVpceConfig struct {
 	ID                types.String `tfsdk:"id"`
+	MasterOrderID     types.String `tfsdk:"master_order_id"`
 	EndpointServiceID types.String `tfsdk:"endpoint_service_id"`
 	RegionID          types.String `tfsdk:"region_id"`
 	VpcID             types.String `tfsdk:"vpc_id"`
@@ -62,6 +63,10 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"master_order_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -150,10 +155,11 @@ func (c *ctyunVpce) Create(ctx context.Context, request resource.CreateRequest, 
 	}
 
 	// 创建
-	endpointID, err := c.loopCreate(ctx, plan)
+	masterOrderID, endpointID, err := c.loopCreate(ctx, plan)
 	if err != nil {
 		return
 	}
+	plan.MasterOrderID = types.StringValue(masterOrderID)
 	plan.ID = types.StringValue(endpointID)
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
@@ -274,13 +280,13 @@ func (c *ctyunVpce) ImportState(ctx context.Context, request resource.ImportStat
 }
 
 // loopCreate 循环执行create
-func (c *ctyunVpce) loopCreate(ctx context.Context, plan CtyunVpceConfig) (id string, err error) {
+func (c *ctyunVpce) loopCreate(ctx context.Context, plan CtyunVpceConfig) (masterOrderID, id string, err error) {
 	clientToken := uuid.NewString()
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			id, err = c.create(ctx, clientToken, plan)
+			masterOrderID, id, err = c.create(ctx, clientToken, plan)
 			if err != nil {
 				return false
 			}
@@ -300,7 +306,7 @@ func (c *ctyunVpce) loopCreate(ctx context.Context, plan CtyunVpceConfig) (id st
 }
 
 // create 创建
-func (c *ctyunVpce) create(ctx context.Context, clientToken string, plan CtyunVpceConfig) (endpointID string, err error) {
+func (c *ctyunVpce) create(ctx context.Context, clientToken string, plan CtyunVpceConfig) (masterOrderID, endpointID string, err error) {
 	params := &ctvpc.CtvpcCreateEndpointRequest{
 		ClientToken:       clientToken,
 		RegionID:          plan.RegionID.ValueString(),
@@ -328,6 +334,7 @@ func (c *ctyunVpce) create(ctx context.Context, clientToken string, plan CtyunVp
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID = *resp.ReturnObj.MasterOrderID
 	endpointID = *resp.ReturnObj.EndpointID
 	return
 }

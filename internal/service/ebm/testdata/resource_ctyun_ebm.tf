@@ -4,7 +4,7 @@ resource "ctyun_ebm" "%[1]s" {
   password = "%[4]s"
   status = "%[5]s"
   ext_ip = "not_use"
-  instance_charge_type = "order_on_demand"
+  cycle_type = "on_demand"
   device_type = "%[6]s"
   image_uuid = "%[7]s"
   security_group_ids = %[8]s
