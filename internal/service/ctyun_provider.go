@@ -34,6 +34,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	"terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/service/ccse"
@@ -43,6 +44,7 @@ import (
 	"terraform-provider-ctyun/internal/service/ecs"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/kafka"
 	"terraform-provider-ctyun/internal/service/redis"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
@@ -295,6 +297,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtZosApis: ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
 			SdkCcseApis:  ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
 			SdkDcs2Apis:  dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
+			SdkKafkaApis: ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -337,6 +340,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseNodePools(),
 		redis.NewCtyunRedisSpecs(),
 		redis.NewCtyunRedisInstances(),
+		kafka.NewCtyunKafkaInstances(),
+		kafka.NewCtyunKafkaSpecs(),
 	)
 }
 
@@ -382,6 +387,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcseNodePool(),
 		redis.NewCtyunRedisInstance(),
 		redis.NewCtyunRedisAssociationEip(),
+		kafka.NewCtyunKafkaInstance(),
 	)
 }
 

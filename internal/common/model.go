@@ -15,6 +15,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	"terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 )
 
 var ctyunMetadata *CtyunMetadata
@@ -65,4 +66,5 @@ type Apis struct {
 	SdkCtZosApis *ctzos.Apis
 	SdkCcseApis  *ccse2.Apis
 	SdkDcs2Apis  *dcs2.Apis
+	SdkKafkaApis *ctgkafka.Apis
 }
