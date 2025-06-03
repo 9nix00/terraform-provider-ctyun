@@ -36,6 +36,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	"terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/service/ccse"
@@ -48,6 +49,7 @@ import (
 	"terraform-provider-ctyun/internal/service/image"
 	mysql2 "terraform-provider-ctyun/internal/service/mysql"
 	"terraform-provider-ctyun/internal/service/nat"
+	"terraform-provider-ctyun/internal/service/kafka"
 	"terraform-provider-ctyun/internal/service/redis"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
@@ -302,6 +304,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkDcs2Apis:    dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
 			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis: mysql.NewApis(client),
+			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -358,6 +361,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlInstances(),
 		mysql2.NewCtyunMysqlAssociationEips(),
 		mysql2.NewCtyunMysqlSpecs(),
+		kafka.NewCtyunKafkaInstances(),
+		kafka.NewCtyunKafkaSpecs(),
 	)
 }
 
@@ -416,6 +421,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		elb.NewCtyunElbRule(),
 		mysql2.NewCtyunMysqlInstance(),
 		mysql2.NewCtyunMysqlAssociationEip(),
+		kafka.NewCtyunKafkaInstance(),
 	)
 }
 

@@ -18,6 +18,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	"terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 )
 
 var once sync.Once
@@ -71,4 +72,5 @@ type Apis struct {
 	SdkDcs2Apis    *dcs2.Apis
 	SdkCtElbApis   *sdkCtelb.Apis
 	SdkCtMysqlApis *mysql.Apis
+	SdkKafkaApis   *ctgkafka.Apis
 }
