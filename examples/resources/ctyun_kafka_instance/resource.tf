@@ -7,7 +7,7 @@ terraform {
 }
 
 resource "ctyun_kafka_instance" "tbidgqvfbs" {
-  instance_name = "tf-kafka-4333pywerkb"
+  instance_name = "tf-kafka-4ywerkb"
   engine_version = "3.6"
   spec_name = "kafka.4u8g.cluster"
   node_num = 5

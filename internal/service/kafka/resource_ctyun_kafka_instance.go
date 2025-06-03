@@ -558,7 +558,7 @@ func (c *ctyunKafkaInstance) checkSpecParams(ctx context.Context, plan CtyunKafk
 		}
 	}
 	if !diskAvailable {
-		return fmt.Errorf("本资源池不支持 %s", diskAvailable)
+		return fmt.Errorf("本资源池不支持 %s", diskType)
 	}
 
 	return
@@ -831,6 +831,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != 1 {
 				return true
 			}
+			time.Sleep(10 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -916,6 +917,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != 1 {
 				return true
 			}
+			time.Sleep(10 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -1023,6 +1025,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != 1 {
 				return true
 			}
+			time.Sleep(10 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -1106,7 +1109,7 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 	retryer.Start(
 		func(currentTime int) bool {
 			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
+			instance, err = c.getByNameOrID(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1158,7 +1161,8 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
 				return true
 			}
-
+			// 等待订单完成
+			time.Sleep(10 * time.Second)
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false
