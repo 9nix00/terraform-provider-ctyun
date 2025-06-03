@@ -25,8 +25,7 @@ func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
 	zone := os.Getenv("CTYUN_AZ_NAME")
 	extra := `cycle_type = "month"
 cycle_count = 2
-auto_renew = true
-auto_renew_cycle_count = 1
+auto_renew = false
 `
 
 	initName := "tf-kafka-init-" + utils.GenerateRandomString()
