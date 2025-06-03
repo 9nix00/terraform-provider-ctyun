@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunSNat(t *testing.T) {
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

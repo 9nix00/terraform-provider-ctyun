@@ -350,14 +350,6 @@ func (c *CtyunElbLoadBalancerResource) Update(ctx context.Context, request resou
 		}
 	}
 
-	//保障型负载均衡实例续订
-	// 如果elb类型为保障型，才可以续订/退订
-	if c.isContains(state.SlaName.ValueString(), business.PgElbSlaNames) {
-		err := c.renewPgElb(ctx, &state, &plan)
-		if err != nil {
-			return
-		}
-	}
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeElb(ctx, &state)
 	if err != nil {
@@ -732,53 +724,6 @@ func (c *CtyunElbLoadBalancerResource) modifyPgElbSpec(ctx context.Context, stat
 	return
 }
 
-func (c *CtyunElbLoadBalancerResource) renewPgElb(ctx context.Context, state *CtyunElbLoadBalancerConfig, plan *CtyunElbLoadBalancerConfig) (err error) {
-	if plan.CycleCount.ValueInt64() <= 0 {
-		_ = fmt.Sprintf("订购时长<0，当前无需续订。")
-		return
-	}
-	params := &ctelb.CtelbRenewPgelbRequest{
-		ClientToken: uuid.NewString(),
-		RegionID:    state.RegionID.ValueString(),
-		ElbID:       state.ID.ValueString(),
-	}
-	if !plan.PayVoucherPrice.IsNull() {
-		params.PayVoucherPrice = plan.PayVoucherPrice.ValueString()
-	}
-
-	if !state.CycleType.Equal(plan.CycleType) {
-		params.CycleCount = int32(plan.CycleCount.ValueInt64())
-	} else if plan.CycleCount.ValueInt64() > state.CycleCount.ValueInt64() {
-		// 若订购周期与原来一致，求plan和state差值，作为更新周期
-		params.CycleCount = int32(plan.CycleCount.ValueInt64() - state.CycleCount.ValueInt64())
-	} else {
-		_ = fmt.Sprintf("最新订购周期 <= 原订购周期，不予续费")
-		return
-	}
-	params.CycleType = plan.CycleType.ValueString()
-	params.CycleCount = int32(plan.CycleCount.ValueInt64())
-
-	// 调用保障型elb续期接口
-	resp, err := c.meta.Apis.SdkCtElbApis.CtelbRenewPgelbApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		return
-	}
-	// 轮询查询续订情况
-	loopResp, err := c.renewLoop(ctx, params, 600)
-	if err != nil {
-		return
-	} else if loopResp == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
-
 func (c *CtyunElbLoadBalancerResource) orderLoop(ctx context.Context, params *ctelb.CtelbCreatePgelbRequest, loopCount ...int) (loopResp *ctelb.CtelbCreatePgelbReturnObjResponse, err error) {
 	count := 60
 	if len(loopCount) > 0 {
@@ -905,45 +850,6 @@ func (c *CtyunElbLoadBalancerResource) modifyLoop(ctx context.Context, state Cty
 	}
 
 	return
-}
-
-func (c *CtyunElbLoadBalancerResource) renewLoop(ctx context.Context, params *ctelb.CtelbRenewPgelbRequest, loopCount ...int) (loopResp *ctelb.CtelbRenewPgelbReturnObjResponse, err error) {
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-	retryer, err := business.NewRetryer(time.Second*5, count)
-	if err != nil {
-		return
-	}
-	result := retryer.Start(
-		func(currentTime int) bool {
-			resp, err := c.meta.Apis.SdkCtElbApis.CtelbRenewPgelbApi.Do(ctx, c.meta.SdkCredential, params)
-			if err != nil {
-				return false
-			} else if resp.StatusCode == common.ErrorStatusCode {
-				err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-				return false
-			}
-			status := resp.ReturnObj.MasterResourceStatus
-			switch status {
-			case business.ElbStatusStarted:
-				// nat 已经续期成功
-				loopResp = resp.ReturnObj
-				return false
-			case business.ElbStatusRenewed:
-				return true
-			default:
-				// 在开通的时候，其他状态是异常的，因此抛出异常，并跳出轮询
-				err = errors.New("保障型Elb续订时，出现非renewed 和 started的异常状态。当前状态为： " + status)
-				return false
-			}
-		},
-	)
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return nil, errors.New("轮询已达最大次数，资源仍未续订成功！")
-	}
-	return loopResp, nil
 }
 
 func (c *CtyunElbLoadBalancerResource) isContains(value string, collect []string) bool {
