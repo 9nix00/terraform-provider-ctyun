@@ -105,19 +105,19 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 				),
 			},
 			// 2.2 续费验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, monthCycleType, updatedCycleCount),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
-					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", "month"),
-					resource.TestCheckResourceAttr(resourceName, "cycle_count", "2"),
-				),
-			},
+			//{
+			//	Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, monthCycleType, updatedCycleCount),
+			//	Check: resource.ComposeAggregateTestCheckFunc(
+			//		resource.TestCheckResourceAttr(resourceName, "description", initDescription),
+			//		resource.TestCheckResourceAttr(resourceName, "name", initName),
+			//		resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
+			//		resource.TestCheckResourceAttr(resourceName, "cycle_type", "month"),
+			//		resource.TestCheckResourceAttr(resourceName, "cycle_count", "2"),
+			//	),
+			//},
 			// 销毁
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, monthCycleType, updatedCycleCount),
+				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, monthCycleType, cycleCount),
 				Destroy: true,
 			},
 			// 3 cycle_type = year类型

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"os"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
@@ -13,6 +14,10 @@ import (
 // 无法测试升级保障型ELB，目前各资源池既支持经典型elb，又支持保障型elb的资源池传统型ELB均售罄
 
 func TestAccCtyunElbLoadBalancerPg(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
 
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_elb_loadbalancer." + rnd
