@@ -601,9 +601,9 @@ func (c *ctyunKafkaInstance) createPrePayOrder(ctx context.Context, plan CtyunKa
 	}
 
 	var zoneList []string
-	var strings []types.String
-	plan.ZoneList.ElementsAs(ctx, &strings, true)
-	for _, s := range strings {
+	var str []types.String
+	plan.ZoneList.ElementsAs(ctx, &str, true)
+	for _, s := range str {
 		zoneList = append(zoneList, s.ValueString())
 	}
 	params.ZoneList = zoneList

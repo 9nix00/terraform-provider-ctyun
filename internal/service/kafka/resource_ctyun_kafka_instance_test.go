@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
+func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -22,15 +22,20 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 	datasourceFile := "datasource_ctyun_kafka_instances.tf"
 
 	engineVersion := "3.6"
-	nodeNum := 1
 	zone := os.Getenv("CTYUN_AZ_NAME")
-	extra := `cycle_type = "on_demand"`
+	extra := `cycle_type = "month"
+cycle_count = 2
+auto_renew = true
+auto_renew_cycle_count = 1
+`
 
 	initName := "tf-kafka-init-" + utils.GenerateRandomString()
+	initNodeNum := 3
 	initDiskSize := 100
 	initRetentionHours := 80
 
 	updatedName := "tf-kafka-updated-" + utils.GenerateRandomString()
+	updatedNodeNum := 4
 	updatedDiskSize := 200
 	updatedRetentionHours := 60
 
@@ -50,10 +55,10 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 					resourceFile, rnd,
 					initName,
 					engineVersion,
-					dependence.kafkaSingleSpecName,
-					nodeNum,
+					dependence.kafkaClusterSpecName,
+					initNodeNum,
 					zone,
-					dependence.kafkaSingleDiskType,
+					dependence.kafkaClusterDiskType,
 					initDiskSize,
 					dependence.vpcID,
 					dependence.subnetID,
@@ -64,10 +69,10 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
 					resource.TestCheckResourceAttr(resourceName, "engine_version", engineVersion),
-					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaSingleSpecName),
-					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(nodeNum)),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaClusterSpecName),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(initNodeNum)),
 					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
-					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaSingleDiskType),
+					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaClusterDiskType),
 					resource.TestCheckResourceAttr(resourceName, "disk_size", strconv.Itoa(initDiskSize)),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", dependence.vpcID),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", dependence.subnetID),
@@ -83,10 +88,10 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 					resourceFile, rnd,
 					updatedName,
 					engineVersion,
-					dependence.kafkaSingleSpecName2,
-					nodeNum,
+					dependence.kafkaClusterSpecName2,
+					updatedNodeNum,
 					zone,
-					dependence.kafkaSingleDiskType,
+					dependence.kafkaClusterDiskType,
 					updatedDiskSize,
 					dependence.vpcID,
 					dependence.subnetID,
@@ -97,10 +102,10 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "engine_version", engineVersion),
-					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaSingleSpecName2),
-					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(nodeNum)),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaClusterSpecName2),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(updatedNodeNum)),
 					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
-					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaSingleDiskType),
+					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaClusterDiskType),
 					resource.TestCheckResourceAttr(resourceName, "disk_size", strconv.Itoa(updatedDiskSize)),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", dependence.vpcID),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", dependence.subnetID),
@@ -111,16 +116,15 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 				),
 			},
 
-			// 规格降级
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,
 					engineVersion,
-					dependence.kafkaSingleSpecName,
-					nodeNum,
+					dependence.kafkaClusterSpecName2,
+					updatedNodeNum,
 					zone,
-					dependence.kafkaSingleDiskType,
+					dependence.kafkaClusterDiskType,
 					updatedDiskSize,
 					dependence.vpcID,
 					dependence.subnetID,
@@ -135,9 +139,9 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.instance_name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.engine_version", engineVersion),
-					resource.TestCheckResourceAttr(datasourceName, "instances.0.spec_name", dependence.kafkaSingleSpecName),
-					resource.TestCheckResourceAttr(datasourceName, "instances.0.node_num", strconv.Itoa(nodeNum)),
-					resource.TestCheckResourceAttr(datasourceName, "instances.0.disk_type", dependence.kafkaSingleDiskType),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.spec_name", dependence.kafkaClusterSpecName2),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.node_num", strconv.Itoa(updatedNodeNum)),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.disk_type", dependence.kafkaClusterDiskType),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.disk_size", strconv.Itoa(updatedDiskSize)),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.vpc_id", dependence.vpcID),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.subnet_id", dependence.subnetID),
@@ -164,6 +168,7 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 					"project_id",
 					"security_group_id",
 					"master_order_id",
+					"zone_list",
 				},
 			},
 			{
@@ -171,10 +176,10 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 					resourceFile, rnd,
 					updatedName,
 					engineVersion,
-					dependence.kafkaSingleSpecName,
-					nodeNum,
+					dependence.kafkaClusterSpecName2,
+					updatedNodeNum,
 					zone,
-					dependence.kafkaSingleDiskType,
+					dependence.kafkaClusterDiskType,
 					updatedDiskSize,
 					dependence.vpcID,
 					dependence.subnetID,
