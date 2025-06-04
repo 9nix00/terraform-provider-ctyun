@@ -1,0 +1,69 @@
+package rabbitmq
+
+import (
+	"context"
+	"net/http"
+	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+)
+
+type AmqpInstanceQueryProdApi struct {
+	ctyunsdk.CtyunRequestBuilder
+	client *ctyunsdk.CtyunClient
+}
+
+func NewAmqpInstanceQueryProdApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQueryProdApi {
+	return &AmqpInstanceQueryProdApi{
+		client: client,
+		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
+			Method:  http.MethodGet,
+			UrlPath: "/v3/instances/queryProd",
+		},
+	}
+}
+
+func (this *AmqpInstanceQueryProdApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceQueryProdRequest) (res *AmqpInstanceQueryProdRequest, err error) {
+	builder := this.WithCredential(&credential)
+	_, err = builder.WriteJson(req)
+	if err != nil {
+		return
+	}
+	builder.AddHeader("regionId", req.RegionID)
+	resp, err := this.client.RequestToEndpoint(ctx, EndpointName, builder)
+	if err != nil {
+		return
+	}
+	res = &AmqpInstanceQueryProdRequest{}
+	err = resp.Parse(res)
+	if err != nil {
+		return
+	}
+	return res, nil
+}
+
+type AmqpInstanceQueryProdRequest struct {
+	RegionID string `json:"regionId"`
+}
+
+type AmqpInstanceQueryProdResponse struct {
+	ReturnObj struct {
+		Data []struct {
+			FlavorID      string      `json:"flavorID"`
+			SpecName      string      `json:"specName"`
+			FlavorType    string      `json:"flavorType"`
+			FlavorName    string      `json:"flavorName"`
+			CpuNum        int         `json:"cpuNum"`
+			MemSize       int         `json:"memSize"`
+			MultiQueue    int         `json:"multiQueue"`
+			Pps           int         `json:"pps"`
+			BandwidthBase float64     `json:"bandwidthBase"`
+			BandwidthMax  int         `json:"bandwidthMax"`
+			CpuArch       interface{} `json:"cpuArch"`
+			Series        string      `json:"series"`
+			AzList        []string    `json:"azList"`
+		} `json:"data"`
+	} `json:"returnObj"`
+	Message    string `json:"message"`
+	StatusCode string `json:"statusCode"`
+}
+
+type AmqpInstanceQueryProdResponse s
