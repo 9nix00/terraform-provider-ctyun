@@ -133,7 +133,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(datasourceFile, dnd),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "2"),
 				),
 			},
 			//销毁
@@ -154,7 +154,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", updatedProdID)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", updatedDoubleProId)),
 				),
 			},
 			// 销毁
