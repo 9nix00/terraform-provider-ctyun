@@ -1,0 +1,80 @@
+package mysql_test
+
+import (
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"os"
+	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
+	"testing"
+)
+
+func TestAccCtyunMysqlAssociationEip(t *testing.T) {
+
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+
+	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_mysql_association_eip." + rnd
+	resourceFile := "resource_ctyun_mysql_association_eip.tf"
+
+	datasourceName := "data.ctyun_mysql_association_eips." + dnd
+	datasourceFile := "datasource_ctyun_mysql_association_eips.tf"
+	eipId := dependence.eipID
+	//eipId := "eip-140rfs2and"
+	eipAddress := dependence.eipAddress
+	//eipAddress := "150.223.193.123"
+	instId := dependence.mysqlID
+
+	prodType := "1"
+	prodCode := "MYSQL"
+	instanceType := "1"
+
+	specDatasourceName := "data.ctyun_mysql_specss." + dnd
+	specDatasourceFile := "datasource_ctyun_mysql_specs.tf"
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 绑定IP验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
+					resource.TestCheckResourceAttr(resourceName, "eip", eipAddress),
+					resource.TestCheckResourceAttr(resourceName, "inst_id", instId),
+				),
+			},
+			//datasource验证
+			{
+				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "eips.#", "0"),
+					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
+					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(specDatasourceFile, dnd, prodType, prodCode, instanceType),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
+				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
+				Destroy: true,
+			},
+		},
+	})
+}
