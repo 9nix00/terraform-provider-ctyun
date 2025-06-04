@@ -29,6 +29,7 @@ func TestMain(m *testing.M) {
 	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {
 		fmt.Println(err)
+		terraform.DestroyResource(dependenceDir)
 		os.Exit(1)
 	}
 	dependence = Dependence{
