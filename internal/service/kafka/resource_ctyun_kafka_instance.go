@@ -735,11 +735,11 @@ func (c *ctyunKafkaInstance) checkBeforeUpdate(ctx context.Context, plan, state 
 
 // update 更新
 func (c *ctyunKafkaInstance) update(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
-	err = c.updateName(ctx, plan, state)
+	err = c.updateRetentionHours(ctx, plan, state)
 	if err != nil {
 		return
 	}
-	err = c.updateRetentionHours(ctx, plan, state)
+	err = c.updateName(ctx, plan, state)
 	if err != nil {
 		return
 	}
@@ -831,7 +831,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != 1 {
 				return true
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(30 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -917,7 +917,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != 1 {
 				return true
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(30 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -974,7 +974,7 @@ func (c *ctyunKafkaInstance) specShrink(ctx context.Context, plan, state CtyunKa
 	params := &ctgkafka.CtgkafkaSpecShrinkRequest{
 		RegionId:   state.RegionID.ValueString(),
 		ProdInstId: state.ID.ValueString(),
-		SpecName:   plan.SpecName.String(),
+		SpecName:   plan.SpecName.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaSpecShrinkApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -1025,7 +1025,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != 1 {
 				return true
 			}
-			time.Sleep(10 * time.Second)
+			time.Sleep(30 * time.Second)
 			executeSuccessFlag = true
 			return false
 		})
@@ -1162,7 +1162,7 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 				return true
 			}
 			// 等待订单完成
-			time.Sleep(10 * time.Second)
+			time.Sleep(30 * time.Second)
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false

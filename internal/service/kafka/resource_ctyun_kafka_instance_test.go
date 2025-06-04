@@ -115,12 +115,13 @@ auto_renew = false
 				),
 			},
 
+			// 缩容
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,
 					engineVersion,
-					dependence.kafkaClusterSpecName2,
+					dependence.kafkaClusterSpecName,
 					updatedNodeNum,
 					zone,
 					dependence.kafkaClusterDiskType,
@@ -138,7 +139,7 @@ auto_renew = false
 					resource.TestCheckResourceAttr(datasourceName, "instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.instance_name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.engine_version", engineVersion),
-					resource.TestCheckResourceAttr(datasourceName, "instances.0.spec_name", dependence.kafkaClusterSpecName2),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.spec_name", dependence.kafkaClusterSpecName),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.node_num", strconv.Itoa(updatedNodeNum)),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.disk_type", dependence.kafkaClusterDiskType),
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.disk_size", strconv.Itoa(updatedDiskSize)),
@@ -175,7 +176,7 @@ auto_renew = false
 					resourceFile, rnd,
 					updatedName,
 					engineVersion,
-					dependence.kafkaClusterSpecName2,
+					dependence.kafkaClusterSpecName,
 					updatedNodeNum,
 					zone,
 					dependence.kafkaClusterDiskType,

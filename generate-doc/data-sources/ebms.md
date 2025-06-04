@@ -32,7 +32,6 @@ Read-Only:
 - `freezing` (Boolean) 是否冻结
 - `hostname` (String) 物理机主机名称(hostname)
 - `image_uuid` (String) 镜像ID
-- `instance_charge_type` (String) 付费方式
 - `instance_id` (String) 物理机UUID
 - `instance_name` (String) 物理机实例展示名
 - `network_card_list` (Attributes List) 网卡信息 (see [below for nested schema](#nestedatt--instances--network_card_list))

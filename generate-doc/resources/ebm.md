@@ -45,9 +45,8 @@ resource "ctyun_ebm" "ebm_test" {
   ext_ip = "not_use"
   system_volume_raid_uuid = length(data.ctyun_ebm_device_raids.system_raid.raids) > 0 ? data.ctyun_ebm_device_raids.system_raid.raids[0].uuid : ""
   data_volume_raid_uuid = length(data.ctyun_ebm_device_raids.data_raid.raids) > 0 ? data.ctyun_ebm_device_raids.data_raid.raids[0].uuid : ""
-  instance_charge_type = "order_on_demand"
   status = "running"
-  # cycle_type = "month"
+  cycle_type = "on_demand"
   # cycle_count = 3
   # band_width = "100"
   disk_list = data.ctyun_ebm_device_types.test.device_types[0].cloud_boot ? [{
@@ -67,26 +66,25 @@ resource "ctyun_ebm" "ebm_test" {
 
 ### Required
 
+- `cycle_type` (String) 订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]，cycleType与cycleCount一起填写
 - `device_type` (String) 物理机套餐类型
 - `ext_ip` (String) 是否使用弹性公网IP，取值范围:[自动分配:auto_assign,不使用:not_use,使用已有:use_exist]
 - `hostname` (String) hostname，linux系统2到63位长度；windows系统2-15位长度；<br/>允许使用大小写字母、数字、连字符'-'、点号'.'，不能连续使用'-'或者'.'，'-'和'.'不能用于开头或结尾，不能仅使用数字
 - `image_uuid` (String) 物理机镜像id
-- `instance_charge_type` (String) 实例计费类型 <br/>*order_on_cycle：包年包月<br/>*order_on_demand：按量付费
 - `instance_name` (String) 物理机名称，长度为2-31位
 - `network_card_list` (Attributes List) 网卡 (see [below for nested schema](#nestedatt--network_card_list))
 - `vpc_id` (String) 主网卡网络ID
 
 ### Optional
 
-- `auto_renew_status` (Number) 是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费），<br/>注：按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订。
 - `az_name` (String) 可用区名称
 - `band_width` (Number) 带宽，取值范围:[1~2000]，默认值:100
-- `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；cycleType与cycleCount一起填写；按量付费，无需填写该参数
-- `cycle_type` (String) 订购周期类型，取值范围:[month=按月,year=按年]，cycleType与cycleCount一起填写；按量付费时，无需填写该参数
+- `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；非按需时必填
 - `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填
 - `disk_list` (Attributes List) 云盘信息列表，套餐中supportCloud为true表示支持云盘 (see [below for nested schema](#nestedatt--disk_list))
 - `ip_type` (String) 弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4
-- `key_name` (String) 密钥对名词
+- `key_pair_name` (String) 密钥对名词
 - `password` (String, Sensitive) 密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password
 - `project_id` (String) 企业项目ID
 - `public_ip` (String) 弹性公网IP的id

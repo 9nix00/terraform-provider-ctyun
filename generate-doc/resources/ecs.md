@@ -14,86 +14,104 @@ terraform {
   }
 }
 
-provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-}
-
-data "ctyun_images" "image_test1" {
-  name       = "Ubuntu 22.04"
-  visibility = "public"
-  page_no    = 1
-  page_size  = 50
-}
-
-data "ctyun_ecs_flavors" "ecs_flavor_test1" {
-  cpu    = 1
-  ram    = 1
-  arch   = "x86"
-  series = "S"
-  type   = "CPU_S7"
-}
-
-# 创建1c1g x86架构的通用型云主机，系统盘使用SATA，40g，计费方式为包周期1个月，到期自动续费
-resource "ctyun_ecs" "ecs_test1" {
-  instance_name       = "ecs-test"
-  display_name        = "ecs-test"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
-  image_id            = data.ctyun_images.image_test1.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id              = "vpc-r7kv00qbz5"
-  password            = "P@ssW0rd_1"
-  cycle_type          = "month"
-  cycle_count         = 1
-  auto_renew          = true
-  subnet_id           = "subnet-f3ktwpsf07"
-  security_group_ids  = [""],
-  is_destroy_instance = false
-}
-
-#########################################################################################
-
-data "ctyun_images" "image_test2" {
-  name       = "Ubuntu 22.04"
-  visibility = "public"
-  page_no    = 1
-  page_size  = 50
-  region_id  = "200000002527"
-  az_name    = "cn-jx-nc5-jxnc1A-public-ctcloud"
-}
-
-data "ctyun_ecs_flavors" "ecs_flavor_test2" {
-  cpu       = 2
-  ram       = 4
-  arch      = "x86"
-  series    = "S"
-  type      = "CPU_S7"
-  region_id = "200000002527"
-  az_name   = "cn-jx-nc5-jxnc1A-public-ctcloud"
-}
-
-# 创建2c4g x86架构的通用型云主机，系统盘使用SATA，50g，计费方式为按需
-resource "ctyun_ecs" "ecs_test2" {
-  instance_name      = "ecs-test2"
-  display_name       = "ecs-test2"
-  flavor_id          = data.ctyun_ecs_flavors.ecs_flavor_test2.flavors[0].id
-  image_id           = data.ctyun_images.image_test2.images[0].id
+resource "ctyun_ecs" "jdxutuzpfr" {
+  instance_name      = "tf-test-ecs"
+  display_name       = "tf-test-init-ecs"
+  flavor_id          = "9b4b5e39-db25-f2c8-3914-76881ee77d5c"
+  image_id           = "fa3f3784-34f9-4f6b-80a1-dd173d486bd6"
   system_disk_type   = "sata"
-  system_disk_size   = 50
-  vpc_id             = "vpc-d7zxz8j05c"
-  password           = "P@ssW0rd_1"
+  system_disk_size   = 60
+  vpc_id             = "vpc-0ein2p8bs8"
+
+  subnet_id          = "subnet-0oiyrpu8nk"
+
+  key_pair_name      = "tf-keypair-for-ecs"
+
   cycle_type         = "on_demand"
-  subnet_id          = "subnet-5jtwyd0m15"
-  security_group_ids = [
-    "sg-p5gue21vy8"
-  ]
-  key_pair_name = "keypair-test"
-  region_id     = "200000002527"
-  az_name       = "cn-jx-nc5-jxnc1A-public-ctcloud"
-  project_id    = "4f5ef15300724760af59b37cf6409f45"
+
 }
+#
+#
+# provider "ctyun" {
+#   region_id  = "bb9fdb42056f11eda1610242ac110002"
+#   project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
+#   az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+# }
+#
+# data "ctyun_images" "image_test1" {
+#   name       = "Ubuntu 22.04"
+#   visibility = "public"
+#   page_no    = 1
+#   page_size  = 50
+# }
+#
+# data "ctyun_ecs_flavors" "ecs_flavor_test1" {
+#   cpu    = 1
+#   ram    = 1
+#   arch   = "x86"
+#   series = "S"
+#   type   = "CPU_S7"
+# }
+#
+# # 创建1c1g x86架构的通用型云主机，系统盘使用SATA，40g，计费方式为包周期1个月，到期自动续费
+# resource "ctyun_ecs" "ecs_test1" {
+#   instance_name       = "ecs-test"
+#   display_name        = "ecs-test"
+#   flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
+#   image_id            = data.ctyun_images.image_test1.images[0].id
+#   system_disk_type    = "sata"
+#   system_disk_size    = 40
+#   vpc_id              = "vpc-r7kv00qbz5"
+#   password            = "P@ssW0rd_1"
+#   cycle_type          = "month"
+#   cycle_count         = 1
+#   auto_renew          = true
+#   subnet_id           = "subnet-f3ktwpsf07"
+#   security_group_ids  = [""],
+#   is_destroy_instance = false
+# }
+#
+# #########################################################################################
+#
+# data "ctyun_images" "image_test2" {
+#   name       = "Ubuntu 22.04"
+#   visibility = "public"
+#   page_no    = 1
+#   page_size  = 50
+#   region_id  = "200000002527"
+#   az_name    = "cn-jx-nc5-jxnc1A-public-ctcloud"
+# }
+#
+# data "ctyun_ecs_flavors" "ecs_flavor_test2" {
+#   cpu       = 2
+#   ram       = 4
+#   arch      = "x86"
+#   series    = "S"
+#   type      = "CPU_S7"
+#   region_id = "200000002527"
+#   az_name   = "cn-jx-nc5-jxnc1A-public-ctcloud"
+# }
+#
+# # 创建2c4g x86架构的通用型云主机，系统盘使用SATA，50g，计费方式为按需
+# resource "ctyun_ecs" "ecs_test2" {
+#   instance_name      = "ecs-test2"
+#   display_name       = "ecs-test2"
+#   flavor_id          = data.ctyun_ecs_flavors.ecs_flavor_test2.flavors[0].id
+#   image_id           = data.ctyun_images.image_test2.images[0].id
+#   system_disk_type   = "sata"
+#   system_disk_size   = 50
+#   vpc_id             = "vpc-d7zxz8j05c"
+#   password           = "P@ssW0rd_1"
+#   cycle_type         = "on_demand"
+#   subnet_id          = "subnet-5jtwyd0m15"
+#   security_group_ids = [
+#     "sg-p5gue21vy8"
+#   ]
+#   key_pair_name = "keypair-test"
+#   region_id     = "200000002527"
+#   az_name       = "cn-jx-nc5-jxnc1A-public-ctcloud"
+#   project_id    = "4f5ef15300724760af59b37cf6409f45"
+# }
 ```
 
 <!-- schema generated by tfplugindocs -->
@@ -118,20 +136,19 @@ resource "ctyun_ecs" "ecs_test2" {
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
 - `is_destroy_instance` (Boolean) 是否立即释放，false：不释放，true：释放。当包周期云主机退订之后有一定时间的保留期。可选择销毁该云主机，立即释放则没有保留期
 - `key_pair_name` (String) 密钥对名称
-- `monitor_service` (Boolean) 监控参数，支持通过该参数指定云主机在创建后是否开启详细监控，false：不开启，true：开启。若指定该参数为true或不指定该参数，云主机内默认开启最新详细监控服务。若指定该参数为false，默认公共镜像不开启最新监控服务；私有镜像使用镜像中保留的监控服务。说明：仅部分资源池支持
 - `password` (String, Sensitive) 用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
 - `pay_voucher_price` (Number) 代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用
 - `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `security_group_ids` (Set of String) 安全组id列表，在多可用区类型资源池下，安全组ID通常以“sg-”开头，非多可用区类型资源池安全组ID为uuid格式；默认使用默认安全组，无默认安全组情况下请填写该参数
 - `status` (String) 云主机状态，取值范围：backingup: 备份中，creating: 创建中，expired: 已到期，freezing: 冻结中，rebuild: 重装，restarting: 重启中，running: 运行中，starting: 开机中，stopped: 已关机，stopping: 关机中，error: 错误，snapshotting: 快照创建中，unsubscribed: 包周期已退订，unsubscribing: 包周期退订中，shelve：节省关机，shelving：节省关机中
-- `user_data` (String) 用户自定义数据，需要以Base64方式编码，Base64编码后的长度限制为1-16384字符。注：非多可用区类型资源池暂不支持该参数
+- `user_data` (String) 用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符
 
 ### Read-Only
 
 - `default_security_group_id` (String) 默认加入安全组id
 - `expire_time` (String) 到期时间
-- `fixed_ip` (String) 主网卡固定子网的ip地址，不填则自动返回加入子网后的ip地址
+- `fixed_ip` (String) 加入子网后的ip地址
 - `id` (String) id
 - `master_order_id` (String) 订购的受理单id
 - `system_disk_id` (String) 系统盘的id
