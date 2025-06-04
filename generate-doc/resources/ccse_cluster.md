@@ -1,5 +1,5 @@
 # ctyun_ccse_cluster (Resource)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137**
 
 
 
@@ -189,6 +189,7 @@ resource "ctyun_ccse_cluster" "example" {
 ### Read-Only
 
 - `id` (String) ID
+- `master_order_id` (String) 主订单号
 
 <a id="nestedatt--base_info"></a>
 ### Nested Schema for `base_info`

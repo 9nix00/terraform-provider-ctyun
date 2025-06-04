@@ -10,6 +10,10 @@
 
 ### Optional
 
+- `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
+- `page_no` (Number) 页码，取值范围：正整数（≥1），注：默认值为1
+- `page_size` (Number) 每页记录数目，取值范围：[1,300]，注：默认值为10
+- `project_id` (String) 企业项目ID
 - `region_id` (String) 资源池ID
 
 ### Read-Only

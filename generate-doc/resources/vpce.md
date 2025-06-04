@@ -69,4 +69,5 @@ resource "ctyun_vpce" "test" {
 ### Read-Only
 
 - `id` (String) ID
+- `master_order_id` (String) 主订单号
 - `status` (Number) endpoint状态, 1 表示已链接，2 表示未链接

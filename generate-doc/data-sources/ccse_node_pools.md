@@ -1,5 +1,5 @@
 # ctyun_ccse_node_pools (Data Source)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452**
 
 
 
@@ -57,7 +57,7 @@ Optional:
 
 Read-Only:
 
-- `auto_renew_status` (Number) 是否自动续订，默认非自动续订。取值范围：<br/>0（不续费），<br/>1（自动续费）
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订。
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `id` (String) 节点池id
