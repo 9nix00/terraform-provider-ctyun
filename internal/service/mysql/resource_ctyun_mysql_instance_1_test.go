@@ -74,7 +74,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 升级1主2备
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", 10001002)),
