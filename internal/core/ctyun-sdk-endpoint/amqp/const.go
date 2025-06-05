@@ -1,4 +1,4 @@
-package rabbitmq
+package amqp
 
 import ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 

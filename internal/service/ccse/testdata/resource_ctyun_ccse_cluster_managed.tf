@@ -21,7 +21,14 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     az_infos = [
       {
         az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
+      },
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+      }
+      {
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+      }
       }
     ]
   }

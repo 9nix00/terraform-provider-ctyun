@@ -10,6 +10,7 @@ import (
 	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
@@ -73,4 +74,5 @@ type Apis struct {
 	SdkCtElbApis   *sdkCtelb.Apis
 	SdkCtMysqlApis *mysql.Apis
 	SdkKafkaApis   *ctgkafka.Apis
+	SdkAmqpApis    *amqp.Apis
 }
