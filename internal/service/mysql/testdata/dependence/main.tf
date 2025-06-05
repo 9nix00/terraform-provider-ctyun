@@ -1,6 +1,6 @@
 // main.tf负责创建或查询单测依赖的前置资源
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-mysql2"
+  name        = "tf-vpc-for-mysql3"
   cidr        = "192.168.128.0/17"
   description = "terraform测试使用2"
   enable_ipv6 = true
@@ -9,7 +9,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-mysql3"
+  name        = "tf-subnet-for-mysql5"
   cidr        = "192.168.192.0/24"
   description = "terraform测试使用3"
   dns = [
@@ -21,7 +21,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 resource "ctyun_subnet" "subnet_test2" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-mysql4"
+  name        = "tf-subnet-for-mysql6"
   cidr        = "192.168.193.0/24"
   description = "terraform测试使用4"
   dns = [
@@ -34,13 +34,13 @@ resource "ctyun_subnet" "subnet_test2" {
 
 resource "ctyun_security_group" "test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-secureity-group-for-mysql3"
+  name        = "tf-secureity-group-for-mysql4"
   description = "terraform测试"
 }
 
 resource "ctyun_security_group" "test2" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-secureity-group-for-mysql4"
+  name        = "tf-secureity-group-for-mysql5"
   description = "terraform测试"
 }
 
@@ -58,7 +58,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   host_type         = "C7"
   subnet_id         = ctyun_subnet.subnet_test2.id
   security_group_id = ctyun_security_group.test2.id
-  name              = "tf-mysql-for-ip3"
+  name              = "tf-mysql-for-ip5"
   password          = "kqjwyk111"
   period            = 1
   purchase_count    = 1
