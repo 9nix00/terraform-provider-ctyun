@@ -37,3 +37,7 @@ output "data_raid" {
 output "image_uuid" {
   value = data.ctyun_ebm_device_images.test.images[0].image_uuid
 }
+
+output "ebs_id" {
+  value = ctyun_ebs.ebs_test.id
+}

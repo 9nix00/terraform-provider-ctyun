@@ -1,0 +1,658 @@
+package ccse
+
+import (
+	"context"
+	"fmt"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
+	"terraform-provider-ctyun/internal/business"
+	"terraform-provider-ctyun/internal/common"
+	ccse2 "terraform-provider-ctyun/internal/core/ccse"
+	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
+	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+)
+
+var (
+	_ resource.Resource                = &ctyunCcseNodePool{}
+	_ resource.ResourceWithConfigure   = &ctyunCcseNodePool{}
+	_ resource.ResourceWithImportState = &ctyunCcseNodePool{}
+)
+
+type ctyunCcseNodePool struct {
+	meta *common.CtyunMetadata
+}
+
+func NewCtyunCcseNodePool() resource.Resource {
+	return &ctyunCcseNodePool{}
+}
+
+func (c *ctyunCcseNodePool) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_ccse_node_pool"
+}
+
+type CtyunCcseNodePoolConfig struct {
+	ID                       types.String            `tfsdk:"id"`
+	ClusterID                types.String            `tfsdk:"cluster_id"`
+	RegionID                 types.String            `tfsdk:"region_id"`
+	NodePoolName             types.String            `tfsdk:"node_pool_name"`
+	CycleCount               types.Int64             `tfsdk:"cycle_count"`
+	CycleType                types.String            `tfsdk:"cycle_type"`
+	AutoRenew                types.Bool              `tfsdk:"auto_renew"`
+	VisibilityPostHostScript types.String            `tfsdk:"visibility_post_host_script"`
+	VisibilityHostScript     types.String            `tfsdk:"visibility_host_script"`
+	InstanceType             types.String            `tfsdk:"instance_type"`
+	MirrorID                 types.String            `tfsdk:"mirror_id"`
+	MirrorName               types.String            `tfsdk:"mirror_name"`
+	MirrorType               types.Int32             `tfsdk:"mirror_type"`
+	Password                 types.String            `tfsdk:"password"`
+	KeyPairName              types.String            `tfsdk:"key_pair_name"`
+	KeyPairID                types.String            `tfsdk:"key_pair_id"`
+	UseAffinityGroup         types.Bool              `tfsdk:"use_affinity_group"`
+	AffinityGroupID          types.String            `tfsdk:"affinity_group_id"`
+	ItemDefName              types.String            `tfsdk:"item_def_name"`
+	SysDisk                  CtyunCcseNodePoolDisk   `tfsdk:"sys_disk"`
+	DataDisks                []CtyunCcseNodePoolDisk `tfsdk:"data_disks"`
+	MaxPodNum                types.Int32             `tfsdk:"max_pod_num"`
+}
+
+type CtyunCcseNodePoolDisk struct {
+	Type types.String `tfsdk:"type"`
+	Size types.Int32  `tfsdk:"size"`
+}
+
+func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+	response.Schema = schema.Schema{
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452**`,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID",
+			},
+			"region_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池ID",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"cluster_id": schema.StringAttribute{
+				Required:    true,
+				Description: "集群ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"node_pool_name": schema.StringAttribute{
+				Required:    true,
+				Description: "节点池名称",
+			},
+			"cycle_type": schema.StringAttribute{
+				Required:    true,
+				Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.OrderCycleTypes...),
+				},
+			},
+			"cycle_count": schema.Int64Attribute{
+				Optional:    true,
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+				Validators: []validator.Int64{
+					validator2.AlsoRequiresEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+						types.StringValue(business.OrderCycleTypeYear),
+					),
+					validator2.ConflictsWithEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+					validator2.CycleCount(1, 11, 1, 5),
+				},
+			},
+			"auto_renew": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "是否自动续订，默认非自动续订",
+			},
+			"visibility_post_host_script": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "部署后执行自定义脚本，base64编码",
+			},
+			"visibility_host_script": schema.StringAttribute{
+				Optional:    true,
+				Description: "部署前执行自定义脚本，base64编码",
+			},
+			"instance_type": schema.StringAttribute{
+				Required:    true,
+				Description: "实例类型， ecs 或 ebm",
+				Validators: []validator.String{
+					stringvalidator.OneOf("ecs", "ebm"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"mirror_id": schema.StringAttribute{
+				Required:    true,
+				Description: "镜像id, 可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"mirror_name": schema.StringAttribute{
+				Required:    true,
+				Description: "镜像名称, 可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"mirror_type": schema.Int32Attribute{
+				Required:    true,
+				Description: "镜像类型，0-私有，1-公有",
+				Validators: []validator.Int32{
+					int32validator.Between(0, 1),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"item_def_name": schema.StringAttribute{
+				Required:    true,
+				Description: "规格名称",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"key_pair_name": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "密钥对名称",
+				Default:     stringdefault.StaticString(""),
+			},
+			"key_pair_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "密钥对ID",
+				Default:     stringdefault.StaticString(""),
+			},
+			"password": schema.StringAttribute{
+				Optional:    true,
+				Description: "用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(8, 30),
+					validator2.EcsPassword(),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("key_pair_name"),
+					),
+				},
+				Sensitive: true,
+			},
+			"use_affinity_group": schema.BoolAttribute{
+				Optional:    true,
+				Description: "是否使用主机组",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+			"affinity_group_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "云主机组id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"max_pod_num": schema.Int32Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "最大pod数, 默认110",
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"sys_disk": schema.SingleNestedAttribute{
+				Required:    true,
+				Description: "系统盘",
+				Attributes: map[string]schema.Attribute{
+					"type": schema.StringAttribute{
+						Required:    true,
+						Description: "系统盘规格",
+						Validators: []validator.String{
+							stringvalidator.OneOf("SATA", "SAS", "SSD"),
+						},
+					},
+					"size": schema.Int32Attribute{
+						Required:    true,
+						Description: "系统盘大小，单位为G",
+					},
+				},
+			},
+			"data_disks": schema.ListNestedAttribute{
+				Optional:    true,
+				Description: "数据盘",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"type": schema.StringAttribute{
+							Required:    true,
+							Description: "系统盘规格",
+							Validators: []validator.String{
+								stringvalidator.OneOf("SATA", "SAS", "SSD"),
+							},
+						},
+						"size": schema.Int32Attribute{
+							Required:    true,
+							Description: "系统盘大小，单位为G",
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func (c *ctyunCcseNodePool) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunCcseNodePoolConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 创建
+	err = c.create(ctx, plan)
+	if err != nil {
+		return
+	}
+	// 创建后检查
+	id, err := c.checkAfterCreate(ctx, plan)
+	if err != nil {
+		return
+	}
+	plan.ID = types.StringValue(id)
+	// 反查信息
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+}
+
+func (c *ctyunCcseNodePool) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunCcseNodePoolConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 查询远端
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+}
+
+func (c *ctyunCcseNodePool) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	// tf文件中的
+	var plan CtyunCcseNodePoolConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// state中的
+	var state CtyunCcseNodePoolConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 更新
+	err = c.update(ctx, plan, state)
+	if err != nil {
+		return
+	}
+
+	// 查询远端信息
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+}
+
+func (c *ctyunCcseNodePool) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunCcseNodePoolConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 删除
+	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+	//response.State.RemoveResource(ctx)
+}
+
+func (c *ctyunCcseNodePool) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+
+// 导入命令：terraform import [配置标识].[导入配置名称] [id],[clusterID],[regionID]
+func (c *ctyunCcseNodePool) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunCcseNodePoolConfig
+	var id, clusterID, regionID string
+	err = terraform_extend.Split(request.ID, &id, &clusterID, &regionID)
+	if err != nil {
+		return
+	}
+	cfg.RegionID = types.StringValue(regionID)
+	cfg.ClusterID = types.StringValue(clusterID)
+	cfg.ID = types.StringValue(id)
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+// checkAfterCreate 创建后检查
+func (c *ctyunCcseNodePool) checkAfterCreate(ctx context.Context, plan CtyunCcseNodePoolConfig) (id string, err error) {
+	params := &ccse2.CcseListNodePoolsRequest{
+		ClusterId:    plan.ClusterID.ValueString(),
+		RegionId:     plan.RegionID.ValueString(),
+		NodePoolName: plan.NodePoolName.ValueString(),
+		PageSize:     1,
+		PageNow:      1,
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseListNodePoolsApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	} else if len(resp.ReturnObj.Records) == 0 {
+		err = common.InvalidReturnObjResultsError
+	}
+	id = resp.ReturnObj.Records[0].Id
+	return
+}
+
+// create 创建
+func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolConfig) (err error) {
+	params := &ccse2.CcseCreateNodePoolRequest{
+		ClusterId:                plan.ClusterID.ValueString(),
+		RegionId:                 plan.RegionID.ValueString(),
+		NodePoolName:             plan.NodePoolName.ValueString(),
+		AutoRenewStatus:          map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
+		VisibilityPostHostScript: plan.VisibilityPostHostScript.ValueString(),
+		VisibilityHostScript:     plan.VisibilityHostScript.ValueString(),
+		UseAffinityGroup:         plan.UseAffinityGroup.ValueBoolPointer(),
+		AffinityGroupUuid:        plan.AffinityGroupID.ValueString(),
+		MaxPodNum:                plan.MaxPodNum.ValueInt32(),
+		SysDiskType:              plan.SysDisk.Type.ValueString(),
+		SysDiskSize:              plan.SysDisk.Size.ValueInt32(),
+		ImageUuid:                plan.MirrorID.ValueString(),
+		ImageType:                plan.MirrorType.ValueInt32(),
+		ImageName:                plan.MirrorName.ValueString(),
+	}
+	if plan.Password.ValueString() != "" {
+		params.LoginType = "password"
+		params.EcsPasswd = plan.Password.ValueString()
+	} else {
+		params.LoginType = "secretPair"
+		params.KeyName = plan.KeyPairName.ValueString()
+		params.KeyPairId = plan.KeyPairID.ValueString()
+	}
+
+	// 处理订单
+	switch plan.CycleType.ValueString() {
+	case business.OnDemandCycleType:
+		params.BillMode = "2"
+	case business.MonthCycleType:
+		params.BillMode = "1"
+		params.CycleType = "MONTH"
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
+	case business.YearCycleType:
+		params.BillMode = "1"
+		params.CycleType = "YEAR"
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
+	}
+
+	// 处理规格
+	switch plan.InstanceType.ValueString() {
+	case "ecs":
+		flavorName := plan.ItemDefName.ValueString()
+		flavor, err := business.NewEcsService(c.meta).GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
+		if err != nil {
+			return err
+		}
+		params.Cpu = int32(flavor.FlavorCpu)
+		params.Memory = int32(flavor.FlavorRam)
+		params.VmSpecName = flavorName
+		params.VmType = flavor.FlavorType
+	case "ebm":
+		deviceType := plan.ItemDefName.ValueString()
+		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), "test")
+		if err != nil {
+			return err
+		}
+		params.Cpu = flavor.CpuAmount
+		params.Memory = flavor.MemAmount
+		params.VmSpecName = deviceType
+		params.VmType = deviceType
+	}
+
+	for _, disk := range plan.DataDisks {
+		params.DataDisks = append(params.DataDisks, &ccse2.CcseCreateNodePoolDataDisksRequest{
+			DiskSpecName: disk.Type.ValueString(),
+			Size:         disk.Size.ValueInt32(),
+		})
+	}
+
+	resp, err := c.meta.Apis.SdkCcseApis.CcseCreateNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+
+	return
+}
+
+// getAndMerge 从远端查询
+func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNodePoolConfig) (err error) {
+	params := &ccse2.CcseGetNodePoolRequest{
+		ClusterId:  plan.ClusterID.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+		NodePoolId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseGetNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	pool := resp.ReturnObj
+	plan.NodePoolName = types.StringValue(pool.NodePoolName)
+	plan.MirrorType = types.Int32Value(pool.ImageType)
+
+	listParams := &ccse2.CcseListNodePoolsRequest{
+		ClusterId:    plan.ClusterID.ValueString(),
+		RegionId:     plan.RegionID.ValueString(),
+		NodePoolName: plan.NodePoolName.ValueString(),
+		PageNow:      1,
+		PageSize:     10,
+	}
+
+	listResp, err := c.meta.Apis.SdkCcseApis.CcseListNodePoolsApi.Do(ctx, c.meta.SdkCredential, listParams)
+	if err != nil {
+		return
+	} else if resp.ReturnObj == nil {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	// 解析返回值
+	records := listResp.ReturnObj.Records
+	if len(records) == 0 {
+		return
+	}
+	p := records[0]
+	plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
+	plan.SysDisk.Type = types.StringValue(p.SysDiskType)
+	plan.VisibilityPostHostScript = types.StringValue(p.VisibilityPostHostScript)
+	plan.VisibilityHostScript = types.StringValue(p.VisibilityHostScript)
+	plan.SysDisk.Type = types.StringValue(p.SysDiskType)
+	plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
+	plan.MaxPodNum = types.Int32Value(p.MaxPodNum)
+	plan.AutoRenew = types.BoolValue(map[int32]bool{0: false, 1: true}[p.AutoRenewStatus])
+	plan.MirrorID = types.StringValue(p.ImageUuid)
+	plan.MirrorName = types.StringValue(p.ImageName)
+	plan.ItemDefName = types.StringValue(p.VmSpecName)
+	plan.KeyPairID = types.StringValue(p.KeyPairId)
+	plan.KeyPairName = types.StringValue(p.KeyName)
+
+	switch p.BillMode {
+	case "1":
+		plan.CycleType = types.StringValue(strings.ToLower(p.CycleType))
+		plan.CycleCount = types.Int64Value(int64(p.CycleCount))
+	case "2":
+		plan.CycleType = types.StringValue(business.OnDemandCycleType)
+	}
+	if strings.HasPrefix(p.VmSpecName, "physical") {
+		plan.InstanceType = types.StringValue("ebm")
+	} else {
+		plan.InstanceType = types.StringValue("ecs")
+	}
+	plan.DataDisks = nil
+	for _, disk := range p.DataDisks {
+		plan.DataDisks = append(plan.DataDisks, CtyunCcseNodePoolDisk{
+			Size: types.Int32Value(int32(disk.Size)),
+			Type: types.StringValue(disk.DiskSpecName),
+		})
+	}
+
+	return
+}
+
+// update 更新
+func (c *ctyunCcseNodePool) update(ctx context.Context, plan, state CtyunCcseNodePoolConfig) (err error) {
+	params := &ccse2.CcseUpdateNodePoolRequest{
+		ClusterId:                state.ClusterID.ValueString(),
+		NodePoolId:               state.ID.ValueString(),
+		RegionId:                 state.RegionID.ValueString(),
+		NodePoolName:             plan.NodePoolName.ValueString(),
+		AutoRenewStatus:          map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
+		VisibilityPostHostScript: plan.VisibilityPostHostScript.ValueString(),
+		VisibilityHostScript:     plan.VisibilityHostScript.ValueString(),
+		SysDiskType:              plan.SysDisk.Type.ValueString(),
+		SysDiskSize:              plan.SysDisk.Size.ValueInt32(),
+	}
+
+	for _, disk := range plan.DataDisks {
+		params.DataDisks = append(params.DataDisks, &ccse2.CcseUpdateNodePoolDataDisksRequest{
+			DiskSpecName: disk.Type.ValueString(),
+			Size:         disk.Size.ValueInt32(),
+		})
+	}
+	// 处理订单
+	switch plan.CycleType.ValueString() {
+	case business.OnDemandCycleType:
+		params.BillMode = "2"
+	case business.MonthCycleType:
+		params.BillMode = "1"
+		params.CycleType = "MONTH"
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
+	case business.YearCycleType:
+		params.BillMode = "1"
+		params.CycleType = "YEAR"
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
+	}
+
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+
+	return
+}
+
+// delete 删除
+func (c *ctyunCcseNodePool) delete(ctx context.Context, plan CtyunCcseNodePoolConfig) (err error) {
+	params := &ccse2.CcseDeleteNodePoolRequest{
+		ClusterId:  plan.ClusterID.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+		NodePoolId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseDeleteNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}

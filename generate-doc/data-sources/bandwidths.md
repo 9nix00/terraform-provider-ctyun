@@ -1,5 +1,5 @@
 # ctyun_bandwidths (Data Source)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10026761**
 
 
 
@@ -43,7 +43,7 @@ data "ctyun_bandwidths" "test" {
 
 ### Optional
 
-- `bandwidth_id` (String) 资源池ID
+- `bandwidth_id` (String) 带宽ID
 - `page_no` (Number) 列表的页码，默认值为1,推荐使用该字段
 - `page_size` (Number) 每页数据量大小，取值1-50
 - `project_id` (String) 企业项目ID，默认为`0`

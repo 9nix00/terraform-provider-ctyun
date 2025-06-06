@@ -19,7 +19,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 data "ctyun_images" "image_test" {
-  name       = "CtyunOS 23"
+  name       = "CentOS Linux 8.4"
   visibility = "public"
   page_no = 1
   page_size = 10
@@ -45,7 +45,6 @@ resource "ctyun_ecs" "ecs_test" {
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
-  monitor_service = false
 }
 
 resource "ctyun_ecs" "ecs_test2" {
@@ -60,7 +59,6 @@ resource "ctyun_ecs" "ecs_test2" {
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
-  monitor_service = false
 }
 
 

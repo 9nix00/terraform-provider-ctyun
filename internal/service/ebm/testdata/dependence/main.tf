@@ -43,3 +43,11 @@ data "ctyun_ebm_device_images" "test" {
   os_type = "linux"
   image_type = "standard"
 }
+
+resource "ctyun_ebs" "ebs_test" {
+  name       = "tf-ebs-for-ebm"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
+}

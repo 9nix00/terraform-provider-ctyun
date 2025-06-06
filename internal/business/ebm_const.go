@@ -7,11 +7,8 @@ const (
 	EbmExtIpAutoAssign = "auto_assign"
 	EbmExtIpUseExist   = "use_exist"
 
-	EbmOrderOnCycle  = "order_on_cycle"
-	EbmOrderOnDemand = "order_on_demand"
-
-	EbmCycleTypeMonth = "month"
-	EbmCycleTypeYear  = "year"
+	EbmOrderOnCycle  = "ORDER_ON_CYCLE"
+	EbmOrderOnDemand = "ORDER_ON_DEMAND"
 
 	EbmStatusCreating          = "creating"
 	EbmStatusStarting          = "starting"

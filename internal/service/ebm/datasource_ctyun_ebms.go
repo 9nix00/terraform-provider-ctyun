@@ -6,7 +6,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	"terraform-provider-ctyun/internal/utils"
@@ -49,7 +48,6 @@ type CtyunEbmsModel struct {
 	CreateTime           types.String               `tfsdk:"create_time"`
 	UpdatedTime          types.String               `tfsdk:"updated_time"`
 	ExpiredTime          types.String               `tfsdk:"expired_time"`
-	InstanceChargeType   types.String               `tfsdk:"instance_charge_type"`
 }
 type CtyunEbmsNetworkCardList struct {
 	InterfaceID types.String `tfsdk:"interface_id"`
@@ -201,10 +199,6 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Computed:    true,
 							Description: "到期时间",
 						},
-						"instance_charge_type": schema.StringAttribute{
-							Computed:    true,
-							Description: "付费方式",
-						},
 					},
 				},
 			},
@@ -291,13 +285,6 @@ func (c *ctyunEbms) Read(ctx context.Context, request datasource.ReadRequest, re
 			})
 		}
 		item.NetworkCardList = networkCards
-
-		// 处理付费类型
-		if utils.SecBoolValue(ebm.OnDemand).ValueBool() {
-			item.InstanceChargeType = types.StringValue(business.EbmOrderOnDemand)
-		} else {
-			item.InstanceChargeType = types.StringValue(business.EbmOrderOnCycle)
-		}
 		model = append(model, item)
 	}
 

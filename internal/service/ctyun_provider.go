@@ -26,7 +26,7 @@ import (
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
-	sdkCtvpc "terraform-provider-ctyun/internal/core/ctvpc"
+	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
@@ -35,6 +35,8 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/core/ctzos"
+	"terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/service/ccse"
@@ -45,8 +47,10 @@ import (
 	"terraform-provider-ctyun/internal/service/elb"
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
+	"terraform-provider-ctyun/internal/service/kafka"
 	mysql2 "terraform-provider-ctyun/internal/service/mysql"
 	"terraform-provider-ctyun/internal/service/nat"
+	"terraform-provider-ctyun/internal/service/redis"
 	"terraform-provider-ctyun/internal/service/vpc"
 	"terraform-provider-ctyun/internal/service/vpce"
 	"terraform-provider-ctyun/internal/service/zos"
@@ -291,14 +295,16 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtIamApis:      ctiam.NewApis(client),
 			CtImageApis:    ctimage.NewApis(client),
 			CtVpcApis:      ctvpc.NewApis(client),
-			CtEbmApis:      ctebm.NewApis(fmt.Sprintf(endpointUrl, "ebm"), coreClient),
-			SdkCtVpcApis:   sdkCtvpc.NewApis(fmt.Sprintf(endpointUrl, "ctvpc"), coreClient),
-			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, "ctelb"), coreClient),
+			CtEbmApis:      ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtEbsApis:   ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
+			SdkCtEcsApis:   ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
+			SdkCtVpcApis:   ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
+			SdkCtZosApis:   ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
+			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
+			SdkDcs2Apis:    dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
+			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis: mysql.NewApis(client),
-			SdkCtEbsApis:   ctebs2.NewApis(fmt.Sprintf(endpointUrl, "ebs"), coreClient),
-			SdkCtEcsApis:   ctecs2.NewApis(fmt.Sprintf(endpointUrl, "ctecs"), coreClient),
-			SdkCtZosApis:   ctzos.NewApis(fmt.Sprintf(endpointUrl, "zos"), coreClient),
-			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, "ccse"), coreClient),
+			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -341,6 +347,10 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpce.NewCtyunVpceServiceReverseRules(),
 		zos.NewCtyunZosBuckets(),
 		zos.NewCtyunZosBucketObjects(),
+		ccse.NewCtyunCcseClusters(),
+		ccse.NewCtyunCcseNodePools(),
+		redis.NewCtyunRedisSpecs(),
+		redis.NewCtyunRedisInstances(),
 		elb.NewCtyunElbHealthChecks(),
 		elb.NewCtyunElbTargetGroups(),
 		elb.NewCtyunElbAcls(),
@@ -351,6 +361,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlInstances(),
 		mysql2.NewCtyunMysqlAssociationEips(),
 		mysql2.NewCtyunMysqlSpecs(),
+		kafka.NewCtyunKafkaInstances(),
+		kafka.NewCtyunKafkaSpecs(),
 	)
 }
 
@@ -396,6 +408,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		zos.NewCtyunZosBucket(),
 		zos.NewCtyunZosBucketObject(),
 		ccse.NewCtyunCcseCluster(),
+		ccse.NewCtyunCcseNodePool(),
+		redis.NewCtyunRedisInstance(),
+		redis.NewCtyunRedisAssociationEip(),
 		elb.NewCtyunElbLoadBalancer(),
 		elb.NewCtyunElbHealthCheck(),
 		elb.NewCtyunElbTargetGroup(),
@@ -406,6 +421,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		elb.NewCtyunElbRule(),
 		mysql2.NewCtyunMysqlInstance(),
 		mysql2.NewCtyunMysqlAssociationEip(),
+		kafka.NewCtyunKafkaInstance(),
 	)
 }
 

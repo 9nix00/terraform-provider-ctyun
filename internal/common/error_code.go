@@ -24,7 +24,9 @@ const (
 	CtiamNoPermission                = "CTIAM_0005"
 	CtiamNoPrivilege                 = "CTIAM_1044"
 
-	ErrorStatusCode = 900
+	ErrorStatusCode        = 900
+	NormalStatusCode       = 800
+	NormalStatusCodeString = "800"
 )
 
 var InvalidReturnObjError = errors.New("invalid return object")

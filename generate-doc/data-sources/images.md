@@ -50,6 +50,7 @@ output "ctyun_image" {
 
 Read-Only:
 
+- `architecture` (String) 架构
 - `description` (String) 描述
 - `id` (String) 镜像id
 - `name` (String) 镜像名称

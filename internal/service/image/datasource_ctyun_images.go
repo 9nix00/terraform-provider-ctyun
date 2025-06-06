@@ -84,6 +84,10 @@ func (c *ctyunImages) Schema(_ context.Context, _ datasource.SchemaRequest, resp
 							Computed:    true,
 							Description: "描述",
 						},
+						"architecture": schema.StringAttribute{
+							Computed:    true,
+							Description: "架构",
+						},
 					},
 				},
 			},
@@ -128,10 +132,11 @@ func (c *ctyunImages) Read(ctx context.Context, req datasource.ReadRequest, resp
 	var images []CtyunImageImagesConfig
 	for _, ig := range imageListResponse.Images {
 		images = append(images, CtyunImageImagesConfig{
-			Name:        types.StringValue(ig.ImageName),
-			Id:          types.StringValue(ig.ImageId),
-			OsType:      types.StringValue(ig.OsType),
-			Description: types.StringValue(ig.Description),
+			Name:         types.StringValue(ig.ImageName),
+			Id:           types.StringValue(ig.ImageId),
+			OsType:       types.StringValue(ig.OsType),
+			Description:  types.StringValue(ig.Description),
+			Architecture: types.StringValue(ig.Architecture),
 		})
 	}
 	config.Images = images
@@ -147,10 +152,11 @@ func (c *ctyunImages) Configure(_ context.Context, req datasource.ConfigureReque
 }
 
 type CtyunImageImagesConfig struct {
-	Id          types.String `tfsdk:"id"`          // 镜像id
-	Name        types.String `tfsdk:"name"`        // 镜像名称
-	OsType      types.String `tfsdk:"os_type"`     // 系统类型
-	Description types.String `tfsdk:"description"` // 描述
+	Id           types.String `tfsdk:"id"`          // 镜像id
+	Name         types.String `tfsdk:"name"`        // 镜像名称
+	OsType       types.String `tfsdk:"os_type"`     // 系统类型
+	Description  types.String `tfsdk:"description"` // 描述
+	Architecture types.String `tfsdk:"architecture"`
 }
 
 type CtyunImagesConfig struct {

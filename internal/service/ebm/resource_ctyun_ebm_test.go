@@ -111,14 +111,15 @@ func TestAccCtyunEbm(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"auto_renew_status", // 查询接口没返回
-					"band_width",        // 查询接口没返回
-					"ext_ip",            // 查询接口没返回
-					"ip_type",           // 查询接口没返回
-					"master_order_id",   // 查询接口没返回
-					"password",          // 查询接口没返回
-					"project_id",        // 查询接口没返回
+					"auto_renew",      // 查询接口没返回
+					"band_width",      // 查询接口没返回
+					"ext_ip",          // 查询接口没返回
+					"ip_type",         // 查询接口没返回
+					"master_order_id", // 查询接口没返回
+					"password",        // 查询接口没返回
+					"project_id",      // 查询接口没返回
 					"user_data",
+					"cycle_type",
 				},
 			},
 			{

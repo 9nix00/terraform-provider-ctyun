@@ -48,6 +48,13 @@ func AlsoRequiresEqualInt32(expression path.Expression, objs ...attr.Value) vali
 	}
 }
 
+func AlsoRequiresEqualBool(expression path.Expression, objs ...attr.Value) validator.Bool {
+	return &validatorAlsoRequiresEqual{
+		expression: expression,
+		objs:       objs,
+	}
+}
+
 func AlsoRequiresEqualSet(expression path.Expression, objs ...attr.Value) validator.Set {
 	return &validatorAlsoRequiresEqual{
 		expression: expression,
@@ -140,6 +147,18 @@ func (v validatorAlsoRequiresEqual) ValidateInt64(ctx context.Context, req valid
 }
 
 func (v validatorAlsoRequiresEqual) ValidateInt32(ctx context.Context, req validator.Int32Request, resp *validator.Int32Response) {
+	validateReq := alsoRequiresEqualValidatorRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &alsoRequiresEqualValidatorResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorAlsoRequiresEqual) ValidateBool(ctx context.Context, req validator.BoolRequest, resp *validator.BoolResponse) {
 	validateReq := alsoRequiresEqualValidatorRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,

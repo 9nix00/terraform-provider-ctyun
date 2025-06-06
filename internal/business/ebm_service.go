@@ -43,3 +43,22 @@ func (c EbmService) GetEbmStatus(ctx context.Context, id, regionID, azName strin
 	}
 	return strings.ToLower(*instance.EbmState), err
 }
+
+func (c EbmService) GetDeviceType(ctx context.Context, deviceType, regionID, azName string) (spec ctebm.EbmDeviceTypeListReturnObjResultsResponse, err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmDeviceTypeListApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeviceTypeListRequest{
+		RegionID:   regionID,
+		DeviceType: &deviceType,
+		AzName:     azName,
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil || len(resp.ReturnObj.Results) == 0 {
+		err = common.InvalidReturnObjError
+		return
+	}
+	spec = *resp.ReturnObj.Results[0]
+	return
+}
