@@ -1,5 +1,12 @@
 // main.tf负责创建或查询单测依赖的前置资源
 
+
+
+
+
+
+
+
 locals {
   vpc_name             = "tf-vpc-for-mysql-${local.random_string}"
   subnet_name1         = "tf-subnet-for-mysql-${local.random_string}1"
