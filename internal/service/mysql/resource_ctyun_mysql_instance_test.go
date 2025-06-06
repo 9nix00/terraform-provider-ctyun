@@ -44,8 +44,8 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	storageSpace := 100
 	prodPerformanceSpec := "2C4G"
 	disks := 1
-	availabilityZoneInfo := `availability_zone_info = [{"availability_zone_name":"cn-nm-het3-1a-public-ctcloud","availability_zone_count":1,"node_type":"master"}]`
-	updatedDiskAvailabilityZoneInfo := `availability_zone_info = [{"availability_zone_name":"cn-nm-het3-1a-public-ctcloud","availability_zone_count":1,"node_type":"slave"}]`
+	availabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"}]`, dependence.azName)
+	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName)
 
 	cpuType := "30"
 	osType := "11"
@@ -61,8 +61,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	// 一主两备
 	updatedDoubleProId := 10001002
 	cycleBillMode := "1"
-	backupOneAvailabilityZoneInfo := `availability_zone_info=[{"availability_zone_name":"cn-nm-het3-1a-public-ctcloud","availability_zone_count":1,"node_type":"master"},{"availability_zone_name":"cn-nm-het3-1a-public-ctcloud","availability_zone_count":1,"node_type":"slave"}]`
-	//ProdUpdatedMsyqlNodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":120,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-nm-het3-1a-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
+	backupOneAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"},{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName, dependence.azName)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

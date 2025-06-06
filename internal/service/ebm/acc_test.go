@@ -25,6 +25,9 @@ type Dependence struct {
 var dependence Dependence
 
 func TestMain(m *testing.M) {
+	if skip := os.Getenv("SKIP_EBM_TEST"); skip != "" {
+		return
+	}
 	// 初始化依赖资源
 	fmt.Println("开始初始化依赖资源")
 	outputs, err := terraform.ApplyResource(dependenceDir)

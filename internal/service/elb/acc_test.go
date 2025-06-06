@@ -33,9 +33,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dependence = Dependence{
-		//vpcID:    outputs["vpc_id"].Value,
-		//subnetID: outputs["subnet_id"].Value,
-		//eipID:    outputs["eip_id"].Value,
 		vpcID:          outputs["vpc_id"].Value,
 		subnetID:       outputs["subnet_id"].Value,
 		loadBalanceID:  outputs["loadbalancer_id"].Value,

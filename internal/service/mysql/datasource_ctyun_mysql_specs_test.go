@@ -17,8 +17,8 @@ func TestAccCtyunMysqlSpecs(t *testing.T) {
 
 	dnd := utils.GenerateRandomString()
 
-	datasourceName := "data.ctyun_elb_target_groups." + dnd
-	datasourceFile := "datasource_ctyun_elb_target_groups.tf"
+	datasourceName := "data.ctyun_mysql_specs." + dnd
+	datasourceFile := "datasource_ctyun_mysql_specs.tf"
 
 	prodType := "RDS"
 	prodCode := "MYSQL"
