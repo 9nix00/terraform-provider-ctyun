@@ -307,9 +307,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"cluster_series": schema.StringAttribute{
 						Required:    true,
-						Description: "集群系列，cce.standard-专有版，cce.managed-托管版，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10892150\">产品定义</a>选择",
+						Description: "集群系列，cce.standard-专有版，cce.managed-托管版，cce.icce-智算版，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10892150\">产品定义</a>选择",
 						Validators: []validator.String{
-							stringvalidator.OneOf("cce.standard", "cce.managed"),
+							stringvalidator.OneOf(business.CcseClusterSeriesStandard, business.CcseClusterSeriesManaged, business.CcseClusterSeriesIcce),
 						},
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
@@ -322,7 +322,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							stringvalidator.OneOf("managedbase", "managedpro"),
 							validator2.AlsoRequiresEqualString(
 								path.MatchRoot("base_info").AtName("cluster_series"),
-								types.StringValue("cce.managed"),
+								types.StringValue(business.CcseClusterSeriesManaged),
 							),
 						},
 						PlanModifiers: []planmodifier.String{
@@ -416,11 +416,12 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.Object{
 					validator2.AlsoRequiresEqualObject(
 						path.MatchRoot("base_info").AtName("cluster_series"),
-						types.StringValue("cce.standard"),
+						types.StringValue(business.CcseClusterSeriesStandard),
 					),
 					validator2.ConflictsWithEqualObject(
 						path.MatchRoot("base_info").AtName("cluster_series"),
-						types.StringValue("cce.managed"),
+						types.StringValue(business.CcseClusterSeriesManaged),
+						types.StringValue(business.CcseClusterSeriesIcce),
 					),
 				},
 			},
@@ -885,9 +886,11 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	plan.BaseInfo.KubeProxy = types.StringValue(instance.KubeProxyPattern)
 	switch instance.ClusterType {
 	case 0:
-		plan.BaseInfo.ClusterSeries = types.StringValue("cce.standard")
+		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesStandard)
 	case 2:
-		plan.BaseInfo.ClusterSeries = types.StringValue("cce.managed")
+		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesManaged)
+	case 4:
+		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesIcce)
 	}
 	plan.BaseInfo.StartPort = types.Int32Value(instance.StartPort)
 	plan.BaseInfo.EndPort = types.Int32Value(instance.EndPort)
