@@ -6,6 +6,7 @@ import (
 
 type Apis struct {
 	AmqpInstanceQueryProdApi *AmqpInstanceQueryProdApi
+	AmqpInstanceQueryApi     *AmqpInstanceQueryApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -19,5 +20,6 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 	client.RegisterEndpoint(ctyunsdk.EnvironmentProd, EndPointProd)
 	return &Apis{
 		AmqpInstanceQueryProdApi: NewAmqpInstanceQueryProdApi(client),
+		AmqpInstanceQueryApi:     NewAmqpInstanceQueryApi(client),
 	}
 }

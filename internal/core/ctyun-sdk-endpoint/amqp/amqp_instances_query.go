@@ -22,7 +22,7 @@ func NewAmqpInstanceQueryApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQueryApi
 	}
 }
 
-func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceQueryRequest) (res *AmqpInstanceQueryRequest, err error) {
+func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceQueryRequest) (res *AmqpInstanceQueryResponse, err error) {
 	builder := this.WithCredential(&credential)
 	_, err = builder.WriteJson(req)
 	if err != nil {
@@ -35,7 +35,7 @@ func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Cr
 	if err != nil {
 		return
 	}
-	res = &AmqpInstanceQueryRequest{}
+	res = &AmqpInstanceQueryResponse{}
 	err = resp.Parse(res)
 	if err != nil {
 		return
