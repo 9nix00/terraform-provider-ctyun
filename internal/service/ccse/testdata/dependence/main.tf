@@ -76,12 +76,6 @@ resource "ctyun_ccse_cluster" "test" {
     kube_proxy    = "ipvs"
     cluster_series = "cce.managed"
     series_type = "managedbase"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
 

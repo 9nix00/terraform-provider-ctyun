@@ -6,22 +6,22 @@ import (
 	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
-type AmqpInstanceCreatePostPayOrderApi struct {
+type AmqpInstanceCreatePrePayOrderApi struct {
 	ctyunsdk.CtyunRequestBuilder
 	client *ctyunsdk.CtyunClient
 }
 
-func NewAmqpInstanceCreatePostPayOrderApi(client *ctyunsdk.CtyunClient) *AmqpInstanceCreatePostPayOrderApi {
-	return &AmqpInstanceCreatePostPayOrderApi{
+func NewAmqpInstanceCreatePrePayOrderApi(client *ctyunsdk.CtyunClient) *AmqpInstanceCreatePrePayOrderApi {
+	return &AmqpInstanceCreatePrePayOrderApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodGet,
-			UrlPath: "/v3/instances/createPostPayOrder",
+			UrlPath: "/v3/instances/createPrePayOrder",
 		},
 	}
 }
 
-func (this *AmqpInstanceCreatePostPayOrderApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceCreatePostPayOrderRequest) (res *AmqpInstanceCreatePostPayOrderRequest, err error) {
+func (this *AmqpInstanceCreatePrePayOrderApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceCreatePrePayOrderRequest) (res *AmqpInstanceCreatePrePayOrderRequest, err error) {
 	builder := this.WithCredential(&credential)
 	_, err = builder.WriteJson(req)
 	if err != nil {
@@ -32,7 +32,7 @@ func (this *AmqpInstanceCreatePostPayOrderApi) Do(ctx context.Context, credentia
 	if err != nil {
 		return
 	}
-	res = &AmqpInstanceCreatePostPayOrderRequest{}
+	res = &AmqpInstanceCreatePrePayOrderRequest{}
 	err = resp.Parse(res)
 	if err != nil {
 		return
@@ -40,7 +40,7 @@ func (this *AmqpInstanceCreatePostPayOrderApi) Do(ctx context.Context, credentia
 	return res, nil
 }
 
-type AmqpInstanceCreatePostPayOrderRequest struct {
+type AmqpInstanceCreatePrePayOrderRequest struct {
 	RegionID        string `json:"regionId"`
 	HostType        string `json:"hostType"`
 	DiskType        string `json:"diskType"`
@@ -54,20 +54,20 @@ type AmqpInstanceCreatePostPayOrderRequest struct {
 	AzInfo          string `json:"azInfo"`
 	SubnetId        string `json:"subnetId"`
 	SecurityGroupId string `json:"securityGroupId"`
-	AutoPay         bool   `json:"autoPay"`
+	CycleCnt        int32  `json:"cycleCnt"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponse struct {
-	ReturnObj  *AmqpInstanceCreatePostPayOrderResponseReturnObj `json:"returnObj"`
-	Message    string                                           `json:"message"`
-	StatusCode string                                           `json:"statusCode"`
+type AmqpInstanceCreatePrePayOrderResponse struct {
+	ReturnObj  *AmqpInstanceCreatePrePayOrderResponseReturnObj `json:"returnObj"`
+	Message    string                                          `json:"message"`
+	StatusCode string                                          `json:"statusCode"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponseReturnObj struct {
-	Data AmqpInstanceCreatePostPayOrderResponseReturnObjData `json:"data"`
+type AmqpInstanceCreatePrePayOrderResponseReturnObj struct {
+	Data AmqpInstanceCreatePrePayOrderResponseReturnObjData `json:"data"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponseReturnObjData struct {
+type AmqpInstanceCreatePrePayOrderResponseReturnObjData struct {
 	Submitted  bool   `json:"submitted"`
 	NewOrderId string `json:"newOrderId"`
 	NewOrderNo string `json:"newOrderNo"`

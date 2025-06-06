@@ -57,12 +57,6 @@ resource "ctyun_ccse_cluster" "example" {
     deploy_type   = "single"
     kube_proxy    = "iptables"
     cluster_series = "cce.standard"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
   master_host = {
@@ -77,6 +71,13 @@ resource "ctyun_ccse_cluster" "example" {
       {
         type = "SSD"
         size = 200
+      }
+    ]
+
+    az_infos = [
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+        size    = 1
       }
     ]
   }
@@ -128,12 +129,6 @@ resource "ctyun_ccse_cluster" "example" {
 #     kube_proxy    = "ipvs"
 #     cluster_series = "cce.managed"
 #     series_type = "managedbase"
-#     az_infos = [
-#       {
-#         az_name = "cn-huadong1-jsnj2A-public-ctcloud"
-#         size    = 1
-#       }
-#     ]
 #   }
 #
 #

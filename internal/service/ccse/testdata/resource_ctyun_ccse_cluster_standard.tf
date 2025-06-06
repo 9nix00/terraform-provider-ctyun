@@ -17,12 +17,6 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cluster_version = "1.23.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
   master_host = {
@@ -37,6 +31,13 @@ resource "ctyun_ccse_cluster" "%[1]s" {
       {
         type = "SSD"
         size = 200
+      }
+    ]
+
+    az_infos = [
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+        size    = 1
       }
     ]
   }

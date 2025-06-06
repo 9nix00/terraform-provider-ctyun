@@ -18,19 +18,6 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     deploy_type   = "single"
     kube_proxy    = "iptables"
     series_type = "managedbase"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-      },
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-      }
-      {
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-      }
-      }
-    ]
   }
 
   slave_host = {

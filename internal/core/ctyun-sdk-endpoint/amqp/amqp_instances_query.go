@@ -61,17 +61,17 @@ type AmqpInstanceQueryResponseReturnObj struct {
 }
 
 type AmqpInstanceQueryResponseReturnObjData struct {
-	Cluster       string `json:"cluster"`
-	Subnet        string `json:"subnet"`
-	Prod          string `json:"prod"`
-	EngineType    string `json:"engineType"`
-	BillMode      string `json:"billMode"`
-	SecurityGroup string `json:"securityGroup"`
-	//ProdType      interface{} `json:"prodType"`
-	Network     string `json:"network"`
-	ExpireTime  string `json:"expireTime"`
-	CreateTime  string `json:"createTime"`
-	ClusterName string `json:"clusterName"`
-	ProdInstId  string `json:"prodInstId"`
-	Status      int32  `json:"status"`
+	Cluster       string      `json:"cluster"`       // 实例id
+	Subnet        string      `json:"subnet"`        // 子网名称？
+	Prod          string      `json:"prod"`          // 规格
+	EngineType    string      `json:"engineType"`    // 引擎类型
+	BillMode      string      `json:"billMode"`      // 账单
+	SecurityGroup string      `json:"securityGroup"` // 安全组名称
+	ProdType      interface{} `json:"prodType"`
+	Network       string      `json:"network"`     // vpc名称?
+	ExpireTime    string      `json:"expireTime"`  // 过期时间
+	CreateTime    string      `json:"createTime"`  // 创建时间
+	ClusterName   string      `json:"clusterName"` // 实例名称
+	ProdInstId    string      `json:"prodInstId"`  // 实例id
+	Status        int32       `json:"status"`      // 状态
 }
