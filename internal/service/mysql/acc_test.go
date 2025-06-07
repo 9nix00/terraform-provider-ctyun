@@ -16,6 +16,7 @@ type Dependence struct {
 	eipID           string
 	eipAddress      string
 	mysqlID         string
+	azName          string
 }
 
 var dependence Dependence
@@ -35,6 +36,7 @@ func TestMain(m *testing.M) {
 		eipID:           outputs["eip_id"].Value,
 		eipAddress:      outputs["eip_address"].Value,
 		mysqlID:         outputs["mysql_id"].Value,
+		azName:          outputs["az_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

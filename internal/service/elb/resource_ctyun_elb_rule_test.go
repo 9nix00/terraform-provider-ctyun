@@ -30,7 +30,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 	pathConditions := fmt.Sprintf(`{"type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test", "PREFIX")
 	//updatedPathConditions := fmt.Sprintf(`{"type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test-new", "PREFIX")
 	actionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID2)
-	updatedActionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID)
+	//updatedActionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -72,7 +72,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 			},
 			// 1.3 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, listenerId, updatedConditions, actionType, actionTargetGroups) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.listener_id", listenerId),
@@ -82,9 +82,9 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID2),
 				),
 			},
-			// 1.4 destroy
+			//1.4 destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, listenerId, conditions, actionType, updatedActionTargetGroups),
+				Config:  utils.LoadTestCase(resourceFile, rnd, listenerId, updatedConditions, actionType, actionTargetGroups) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},
 

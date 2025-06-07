@@ -1,6 +1,6 @@
 // main.tf负责创建或查询单测依赖的前置资源
-
 data "ctyun_vpcs" "vpc_test" {
+
 }
 
 locals {
@@ -78,6 +78,7 @@ resource "ctyun_eip" "eip_test" {
 
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
+  az_name = "cn-huadong1-jsnj1A-public-ctcloud"
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
@@ -100,7 +101,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   prod_performance_spec = "2C4G"
   disks                 = 1
   availability_zone_info = [
-    { "availability_zone_name" : "cn-nm-het3-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
+    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
   cpu_type = "30"
   os_type  = "11"

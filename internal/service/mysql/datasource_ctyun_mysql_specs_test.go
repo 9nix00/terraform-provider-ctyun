@@ -1,8 +1,11 @@
 package mysql_test
 
 import (
+	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"os"
+	"strconv"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
@@ -17,19 +20,26 @@ func TestAccCtyunMysqlSpecs(t *testing.T) {
 
 	dnd := utils.GenerateRandomString()
 
-	datasourceName := "data.ctyun_elb_target_groups." + dnd
-	datasourceFile := "datasource_ctyun_elb_target_groups.tf"
+	datasourceName := "data.ctyun_mysql_specs." + dnd
+	datasourceFile := "datasource_ctyun_mysql_specs.tf"
 
-	prodType := "RDS"
+	prodType := "1"
 	prodCode := "MYSQL"
-	instanceType := "通用型"
+	instanceType := "1"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
 				Config: utils.LoadTestCase(datasourceFile, dnd, prodType, prodCode, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(datasourceName, "specs"),
+					func(s *terraform.State) error {
+						ds := s.RootModule().Resources[datasourceName].Primary
+						count, err := strconv.Atoi(ds.Attributes["specs.#"])
+						if err != nil || count == 0 {
+							return fmt.Errorf("specs 无效: %v", ds.Attributes)
+						}
+						return nil
+					},
 				),
 			},
 		},
