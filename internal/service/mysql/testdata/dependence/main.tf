@@ -1,48 +1,73 @@
 // main.tf负责创建或查询单测依赖的前置资源
+data "ctyun_vpcs" "vpc_test" {
+
+}
+
+locals {
+  vpcs        = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-paas"]
+  data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
+}
+
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-mysql2"
-  cidr        = "192.168.128.0/17"
-  description = "terraform测试使用2"
+  count    = local.data_vpc_id == "" ? 1 : 0
+  name        = "tf-vpc-for-paas"
+  cidr        = "192.168.0.0/16"
+  description = "terraform测试使用"
   enable_ipv6 = true
 }
 
+locals {
+  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test["create"].id, "") : local.data_vpc_id
+}
+
+data "ctyun_subnets" "subnet_test" {
+  vpc_id = local.real_vpc_id
+}
+
+locals {
+  subnets = [for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"]
+  data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
+}
 
 resource "ctyun_subnet" "subnet_test" {
-  vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-mysql3"
-  cidr        = "192.168.192.0/24"
-  description = "terraform测试使用3"
+  count =  local.data_subnet_id == "" ? 1:0
+  vpc_id      = local.real_vpc_id
+  name        = "tf-subnet-for-paas"
+  cidr        = "192.168.0.0/16"
+  description = "terraform测试使用"
   dns = [
-    "114.114.114.114",
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
-}
-resource "ctyun_subnet" "subnet_test2" {
-  vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-mysql4"
-  cidr        = "192.168.193.0/24"
-  description = "terraform测试使用4"
-  dns = [
-    "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
-  ]
-  enable_ipv6 = true
 }
 
-resource "ctyun_security_group" "test" {
-  vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-secureity-group-for-mysql3"
-  description = "terraform测试"
+locals {
+  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test["create"].id, "") : local.data_subnet_id
 }
 
-resource "ctyun_security_group" "test2" {
-  vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-secureity-group-for-mysql4"
-  description = "terraform测试"
+data "ctyun_security_groups" "security_group_test" {
+  vpc_id = local.real_vpc_id
 }
+
+locals {
+  security_groups = [for security_group in data.ctyun_security_groups.security_group_test.security_groups : security_group if security_group.name == "tf-sg-for-paas"]
+  data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
+}
+
+resource "ctyun_security_group" "security_group_test" {
+  count = local.data_security_group_id == "" ? 1:0
+  vpc_id      = local.real_vpc_id
+  name        = "tf-sg-for-paas"
+  description = "terraform测试使用"
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+locals {
+  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test["create"].id, "") : local.data_security_group_id
+}
+
 
 resource "ctyun_eip" "eip_test" {
   name                = "tf-eip-for-mysql"
@@ -51,29 +76,48 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
+locals {
+  mysql_name = "tf-mysql-for-ip-${local.random_string}"
+  az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+}
+
 resource "ctyun_mysql_instance" "mysql_test" {
-  bill_mode         = "2"
-  prod_version      = "5.7"
-  vpc_id            = ctyun_vpc.vpc_test.id
-  host_type         = "C7"
-  subnet_id         = ctyun_subnet.subnet_test2.id
-  security_group_id = ctyun_security_group.test2.id
-  name              = "tf-mysql-for-ip3"
-  password          = "kqjwyk111"
-  period            = 1
-  purchase_count    = 1
-  auto_renew_status = 0
-  prod_id           = 10001003
-  mysql_node_info_list = [
-    {
-      "node_type" : "master", "inst_spec" : "1", "storage_type" : "SATA", "storage_space" : 100,
-      "prod_performance_spec" : "2C4G", "disks" : 1, "availability_zone_info" : [
-      {
-        "availability_zone_name" : "cn-nm-het3-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master"
-      }
-    ]
-    }
+  bill_mode             = "2"
+  prod_version          = "5.7"
+  vpc_id                = local.real_vpc_id
+  host_type             = "C7"
+  subnet_id             = local.real_subnet_id
+  security_group_id     = local.real_security_group_id
+  name                  = local.mysql_name
+  password              = "kqjwyk111"
+  period                = 1
+  purchase_count        = 1
+  auto_renew_status     = 0
+  prod_id               = 10001003
+  node_type             = "master"
+  inst_spec             = "1"
+  storage_type          = "SATA"
+  storage_space         = 100
+  prod_performance_spec = "2C4G"
+  disks                 = 1
+  availability_zone_info = [
+    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
   cpu_type = "30"
   os_type  = "11"
+}
+
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 5  # 截取前10个字符
+  )
 }
