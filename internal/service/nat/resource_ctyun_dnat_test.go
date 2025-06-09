@@ -11,7 +11,6 @@ import (
 )
 
 func TestAccCtyunDNat(t *testing.T) {
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -72,7 +71,8 @@ func TestAccCtyunDNat(t *testing.T) {
 			{
 				// 3 datasource 验证
 				//Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
-				Config: utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
+					utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "dnats.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "dnats.0.internal_port", strconv.Itoa(updatedInternalPort)),

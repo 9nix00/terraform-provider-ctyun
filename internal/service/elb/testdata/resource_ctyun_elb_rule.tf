@@ -4,3 +4,4 @@ resource "ctyun_elb_rule" "%[1]s" {
   action_type = "%[4]s"
   action_target_groups = [%[5]s]
 }
+

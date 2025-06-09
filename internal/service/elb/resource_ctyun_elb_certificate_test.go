@@ -67,13 +67,12 @@ func TestAccCtyunElbCertificate(t *testing.T) {
 			},
 			// datasource 验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, serverCertificateType, certificate, tfPrivateKey) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("ids=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "certificates.#", "1"),
-					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.name", updatedName),
-					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.type", certificateType),
-					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.private_key", privateKey),
-					//resource.TestCheckResourceAttr(datasourceName, "certificates.2.certificate", certificate),
+					resource.TestCheckResourceAttr(datasourceName, "certificates.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "certificates.0.type", serverCertificateType),
 				),
 			},
 			// destroy

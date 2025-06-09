@@ -85,7 +85,8 @@ func TestAccCtyunElbHealthCheck(t *testing.T) {
 			},
 			// 1.3 验证datasource
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, protocol, "", "", "", "", "", "", "") +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("ids=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					//resource.TestCheckResourceAttr(datasourceName, "health_checks.#", "1"),
 					//resource.TestCheckResourceAttr(datasourceName, "health_checks.0.name", updatedName),

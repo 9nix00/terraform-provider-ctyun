@@ -72,7 +72,8 @@ func TestAccCtyunElbRule(t *testing.T) {
 			},
 			// 1.3 datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, listenerId, updatedConditions, actionType, actionTargetGroups) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Config: utils.LoadTestCase(resourceFile, rnd, listenerId, updatedConditions, actionType, actionTargetGroups) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.listener_id", listenerId),

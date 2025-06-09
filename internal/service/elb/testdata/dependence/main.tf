@@ -16,7 +16,6 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
 }
 
 
