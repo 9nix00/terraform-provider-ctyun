@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
@@ -12,10 +11,6 @@ import (
 )
 
 func TestAccCtyunMysqlInstance(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()

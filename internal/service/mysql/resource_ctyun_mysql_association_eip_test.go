@@ -35,7 +35,7 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 	prodCode := "MYSQL"
 	instanceType := "1"
 
-	specDatasourceName := "data.ctyun_mysql_specss." + dnd
+	specDatasourceName := "data.ctyun_mysql_specs." + dnd
 	specDatasourceFile := "datasource_ctyun_mysql_specs.tf"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
