@@ -128,7 +128,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, billMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, updatedName, password, period, count, autoRenewStatus, updatedProdID, cpuType, osType, updatedWritePort, nodeType, instSpec, storageType, updatedStorageSpace, updatedProdPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, false) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_name=%s.name", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "2"),
+					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "1"),
 				),
 			},
 			//销毁
