@@ -153,7 +153,6 @@ func (c *CtyunElbTargetGroups) Read(ctx context.Context, request datasource.Read
 		ClientToken: uuid.NewString(),
 		RegionID:    regionId,
 	}
-
 	if !config.IDs.IsNull() {
 		params.IDs = config.IDs.ValueString()
 	}

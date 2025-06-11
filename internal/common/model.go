@@ -4,18 +4,21 @@ import (
 	"sync"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
+	"terraform-provider-ctyun/internal/core/crs"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"terraform-provider-ctyun/internal/core/ctzos"
 	"terraform-provider-ctyun/internal/core/dcs2"
 	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
@@ -72,5 +75,8 @@ type Apis struct {
 	SdkDcs2Apis    *dcs2.Apis
 	SdkCtElbApis   *sdkCtelb.Apis
 	SdkCtMysqlApis *mysql.Apis
+	SdkCtPgsqlApis *pgsql.Apis
 	SdkKafkaApis   *ctgkafka.Apis
+	SdkAmqpApis    *amqp.Apis
+	SdkCrsApis     *crs.Apis
 }

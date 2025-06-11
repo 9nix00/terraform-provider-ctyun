@@ -48,7 +48,7 @@ func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 				Description: "资源池id，如果不填这默认使用provider ctyun总region_id 或者环境变量",
 			},
 			"nat_gateway_id": schema.StringAttribute{
-				Optional:    true,
+				Required:    true,
 				Description: "AT网关ID，选填",
 			},
 			"snat_id": schema.StringAttribute{
@@ -149,7 +149,7 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 		return
 	}
 	natGatewayId := config.NatGateWayID.ValueString()
-	snatId := config.SubNetID.ValueString()
+	snatId := config.SNatID.ValueString()
 	subnetId := config.SubNetID.ValueString()
 	// 分页信息先预留
 	pageNumber := c.ParseIntIfEmpty(config.PageNumber, types.Int64Value(1))
@@ -188,7 +188,7 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 		snatItem := CtyunSNatsModel{
 			SNatID:       utils.SecStringValue(snat.SNatID),
 			Description:  types.StringValue("test"),
-			SubNetCidr:   utils.SecStringValue(snat.SubnetID),
+			SubNetCidr:   utils.SecStringValue(snat.SubnetCidr),
 			SubNetType:   types.Int32Value(snat.SubnetType),
 			CreationTime: utils.SecStringValue(snat.CreationTime),
 			SubnetID:     utils.SecStringValue(snat.SubnetID),

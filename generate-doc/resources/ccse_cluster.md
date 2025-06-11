@@ -19,7 +19,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "vpc-test-ccse"
+  name        = "vpc-test-ccse1"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
@@ -27,7 +27,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "subnet-test-ccse"
+  name        = "subnet-test-ccse1"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [
@@ -50,13 +50,12 @@ resource "ctyun_ccse_cluster" "example" {
   base_info = {
     vpc_id     = ctyun_vpc.vpc_test.id
     subnet_id  = ctyun_subnet.subnet_test.id
-    cluster_name = "auto-sec-kkkccc1"
+    cluster_name = "auto-sec-kkkccc21"
     cluster_domain = "www.ccc.s"
     network_plugin = "cubecni"
     start_port = 30000
     end_port   = 65535
     elb_prod_code = "standardI"
-    pod_cidr    = "192.168.0.0/16"
     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
     cycle_type  = "on_demand"
     container_runtime = "containerd"
@@ -65,12 +64,6 @@ resource "ctyun_ccse_cluster" "example" {
     deploy_type   = "single"
     kube_proxy    = "iptables"
     cluster_series = "cce.standard"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
   master_host = {
@@ -85,6 +78,13 @@ resource "ctyun_ccse_cluster" "example" {
       {
         type = "SSD"
         size = 200
+      }
+    ]
+
+    az_infos = [
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+        size    = 1
       }
     ]
   }
@@ -126,7 +126,6 @@ resource "ctyun_ccse_cluster" "example" {
 #     start_port = 30000
 #     end_port   = 65535
 #     elb_prod_code = "standardI"
-#     pod_cidr    = "192.168.0.0/16"
 #     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
 #     cycle_type  = "on_demand"
 #     container_runtime = "containerd"
@@ -136,12 +135,6 @@ resource "ctyun_ccse_cluster" "example" {
 #     kube_proxy    = "ipvs"
 #     cluster_series = "cce.managed"
 #     series_type = "managedbase"
-#     az_infos = [
-#       {
-#         az_name = "cn-huadong1-jsnj2A-public-ctcloud"
-#         size    = 1
-#       }
-#     ]
 #   }
 #
 #
@@ -196,10 +189,9 @@ resource "ctyun_ccse_cluster" "example" {
 
 Required:
 
-- `az_infos` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--base_info--az_infos))
 - `cluster_domain` (String) 集群本地域名
 - `cluster_name` (String) 集群名字
-- `cluster_series` (String) 集群系列，cce.standard-专有版，cce.managed-托管版，您可查看<a href="https://www.ctyun.cn/document/10083472/10892150">产品定义</a>选择
+- `cluster_series` (String) 集群系列，cce.standard-专有版，cce.managed-托管版，cce.icce-智算版，您可查看<a href="https://www.ctyun.cn/document/10083472/10892150">产品定义</a>选择
 - `cluster_version` (String) 集群版本，支持1.23.3 ，1.25.6 ，1.27.8，1.29.3
 - `container_runtime` (String) 容器运行时,可选containerd、docker
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
@@ -208,7 +200,6 @@ Required:
 - `end_port` (Number) 节点服务终止端口，可选范围30000-65535
 - `kube_proxy` (String) kubeProxy类型：iptables或ipvs。您可查看<a href="https://www.ctyun.cn/document/10083472/10915725">iptables与IPVS如何选择</a>
 - `network_plugin` (String) 网络插件
-- `pod_cidr` (String) pod网络cidr，使用cubecni作为网络插件时，podCidr传值为vpc cidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。
 - `start_port` (Number) 节点服务开始端口，可选范围30000-65535
 - `subnet_id` (String) 子网ID
 - `timezone` (String) 时区，例如Asia/Shanghai (UTC+08:00)
@@ -217,18 +208,10 @@ Required:
 Optional:
 
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-3年
+- `pod_cidr` (String) pod网络cidr，使用cubecni作为网络插件时，podCidr不填，服务端会取vpcCidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。
 - `pod_subnet_id_list` (Set of String) pod子网id列表，网络插件选择cubecni必传
 - `project_id` (String) 企业项目ID
 - `series_type` (String) 托管版集群规格，托管版集群必填，单实例-managedbase，多实例-managedpro。单/多实例指控制面是否高可用，生产环境建议使用多实例
-
-<a id="nestedatt--base_info--az_infos"></a>
-### Nested Schema for `base_info.az_infos`
-
-Required:
-
-- `az_name` (String) 可用区编码
-- `size` (Number) 节点数量
-
 
 
 <a id="nestedatt--slave_host"></a>
@@ -236,7 +219,7 @@ Required:
 
 Required:
 
-- `az_infos` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--slave_host--az_infos))
+- `az_infos` (Attributes List) 可用区信息，包括可用区编码，该可用区下worker节点数量 (see [below for nested schema](#nestedatt--slave_host--az_infos))
 - `instance_type` (String) 实例类型， ecs 或 ebm
 - `item_def_name` (String) 规格名称
 - `mirror_type` (Number) 镜像类型，0-私有，1-公有
@@ -244,8 +227,8 @@ Required:
 Optional:
 
 - `data_disks` (Attributes List) 数据盘 (see [below for nested schema](#nestedatt--slave_host--data_disks))
-- `mirror_id` (String) 云主机镜像id, 可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
-- `mirror_name` (String) 物理机镜像名称, 可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
+- `mirror_id` (String) 镜像id，worker节点为ecs类型必填，可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
+- `mirror_name` (String) 镜像名称，worker节点为ebm类型必填，可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
 - `sys_disk` (Attributes) 系统盘 (see [below for nested schema](#nestedatt--slave_host--sys_disk))
 
 <a id="nestedatt--slave_host--az_infos"></a>
@@ -253,8 +236,8 @@ Optional:
 
 Required:
 
-- `az_name` (String) 可用区编码
-- `size` (Number) 节点数量
+- `az_name` (String) worker可用区编码
+- `size` (Number) 该可用区下worker节点数量
 
 
 <a id="nestedatt--slave_host--data_disks"></a>
@@ -281,12 +264,22 @@ Required:
 
 Required:
 
+- `az_infos` (Attributes List) 可用区信息，包括可用区编码，该可用区下master节点数量 (see [below for nested schema](#nestedatt--master_host--az_infos))
 - `item_def_name` (String) 规格名称
 
 Optional:
 
 - `data_disks` (Attributes List) 数据盘 (see [below for nested schema](#nestedatt--master_host--data_disks))
 - `sys_disk` (Attributes) 系统盘 (see [below for nested schema](#nestedatt--master_host--sys_disk))
+
+<a id="nestedatt--master_host--az_infos"></a>
+### Nested Schema for `master_host.az_infos`
+
+Required:
+
+- `az_name` (String) master可用区编码
+- `size` (Number) 该可用区下master节点数量
+
 
 <a id="nestedatt--master_host--data_disks"></a>
 ### Nested Schema for `master_host.data_disks`

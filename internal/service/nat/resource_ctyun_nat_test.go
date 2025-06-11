@@ -74,7 +74,8 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 			},
 			// 1.4 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, updatedSpec, updatedName, updatedDescription, onDemandCycleType, "") +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`nat_gateway_id=%s.nat_gateway_id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					//resource.TestCheckResourceAttr(datasourceName, "nats.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "nats.0.name", updatedName),

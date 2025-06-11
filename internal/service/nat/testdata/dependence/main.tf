@@ -37,7 +37,6 @@ resource "ctyun_subnet" "subnet_test1" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
 }
 
 resource "ctyun_subnet" "subnet_test2" {
@@ -50,5 +49,4 @@ resource "ctyun_subnet" "subnet_test2" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
 }

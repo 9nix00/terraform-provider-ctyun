@@ -10,10 +10,15 @@ import (
 const dependenceDir = "testdata/dependence"
 
 type Dependence struct {
-	vpcID      string
-	subnetID   string
-	flavorName string
-	clusterID  string
+	vpcID           string
+	subnetID        string
+	flavorName      string
+	clusterID       string
+	chartName       string
+	chartVersion1   string
+	chartVersion2   string
+	chartValuesYaml string
+	chartValuesJson string
 }
 
 var dependence Dependence
@@ -28,10 +33,15 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dependence = Dependence{
-		vpcID:      outputs["vpc_id"].Value,
-		subnetID:   outputs["subnet_id"].Value,
-		flavorName: outputs["flavor_name"].Value,
-		clusterID:  outputs["cluster_id"].Value,
+		vpcID:           outputs["vpc_id"].Value,
+		subnetID:        outputs["subnet_id"].Value,
+		flavorName:      outputs["flavor_name"].Value,
+		clusterID:       outputs["cluster_id"].Value,
+		chartName:       outputs["chart_name"].Value,
+		chartVersion1:   outputs["chart_version1"].Value,
+		chartVersion2:   outputs["chart_version2"].Value,
+		chartValuesYaml: outputs["chart_values_yaml"].Value,
+		chartValuesJson: outputs["chart_values_json"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 
