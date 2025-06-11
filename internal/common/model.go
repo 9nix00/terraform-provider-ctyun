@@ -4,6 +4,7 @@ import (
 	"sync"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
+	"terraform-provider-ctyun/internal/core/crs"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
@@ -75,4 +76,5 @@ type Apis struct {
 	SdkCtMysqlApis *mysql.Apis
 	SdkKafkaApis   *ctgkafka.Apis
 	SdkAmqpApis    *amqp.Apis
+	SdkCrsApis     *crs.Apis
 }

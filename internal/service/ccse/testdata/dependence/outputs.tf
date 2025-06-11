@@ -13,3 +13,23 @@ output "flavor_name" {
 output "cluster_id" {
   value = ctyun_ccse_cluster.test.id
 }
+
+output "chart_name" {
+  value = local.chart_name
+}
+
+output "chart_version1" {
+  value = local.chart_version1
+}
+
+output "chart_version2" {
+  value = local.chart_version2
+}
+
+output "chart_values_yaml" {
+  value = jsonencode(data.ctyun_ccse_plugin_market.test1.values)
+}
+
+output "chart_values_json" {
+  value = jsonencode(data.ctyun_ccse_plugin_market.test2.values)
+}

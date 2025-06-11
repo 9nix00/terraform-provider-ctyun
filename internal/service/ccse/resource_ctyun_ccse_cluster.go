@@ -15,18 +15,21 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"time"
 )
 
 var (
-	_ resource.Resource              = &ctyunCcseCluster{}
-	_ resource.ResourceWithConfigure = &ctyunCcseCluster{}
+	_ resource.Resource                = &ctyunCcseCluster{}
+	_ resource.ResourceWithConfigure   = &ctyunCcseCluster{}
+	_ resource.ResourceWithImportState = &ctyunCcseCluster{}
 )
 
 type ctyunCcseCluster struct {
@@ -209,9 +212,14 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						},
 					},
 					"pod_cidr": schema.StringAttribute{
-						Required:    true,
-						Description: "pod网络cidr，使用cubecni作为网络插件时，podCidr传值为vpc cidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。",
+						Optional:    true,
+						Computed:    true,
+						Description: "pod网络cidr，使用cubecni作为网络插件时，podCidr不填，服务端会取vpcCidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。",
 						Validators: []validator.String{
+							validator2.ConflictsWithEqualString(
+								path.MatchRoot("base_info").AtName("network_plugin"),
+								types.StringValue("cubecni"),
+							),
 							validator2.Cidr(),
 						},
 						PlanModifiers: []planmodifier.String{
@@ -610,6 +618,10 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "退订状态") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 
@@ -674,6 +686,30 @@ func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRe
 	//response.State.RemoveResource(ctx)
 }
 
+// 导入命令：terraform import [配置标识].[导入配置名称],[clusterID],[regionID]
+func (c *ctyunCcseCluster) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunCcseClusterConfig
+	var clusterID, regionID string
+	err = terraform_extend.Split(request.ID, &clusterID, &regionID)
+	if err != nil {
+		return
+	}
+	cfg.RegionID = types.StringValue(regionID)
+	cfg.ID = types.StringValue(clusterID)
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
 func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
@@ -688,11 +724,23 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 
 // checkBeforeCreate 创建前检查
 func (c *ctyunCcseCluster) checkBeforeCreate(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+	if len(plan.BaseInfo.PodSubnetIdList) > 10 {
+		return fmt.Errorf("pod_subnet_id_list最多支持10个子网")
+	}
+
 	// 确保当前虚拟私有云存在，且子网与虚拟私有云存在对应关系
 	vpc, regionID, projectID := plan.BaseInfo.VpcID.ValueString(), plan.RegionID.ValueString(), plan.BaseInfo.ProjectID.ValueString()
-	err = c.vpcService.MustExist(ctx, vpc, regionID, projectID)
+	subnets, err := c.vpcService.GetVpcSubnet(ctx, vpc, regionID, projectID)
 	if err != nil {
 		return err
+	}
+	if _, ok := subnets[plan.BaseInfo.SubnetID.ValueString()]; !ok {
+		return fmt.Errorf("子网 %s 不在 %s 内", plan.BaseInfo.SubnetID.ValueString(), vpc)
+	}
+	for s, _ := range subnets {
+		if _, ok := subnets[s]; !ok {
+			return fmt.Errorf("子网 %s 不在 %s 内", plan.BaseInfo.SubnetID.ValueString(), vpc)
+		}
 	}
 	return
 }
@@ -877,6 +925,10 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	}
 
 	instance := resp.ReturnObj
+	if instance.BizState == business.CcseRefundedBizState || instance.BizState == business.CcseRefundingBizState {
+		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
+	}
+
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
 	plan.BaseInfo.NetworkPlugin = types.StringValue(instance.NetworkPlugin)

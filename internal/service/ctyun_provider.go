@@ -22,6 +22,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 	"terraform-provider-ctyun/internal/core/core"
+	"terraform-provider-ctyun/internal/core/crs"
 	"terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
@@ -308,6 +309,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtMysqlApis: mysql.NewApis(client),
 			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 			SdkAmqpApis:    amqp.NewApis(client),
+			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -367,6 +369,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		kafka.NewCtyunKafkaInstances(),
 		kafka.NewCtyunKafkaSpecs(),
 		rabbitmq.NewCtyunRabbitmqSpecs(),
+		ccse.NewCtyunCcsePluginMarket(),
 	)
 }
 
@@ -426,6 +429,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlInstance(),
 		mysql2.NewCtyunMysqlAssociationEip(),
 		kafka.NewCtyunKafkaInstance(),
+		ccse.NewCtyunCcsePlugin(),
 	)
 }
 

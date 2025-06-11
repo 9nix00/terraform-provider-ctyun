@@ -1,4 +1,4 @@
-# ctyun_mysql_specss (Data Source)
+# ctyun_mysql_specs (Data Source)
 
 
 

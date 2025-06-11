@@ -6,7 +6,6 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     subnet_id  = "%[5]s"
     cluster_domain = "www.ctyun.com"
     network_plugin = "cubecni"
-    pod_cidr    = "192.168.0.0/16"
     pod_subnet_id_list = ["%[5]s"]
     start_port = 30000
     end_port   = 65535
