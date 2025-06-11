@@ -19,7 +19,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_ccse_plugin" "example" {
-  cluster_id = "9e5c93d1adad4f9898734a13ce37bacb"
+  cluster_id = "d9ada3c728924a2589d20d530a61f302"
   chart_name = "node-problem-detector"
   chart_version = "1.0.2"
   plugin_name = "tf-ccse-plugin"

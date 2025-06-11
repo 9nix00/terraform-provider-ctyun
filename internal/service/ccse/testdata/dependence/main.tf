@@ -16,7 +16,7 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 locals {
-  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test["1"].id, "") : local.data_vpc_id
+  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test[0].id, "") : local.data_vpc_id
 }
 
 data "ctyun_subnets" "subnet_test" {
@@ -41,7 +41,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 locals {
-  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test["1"].id, "") : local.data_subnet_id
+  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
