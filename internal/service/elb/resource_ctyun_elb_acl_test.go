@@ -68,7 +68,8 @@ func TestAccCtyunElbAcl(t *testing.T) {
 			},
 			// 1.4 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedSourceIps2) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("ids=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "acls.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "acls.0.name", updatedName),

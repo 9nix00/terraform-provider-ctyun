@@ -16,6 +16,9 @@ func TestAccCtyunElbLoadBalancerPg(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_elb_loadbalancer." + rnd
 	resourceFile := "resource_ctyun_elb_loadbalancer.tf"
+	dnd := utils.GenerateRandomString()
+	datasourceName := "data.ctyun_elb_loadbalancers." + dnd
+	datasourceFile := "datasource_ctyun_elb_loadbalancers.tf"
 	name := "elb_" + utils.GenerateRandomString()
 	//slaName := "elb.s1.small"
 	//resourceType := "external"
@@ -66,6 +69,18 @@ func TestAccCtyunElbLoadBalancerPg(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updateName),
 					resource.TestCheckResourceAttr(resourceName, "description", updateDescription),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, subnetID, updateName, update2SlaName, resourceType, vpcID, updateDescription, cycleType, CycleCount, eip) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`ids=%s.id`, resourceName)),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "elbs.#", "1"),
+					resource.TestCheckResourceAttrSet(datasourceName, "elbs.0.id"),
+					resource.TestCheckResourceAttr(datasourceName, "elbs.0.name", updateName),
+					resource.TestCheckResourceAttr(datasourceName, "elbs.0.description", updateDescription),
+					resource.TestCheckResourceAttr(datasourceName, "elbs.0.sla_name", update2SlaName),
+					resource.TestCheckResourceAttr(datasourceName, "elbs.0.resource_type", resourceType),
 				),
 			},
 			{

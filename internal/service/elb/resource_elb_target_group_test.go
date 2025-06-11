@@ -96,7 +96,8 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 1.3 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, vpcId, updatedAlgorithm, "", "", "", "", "", "", "") +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`ids=%s.id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "target_groups.0.name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "target_groups.0.vpc_id", vpcId),

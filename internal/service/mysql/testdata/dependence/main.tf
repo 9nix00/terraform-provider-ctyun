@@ -9,7 +9,7 @@ locals {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  count    = local.data_vpc_id == "" ? 1 : 0
+  count       = local.data_vpc_id == "" ? 1 : 0
   name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
@@ -17,20 +17,23 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 locals {
-  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test["create"].id, "") : local.data_vpc_id
+  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test[0].id, "") : local.data_vpc_id
 }
+
 
 data "ctyun_subnets" "subnet_test" {
   vpc_id = local.real_vpc_id
 }
 
 locals {
-  subnets = [for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"]
+  subnets = [
+    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"
+  ]
   data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  count =  local.data_subnet_id == "" ? 1:0
+  count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-subnet-for-paas"
   cidr        = "192.168.0.0/16"
@@ -42,7 +45,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 locals {
-  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test["create"].id, "") : local.data_subnet_id
+  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
 }
 
 data "ctyun_security_groups" "security_group_test" {
@@ -50,12 +53,14 @@ data "ctyun_security_groups" "security_group_test" {
 }
 
 locals {
-  security_groups = [for security_group in data.ctyun_security_groups.security_group_test.security_groups : security_group if security_group.name == "tf-sg-for-paas"]
+  security_groups = [
+    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas"
+  ]
   data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
 }
 
 resource "ctyun_security_group" "security_group_test" {
-  count = local.data_security_group_id == "" ? 1:0
+  count = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
@@ -65,7 +70,7 @@ resource "ctyun_security_group" "security_group_test" {
 }
 
 locals {
-  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test["create"].id, "") : local.data_security_group_id
+  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
 
@@ -78,7 +83,7 @@ resource "ctyun_eip" "eip_test" {
 
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {

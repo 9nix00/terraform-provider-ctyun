@@ -22,7 +22,7 @@ func TestAccCtyunSNat(t *testing.T) {
 	datasourceFile := "datasource_ctyun_snat.tf"
 
 	initSourceCidr := `source_cidr="192.168.0.0/24"`
-	updatedSourceCidr := `source_cidr="192.168.128.0/25"`
+	updatedSourceCidr := fmt.Sprintf(`source_cidr="%s"`, "192.168.128.0/25")
 	sourceSubnetId := dependence.subnetID1
 	updatedSubnetId := dependence.subnetID2
 	tfSourceSubnetID := fmt.Sprintf(`source_subnet_id="%s"`, sourceSubnetId)
@@ -67,9 +67,12 @@ func TestAccCtyunSNat(t *testing.T) {
 			},
 			{
 				// 1.3. datasource验证
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps) +
+					utils.LoadTestCase(datasourceFile, dnd, natGatewayID, fmt.Sprintf(`snat_id=%s.snat_id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "snats.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "snats.0.nat_gateway_id", natGatewayID),
+					resource.TestCheckResourceAttr(datasourceName, "snats.0.subnet_cidr", "192.168.128.0/25"),
 					//resource.TestCheckResourceAttr(datasourceName, "snats.0.subnet_id", updatedSubnetId),
 				),
 			},
