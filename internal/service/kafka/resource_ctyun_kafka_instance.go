@@ -370,6 +370,10 @@ func (c *ctyunKafkaInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "退订状态") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 
@@ -672,6 +676,10 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	if err != nil {
 		return
 	}
+	switch instance.Status {
+	case business.KafkaStatusExpired, business.KafkaStatusDeregister, business.KafkaStatusUnsubscribed:
+		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
+	}
 	plan.InstanceName = types.StringValue(instance.InstanceName)
 	if len(instance.Version) >= 3 {
 		plan.EngineVersion = types.StringValue(instance.Version[:3])
@@ -726,7 +734,7 @@ func (c *ctyunKafkaInstance) checkBeforeUpdate(ctx context.Context, plan, state 
 	if err != nil {
 		return
 	}
-	if instance.Status != 1 {
+	if instance.Status != business.KafkaStatusRunning {
 		return fmt.Errorf("请在实例处于运行中状态时再进行更新操作")
 	}
 
@@ -828,7 +836,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if err != nil {
 				return false
 			}
-			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != 1 {
+			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -914,7 +922,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if err != nil {
 				return false
 			}
-			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != 1 {
+			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -1022,7 +1030,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if err != nil {
 				return false
 			}
-			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != 1 {
+			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -1113,7 +1121,7 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			executeSuccessFlag = true
@@ -1158,7 +1166,7 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
+			if instance == nil || instance.Status != business.KafkaStatusRunning || instance.ProdInstId == "" {
 				return true
 			}
 			// 等待订单完成
@@ -1187,7 +1195,7 @@ func (c *ctyunKafkaInstance) checkAfterDelete(ctx context.Context, plan CtyunKaf
 			if err != nil {
 				return false
 			}
-			if instance != nil && instance.Status != 5 {
+			if instance != nil && instance.Status != business.KafkaStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true
