@@ -11,5 +11,4 @@ resource "ctyun_vpc" "vpc_test" {
   cidr        = "10.0.0.0/8"
   description = "terraform测试使用"
   enable_ipv6 = true
-
 }
