@@ -92,7 +92,7 @@ type EbsQueryEbsByIDReturnObjResponse struct {
 	CycleCount       int32                                          `json:"cycleCount"`                 /*  包周期数，非按需时才返回。  */
 	RegionID         *string                                        `json:"regionID,omitempty"`         /*  资源池ID。  */
 	AzName           *string                                        `json:"azName,omitempty"`           /*  多可用区下的可用区名称。  */
-	DiskFreeze       *string                                        `json:"diskFreeze,omitempty"`       /*  云硬盘是否已冻结。  */
+	DiskFreeze       *bool                                          `json:"diskFreeze,omitempty"`       /*  云硬盘是否已冻结。  */
 	ProvisionedIops  int32                                          `json:"provisionedIops"`            /*  XSSD类型盘的预配置iops，未配置返回0，其他类型盘不返回。  */
 	VolumeSource     *string                                        `json:"volumeSource,omitempty"`     /*  云硬盘源快照ID，若不是从快照创建的则返回null。  */
 	SnapshotPolicyID *string                                        `json:"snapshotPolicyID,omitempty"` /*  云硬盘绑定的快照策略ID，若没有绑定则返回null。  */
