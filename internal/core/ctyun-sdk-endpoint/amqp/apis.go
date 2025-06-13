@@ -5,8 +5,15 @@ import (
 )
 
 type Apis struct {
-	AmqpInstanceQueryProdApi *AmqpInstanceQueryProdApi
-	AmqpInstanceQueryApi     *AmqpInstanceQueryApi
+	AmqpInstancesQueryProdApi          *AmqpInstancesQueryProdApi
+	AmqpInstancesQueryApi              *AmqpInstancesQueryApi
+	AmqpInstancesCreatePostPayOrderApi *AmqpInstancesCreatePostPayOrderApi
+	AmqpInstancesCreatePrePayOrderApi  *AmqpInstancesCreatePrePayOrderApi
+	AmqpInstancesDiskExtendApi         *AmqpInstancesDiskExtendApi
+	AmqpInstancesNodeExtendApi         *AmqpInstancesNodeExtendApi
+	AmqpInstancesSpecExtendApi         *AmqpInstancesSpecExtendApi
+	AmqpInstancesUnsubscribeInstApi    *AmqpInstancesUnsubscribeInstApi
+	AmqpInstancesInstanceNameApi       *AmqpInstancesInstanceNameApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -19,7 +26,14 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 	client.RegisterEndpoint(ctyunsdk.EnvironmentDev, EndpointTest)
 	client.RegisterEndpoint(ctyunsdk.EnvironmentProd, EndPointProd)
 	return &Apis{
-		AmqpInstanceQueryProdApi: NewAmqpInstanceQueryProdApi(client),
-		AmqpInstanceQueryApi:     NewAmqpInstanceQueryApi(client),
+		AmqpInstancesQueryProdApi:          NewAmqpInstancesQueryProdApi(client),
+		AmqpInstancesQueryApi:              NewAmqpInstancesQueryApi(client),
+		AmqpInstancesCreatePostPayOrderApi: NewAmqpInstancesCreatePostPayOrderApi(client),
+		AmqpInstancesCreatePrePayOrderApi:  NewAmqpInstancesCreatePrePayOrderApi(client),
+		AmqpInstancesDiskExtendApi:         NewAmqpInstancesDiskExtendApi(client),
+		AmqpInstancesNodeExtendApi:         NewAmqpInstancesNodeExtendApi(client),
+		AmqpInstancesSpecExtendApi:         NewAmqpInstancesSpecExtendApi(client),
+		AmqpInstancesUnsubscribeInstApi:    NewAmqpInstancesUnsubscribeInstApi(client),
+		AmqpInstancesInstanceNameApi:       NewAmqpInstancesInstanceNameApi(client),
 	}
 }

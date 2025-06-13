@@ -139,9 +139,9 @@ func (c *ctyunRabbitmqSpecs) Read(ctx context.Context, request datasource.ReadRe
 
 	config.RegionID = types.StringValue(regionId)
 	// 组装请求体
-	params := &amqp.AmqpInstanceQueryProdRequest{regionId}
+	params := &amqp.AmqpInstancesQueryProdRequest{regionId}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceQueryProdApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryProdApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {

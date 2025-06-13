@@ -17,6 +17,7 @@ import (
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -135,6 +136,10 @@ func (c *ctyunCcsePlugin) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
+	err = c.checkBeforeCreate(ctx, plan)
+	if err != nil {
+		return
+	}
 	// 创建
 	err = c.create(ctx, plan)
 	if err != nil {
@@ -260,6 +265,27 @@ func (c *ctyunCcsePlugin) ImportState(ctx context.Context, request resource.Impo
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+// checkBeforeCreate 创建前检查
+func (c *ctyunCcsePlugin) checkBeforeCreate(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
+	params := &ccse2.CcseHasPluginInstanceExistedRequest{
+		ClusterId:  plan.ClusterID.ValueString(),
+		PluginName: plan.PluginName.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseHasPluginInstanceExistedApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	if utils.SecBool(resp.ReturnObj) {
+		err = fmt.Errorf("插件实例名称 %s 已经存在", plan.PluginName.ValueString())
+		return
+	}
+	return
 }
 
 // checkAfterCreate 创建后检查

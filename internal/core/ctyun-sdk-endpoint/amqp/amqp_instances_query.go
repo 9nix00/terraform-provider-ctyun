@@ -7,13 +7,13 @@ import (
 	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
-type AmqpInstanceQueryApi struct {
+type AmqpInstancesQueryApi struct {
 	ctyunsdk.CtyunRequestBuilder
 	client *ctyunsdk.CtyunClient
 }
 
-func NewAmqpInstanceQueryApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQueryApi {
-	return &AmqpInstanceQueryApi{
+func NewAmqpInstancesQueryApi(client *ctyunsdk.CtyunClient) *AmqpInstancesQueryApi {
+	return &AmqpInstancesQueryApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodGet,
@@ -22,7 +22,7 @@ func NewAmqpInstanceQueryApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQueryApi
 	}
 }
 
-func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceQueryRequest) (res *AmqpInstanceQueryResponse, err error) {
+func (this *AmqpInstancesQueryApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstancesQueryRequest) (res *AmqpInstancesQueryResponse, err error) {
 	builder := this.WithCredential(&credential)
 	_, err = builder.WriteJson(req)
 	if err != nil {
@@ -30,12 +30,12 @@ func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Cr
 	}
 	builder.AddParam("pageNum", fmt.Sprintf("%d", req.PageNum))
 	builder.AddParam("pageSize", fmt.Sprintf("%d", req.PageSize))
-	builder.AddHeader("regionId", req.RegionID)
+	builder.AddHeader("regionId", req.RegionId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointName, builder)
 	if err != nil {
 		return
 	}
-	res = &AmqpInstanceQueryResponse{}
+	res = &AmqpInstancesQueryResponse{}
 	err = resp.Parse(res)
 	if err != nil {
 		return
@@ -43,24 +43,24 @@ func (this *AmqpInstanceQueryApi) Do(ctx context.Context, credential ctyunsdk.Cr
 	return res, nil
 }
 
-type AmqpInstanceQueryRequest struct {
-	RegionID string `json:"regionId"`
+type AmqpInstancesQueryRequest struct {
+	RegionId string `json:"regionId"`
 	PageNum  int32  `json:"pageNum"`
 	PageSize int32  `json:"pageSize"`
 }
 
-type AmqpInstanceQueryResponse struct {
-	ReturnObj  *AmqpInstanceQueryResponseReturnObj `json:"returnObj"`
-	Message    string                              `json:"message"`
-	StatusCode string                              `json:"statusCode"`
+type AmqpInstancesQueryResponse struct {
+	ReturnObj  *AmqpInstancesQueryResponseReturnObj `json:"returnObj"`
+	Message    string                               `json:"message"`
+	StatusCode string                               `json:"statusCode"`
 }
 
-type AmqpInstanceQueryResponseReturnObj struct {
-	Total int32                                    `json:"total"`
-	Data  []AmqpInstanceQueryResponseReturnObjData `json:"data"`
+type AmqpInstancesQueryResponseReturnObj struct {
+	Total int32                                      `json:"total"`
+	Data  []*AmqpInstancesQueryResponseReturnObjData `json:"data"`
 }
 
-type AmqpInstanceQueryResponseReturnObjData struct {
+type AmqpInstancesQueryResponseReturnObjData struct {
 	Cluster       string      `json:"cluster"`       // 实例id
 	Subnet        string      `json:"subnet"`        // 子网名称？
 	Prod          string      `json:"prod"`          // 规格
