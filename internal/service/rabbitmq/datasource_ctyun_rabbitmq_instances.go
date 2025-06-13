@@ -95,10 +95,10 @@ func (c *ctyunRabbitmqInstances) Read(ctx context.Context, request datasource.Re
 
 	config.RegionID = types.StringValue(regionId)
 	// 组装请求体
-	params := &amqp.AmqpInstanceQueryRequest{
-		RegionID: regionId}
+	params := &amqp.AmqpInstancesQueryRequest{
+		RegionId: regionId}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceQueryApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
