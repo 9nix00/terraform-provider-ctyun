@@ -58,9 +58,11 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 			},
 			//datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "0"),
+					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
 					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
 					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
 				),
