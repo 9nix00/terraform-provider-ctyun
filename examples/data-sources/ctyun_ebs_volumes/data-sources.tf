@@ -10,8 +10,12 @@ provider "ctyun" {
   env = "prod"
 }
 
+# data "ctyun_ebs_volumes" "test" {
+#  disk_id = "54b130e0-b040-487a-8a99-45086b49cc2b"
+# }
+
 data "ctyun_ebs_volumes" "test" {
-  region_id = "200000001852"
+  disk_name = "lx-test-29"
 }
 
 output "ctyun_ebs_volumes_test" {
