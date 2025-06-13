@@ -132,7 +132,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.Int64Attribute{
 				Required:    true,
-				Description: "产品id",
+				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致",
 				Validators: []validator.Int64{
 					int64validator.OneOf(business.MysqlProdIDs...),
 				},
@@ -166,7 +166,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_performance_spec": schema.StringAttribute{
 				Required:    true,
-				Description: "规格(例: 4C8G)",
+				Description: "规格(例: 4C8G),不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致",
 			},
 			"disks": schema.Int32Attribute{
 				Required:    true,
