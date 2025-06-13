@@ -83,8 +83,8 @@ resource "ctyun_eip" "eip_test" {
 
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  #az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-  az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  #az_name    = "cn-gs-qyi2-1a-public-ctcloud"
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
