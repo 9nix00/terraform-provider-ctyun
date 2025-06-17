@@ -15,7 +15,7 @@ func NewAmqpInstancesDiskExtendApi(client *ctyunsdk.CtyunClient) *AmqpInstancesD
 	return &AmqpInstancesDiskExtendApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/diskExtend",
 		},
 	}

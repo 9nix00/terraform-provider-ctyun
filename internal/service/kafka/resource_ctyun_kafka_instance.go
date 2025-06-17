@@ -130,7 +130,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型",
+				Description: "实例的规格类型，建议使用datasource: ctyun_kafka_specs查看",
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
@@ -142,7 +142,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"zone_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "实例所在可用区信息",
+				Description: "实例所在可用区信息，只能传一个或三个可用区",
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},

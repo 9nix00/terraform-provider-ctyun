@@ -111,7 +111,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Required:    true,
 				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf("month", "on_demand"),
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -154,7 +154,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"version": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "版本类型，SeriesInfo中的version值",
+				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -164,7 +164,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"edition": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型，SeriesInfo中的seriesCode值",
+				Description: "实例类型，SeriesInfo中的seriesCode值，可参考https://www.ctyun.cn/document/10029420/11030280",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -285,7 +285,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"password": schema.StringAttribute{
 				Required:    true,
-				Description: "密码",
+				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。",
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 26),
@@ -295,7 +295,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订",
+				Description: "是否自动续订，默认是false",
 				Default:     booldefault.StaticBool(false),
 				Validators: []validator.Bool{
 					validator2.ConflictsWithEqualBool(
@@ -309,7 +309,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"auto_renew_cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "自动续订时长",
+				Description: "自动续订时长，单位月，支持1, 2, 3, 5, 6, 7, 12, 24, 36",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("auto_renew"),
@@ -328,13 +328,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"maintenance_time": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例维护时间窗口，格式如：00:00-02:00，总时长必须为2小时",
+				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00",
 				Default:     stringdefault.StaticString("00:00-02:00"),
 			},
 			"protection_status": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "退订保护开关",
+				Description: "退订保护开关，默认为false",
 				Default:     booldefault.StaticBool(false),
 			},
 		},

@@ -15,7 +15,7 @@ func NewAmqpInstancesSpecExtendApi(client *ctyunsdk.CtyunClient) *AmqpInstancesS
 	return &AmqpInstancesSpecExtendApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/specExtend",
 		},
 	}

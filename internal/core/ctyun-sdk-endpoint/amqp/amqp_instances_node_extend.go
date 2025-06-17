@@ -15,7 +15,7 @@ func NewAmqpInstancesNodeExtendApi(client *ctyunsdk.CtyunClient) *AmqpInstancesN
 	return &AmqpInstancesNodeExtendApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/nodeExtend",
 		},
 	}

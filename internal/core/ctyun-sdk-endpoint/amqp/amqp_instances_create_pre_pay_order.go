@@ -28,6 +28,7 @@ func (this *AmqpInstancesCreatePrePayOrderApi) Do(ctx context.Context, credentia
 		return
 	}
 	builder.AddHeader("regionId", req.RegionId)
+	builder.AddHeader("projectId", req.ProjectId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointName, builder)
 	if err != nil {
 		return
@@ -42,6 +43,7 @@ func (this *AmqpInstancesCreatePrePayOrderApi) Do(ctx context.Context, credentia
 
 type AmqpInstancesCreatePrePayOrderRequest struct {
 	RegionId        string `json:"regionId"`
+	ProjectId       string `json:"projectId"`
 	HostType        string `json:"hostType"`
 	DiskType        string `json:"diskType"`
 	DiskSize        string `json:"diskSize"`

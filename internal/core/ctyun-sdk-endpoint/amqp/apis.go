@@ -14,6 +14,7 @@ type Apis struct {
 	AmqpInstancesSpecExtendApi         *AmqpInstancesSpecExtendApi
 	AmqpInstancesUnsubscribeInstApi    *AmqpInstancesUnsubscribeInstApi
 	AmqpInstancesInstanceNameApi       *AmqpInstancesInstanceNameApi
+	AmqpInstancesQueryDetailApi        *AmqpInstancesQueryDetailApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -35,5 +36,6 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		AmqpInstancesSpecExtendApi:         NewAmqpInstancesSpecExtendApi(client),
 		AmqpInstancesUnsubscribeInstApi:    NewAmqpInstancesUnsubscribeInstApi(client),
 		AmqpInstancesInstanceNameApi:       NewAmqpInstancesInstanceNameApi(client),
+		AmqpInstancesQueryDetailApi:        NewAmqpInstancesQueryDetailApi(client),
 	}
 }

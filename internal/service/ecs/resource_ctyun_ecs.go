@@ -287,11 +287,10 @@ func (c *ctyunEcs) Create(ctx context.Context, request resource.CreateRequest, r
 
 	// 实际创建
 	err = c.createInstance(ctx, &plan)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	if err != nil {
 		return
 	}
-
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机、节省关机
 	status := plan.Status.ValueString()
 	if status != "" && status != business.EcsStatusRunning {

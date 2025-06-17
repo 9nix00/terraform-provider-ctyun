@@ -11,7 +11,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "vpc-test-ccse1"
+  name        = "vpc-test-ccse21"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
@@ -19,7 +19,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "subnet-test-ccse1"
+  name        = "subnet-test-ccs31"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [

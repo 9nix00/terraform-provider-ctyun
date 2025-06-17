@@ -15,7 +15,7 @@ func NewAmqpInstancesUnsubscribeInstApi(client *ctyunsdk.CtyunClient) *AmqpInsta
 	return &AmqpInstancesUnsubscribeInstApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/unsubscribeInst",
 		},
 	}

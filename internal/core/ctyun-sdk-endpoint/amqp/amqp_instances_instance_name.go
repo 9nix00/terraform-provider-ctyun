@@ -15,7 +15,7 @@ func NewAmqpInstancesInstanceNameApi(client *ctyunsdk.CtyunClient) *AmqpInstance
 	return &AmqpInstancesInstanceNameApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/instanceName",
 		},
 	}
