@@ -75,7 +75,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -83,7 +83,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -117,7 +117,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例id,当type为interface时，必填",
+				Description: "服务后端实例ID,当type为interface时，必填",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
@@ -140,7 +140,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "白名单邮箱",
+				Description: "白名单邮箱，最多支持10个",
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(validator2.Email()),
 					setvalidator.SizeAtMost(10),
@@ -155,7 +155,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
 				},
-				Description: "节点服务规则,当type为interface时，必填",
+				Description: "节点服务规则,当type为interface时必填",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"protocol": schema.StringAttribute{

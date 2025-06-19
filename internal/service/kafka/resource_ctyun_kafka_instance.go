@@ -79,7 +79,7 @@ type CtyunKafkaInstanceConfig struct {
 
 func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -92,7 +92,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -101,7 +101,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -121,16 +121,16 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Computed:    true,
 				Description: "实例引擎版本，支持2.8和3.6，默认3.6",
 				Validators: []validator.String{
-					stringvalidator.OneOf("2.8", "3.6"),
+					stringvalidator.OneOf(business.KafkaVersion28, business.KafkaVersion36),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: stringdefault.StaticString("3.6"),
+				Default: stringdefault.StaticString(business.KafkaVersion36),
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型，建议使用datasource: ctyun_kafka_specs查看",
+				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>",
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
@@ -142,14 +142,14 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"zone_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "实例所在可用区信息，只能传一个或三个可用区",
+				Description: "实例所在可用区信息，只能传一个或三个可用区，可通过ctyun_regions查看",
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
 			},
 			"disk_type": schema.StringAttribute{
 				Required:    true,
-				Description: "磁盘类型",
+				Description: "磁盘类型，建议使用ctyun_kafka_specs查看，通常支持SAS、SSD、FAST-SSD",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -163,7 +163,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -243,7 +243,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"retention_hours": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例消息保留时长，默认为72小时，可选1~10000小时",
+				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10000),
 				},
@@ -281,7 +281,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订",
+				Description: "是否自动续订，默认非自动续订",
 				Default:     booldefault.StaticBool(false),
 				Validators: []validator.Bool{
 					validator2.ConflictsWithEqualBool(
@@ -296,7 +296,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"auto_renew_cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "自动续订时长，支持自动续订范围：1-6月",
+				Description: "自动续订时长，当且仅当auto_renew为true时填写。支持自动续订范围：1-6月",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("auto_renew"),

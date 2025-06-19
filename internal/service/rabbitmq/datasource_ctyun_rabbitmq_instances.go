@@ -153,6 +153,7 @@ func (c *ctyunRabbitmqInstances) Configure(_ context.Context, request datasource
 	c.meta = meta
 }
 
+// getByID 通过id查询
 func (c *ctyunRabbitmqInstances) getByID(ctx context.Context, config *CtyunRabbitmqInstancesConfig) (err error) {
 
 	// 组装请求体
@@ -192,6 +193,7 @@ func (c *ctyunRabbitmqInstances) getByID(ctx context.Context, config *CtyunRabbi
 
 }
 
+// getByPage 无id时查询
 func (c *ctyunRabbitmqInstances) getByPage(ctx context.Context, config *CtyunRabbitmqInstancesConfig) (err error) {
 	// 组装请求体
 	params := &amqp.AmqpInstancesQueryRequest{

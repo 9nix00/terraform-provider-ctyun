@@ -77,7 +77,7 @@ func (c *ctyunRedisInstances) Schema(_ context.Context, _ datasource.SchemaReque
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Description: "每页数据量大小",
+				Description: "每页数据量大小，支持范围1-50",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},

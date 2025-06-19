@@ -98,7 +98,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年",
+				Description: "订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -730,7 +730,7 @@ type CtyunNatConfig struct {
 	Name                 types.String `tfsdk:"name"`                   //支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 	Description          types.String `tfsdk:"description"`            //支持拉丁字母、中文、数p字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
 	CycleType            types.String `tfsdk:"cycle_type"`             //订购类型：month（包月） / year（包年）/ on_demand（按需）
-	CycleCount           types.Int64  `tfsdk:"cycle_count"`            //订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年
+	CycleCount           types.Int64  `tfsdk:"cycle_count"`            //订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 	AzName               types.String `tfsdk:"az_name"`                //可用区名称
 	PayVoucherPrice      types.String `tfsdk:"pay_voucher_price"`      //代金券金额，支持到小数点后两位
 	ProjectID            types.String `tfsdk:"project_id"`             //企业项目，不传默认为 0

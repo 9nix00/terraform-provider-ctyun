@@ -15,4 +15,7 @@ const (
 	KafkaStatusUpgrading      = 12  // 升级中
 	KafkaStatusArrears        = 13  // 已欠费
 	KafkaStatusActivateFailed = 101 // 开通失败
+
+	KafkaVersion28 = "2.8"
+	KafkaVersion36 = "3.6"
 )

@@ -71,7 +71,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -79,21 +79,21 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点服务id",
+				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的子网ID",
+				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -101,7 +101,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"subnet_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "子网ip",
+				Description: "子网IP",
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
@@ -122,7 +122,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				ElementType: types.StringType,
 				Computed:    true,
 				Optional:    true,
-				Description: "白名单列表, 最多同时支持20个地址，最少输入一个",
+				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("whitelist_flag"),
@@ -300,7 +300,7 @@ func (c *ctyunVpce) loopCreate(ctx context.Context, plan CtyunVpceConfig) (maste
 		return
 	}
 	if !executeSuccessFlag {
-		err = errors.New("创建时未获取到终端节点id")
+		err = errors.New("创建时未获取到终端节点ID")
 	}
 	return
 }

@@ -53,7 +53,7 @@ func (c *ctyunPolicyAssociationUserGroup) Schema(_ context.Context, _ resource.S
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，当授权的策略为资源池级别时必填",
+				Description: "资源池ID，当授权的策略为资源池级别时必填",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -199,14 +199,14 @@ func (c *ctyunPolicyAssociationUserGroup) checkAndGetRangeType(ctx context.Conte
 	}
 	switch policy.(string) {
 	case business.PolicyRangeRegion:
-		// 如果是资源池级别的范围，用户又没有填写资源池id，报错
+		// 如果是资源池级别的范围，用户又没有填写资源池ID，报错
 		if cfg.RegionId.IsNull() || cfg.RegionId.IsUnknown() {
-			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为资源池级别的范围，授权时必须填写资源池id")
+			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为资源池级别的范围，授权时必须填写资源池ID")
 		}
 	case business.PolicyRangeGlobal:
-		// 如果是全局级别的范围，用户又填写资源池id，报错
+		// 如果是全局级别的范围，用户又填写资源池ID，报错
 		if !cfg.RegionId.IsNull() && !cfg.RegionId.IsUnknown() && cfg.RegionId.ValueString() != "" {
-			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为全局级别的范围，授权时不能填写资源池id")
+			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为全局级别的范围，授权时不能填写资源池ID")
 		}
 	}
 	key, err2 := business.PolicyRangeMap.Map(resp.PolicyRange, business.PolicyRangeMapScene1, business.PolicyRangeMapScene2)

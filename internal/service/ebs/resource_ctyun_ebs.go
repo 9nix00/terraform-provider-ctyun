@@ -87,7 +87,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持订购1-11个月；当cycleType=year，支持订购1-5年",
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
@@ -135,7 +135,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -144,7 +144,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

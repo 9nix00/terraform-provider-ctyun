@@ -83,7 +83,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"master_order_id": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -105,7 +105,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"cpu_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "cpu数量，支持2、4、8、16、32、64",
+				Description: "cpu数量，支持2、4、8、16、32、64，您可查看<a href=\"https://www.ctyun.cn/document/10029625/10032819\">产品规格说明</a>",
 				Validators: []validator.Int32{
 					int32validator.OneOf(2, 4, 8, 16, 32, 64),
 				},
@@ -129,29 +129,35 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"disk_type": schema.StringAttribute{
 				Required:    true,
-				Description: "磁盘类型，必须为100的倍数",
+				Description: "磁盘类型，通常支持SAS、SSD、FAST-SSD",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf("SAS", "SSD", "FAST-SSD"),
 				},
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，实例总存储空间为diskSize * nodeNum",
+				Description: "单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int32{
+					int32validator.Between(100, 10000),
 				},
 			},
 			"zone_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "实例所在可用区信息，只能传一个或三个可用区",
+				Description: "实例所在可用区信息，只能传一个或三个可用区，可通过ctyun_regions查看",
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
