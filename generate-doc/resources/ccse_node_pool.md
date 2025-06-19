@@ -63,26 +63,26 @@ resource "ctyun_ccse_node_pool" "example" {
 
 - `cluster_id` (String) 集群ID
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
-- `instance_type` (String) 实例类型， ecs 或 ebm
-- `item_def_name` (String) 规格名称
+- `instance_type` (String) 实例类型，支持ecs（云主机）、ebm（裸金属）
+- `item_def_name` (String) 实例规格名称，使用至少4C8G以上的规格，云主机规格通过ctyun_ecs_flavors查询，裸金属规格通过ctyun_ebm_device_types查询
 - `mirror_id` (String) 镜像id, 可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
 - `mirror_name` (String) 镜像名称, 可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
-- `mirror_type` (Number) 镜像类型，0-私有，1-公有
+- `mirror_type` (Number) 镜像类型，支持传0（私有），1（公有），可查看<a href="https://www.ctyun.cn/document/10026730/10030151">镜像概述</a>
 - `node_pool_name` (String) 节点池名称
-- `sys_disk` (Attributes) 系统盘 (see [below for nested schema](#nestedatt--sys_disk))
+- `sys_disk` (Attributes) 系统盘信息 (see [below for nested schema](#nestedatt--sys_disk))
 
 ### Optional
 
 - `affinity_group_id` (String) 云主机组id
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
-- `data_disks` (Attributes List) 数据盘 (see [below for nested schema](#nestedatt--data_disks))
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持订购1-11个月；当cycleType=year，支持订购1-5年
+- `data_disks` (Attributes List) 数据盘信息 (see [below for nested schema](#nestedatt--data_disks))
 - `key_pair_id` (String) 密钥对ID
 - `key_pair_name` (String) 密钥对名称
 - `max_pod_num` (Number) 最大pod数, 默认110
 - `password` (String, Sensitive) 用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
-- `region_id` (String) 资源池ID
-- `use_affinity_group` (Boolean) 是否使用主机组
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `use_affinity_group` (Boolean) 是否使用主机组，默认不使用
 - `visibility_host_script` (String) 部署前执行自定义脚本，base64编码
 - `visibility_post_host_script` (String) 部署后执行自定义脚本，base64编码
 
@@ -96,7 +96,7 @@ resource "ctyun_ccse_node_pool" "example" {
 Required:
 
 - `size` (Number) 系统盘大小，单位为G
-- `type` (String) 系统盘规格
+- `type` (String) 系统盘类型，支持SATA、SAS、SSD
 
 
 <a id="nestedatt--data_disks"></a>
@@ -104,5 +104,5 @@ Required:
 
 Required:
 
-- `size` (Number) 系统盘大小，单位为G
-- `type` (String) 系统盘规格
+- `size` (Number) 数据盘大小，单位为G
+- `type` (String) 数据盘类型，支持SATA、SAS、SSD

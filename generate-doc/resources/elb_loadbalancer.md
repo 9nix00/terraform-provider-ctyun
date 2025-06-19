@@ -18,7 +18,7 @@
 
 ### Optional
 
-- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年，用于升级保障型负载均衡。当升级时，必填
+- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年，用于升级保障型负载均衡。当升级时，必填
 - `cycle_type` (String) 订购类型：month（包月） / year（包年）,用于升级保障型负载均衡。当升级时，必填
 - `delete_protection` (Boolean) 删除保护。false（不开启）、true（开）。 默认：不开启
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128

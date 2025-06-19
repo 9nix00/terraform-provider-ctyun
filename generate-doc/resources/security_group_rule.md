@@ -68,7 +68,7 @@ resource "ctyun_security_group_rule" "security_group_rule_egress_any" {
 - `dest_cidr_ip` (String) 远端地址，为cidr地址格式，如果不填默认为0.0.0.0/0
 - `priority` (Number) 优先级：1~100，取值越小优先级越大，默认优先级为50
 - `range` (String) 安全组开放的传输层协议相关的源端端口范围，格式如：8000-9000，如果仅开放单一端口则直接填写，如：22，中间不能有空格以及其他特殊字符；如果protocol的值为any，请保证此值留空，如果protocol的值为tcp或udp，此值必填
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

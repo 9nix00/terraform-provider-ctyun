@@ -37,7 +37,7 @@ resource "ctyun_nat" "nat_test"{
 
 - `az_name` (String) 可用区名称
 - `creation_time` (String) NAT网关的创建时间
-- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年
+- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 - `cycle_type` (String) 订购类型：month（包月） / year（包年）/ on_demand（按需）
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
 - `expired_time` (String) NAT网关实例的过期时间

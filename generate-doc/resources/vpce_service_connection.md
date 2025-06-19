@@ -97,13 +97,13 @@ resource "ctyun_vpce" "vpce_test" {
 
 ### Required
 
-- `endpoint_id` (String) 终端节点id
-- `endpoint_service_id` (String) 终端节点服务id
-- `status` (String) 连接状态
+- `endpoint_id` (String) 终端节点ID
+- `endpoint_service_id` (String) 终端节点服务ID
+- `status` (String) 连接状态，up表示申请连接，down表示断开连接
 
 ### Optional
 
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

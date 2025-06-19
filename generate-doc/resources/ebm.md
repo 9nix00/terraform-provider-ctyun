@@ -66,14 +66,14 @@ resource "ctyun_ebm" "ebm_test" {
 
 ### Required
 
-- `cycle_type` (String) 订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]，cycleType与cycleCount一起填写
-- `device_type` (String) 物理机套餐类型
+- `cycle_type` (String) 订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]
+- `device_type` (String) 物理机套餐类型，可通过ctyun_ebm_device_types查询
 - `ext_ip` (String) 是否使用弹性公网IP，取值范围:[自动分配:auto_assign,不使用:not_use,使用已有:use_exist]
 - `hostname` (String) hostname，linux系统2到63位长度；windows系统2-15位长度；<br/>允许使用大小写字母、数字、连字符'-'、点号'.'，不能连续使用'-'或者'.'，'-'和'.'不能用于开头或结尾，不能仅使用数字
-- `image_uuid` (String) 物理机镜像id
+- `image_uuid` (String) 物理机镜像id，可通过ctyun_ebm_device_images查询
 - `instance_name` (String) 物理机名称，长度为2-31位
 - `network_card_list` (Attributes List) 网卡 (see [below for nested schema](#nestedatt--network_card_list))
-- `vpc_id` (String) 主网卡网络ID
+- `vpc_id` (String) 主网卡虚拟私有云ID
 
 ### Optional
 
@@ -81,31 +81,31 @@ resource "ctyun_ebm" "ebm_test" {
 - `az_name` (String) 可用区名称
 - `band_width` (Number) 带宽，取值范围:[1~2000]，默认值:100
 - `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；非按需时必填
-- `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填
+- `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询
 - `disk_list` (Attributes List) 云盘信息列表，套餐中supportCloud为true表示支持云盘 (see [below for nested schema](#nestedatt--disk_list))
 - `ip_type` (String) 弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4
-- `key_pair_name` (String) 密钥对名词
+- `key_pair_name` (String) 密钥对名词，和password只能传其中之一
 - `password` (String, Sensitive) 密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password
-- `project_id` (String) 企业项目ID
-- `public_ip` (String) 弹性公网IP的id
-- `region_id` (String) 资源池ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `public_ip` (String) 弹性公网IP的ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `security_group_ids` (Set of String) 安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID
-- `status` (String) 物理机状态
-- `system_volume_raid_uuid` (String) 本地系统盘raid类型，如果有本地盘则必填
-- `user_data` (String) 用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符
+- `status` (String) 物理机状态，支持running（开机）和stopped（关机），默认running
+- `system_volume_raid_uuid` (String) 本地系统盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询
+- `user_data` (String) 用户自定义数据，需要以Base64方式编码，Base64编码后的长度限制为1-16384字符
 
 ### Read-Only
 
 - `id` (String) ID
-- `instance_id` (String) 物理机UUID
-- `master_order_id` (String) 订购的受理单id
+- `instance_id` (String) 物理机UUID，值与id相同
+- `master_order_id` (String) 订单id
 
 <a id="nestedatt--network_card_list"></a>
 ### Nested Schema for `network_card_list`
 
 Required:
 
-- `master` (Boolean) 是否主节点(True代表主节点)
+- `master` (Boolean) 是否主节点
 - `subnet_id` (String) 子网id
 
 Optional:
@@ -125,7 +125,7 @@ Read-Only:
 Required:
 
 - `disk_type` (String) 磁盘类型system或data，套餐中cloudBoot为true表示支持云盘系统盘
-- `size` (Number) 磁盘容量
+- `size` (Number) 磁盘容量，单位G
 - `type` (String) 磁盘分类，取值范围:[SAS=SAS盘,SATA=SATA盘,SSD-genric=SSD-genric盘,SSD=SSD盘]
 
 Optional:

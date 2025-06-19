@@ -191,7 +191,7 @@ resource "ctyun_security_group_rule" "security_group_rule_ingress_in_huabei" {
 ### Optional
 
 - `ak` (String) 身份信息ak
-- `az_name` (String) 可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name，可使用datasource：ctyun_regions查询，zones为空表示3.0资源池。
+- `az_name` (String) 可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name
 - `console_url` (String) 请求分发地址，仅供测试使用，需配合inspect_url_keywords一起使用
 - `env` (String) 环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod
 - `inspect_url_keywords` (Set of String) 请求拦截的地址，仅供测试使用，如果填入*则表示拦截所有请求，需配合console_url一起使用

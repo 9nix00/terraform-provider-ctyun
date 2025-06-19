@@ -57,11 +57,11 @@ Optional:
 
 Read-Only:
 
-- `auto_renew` (Boolean) 是否自动续订，默认非自动续订。
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
-- `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
+- `auto_renew` (Boolean) 是否自动续订
+- `cycle_count` (Number) 订购时长
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需
 - `id` (String) 节点池id
-- `instance_type` (String) 实例类型， ecs 或 ebm
+- `instance_type` (String) 实例类型，支持ecs（云主机）、ebm（裸金属）
 - `item_def_name` (String) 规格名称
 - `mirror_id` (String) 镜像id
 - `mirror_name` (String) 镜像名称

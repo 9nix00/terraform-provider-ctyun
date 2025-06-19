@@ -1,5 +1,5 @@
 # ctyun_kafka_instance (Resource)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**
 
 
 
@@ -37,27 +37,27 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum
-- `disk_type` (String) 磁盘类型
+- `disk_type` (String) 磁盘类型，建议使用ctyun_kafka_specs查看，通常支持SAS、SSD、FAST-SSD
 - `instance_name` (String) 实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复
 - `node_num` (Number) 节点数。单机版为1个，集群版3~50个
 - `security_group_id` (String) 安全组ID
-- `spec_name` (String) 实例的规格类型
+- `spec_name` (String) 实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href="https://www.ctyun.cn/document/10029624/10030704">产品规格说明</a>
 - `subnet_id` (String) 子网ID
-- `vpc_id` (String) 关联的vpcID
-- `zone_list` (Set of String) 实例所在可用区信息
+- `vpc_id` (String) 虚拟私有云ID
+- `zone_list` (Set of String) 实例所在可用区信息，只能传一个或三个可用区，可通过ctyun_regions查看
 
 ### Optional
 
-- `auto_renew` (Boolean) 是否自动续订
-- `auto_renew_cycle_count` (Number) 自动续订时长，支持自动续订范围：1-6月
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订
+- `auto_renew_cycle_count` (Number) 自动续订时长，当且仅当auto_renew为true时填写。支持自动续订范围：1-6月
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycleType=month，支持传递1、2、3、4、5、6、12、24、36
 - `enable_ipv6` (Boolean) 是否启用IPv6，默认为false
 - `engine_version` (String) 实例引擎版本，支持2.8和3.6，默认3.6
 - `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
 - `plain_port` (Number) 公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池ID
-- `retention_hours` (Number) 实例消息保留时长，默认为72小时，可选1~10000小时
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `retention_hours` (Number) 实例消息保留时长，单位小时。默认为72小时，可选1~10000小时
 - `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
 - `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。
 

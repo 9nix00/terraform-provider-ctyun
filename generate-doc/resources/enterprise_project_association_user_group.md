@@ -29,7 +29,7 @@ resource "ctyun_enterprise_project_association_user_group" "enterprise_project_a
 
 ### Required
 
-- `enterprise_project_id` (String) 企业项目id
+- `enterprise_project_id` (String) 企业项目ID
 - `user_group_id` (String) 用户组id
 
 ### Optional

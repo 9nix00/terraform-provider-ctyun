@@ -45,7 +45,7 @@ resource "ctyun_ebm_association_ebs" "test" {
 ### Optional
 
 - `az_name` (String) 可用区名称
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

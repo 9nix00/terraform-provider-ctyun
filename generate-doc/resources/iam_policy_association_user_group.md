@@ -75,7 +75,7 @@ resource "ctyun_iam_policy_association_user_group" "iam_policy_association_user_
 
 ### Optional
 
-- `region_id` (String) 资源池id，当授权的策略为资源池级别时必填
+- `region_id` (String) 资源池ID，当授权的策略为资源池级别时必填
 
 ### Read-Only
 

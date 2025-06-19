@@ -44,7 +44,7 @@ output "plugin" {
 - `chart_name` (String) 插件名称
 - `chart_version` (String) 插件版本号，必须传递chart_name时才有效
 - `page_no` (Number) 列表的页码
-- `page_size` (Number) 每页数据量大小
+- `page_size` (Number) 每页数据量大小，支持范围1-10
 - `region_id` (String) 资源池ID
 - `values_type` (String) values类型，支持YAML或JSON
 
