@@ -181,7 +181,7 @@ var MysqlHostType = []string{
 	MysqlHostTypeKC,
 }
 
-var MysqlBillMode = []string{
-	MysqlBillModeCycle,
-	MysqlBillModeOnDemand,
+var MysqlBillMode = map[string]string{
+	MonthCycleType:    MysqlBillModeCycle,
+	OnDemandCycleType: MysqlBillModeOnDemand,
 }
