@@ -27,7 +27,7 @@ resource "ctyun_security_group" "security_group_test" {
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
-  cycle_type            = "2"
+  cycle_type            = "month"
   prod_version          = "5.7"
   vpc_id                =  ctyun_vpc.vpc_test.id
   host_type             = "C7"
@@ -37,7 +37,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   password              = "**********"
   cycle_count           = 1
   purchase_count        = 1
-  auto_renew_status     = 0
+  auto_renew            = true
   prod_id               = 10001003
   node_type             = "master"
   inst_spec             = "1"
