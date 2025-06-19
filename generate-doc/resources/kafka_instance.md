@@ -48,9 +48,9 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 
 ### Optional
 
-- `auto_renew` (Boolean) 是否自动续订，默认非自动续订
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `auto_renew_cycle_count` (Number) 自动续订时长，当且仅当auto_renew为true时填写。支持自动续订范围：1-6月
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycleType=month，支持传递1、2、3、4、5、6、12、24、36
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `enable_ipv6` (Boolean) 是否启用IPv6，默认为false
 - `engine_version` (String) 实例引擎版本，支持2.8和3.6，默认3.6
 - `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
