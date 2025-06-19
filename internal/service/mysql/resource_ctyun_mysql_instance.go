@@ -56,7 +56,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 	response.Schema = schema.Schema{
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
-			"bill_mode": schema.StringAttribute{
+			"cycle_type": schema.StringAttribute{
 				Required:    true,
 				Description: "计费模式： 1是包周期，2是按需",
 				Validators: []validator.String{
@@ -109,7 +109,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Description: "管理员密码（RSA公钥加密）",
 			},
-			"period": schema.Int32Attribute{
+			"cycle_count": schema.Int32Attribute{
 				Required:    true,
 				Description: "购买时长：单位月（范围：1-36）",
 				Validators: []validator.Int32{
@@ -450,7 +450,7 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 // CreateMysqlInstance 创建mysql实例
 func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *CtyunMysqlInstanceConfig) (err error) {
 	params := &mysql.TeledbCreateRequest{
-		BillMode:        config.BillMode.ValueString(),
+		BillMode:        config.cycleType.ValueString(),
 		RegionId:        config.RegionID.ValueString(),
 		ProdVersion:     config.ProdVersion.ValueString(),
 		VpcId:           config.VpcID.ValueString(),
@@ -458,7 +458,7 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 		SubnetId:        config.SubnetID.ValueString(),
 		SecurityGroupId: config.SecurityGroupID.ValueString(),
 		Name:            config.Name.ValueString(),
-		Period:          config.Period.ValueInt32(),
+		Period:          config.cycleCount.ValueInt32(),
 		Count:           config.PurchaseCount.ValueInt32(),
 		AutoRenewStatus: config.AutoRenewStatus.ValueInt32(),
 		ProdId:          config.ProdID.ValueInt64(),
@@ -1205,7 +1205,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 }
 
 type CtyunMysqlInstanceConfig struct {
-	BillMode                    types.String `tfsdk:"bill_mode"`                      // 计费模式： 1是包周期，2是按需
+	cycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 1是包周期，2是按需
 	RegionID                    types.String `tfsdk:"region_id"`                      // 资源池Id
 	ProdVersion                 types.String `tfsdk:"prod_version"`                   // 版本
 	ProdSpecName                types.String `tfsdk:"prod_spec_name"`                 // 产品名称规格名称
@@ -1216,7 +1216,7 @@ type CtyunMysqlInstanceConfig struct {
 	SecurityGroupID             types.String `tfsdk:"security_group_id"`              // 安全组
 	Name                        types.String `tfsdk:"name"`                           // 集群名称
 	Password                    types.String `tfsdk:"password"`                       // 管理员密码（RSA公钥加密）
-	Period                      types.Int32  `tfsdk:"period"`                         // 购买时长：单位月（范围：1-36）
+	cycleCount                  types.Int32  `tfsdk:"cycle_count"`                    // 购买时长：单位月（范围：1-36）
 	PurchaseCount               types.Int32  `tfsdk:"purchase_count"`                 // 购买数量(范围:1-50)
 	AutoRenewStatus             types.Int32  `tfsdk:"auto_renew_status"`              // 自动续订状态（0-不自动续订，1-自动续订）
 	ProdID                      types.Int64  `tfsdk:"prod_id"`                        // 产品id

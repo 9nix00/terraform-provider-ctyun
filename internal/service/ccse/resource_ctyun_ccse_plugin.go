@@ -91,7 +91,7 @@ func (c *ctyunCcsePlugin) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"chart_version": schema.StringAttribute{
 				Required:    true,
-				Description: "插件版本号",
+				Description: "插件版本号，可通过ctyun_ccse_plugin_market查询",
 			},
 			"values_yaml": schema.StringAttribute{
 				Optional:    true,

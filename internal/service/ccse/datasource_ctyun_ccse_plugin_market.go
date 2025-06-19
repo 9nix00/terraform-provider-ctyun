@@ -74,7 +74,7 @@ func (c *ctyunCcsePluginMarket) Schema(_ context.Context, _ datasource.SchemaReq
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Description: "每页数据量大小",
+				Description: "每页数据量大小，支持范围1-10",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10),
 				},

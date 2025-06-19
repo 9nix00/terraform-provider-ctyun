@@ -109,7 +109,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持订购1-11个月；当cycleType=year，支持订购1-5年",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -139,9 +139,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型， ecs 或 ebm",
+				Description: "实例类型，支持ecs（云主机）、ebm（裸金属）",
 				Validators: []validator.String{
-					stringvalidator.OneOf("ecs", "ebm"),
+					stringvalidator.OneOf(business.CcseSlaveInstanceTypeEcs, business.CcseSlaveInstanceTypeEbm),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -163,7 +163,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"mirror_type": schema.Int32Attribute{
 				Required:    true,
-				Description: "镜像类型，0-私有，1-公有",
+				Description: "镜像类型，支持传0（私有），1（公有），可查看<a href=\"https://www.ctyun.cn/document/10026730/10030151\">镜像概述</a>",
 				Validators: []validator.Int32{
 					int32validator.Between(0, 1),
 				},
@@ -173,7 +173,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"item_def_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称",
+				Description: "实例规格名称，使用至少4C8G以上的规格，云主机规格通过ctyun_ecs_flavors查询，裸金属规格通过ctyun_ebm_device_types查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -204,7 +204,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"use_affinity_group": schema.BoolAttribute{
 				Optional:    true,
-				Description: "是否使用主机组",
+				Description: "是否使用主机组，默认不使用",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
@@ -226,13 +226,13 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"sys_disk": schema.SingleNestedAttribute{
 				Required:    true,
-				Description: "系统盘",
+				Description: "系统盘信息",
 				Attributes: map[string]schema.Attribute{
 					"type": schema.StringAttribute{
 						Required:    true,
-						Description: "系统盘规格",
+						Description: "系统盘类型，支持SATA、SAS、SSD",
 						Validators: []validator.String{
-							stringvalidator.OneOf("SATA", "SAS", "SSD"),
+							stringvalidator.OneOf(business.CcseDiskTypes...),
 						},
 					},
 					"size": schema.Int32Attribute{
@@ -243,19 +243,19 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"data_disks": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "数据盘",
+				Description: "数据盘信息",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"type": schema.StringAttribute{
 							Required:    true,
-							Description: "系统盘规格",
+							Description: "数据盘类型，支持SATA、SAS、SSD",
 							Validators: []validator.String{
-								stringvalidator.OneOf("SATA", "SAS", "SSD"),
+								stringvalidator.OneOf(business.CcseDiskTypes...),
 							},
 						},
 						"size": schema.Int32Attribute{
 							Required:    true,
-							Description: "系统盘大小，单位为G",
+							Description: "数据盘大小，单位为G",
 						},
 					},
 				},
@@ -473,7 +473,7 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 
 	// 处理规格
 	switch plan.InstanceType.ValueString() {
-	case "ecs":
+	case business.CcseSlaveInstanceTypeEcs:
 		flavorName := plan.ItemDefName.ValueString()
 		flavor, err := business.NewEcsService(c.meta).GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
 		if err != nil {
@@ -483,7 +483,7 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 		params.Memory = int32(flavor.FlavorRam)
 		params.VmSpecName = flavorName
 		params.VmType = flavor.FlavorType
-	case "ebm":
+	case business.CcseSlaveInstanceTypeEbm:
 		deviceType := plan.ItemDefName.ValueString()
 		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), "test")
 		if err != nil {
@@ -580,9 +580,9 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 		plan.CycleType = types.StringValue(business.OnDemandCycleType)
 	}
 	if strings.HasPrefix(p.VmSpecName, "physical") {
-		plan.InstanceType = types.StringValue("ebm")
+		plan.InstanceType = types.StringValue(business.CcseSlaveInstanceTypeEbm)
 	} else {
-		plan.InstanceType = types.StringValue("ecs")
+		plan.InstanceType = types.StringValue(business.CcseSlaveInstanceTypeEcs)
 	}
 	plan.DataDisks = nil
 	for _, disk := range p.DataDisks {

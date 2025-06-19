@@ -60,7 +60,7 @@ locals {
 }
 
 resource "ctyun_security_group" "security_group_test" {
-  count = local.data_vpc_id=="" ? 1 : 0
+  count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
@@ -84,11 +84,11 @@ resource "ctyun_eip" "eip_test" {
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
   az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-  #az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
-  bill_mode             = "2"
+  cycle_type            = "2"
   prod_version          = "5.7"
   vpc_id                = local.real_vpc_id
   host_type             = "C7"
@@ -96,7 +96,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
   password              = "kqjwyk111"
-  period                = 1
+  cycle_count           = 1
   purchase_count        = 1
   auto_renew_status     = 0
   prod_id               = 10001003
