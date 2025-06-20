@@ -77,7 +77,7 @@ resource "ctyun_ebm" "ebm_test" {
 
 ### Optional
 
-- `auto_renew` (Boolean) 是否自动续订，默认非自动续订。
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写。
 - `az_name` (String) 可用区名称
 - `band_width` (Number) 带宽，取值范围:[1~2000]，默认值:100
 - `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；非按需时必填
