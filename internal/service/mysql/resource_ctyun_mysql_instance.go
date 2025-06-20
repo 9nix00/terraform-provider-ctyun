@@ -7,8 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -18,6 +22,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"time"
 )
 
@@ -58,9 +63,45 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 		Attributes: map[string]schema.Attribute{
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "计费模式： 1是包周期，2是按需",
+				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.MysqlBillMode...),
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"cycle_count": schema.Int32Attribute{
+				Optional:    true,
+				Description: "订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-12、24、36",
+				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+					),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+					int32validator.OneOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"auto_renew": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月",
+				Default:     booldefault.StaticBool(false),
+				Validators: []validator.Bool{
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+				},
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -109,25 +150,11 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Description: "管理员密码（RSA公钥加密）",
 			},
-			"cycle_count": schema.Int32Attribute{
-				Required:    true,
-				Description: "购买时长：单位月（范围：1-36）",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 36),
-				},
-			},
 			"purchase_count": schema.Int32Attribute{
 				Required:    true,
 				Description: "购买数量(范围:1-50)",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
-				},
-			},
-			"auto_renew_status": schema.Int32Attribute{
-				Required:    true,
-				Description: "自动续订状态 （0-不自动续订,1-自动续订）",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 1),
 				},
 			},
 			"prod_id": schema.Int64Attribute{
@@ -144,7 +171,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"node_type": schema.StringAttribute{
 				Required:    true,
-				Description: "master:实例规格(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
+				Description: "master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
 			},
 			"inst_spec": schema.StringAttribute{
 				Required:    true,
@@ -449,8 +476,9 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 
 // CreateMysqlInstance 创建mysql实例
 func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *CtyunMysqlInstanceConfig) (err error) {
+	cycleType := config.CycleType.ValueString()
 	params := &mysql.TeledbCreateRequest{
-		BillMode:        config.cycleType.ValueString(),
+		BillMode:        business.MysqlBillMode[cycleType],
 		RegionId:        config.RegionID.ValueString(),
 		ProdVersion:     config.ProdVersion.ValueString(),
 		VpcId:           config.VpcID.ValueString(),
@@ -458,12 +486,16 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 		SubnetId:        config.SubnetID.ValueString(),
 		SecurityGroupId: config.SecurityGroupID.ValueString(),
 		Name:            config.Name.ValueString(),
-		Period:          config.cycleCount.ValueInt32(),
+		Period:          config.CycleCount.ValueInt32(),
 		Count:           config.PurchaseCount.ValueInt32(),
-		AutoRenewStatus: config.AutoRenewStatus.ValueInt32(),
 		ProdId:          config.ProdID.ValueInt64(),
 		CpuType:         config.CpuType.ValueString(),
 		OsType:          config.OsType.ValueString(),
+	}
+	if cycleType == business.OnDemandCycleType {
+		params.AutoRenewStatus = 0
+	} else {
+		params.AutoRenewStatus = map[bool]int32{true: 1, false: 0}[config.AutoRenew.ValueBool()]
 	}
 
 	header := &mysql.TeledbCreateRequestHeader{}
@@ -1205,7 +1237,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 }
 
 type CtyunMysqlInstanceConfig struct {
-	cycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 1是包周期，2是按需
+	CycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 支持on_demand和month
 	RegionID                    types.String `tfsdk:"region_id"`                      // 资源池Id
 	ProdVersion                 types.String `tfsdk:"prod_version"`                   // 版本
 	ProdSpecName                types.String `tfsdk:"prod_spec_name"`                 // 产品名称规格名称
@@ -1216,9 +1248,9 @@ type CtyunMysqlInstanceConfig struct {
 	SecurityGroupID             types.String `tfsdk:"security_group_id"`              // 安全组
 	Name                        types.String `tfsdk:"name"`                           // 集群名称
 	Password                    types.String `tfsdk:"password"`                       // 管理员密码（RSA公钥加密）
-	cycleCount                  types.Int32  `tfsdk:"cycle_count"`                    // 购买时长：单位月（范围：1-36）
+	CycleCount                  types.Int32  `tfsdk:"cycle_count"`                    // 购买时长：单位月（范围：1-12，24，36）
 	PurchaseCount               types.Int32  `tfsdk:"purchase_count"`                 // 购买数量(范围:1-50)
-	AutoRenewStatus             types.Int32  `tfsdk:"auto_renew_status"`              // 自动续订状态（0-不自动续订，1-自动续订）
+	AutoRenew                   types.Bool   `tfsdk:"auto_renew"`                     // 自动续订状态
 	ProdID                      types.Int64  `tfsdk:"prod_id"`                        // 产品id
 	ProdPerformanceSpecs        types.Set    `tfsdk:"prod_performance_specs"`         // 该产品下面的单节点规格
 	CpuType                     types.String `tfsdk:"cpu_type"`                       // cpu类型：10是鲲鹏，20是海光，30是intel,40是amd,50是飞腾，60是龙芯，70是兆芯
