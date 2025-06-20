@@ -10,16 +10,17 @@ import (
 const dependenceDir = "testdata/dependence"
 
 type Dependence struct {
-	vpcID           string
-	subnetID        string
-	securityGroupID string
-	deviceType      string
-	smartNicExist   bool
-	supportCloud    bool
-	cloudBoot       bool
-	systemRaid      string
-	dataRaid        string
-	imageUUID       string
+	vpcID            string
+	subnetID         string
+	securityGroupID  string
+	deviceType       string
+	systemRaid       string
+	dataRaid         string
+	imageUUID        string
+	ebsID            string
+	ebmID            string
+	securityGroupID2 string
+	az2              string
 }
 
 var dependence Dependence
@@ -37,22 +38,17 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dependence = Dependence{
-		vpcID:           outputs["vpc_id"].Value,
-		subnetID:        outputs["subnet_id"].Value,
-		securityGroupID: outputs["security_group_id"].Value,
-		deviceType:      outputs["device_type"].Value,
-		systemRaid:      outputs["system_raid"].Value,
-		dataRaid:        outputs["data_raid"].Value,
-		imageUUID:       outputs["image_uuid"].Value,
-	}
-	if outputs["smart_nic_exist "].Value == "true" {
-		dependence.smartNicExist = true
-	}
-	if outputs["support_cloud"].Value == "true" {
-		dependence.supportCloud = true
-	}
-	if outputs["cloud_boot"].Value == "true" {
-		dependence.cloudBoot = true
+		vpcID:            outputs["vpc_id"].Value,
+		subnetID:         outputs["subnet_id"].Value,
+		securityGroupID:  outputs["security_group_id"].Value,
+		deviceType:       outputs["device_type"].Value,
+		systemRaid:       outputs["system_raid"].Value,
+		dataRaid:         outputs["data_raid"].Value,
+		imageUUID:        outputs["image_uuid"].Value,
+		ebsID:            outputs["ebs_id"].Value,
+		ebmID:            outputs["ebm_id"].Value,
+		securityGroupID2: outputs["security_group_id2"].Value,
+		az2:              outputs["az2"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

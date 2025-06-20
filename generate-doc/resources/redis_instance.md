@@ -67,11 +67,11 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 
 ### Optional
 
-- `auto_renew` (Boolean) 是否自动续订，默认非自动续订
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `auto_renew_cycle_count` (Number) 自动续订时长，单位月，支持1, 2, 3, 5, 6, 7, 12, 24, 36
 - `az_name` (String) 主可用区，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
 - `copies_count` (Number) 副本数量，当 edition取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycleType=month，支持传递1、2、3、4、5、6、12、24、36
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `data_disk_type` (String) 磁盘类型，支持SAS和SSD，默认SAS
 - `host_type` (String) 主机类型，默认S，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型
 - `maintenance_time` (String) 实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00

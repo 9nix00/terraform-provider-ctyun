@@ -171,7 +171,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"node_type": schema.StringAttribute{
 				Required:    true,
-				Description: "master:实例规格(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
+				Description: "master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
 			},
 			"inst_spec": schema.StringAttribute{
 				Required:    true,

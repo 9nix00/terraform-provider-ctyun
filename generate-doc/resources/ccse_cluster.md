@@ -208,7 +208,7 @@ Required:
 
 Optional:
 
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持订购1-11个月；当cycleType=year，支持订购1-3年
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-3年
 - `pod_cidr` (String) pod网络cidr，使用cubecni作为网络插件时，podCidr不填，服务端会取vpcCidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。
 - `pod_subnet_id_list` (Set of String) pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
