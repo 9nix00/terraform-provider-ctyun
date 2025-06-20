@@ -44,7 +44,7 @@ provider_installation {
 
 - 将可执行文件terraform-provider-ctyun粘贴到上述目录。
 
-### Linux
+### Linux\MacOS
 
 - vi ~/.terraformrc
 
@@ -105,7 +105,7 @@ provider "ctyun" {
 
 
 
-## 开发调试指南
+## 开发调试指南（开发者阅读）
 
 ### Windows
 
