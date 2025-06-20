@@ -102,7 +102,7 @@ func (c *CtyunProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 		},
 		"az_name": schema.StringAttribute{
 			Optional:    true,
-			Description: "可用区，填写选用资源池的az_name",
+			Description: "可用区英文，填写选用资源池的az_name",
 		},
 		"project_id": schema.StringAttribute{
 			Optional:    true,

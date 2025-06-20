@@ -50,7 +50,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -72,7 +71,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -93,7 +91,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -136,7 +133,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
