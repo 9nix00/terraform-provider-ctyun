@@ -54,6 +54,8 @@ provider "ctyun" {
 
 ## 开发调试指南
 
+### Windows
+
 - 在`C:\Users\用户名\AppData\Roaming`目录中新建terraform.rc
 
 - 在文件中写入
@@ -71,6 +73,33 @@ provider "ctyun" {
     direct {}
   }
   ```
+- 将编译好的可执行文件放到terraform.rc中指定的目录，这里是`D:/Go/gobin/`
+
+### Linux
+
+- vi ~/.terraformrc
+
+- 在文件中写入下列内容，注意要将${pwd}替换成terraform-provider-ctyun文件所在目录
+
+```
+provider_installation {
+
+  dev_overrides {
+      "ctyun-it/ctyun"="${pwd}"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+- 如出现权限问题，可使用以下命令，如：
+
+```
+chmod +x /home/terraform-provider-ctyun
+```
 
 
 
@@ -90,7 +119,9 @@ provider "ctyun" {
 
 
 ## 说明
-- **目前terraform-provider-ctyun仅支持4.0的资源池**，3.0的资源池正在积极接入中，请选择下面的4.0资源池进行使用，建议您的测试使用**华东1可用区1**进行测试，`region_id=bb9fdb42056f11eda1610242ac110002,az_name=cn-huadong1-jsnj1A-public-ctcloud`
+- **目前terraform-provider-ctyun仅支持4.0的资源池**，建议您的测试使用**华东1可用区1**进行测试，`region_id=bb9fdb42056f11eda1610242ac110002,az_name=cn-huadong1-jsnj1A-public-ctcloud`
+
+- 部分4.0资源池region_id及az_name如下，全量资源池可使用ctyun_regions查询
 
 | 区域名称   | region_id                        | 可用区名称 | az_name                           |
 | ---------- | -------------------------------- | ---------- | --------------------------------- |
@@ -112,8 +143,6 @@ provider "ctyun" {
 | 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区1    | cn-huadong1-jsnj1A-public-ctcloud |
 | 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区2    | cn-huadong1-jsnj2A-public-ctcloud |
 
-- 目前**暂未支持资源的ImportState**，预计未来版本会逐步接入
-
 
 
 {{ if .HasExample -}}
@@ -121,7 +150,5 @@ provider "ctyun" {
 
 {{tffile .ExampleFile }}
 {{- end }}
-
-
 
 {{ .SchemaMarkdown | trimspace }}

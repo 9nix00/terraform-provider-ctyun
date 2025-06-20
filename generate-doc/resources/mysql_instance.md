@@ -70,7 +70,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `host_type` (String) 主机类型 host type: S6 or S7,需要大写
 - `inst_spec` (String) 实例规格，取值范围1~15
 - `name` (String) 集群名称(若开通只读实例，默认在主实例名称后面加'-read')
-- `node_type` (String) master:实例规格(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
+- `node_type` (String) master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
 - `os_type` (String) 系统类型：0是裸机，1是windows，2是centos，3是ubuntu，4是android，5是redhat，6是kylin，7是uos,8是suse，9是asianux，10是open_euler，11是ctyunos，12是euler
 - `prod_id` (Number) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致
 - `prod_performance_spec` (String) 规格(例: 4C8G),不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致

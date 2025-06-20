@@ -10,7 +10,7 @@
 
 ## 依赖
 
-- terraform最新版本（v1.12.2），[下载地址](https://developer.hashicorp.com/terraform/install)，请按照官方指引安装
+- terraform最新版本（v1.6.6），[下载地址](https://developer.hashicorp.com/terraform/install)，请按照官方指引安装
 - terraform-provider-ctyun插件，linux请使用terraform-provider-ctyun，windows使用terraform-provider-ctyun.exe
 - 配置样例若干
 - 插件使用说明：
@@ -50,6 +50,8 @@ provider "ctyun" {
 
 ## 开发调试指南
 
+### Windows
+
 - 在`C:\Users\用户名\AppData\Roaming`目录中新建terraform.rc
 
 - 在文件中写入
@@ -67,6 +69,33 @@ provider "ctyun" {
     direct {}
   }
   ```
+- 将编译好的可执行文件放到terraform.rc中指定的目录，这里是`D:/Go/gobin/`
+
+### Linux
+
+- vi ~/.terraformrc
+
+- 在文件中写入下列内容，注意要将${pwd}替换成terraform-provider-ctyun文件所在目录
+
+```
+provider_installation {
+
+  dev_overrides {
+      "ctyun-it/ctyun"="${pwd}"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+- 如出现权限问题，可使用以下命令，如：
+
+```
+chmod +x /home/terraform-provider-ctyun
+```
 
 
 
@@ -86,14 +115,14 @@ provider "ctyun" {
 
 
 ## 说明
-- **目前terraform-provider-ctyun仅支持4.0的资源池**，请选择下面的4.0资源池进行使用，建议您的测试使用**华东1可用区1**进行测试，`region_id=bb9fdb42056f11eda1610242ac110002,az_name=cn-huadong1-jsnj1A-public-ctcloud`
+- **目前terraform-provider-ctyun仅支持4.0的资源池**，建议您的测试使用**华东1可用区1**进行测试，`region_id=bb9fdb42056f11eda1610242ac110002,az_name=cn-huadong1-jsnj1A-public-ctcloud`
 
-- 部分region_id及az_name如下，全量资源池可使用ctyun_regions查询
+- 部分4.0资源池region_id及az_name如下，全量资源池可使用ctyun_regions查询
 
-| 区域名称     | region_id                        | 可用区名称 | az_name                           |
-|----------| -------------------------------- | ---------- | --------------------------------- |
+| 区域名称   | region_id                        | 可用区名称 | az_name                           |
+| ---------- | -------------------------------- | ---------- | --------------------------------- |
 | 太原4      | 200000002689                     | 可用区1    | cn-sx-tyn4-1a-public-ctcloud      |
-| 西南2-贵州   | 200000002927                     | 可用区1    | cn-xinan2-gz-1a-public-ctcloud    |
+| 西南2-贵州 | 200000002927                     | 可用区1    | cn-xinan2-gz-1a-public-ctcloud    |
 | 郑州5      | 200000002586                     | 可用区1    | cn-ha-cgo5-1a-public-ctcloud      |
 | 青岛20     | 200000001703                     | 可用区1    | cn-sd-qd20-sdqd1A-public-ctcloud  |
 | 武汉41     | 200000001781                     | 可用区1    | cn-hb-wh41-hbwh1A-public-ctcloud  |
@@ -189,7 +218,7 @@ resource "ctyun_security_group_rule" "security_group_rule_ingress_in_huabei" {
 ### Optional
 
 - `ak` (String) 身份信息ak
-- `az_name` (String) 可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name（ctyun_regions结果中zones为空表示3.0资源池）。
+- `az_name` (String) 可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name
 - `console_url` (String) 请求分发地址，仅供测试使用，需配合inspect_url_keywords一起使用
 - `env` (String) 环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod
 - `inspect_url_keywords` (Set of String) 请求拦截的地址，仅供测试使用，如果填入*则表示拦截所有请求，需配合console_url一起使用
