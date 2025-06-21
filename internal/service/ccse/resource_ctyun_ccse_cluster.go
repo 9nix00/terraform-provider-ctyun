@@ -8,6 +8,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -60,26 +62,38 @@ type CtyunCcseClusterConfig struct {
 }
 
 type CtyunCcseClusterBaseInfo struct {
-	ProjectID        types.String `tfsdk:"project_id"`
-	VpcID            types.String `tfsdk:"vpc_id"`
-	SubnetID         types.String `tfsdk:"subnet_id"`
-	ClusterName      types.String `tfsdk:"cluster_name"`
-	ClusterDomain    types.String `tfsdk:"cluster_domain"`
-	NetworkPlugin    types.String `tfsdk:"network_plugin"`
-	StartPort        types.Int32  `tfsdk:"start_port"`
-	EndPort          types.Int32  `tfsdk:"end_port"`
-	ElbProdCode      types.String `tfsdk:"elb_prod_code"`
-	PodCidr          types.String `tfsdk:"pod_cidr"`
-	PodSubnetIdList  []string     `tfsdk:"pod_subnet_id_list"`
-	CycleType        types.String `tfsdk:"cycle_type"`
-	CycleCount       types.Int64  `tfsdk:"cycle_count"`
-	ContainerRuntime types.String `tfsdk:"container_runtime"`
-	Timezone         types.String `tfsdk:"timezone"`
-	ClusterVersion   types.String `tfsdk:"cluster_version"`
-	DeployType       types.String `tfsdk:"deploy_type"`
-	KubeProxy        types.String `tfsdk:"kube_proxy"`
-	ClusterSeries    types.String `tfsdk:"cluster_series"`
-	SeriesType       types.String `tfsdk:"series_type"`
+	ProjectID             types.String `tfsdk:"project_id"`
+	VpcID                 types.String `tfsdk:"vpc_id"`
+	SubnetID              types.String `tfsdk:"subnet_id"`
+	ClusterName           types.String `tfsdk:"cluster_name"`
+	ClusterDomain         types.String `tfsdk:"cluster_domain"`
+	NetworkPlugin         types.String `tfsdk:"network_plugin"`
+	StartPort             types.Int32  `tfsdk:"start_port"`
+	EndPort               types.Int32  `tfsdk:"end_port"`
+	ElbProdCode           types.String `tfsdk:"elb_prod_code"`
+	PodCidr               types.String `tfsdk:"pod_cidr"`
+	PodSubnetIdList       []string     `tfsdk:"pod_subnet_id_list"`
+	CycleType             types.String `tfsdk:"cycle_type"`
+	CycleCount            types.Int64  `tfsdk:"cycle_count"`
+	ContainerRuntime      types.String `tfsdk:"container_runtime"`
+	Timezone              types.String `tfsdk:"timezone"`
+	ClusterVersion        types.String `tfsdk:"cluster_version"`
+	DeployType            types.String `tfsdk:"deploy_type"`
+	KubeProxy             types.String `tfsdk:"kube_proxy"`
+	ClusterSeries         types.String `tfsdk:"cluster_series"`
+	SeriesType            types.String `tfsdk:"series_type"`
+	AutoRenew             types.Bool   `tfsdk:"auto_renew"`            // 自动续订
+	EnableApiServerEip    types.Bool   `tfsdk:"enable_api_server_eip"` // 是否开启ApiServerEip，默认false，若开启将自动创建按需计费类型的eip。
+	EnableSnat            types.Bool   `tfsdk:"enable_snat"`           // 是否开启nat网关，默认false，若开启将自动创建按需计费类型的nat网关。
+	NatGatewaySpec        types.String `tfsdk:"nat_gateway_spec"`
+	InstallAlsCubeEvent   types.Bool   `tfsdk:"install_als_cube_event"`
+	InstallAls            types.Bool   `tfsdk:"install_als"`
+	InstallCcseMonitor    types.Bool   `tfsdk:"install_ccse_monitor"`
+	InstallNginxIngress   types.Bool   `tfsdk:"install_nginx_ingress"`
+	NginxIngressLBSpec    types.String `tfsdk:"nginx_ingress_lb_spec"`
+	NginxIngressLBNetWork types.String `tfsdk:"nginx_ingress_network"`
+	IpVlan                types.Bool   `tfsdk:"ip_vlan"`
+	NetworkPolicy         types.Bool   `tfsdk:"network_policy"`
 }
 
 type CtyunCcseClusterAzInfo struct {
@@ -237,6 +251,140 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						},
 						PlanModifiers: []planmodifier.Set{
 							setplanmodifier.RequiresReplace(),
+						},
+					},
+					"enable_api_server_eip": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否开启ApiServerEip，默认false，若开启将自动创建按需计费类型的eip。",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"enable_snat": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否开启nat网关，默认false，若开启将自动创建按需计费类型的nat网关。",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"nat_gateway_spec": schema.StringAttribute{
+						Optional:    true,
+						Description: "当enable_snat=true时填写，nat网关规格：small，medium，large，xlarge，可参考<a href=\"https://www.ctyun.cn/document/10026759/10043996\">产品规格说明</a>",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+						Validators: []validator.String{
+							stringvalidator.OneOf("small", "medium", "large", "xlarge"),
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("base_info").AtName("enable_snat"),
+								types.BoolValue(true),
+							),
+						},
+					},
+					"install_als_cube_event": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否安装事件采集插件，默认false",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"install_als": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否安装日志插件，默认false",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"install_ccse_monitor": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否安装监控插件，默认false",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"install_nginx_ingress": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否安装nginx_ingress插件，默认false",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"nginx_ingress_lb_spec": schema.StringAttribute{
+						Optional:    true,
+						Description: "install_nginx_ingress=true必填，支持规格：standardI（标准I型） ,standardII（标准II型）, enhancedI（增强I型）, enhancedII（增强II型） , higherI（高阶I型），可参考<a href=\"https://www.ctyun.cn/document/10026756/10032048\">规格详情</a>",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+						Validators: []validator.String{
+							stringvalidator.OneOf("standardI", "standardII", "enhancedI", "enhancedII", "higherI"),
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("base_info").AtName("install_nginx_ingress"),
+								types.BoolValue(true),
+							),
+						},
+					},
+					"nginx_ingress_network": schema.StringAttribute{
+						Optional:    true,
+						Description: "install_nginx_ingress=true必填，nginx ingress访问方式：external（公网），internal（内网），当选择公网时将自动创建eip额外产生eip相关费用",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+						Validators: []validator.String{
+							stringvalidator.OneOf("external", "internal"),
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("base_info").AtName("install_nginx_ingress"),
+								types.BoolValue(true),
+							),
+						},
+					},
+					"ip_vlan": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "基于IPVLAN做弹性网卡共享，默认false，当指定为true时，主机镜像只有使用CtyunOS系统才能生效",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"network_policy": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Default:     booldefault.StaticBool(false),
+						Description: "是否提供基于策略的网络访问控制，默认false",
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
+						},
+					},
+					"auto_renew": schema.BoolAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年。",
+						Default:     booldefault.StaticBool(false),
+						Validators: []validator.Bool{
+							validator2.AlsoRequiresEqualBool(
+								path.MatchRoot("base_info").AtName("cycle_type"),
+								types.StringValue(business.OrderCycleTypeMonth),
+								types.StringValue(business.OrderCycleTypeYear),
+							),
+							validator2.ConflictsWithEqualBool(
+								path.MatchRoot("base_info").AtName("cycle_type"),
+								types.StringValue(business.OrderCycleTypeOnDemand),
+							),
+						},
+						PlanModifiers: []planmodifier.Bool{
+							boolplanmodifier.RequiresReplace(),
 						},
 					},
 					"cycle_type": schema.StringAttribute{
@@ -771,15 +919,28 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		DeployType:                plan.BaseInfo.DeployType.ValueString(),
 		KubeProxy:                 plan.BaseInfo.KubeProxy.ValueString(),
 		SeriesType:                plan.BaseInfo.SeriesType.ValueString(),
+		EnableApiServerEip:        plan.BaseInfo.EnableApiServerEip.ValueBoolPointer(),
+		EnableSnat:                plan.BaseInfo.EnableSnat.ValueBoolPointer(),
+		NatGatewaySpec:            plan.BaseInfo.NatGatewaySpec.ValueString(),
+		EnableAlsCubeEventer:      plan.BaseInfo.InstallAlsCubeEvent.ValueBoolPointer(),
+		EnableAls:                 plan.BaseInfo.InstallAls.ValueBoolPointer(),
+		PluginCcseMonitorEnabled:  plan.BaseInfo.InstallCcseMonitor.ValueBoolPointer(),
+		InstallNginxIngress:       plan.BaseInfo.InstallNginxIngress.ValueBoolPointer(),
+		NginxIngressLBSpec:        plan.BaseInfo.NginxIngressLBSpec.ValueString(),
+		Ipvlan:                    plan.BaseInfo.IpVlan.ValueBoolPointer(),
+		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
+		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
 	}
 	switch plan.BaseInfo.CycleType.ValueString() {
 	case business.OnDemandCycleType:
 		clusterBaseInfo.BillMode = "2"
 	case business.MonthCycleType:
+		clusterBaseInfo.AutoRenewStatus = plan.BaseInfo.AutoRenew.ValueBoolPointer()
 		clusterBaseInfo.BillMode = "1"
 		clusterBaseInfo.CycleType = "3"
 		clusterBaseInfo.CycleCnt = int32(plan.BaseInfo.CycleCount.ValueInt64())
 	case business.YearCycleType:
+		clusterBaseInfo.AutoRenewStatus = plan.BaseInfo.AutoRenew.ValueBoolPointer()
 		clusterBaseInfo.BillMode = "1"
 		clusterBaseInfo.CycleType = fmt.Sprintf("%d", plan.BaseInfo.CycleCount.ValueInt64()+4) // 1年传5，2年传6，3年传7
 		clusterBaseInfo.CycleCnt = 1
