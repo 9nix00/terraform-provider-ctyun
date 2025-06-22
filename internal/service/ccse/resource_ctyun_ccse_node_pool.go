@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -44,28 +45,32 @@ func (c *ctyunCcseNodePool) Metadata(_ context.Context, request resource.Metadat
 }
 
 type CtyunCcseNodePoolConfig struct {
-	ID                       types.String            `tfsdk:"id"`
-	ClusterID                types.String            `tfsdk:"cluster_id"`
-	RegionID                 types.String            `tfsdk:"region_id"`
-	NodePoolName             types.String            `tfsdk:"node_pool_name"`
-	CycleCount               types.Int64             `tfsdk:"cycle_count"`
-	CycleType                types.String            `tfsdk:"cycle_type"`
-	AutoRenew                types.Bool              `tfsdk:"auto_renew"`
-	VisibilityPostHostScript types.String            `tfsdk:"visibility_post_host_script"`
-	VisibilityHostScript     types.String            `tfsdk:"visibility_host_script"`
-	InstanceType             types.String            `tfsdk:"instance_type"`
-	MirrorID                 types.String            `tfsdk:"mirror_id"`
-	MirrorName               types.String            `tfsdk:"mirror_name"`
-	MirrorType               types.Int32             `tfsdk:"mirror_type"`
-	Password                 types.String            `tfsdk:"password"`
-	KeyPairName              types.String            `tfsdk:"key_pair_name"`
-	KeyPairID                types.String            `tfsdk:"key_pair_id"`
-	UseAffinityGroup         types.Bool              `tfsdk:"use_affinity_group"`
-	AffinityGroupID          types.String            `tfsdk:"affinity_group_id"`
-	ItemDefName              types.String            `tfsdk:"item_def_name"`
-	SysDisk                  CtyunCcseNodePoolDisk   `tfsdk:"sys_disk"`
-	DataDisks                []CtyunCcseNodePoolDisk `tfsdk:"data_disks"`
-	MaxPodNum                types.Int32             `tfsdk:"max_pod_num"`
+	ID                       types.String              `tfsdk:"id"`
+	ClusterID                types.String              `tfsdk:"cluster_id"`
+	RegionID                 types.String              `tfsdk:"region_id"`
+	NodePoolName             types.String              `tfsdk:"node_pool_name"`
+	CycleCount               types.Int64               `tfsdk:"cycle_count"`
+	CycleType                types.String              `tfsdk:"cycle_type"`
+	AutoRenew                types.Bool                `tfsdk:"auto_renew"`
+	VisibilityPostHostScript types.String              `tfsdk:"visibility_post_host_script"`
+	VisibilityHostScript     types.String              `tfsdk:"visibility_host_script"`
+	InstanceType             types.String              `tfsdk:"instance_type"`
+	MirrorID                 types.String              `tfsdk:"mirror_id"`
+	MirrorName               types.String              `tfsdk:"mirror_name"`
+	MirrorType               types.Int32               `tfsdk:"mirror_type"`
+	Password                 types.String              `tfsdk:"password"`
+	KeyPairName              types.String              `tfsdk:"key_pair_name"`
+	UseAffinityGroup         types.Bool                `tfsdk:"use_affinity_group"`
+	AffinityGroupID          types.String              `tfsdk:"affinity_group_id"`
+	ItemDefName              types.String              `tfsdk:"item_def_name"`
+	SysDisk                  CtyunCcseNodePoolDisk     `tfsdk:"sys_disk"`
+	DataDisks                []CtyunCcseNodePoolDisk   `tfsdk:"data_disks"`
+	MaxPodNum                types.Int32               `tfsdk:"max_pod_num"`
+	AzInfos                  []CtyunCcseNodePoolAzInfo `tfsdk:"az_infos"`
+}
+
+type CtyunCcseNodePoolAzInfo struct {
+	AzName types.String `tfsdk:"az_name"`
 }
 
 type CtyunCcseNodePoolDisk struct {
@@ -142,6 +147,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"visibility_host_script": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "部署前执行自定义脚本，base64编码",
 			},
 			"instance_type": schema.StringAttribute{
@@ -188,30 +194,38 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥对名称",
+				Description: "密钥对名称，与password冲突",
 				Default:     stringdefault.StaticString(""),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(
+						path.MatchRoot("password"),
+					),
+				},
 			},
-			"key_pair_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "密钥对ID",
-				Default:     stringdefault.StaticString(""),
-			},
+
 			"password": schema.StringAttribute{
 				Optional:    true,
-				Description: "用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
+				Description: "用户密码，与key_pair_name冲突，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 30),
 					validator2.EcsPassword(),
-					validator2.ConflictsWithEqualString(
+					stringvalidator.ConflictsWith(
 						path.MatchRoot("key_pair_name"),
 					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 				Sensitive: true,
 			},
 			"use_affinity_group": schema.BoolAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "是否使用主机组，默认不使用",
+				Default:     booldefault.StaticBool(false),
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
@@ -244,7 +258,28 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 					},
 					"size": schema.Int32Attribute{
 						Required:    true,
-						Description: "系统盘大小，单位为G",
+						Description: "系统盘大小，单位为G，支持范围40-2040",
+						Validators: []validator.Int32{
+							int32validator.Between(40, 2040),
+						},
+					},
+				},
+			},
+			"az_infos": schema.ListNestedAttribute{
+				Required: true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				Description: "可用区信息，支持的可用区可通过ctyun_regions查询",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"az_name": schema.StringAttribute{
+							Required:    true,
+							Description: "可用区编码",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+						},
 					},
 				},
 			},
@@ -262,7 +297,10 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 						},
 						"size": schema.Int32Attribute{
 							Required:    true,
-							Description: "数据盘大小，单位为G",
+							Description: "数据盘大小，单位为G，支持范围10-20000",
+							Validators: []validator.Int32{
+								int32validator.Between(10, 20000),
+							},
 						},
 					},
 				},
@@ -319,6 +357,10 @@ func (c *ctyunCcseNodePool) Read(ctx context.Context, request resource.ReadReque
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "不存在") {
+			response.State.RemoveResource(ctx)
+			err = nil
+		}
 		return
 	}
 
@@ -461,7 +503,20 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 	} else {
 		params.LoginType = "secretPair"
 		params.KeyName = plan.KeyPairName.ValueString()
-		params.KeyPairId = plan.KeyPairID.ValueString()
+		// 查keypair_id
+		params.KeyPairId, err = business.NewKeyPairService(c.meta).GetKeyPairID(
+			ctx,
+			plan.KeyPairName.ValueString(),
+			plan.RegionID.ValueString(),
+			"",
+		)
+		if err != nil {
+			return
+		}
+	}
+
+	for _, az := range plan.AzInfos {
+		params.AzInfo = append(params.AzInfo, &ccse2.CcseCreateNodePoolAzInfoRequest{AzName: az.AzName.ValueString()})
 	}
 
 	// 处理订单
@@ -576,7 +631,6 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 	plan.MirrorID = types.StringValue(p.ImageUuid)
 	plan.MirrorName = types.StringValue(p.ImageName)
 	plan.ItemDefName = types.StringValue(p.VmSpecName)
-	plan.KeyPairID = types.StringValue(p.KeyPairId)
 	plan.KeyPairName = types.StringValue(p.KeyName)
 
 	switch p.BillMode {

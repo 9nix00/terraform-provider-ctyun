@@ -373,11 +373,6 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年。",
 						Default:     booldefault.StaticBool(false),
 						Validators: []validator.Bool{
-							validator2.AlsoRequiresEqualBool(
-								path.MatchRoot("base_info").AtName("cycle_type"),
-								types.StringValue(business.OrderCycleTypeMonth),
-								types.StringValue(business.OrderCycleTypeYear),
-							),
 							validator2.ConflictsWithEqualBool(
 								path.MatchRoot("base_info").AtName("cycle_type"),
 								types.StringValue(business.OrderCycleTypeOnDemand),
@@ -515,9 +510,12 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							},
 							"size": schema.Int32Attribute{
 								Required:    true,
-								Description: "系统盘大小，单位为G",
+								Description: "系统盘大小，单位为G，支持范围80-2040",
 								PlanModifiers: []planmodifier.Int32{
 									int32planmodifier.RequiresReplace(),
+								},
+								Validators: []validator.Int32{
+									int32validator.Between(80, 2040),
 								},
 							},
 						},
@@ -539,9 +537,12 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								},
 								"size": schema.Int32Attribute{
 									Required:    true,
-									Description: "数据盘大小，单位为G",
+									Description: "数据盘大小，单位为G，支持范围10-20000",
 									PlanModifiers: []planmodifier.Int32{
 										int32planmodifier.RequiresReplace(),
+									},
+									Validators: []validator.Int32{
+										int32validator.Between(10, 20000),
 									},
 								},
 							},
@@ -685,9 +686,12 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							},
 							"size": schema.Int32Attribute{
 								Required:    true,
-								Description: "系统盘大小，单位为G",
+								Description: "系统盘大小，单位为G，支持范围80-2040",
 								PlanModifiers: []planmodifier.Int32{
 									int32planmodifier.RequiresReplace(),
+								},
+								Validators: []validator.Int32{
+									int32validator.Between(80, 2040),
 								},
 							},
 						},
@@ -709,9 +713,12 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								},
 								"size": schema.Int32Attribute{
 									Required:    true,
-									Description: "数据盘大小，单位为G",
+									Description: "数据盘大小，单位为G，支持范围10-20000",
 									PlanModifiers: []planmodifier.Int32{
 										int32planmodifier.RequiresReplace(),
+									},
+									Validators: []validator.Int32{
+										int32validator.Between(10, 20000),
 									},
 								},
 							},

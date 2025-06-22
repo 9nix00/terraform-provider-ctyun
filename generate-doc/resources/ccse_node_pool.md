@@ -30,20 +30,26 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 resource "ctyun_ccse_node_pool" "example" {
   cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
   node_pool_name           = "default-pool"
-  cycle_type              = "on_demand"
+  cycle_type              = "month"
+  cycle_count = 1
+  auto_renew = true
   instance_type            = "ecs"
-  mirror_name             = "CTyunOS-23.01-CCND_CCSE_40_08-x86_64"
+  mirror_name             = "ctyunos-23.01-x86_64"
   mirror_id                = "3f80d8c0-8eb5-4afa-a506-13ba68b61872"
   mirror_type              = 1
-  password                 = "P@ss2wsx"
+  key_pair_name           = "KeyPair-de15"
   use_affinity_group       = true
-  affinity_group_id      = "e9d3239a-207a-4006-aa84-3945265bac27"
+  affinity_group_id      = "f8b18511-4327-4c3f-9373-c6d661889fcb"
   item_def_name            = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].name
   max_pod_num              = 110
-
+  az_infos = [
+    {
+      az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+    }
+  ]
   sys_disk = {
     type = "SATA"
-    size = 3000
+    size = 300
   }
 
   data_disks = [
@@ -60,6 +66,7 @@ resource "ctyun_ccse_node_pool" "example" {
 
 ### Required
 
+- `az_infos` (Attributes List) 可用区信息，支持的可用区可通过ctyun_regions查询 (see [below for nested schema](#nestedatt--az_infos))
 - `cluster_id` (String) 集群ID
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `instance_type` (String) 实例类型，支持ecs（云主机）、ebm（裸金属）
@@ -76,10 +83,9 @@ resource "ctyun_ccse_node_pool" "example" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年
 - `data_disks` (Attributes List) 数据盘信息 (see [below for nested schema](#nestedatt--data_disks))
-- `key_pair_id` (String) 密钥对ID
-- `key_pair_name` (String) 密钥对名称
+- `key_pair_name` (String) 密钥对名称，与password冲突
 - `max_pod_num` (Number) 最大pod数, 默认110
-- `password` (String, Sensitive) 用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
+- `password` (String, Sensitive) 用户密码，与key_pair_name冲突，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `use_affinity_group` (Boolean) 是否使用主机组，默认不使用
 - `visibility_host_script` (String) 部署前执行自定义脚本，base64编码
@@ -89,12 +95,20 @@ resource "ctyun_ccse_node_pool" "example" {
 
 - `id` (String) ID
 
+<a id="nestedatt--az_infos"></a>
+### Nested Schema for `az_infos`
+
+Required:
+
+- `az_name` (String) 可用区编码
+
+
 <a id="nestedatt--sys_disk"></a>
 ### Nested Schema for `sys_disk`
 
 Required:
 
-- `size` (Number) 系统盘大小，单位为G
+- `size` (Number) 系统盘大小，单位为G，支持范围40-2040
 - `type` (String) 系统盘类型，支持SATA、SAS、SSD
 
 
@@ -103,5 +117,5 @@ Required:
 
 Required:
 
-- `size` (Number) 数据盘大小，单位为G
+- `size` (Number) 数据盘大小，单位为G，支持范围10-20000
 - `type` (String) 数据盘类型，支持SATA、SAS、SSD

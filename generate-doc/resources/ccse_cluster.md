@@ -269,7 +269,7 @@ Required:
 
 Required:
 
-- `size` (Number) 数据盘大小，单位为G
+- `size` (Number) 数据盘大小，单位为G，支持范围10-20000
 - `type` (String) 数据盘类型，支持SATA、SAS、SSD
 
 
@@ -278,7 +278,7 @@ Required:
 
 Required:
 
-- `size` (Number) 系统盘大小，单位为G
+- `size` (Number) 系统盘大小，单位为G，支持范围80-2040
 - `type` (String) 系统盘类型，支持SATA、SAS、SSD
 
 
@@ -310,7 +310,7 @@ Required:
 
 Required:
 
-- `size` (Number) 数据盘大小，单位为G
+- `size` (Number) 数据盘大小，单位为G，支持范围10-20000
 - `type` (String) 数据盘类型，支持SATA、SAS、SSD
 
 
@@ -319,5 +319,5 @@ Required:
 
 Required:
 
-- `size` (Number) 系统盘大小，单位为G
+- `size` (Number) 系统盘大小，单位为G，支持范围80-2040
 - `type` (String) 系统盘类型，支持SATA、SAS、SSD
