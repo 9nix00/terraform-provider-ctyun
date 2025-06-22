@@ -28,10 +28,9 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 }
 
 resource "ctyun_ccse_node_pool" "example" {
-  cluster_id               = "19b4be67777e40e690b97c3a8664a1f9"
+  cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
   node_pool_name           = "default-pool"
   cycle_type              = "on_demand"
-  auto_renew        = 1
   instance_type            = "ecs"
   mirror_name             = "CTyunOS-23.01-CCND_CCSE_40_08-x86_64"
   mirror_id                = "3f80d8c0-8eb5-4afa-a506-13ba68b61872"

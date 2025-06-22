@@ -31,10 +31,9 @@ resource "ctyun_subnet" "subnet_test" {
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [
-    "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
+    "100.95.0.1"
   ]
+  enable_ipv6 = true
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
@@ -50,7 +49,7 @@ resource "ctyun_ccse_cluster" "example" {
   base_info = {
     vpc_id     = ctyun_vpc.vpc_test.id
     subnet_id  = ctyun_subnet.subnet_test.id
-    cluster_name = "fe-ccse1"
+    cluster_name = "fe-ccse33"
     cluster_domain = "www.ccc.s"
     network_plugin = "cubecni"
     start_port = 30000
@@ -65,6 +64,18 @@ resource "ctyun_ccse_cluster" "example" {
     deploy_type   = "single"
     kube_proxy    = "iptables"
     cluster_series = "cce.standard"
+    auto_renew= true           
+    enable_api_server_eip = true
+    enable_snat= true          
+    nat_gateway_spec = "small"
+    install_als_cube_event = true
+    install_als= true          
+    install_ccse_monitor = true
+    install_nginx_ingress = true
+    nginx_ingress_lb_spec = "standardI"
+    nginx_ingress_network = "external"
+    ip_vlan= true              
+    network_policy= true
   }
 
   master_host = {
@@ -208,7 +219,19 @@ Required:
 
 Optional:
 
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，按月购买，自动续订周期为1个月；按年购买，自动续订周期为1年。
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-3年
+- `enable_api_server_eip` (Boolean) 是否开启ApiServerEip，默认false，若开启将自动创建按需计费类型的eip。
+- `enable_snat` (Boolean) 是否开启nat网关，默认false，若开启将自动创建按需计费类型的nat网关。
+- `install_als` (Boolean) 是否安装日志插件，默认false
+- `install_als_cube_event` (Boolean) 是否安装事件采集插件，默认false
+- `install_ccse_monitor` (Boolean) 是否安装监控插件，默认false
+- `install_nginx_ingress` (Boolean) 是否安装nginx_ingress插件，默认false
+- `ip_vlan` (Boolean) 基于IPVLAN做弹性网卡共享，默认false，当指定为true时，主机镜像只有使用CtyunOS系统才能生效
+- `nat_gateway_spec` (String) 当enable_snat=true时填写，nat网关规格：small，medium，large，xlarge，可参考<a href="https://www.ctyun.cn/document/10026759/10043996">产品规格说明</a>
+- `network_policy` (Boolean) 是否提供基于策略的网络访问控制，默认false
+- `nginx_ingress_lb_spec` (String) install_nginx_ingress=true必填，支持规格：standardI（标准I型） ,standardII（标准II型）, enhancedI（增强I型）, enhancedII（增强II型） , higherI（高阶I型），可参考<a href="https://www.ctyun.cn/document/10026756/10032048">规格详情</a>
+- `nginx_ingress_network` (String) install_nginx_ingress=true必填，nginx ingress访问方式：external（公网），internal（内网），当选择公网时将自动创建eip额外产生eip相关费用
 - `pod_cidr` (String) pod网络cidr，使用cubecni作为网络插件时，podCidr不填，服务端会取vpcCidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。
 - `pod_subnet_id_list` (Set of String) pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
