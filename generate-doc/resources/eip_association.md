@@ -38,5 +38,5 @@ resource "ctyun_eip_association" "eip_association_test2" {
 ### Optional
 
 - `association_type` (String) 绑定的实例类型：ECS云主机：vm，目前仅支持云主机vm，后续会补充更多可选项
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

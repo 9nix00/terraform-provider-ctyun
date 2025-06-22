@@ -38,5 +38,5 @@ resource "ctyun_image_association_user" "image_association_user_sharer_test" {
 
 ### Optional
 
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `user_email` (String) 共享镜像的接收者，此值为对应账号的邮箱，当type为share时此值必填

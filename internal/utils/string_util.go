@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 	"strings"
@@ -135,4 +136,9 @@ func AreStringSlicesEqual(a, b []string) bool {
 func StringToInt32Must(s string) int32 {
 	num, _ := strconv.ParseInt(s, 10, 64)
 	return int32(num)
+}
+
+func JsonString(obj interface{}) string {
+	b, _ := json.Marshal(obj)
+	return string(b)
 }

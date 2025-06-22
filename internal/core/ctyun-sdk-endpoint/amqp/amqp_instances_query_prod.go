@@ -6,13 +6,13 @@ import (
 	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
-type AmqpInstanceQueryProdApi struct {
+type AmqpInstancesQueryProdApi struct {
 	ctyunsdk.CtyunRequestBuilder
 	client *ctyunsdk.CtyunClient
 }
 
-func NewAmqpInstanceQueryProdApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQueryProdApi {
-	return &AmqpInstanceQueryProdApi{
+func NewAmqpInstancesQueryProdApi(client *ctyunsdk.CtyunClient) *AmqpInstancesQueryProdApi {
+	return &AmqpInstancesQueryProdApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodGet,
@@ -21,18 +21,18 @@ func NewAmqpInstanceQueryProdApi(client *ctyunsdk.CtyunClient) *AmqpInstanceQuer
 	}
 }
 
-func (this *AmqpInstanceQueryProdApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceQueryProdRequest) (res *AmqpInstanceQueryProdResponse, err error) {
+func (this *AmqpInstancesQueryProdApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstancesQueryProdRequest) (res *AmqpInstancesQueryProdResponse, err error) {
 	builder := this.WithCredential(&credential)
 	_, err = builder.WriteJson(req)
 	if err != nil {
 		return
 	}
-	builder.AddHeader("regionId", req.RegionID)
+	builder.AddHeader("regionId", req.RegionId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointName, builder)
 	if err != nil {
 		return
 	}
-	res = &AmqpInstanceQueryProdResponse{}
+	res = &AmqpInstancesQueryProdResponse{}
 	err = resp.Parse(res)
 	if err != nil {
 		return
@@ -40,21 +40,21 @@ func (this *AmqpInstanceQueryProdApi) Do(ctx context.Context, credential ctyunsd
 	return res, nil
 }
 
-type AmqpInstanceQueryProdRequest struct {
-	RegionID string `json:"regionId"`
+type AmqpInstancesQueryProdRequest struct {
+	RegionId string `json:"regionId"`
 }
 
-type AmqpInstanceQueryProdResponse struct {
-	ReturnObj  *AmqpInstanceQueryProdResponseReturnObj `json:"returnObj"`
-	Message    string                                  `json:"message"`
-	StatusCode string                                  `json:"statusCode"`
+type AmqpInstancesQueryProdResponse struct {
+	ReturnObj  *AmqpInstancesQueryProdResponseReturnObj `json:"returnObj"`
+	Message    string                                   `json:"message"`
+	StatusCode string                                   `json:"statusCode"`
 }
 
-type AmqpInstanceQueryProdResponseReturnObj struct {
-	Data []AmqpInstanceQueryProdResponseReturnObjData `json:"data"`
+type AmqpInstancesQueryProdResponseReturnObj struct {
+	Data []AmqpInstancesQueryProdResponseReturnObjData `json:"data"`
 }
 
-type AmqpInstanceQueryProdResponseReturnObjData struct {
+type AmqpInstancesQueryProdResponseReturnObjData struct {
 	FlavorID      string      `json:"flavorID"`
 	SpecName      string      `json:"specName"`
 	FlavorType    string      `json:"flavorType"`

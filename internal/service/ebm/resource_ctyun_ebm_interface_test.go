@@ -3,6 +3,7 @@ package ebm_test
 import (
 	"fmt"
 	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -10,48 +11,41 @@ import (
 )
 
 func TestAccCtyunEbmInterface(t *testing.T) {
-	resourceName := "ctyun_ebm_interface.test"
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_ebm_interface." + rnd
+	resourceFile := "resource_ctyun_ebm_interface.tf"
+
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: `
-provider "ctyun" {
-  env                  = "prod"
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-}
-
-resource "ctyun_ebm_interface" "test" {
-  security_group_ids = ["sg-t0ae11aig1"]
-  instance_id = "ss-uadmwtxinfp4tkbhvwp52vnzl2kn"
-  ipv4 = "192.168.0.18"
-  subnet_id = "subnet-43z7cqmjlp"
-}
-`,
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					dependence.ebmID,
+					dependence.securityGroupID,
+					dependence.subnetID,
+					dependence.az2,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "security_group_ids.#", "1"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_ids.0", "sg-t0ae11aig1"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.0", dependence.securityGroupID),
 					resource.TestCheckResourceAttrSet(resourceName, "interface_id"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
-				Config: `
-provider "ctyun" {
-  env                  = "prod"
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-}
-
-resource "ctyun_ebm_interface" "test" {
-  security_group_ids = ["sg-t0ae11aig1", "sg-hsqwzeythj"]
-  instance_id = "ss-uadmwtxinfp4tkbhvwp52vnzl2kn"
-  ipv4 = "192.168.0.18"
-  subnet_id = "subnet-43z7cqmjlp"
-}
-`,
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					dependence.ebmID,
+					dependence.securityGroupID2,
+					dependence.subnetID,
+					dependence.az2,
+				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "security_group_ids.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_ids.0", dependence.securityGroupID2),
+					resource.TestCheckResourceAttrSet(resourceName, "interface_id"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
@@ -68,6 +62,16 @@ resource "ctyun_ebm_interface" "test" {
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					dependence.ebmID,
+					dependence.securityGroupID2,
+					dependence.subnetID,
+					dependence.az2,
+				),
+				Destroy: true,
 			},
 		},
 	})

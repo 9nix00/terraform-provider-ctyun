@@ -45,7 +45,7 @@ resource "ctyun_zos_bucket_object" "test" {
 - `content_disposition` (String) 指定该对象的表示性信息，对应S3协议Header中的Content-Disposition
 - `content_encoding` (String) 指定已对该对象应用哪些内容编码方式，对应S3协议Header中的Content-Encoding
 - `content_type` (String) 描述对象类型，对应S3协议Header中的Content-Type
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `source` (String) 文件路径
 - `storage_type` (String) 存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认STANDARD，
 - `tags` (Map of String) 标签

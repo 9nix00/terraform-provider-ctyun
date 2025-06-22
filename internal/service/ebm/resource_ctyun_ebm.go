@@ -109,11 +109,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"instance_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "物理机UUID",
+				Description: "物理机UUID，值与id相同",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "订购的受理单id",
+				Description: "订单id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -121,7 +121,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -138,7 +138,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"device_type": schema.StringAttribute{
 				Required:    true,
-				Description: "物理机套餐类型",
+				Description: "物理机套餐类型，可通过ctyun_ebm_device_types查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -156,7 +156,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"image_uuid": schema.StringAttribute{
 				Required:    true,
-				Description: "物理机镜像id",
+				Description: "物理机镜像id，可通过ctyun_ebm_device_images查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -175,7 +175,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -184,7 +184,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"system_volume_raid_uuid": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "本地系统盘raid类型，如果有本地盘则必填",
+				Description: "本地系统盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
@@ -193,7 +193,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"data_volume_raid_uuid": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "本地数据盘raid类型，如果有本地盘则必填",
+				Description: "本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
@@ -201,7 +201,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "主网卡网络ID",
+				Description: "主网卡虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -240,7 +240,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"public_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "弹性公网IP的id",
+				Description: "弹性公网IP的ID",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("ext_ip"),
@@ -280,7 +280,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 							Required:    true,
 							Description: "磁盘类型system或data，套餐中cloudBoot为true表示支持云盘系统盘",
 							Validators: []validator.String{
-								stringvalidator.OneOf(business.EbmSystemDiskType, "data"),
+								stringvalidator.OneOf(business.EbmSystemDiskType, business.EbmDataDiskType),
 							},
 						},
 						"title": schema.StringAttribute{
@@ -295,12 +295,12 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 							Required:    true,
 							Description: "磁盘分类，取值范围:[SAS=SAS盘,SATA=SATA盘,SSD-genric=SSD-genric盘,SSD=SSD盘]",
 							Validators: []validator.String{
-								stringvalidator.OneOf(business.EbsDiskTypes...),
+								stringvalidator.OneOf(business.EbmDiskTypes...),
 							},
 						},
 						"size": schema.Int64Attribute{
 							Required:    true,
-							Description: "磁盘容量",
+							Description: "磁盘容量，单位G",
 						},
 					},
 				},
@@ -334,7 +334,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						},
 						"master": schema.BoolAttribute{
 							Required:    true,
-							Description: "是否主节点(True代表主节点)",
+							Description: "是否主节点",
 						},
 						"ipv6": schema.StringAttribute{
 							Optional:    true,
@@ -354,7 +354,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"user_data": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符",
+				Description: "用户自定义数据，需要以Base64方式编码，Base64编码后的长度限制为1-16384字符",
 				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 16384),
@@ -362,7 +362,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "密钥对名词",
+				Description: "密钥对名词，和password只能传其中之一",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("password"),
@@ -372,15 +372,21 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订，默认非自动续订。",
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写。",
 				Default:     booldefault.StaticBool(false),
+				Validators: []validator.Bool{
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+				},
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]，cycleType与cycleCount一起填写",
+				Description: "订购周期类型，取值范围:[on_demand=按需,month=按月,year=按年]",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeYear, business.OrderCycleTypeMonth),
 				},
@@ -409,7 +415,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "物理机状态",
+				Description: "物理机状态，支持running（开机）和stopped（关机），默认running",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						business.EbmStatusRunning,

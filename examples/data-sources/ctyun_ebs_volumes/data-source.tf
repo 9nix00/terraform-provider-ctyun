@@ -6,13 +6,12 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
 
 data "ctyun_ebs_volumes" "test" {
-  region_id = "200000001852"
+  disk_name = "lx-test-29"
 }
 
 output "ctyun_ebs_volumes_test" {

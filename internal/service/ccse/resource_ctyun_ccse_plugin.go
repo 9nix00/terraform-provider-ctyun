@@ -2,6 +2,7 @@ package ccse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -17,6 +18,7 @@ import (
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -61,7 +63,7 @@ func (c *ctyunCcsePlugin) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -90,7 +92,7 @@ func (c *ctyunCcsePlugin) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"chart_version": schema.StringAttribute{
 				Required:    true,
-				Description: "插件版本号",
+				Description: "插件版本号，可通过ctyun_ccse_plugin_market查询",
 			},
 			"values_yaml": schema.StringAttribute{
 				Optional:    true,
@@ -135,6 +137,10 @@ func (c *ctyunCcsePlugin) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
+	err = c.checkBeforeCreate(ctx, plan)
+	if err != nil {
+		return
+	}
 	// 创建
 	err = c.create(ctx, plan)
 	if err != nil {
@@ -262,6 +268,27 @@ func (c *ctyunCcsePlugin) ImportState(ctx context.Context, request resource.Impo
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
+// checkBeforeCreate 创建前检查
+func (c *ctyunCcsePlugin) checkBeforeCreate(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
+	params := &ccse2.CcseHasPluginInstanceExistedRequest{
+		ClusterId:  plan.ClusterID.ValueString(),
+		PluginName: plan.PluginName.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseHasPluginInstanceExistedApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	if utils.SecBool(resp.ReturnObj) {
+		err = fmt.Errorf("插件实例名称 %s 已经存在", plan.PluginName.ValueString())
+		return
+	}
+	return
+}
+
 // checkAfterCreate 创建后检查
 func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
 	var executeSuccessFlag bool
@@ -272,6 +299,9 @@ func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePl
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
 			plugin, err = c.getByPluginName(ctx, plan)
 			if err != nil {
+				if errors.Is(err, common.InvalidReturnObjResultsError) {
+					return true
+				}
 				return false
 			}
 			if plugin.Status == "failed" {
@@ -515,6 +545,10 @@ func (c *ctyunCcsePlugin) checkAfterDelete(ctx context.Context, plan CtyunCcsePl
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
 			plugin, err = c.getByPluginName(ctx, plan)
 			if err != nil {
+				if errors.Is(err, common.InvalidReturnObjResultsError) {
+					err = nil
+					executeSuccessFlag = true
+				}
 				return false
 			}
 			if plugin.Status != "uninstalled" {

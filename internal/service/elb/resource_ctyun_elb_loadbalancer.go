@@ -160,7 +160,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年，用于升级保障型负载均衡。当升级时，必填",
+				Description: "订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年，用于升级保障型负载均衡。当升级时，必填",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -884,7 +884,7 @@ type CtyunElbLoadBalancerConfig struct {
 	UpdatedTime      types.String `tfsdk:"updated_time"`       //更新时间，为UTC格式
 	// 升级保障型负载均衡字段
 	CycleType       types.String `tfsdk:"cycle_type"`        //订购类型：month（包月） / year（包年）
-	CycleCount      types.Int64  `tfsdk:"cycle_count"`       //订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年
+	CycleCount      types.Int64  `tfsdk:"cycle_count"`       //订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 	PayVoucherPrice types.String `tfsdk:"pay_voucher_price"` //代金券金额，支持到小数点后两位
 }
 

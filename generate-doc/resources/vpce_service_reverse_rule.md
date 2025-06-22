@@ -34,17 +34,17 @@ resource "ctyun_vpce_service_reverse_rule" "test" {
 
 ### Required
 
-- `endpoint_id` (String) 终端节点id
-- `endpoint_service_id` (String) 终端节点服务id
+- `endpoint_id` (String) 终端节点ID
+- `endpoint_service_id` (String) 终端节点服务ID
 - `protocol` (String) 协议，TCP:TCP协议,UDP:UDP协议
-- `target_ip` (String) 目标地址
+- `target_ip` (String) 目标IP地址
 - `target_port` (Number) 目标端口(1-65535)
-- `transit_ip` (String) 中转地址
+- `transit_ip` (String) 中转IP地址
 - `transit_port` (Number) 中转端口(1-65535)
 
 ### Optional
 
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

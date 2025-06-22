@@ -23,10 +23,9 @@ resource "ctyun_subnet" "subnet_test" {
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   dns         = [
-    "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
+    "100.95.0.1"
   ]
+  enable_ipv6 = true
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
@@ -42,20 +41,33 @@ resource "ctyun_ccse_cluster" "example" {
   base_info = {
     vpc_id     = ctyun_vpc.vpc_test.id
     subnet_id  = ctyun_subnet.subnet_test.id
-    cluster_name = "auto-sec-kkkccc21"
+    cluster_name = "fe-ccse33"
     cluster_domain = "www.ccc.s"
     network_plugin = "cubecni"
     start_port = 30000
     end_port   = 65535
     elb_prod_code = "standardI"
     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
-    cycle_type  = "on_demand"
+    cycle_type  = "month"
+    cycle_count = 1
     container_runtime = "containerd"
     timezone    = "Asia/Shanghai"
     cluster_version = "1.25.6"
     deploy_type   = "single"
     kube_proxy    = "iptables"
     cluster_series = "cce.standard"
+    auto_renew= true           
+    enable_api_server_eip = true
+    enable_snat= true          
+    nat_gateway_spec = "small"
+    install_als_cube_event = true
+    install_als= true          
+    install_ccse_monitor = true
+    install_nginx_ingress = true
+    nginx_ingress_lb_spec = "standardI"
+    nginx_ingress_network = "external"
+    ip_vlan= true              
+    network_policy= true
   }
 
   master_host = {

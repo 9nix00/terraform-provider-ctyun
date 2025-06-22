@@ -93,21 +93,21 @@ type CcseListPluginInstancesReturnObjResponse struct {
 }
 
 type CcseListPluginInstancesReturnObjRecordsResponse struct {
-	Name           string `json:"name,omitempty"`           /*  实例名称。  */
-	Revision       string `json:"revision,omitempty"`       /*  版本  */
-	Namespace      string `json:"namespace,omitempty"`      /*  命名空间  */
-	Updated        string `json:"updated,omitempty"`        /*  更新时间  */
-	Status         string `json:"status,omitempty"`         /*  状态  */
-	Chart          string `json:"chart,omitempty"`          /*  Chart名称和版本  */
-	AppVersion     string `json:"appVersion,omitempty"`     /*  版本  */
-	ClusterId      string `json:"clusterId,omitempty"`      /*  集群ID  */
-	RepositoryId   int64  `json:"repositoryId,omitempty"`   /*  仓库ID  */
-	ChartName      string `json:"chartName,omitempty"`      /*  Chart名称  */
-	ChartVersion   string `json:"chartVersion,omitempty"`   /*  Chart版本  */
-	ChartUrl       string `json:"chartUrl,omitempty"`       /*  Chart地址  */
-	Icon           string `json:"icon,omitempty"`           /*  icon地址  */
-	Description    string `json:"description,omitempty"`    /*  描述  */
-	NextVersion    string `json:"nextVersion,omitempty"`    /*  下一版本  */
-	TemplateName   string `json:"templateName,omitempty"`   /*  模板类型  */
-	KubeConfigPath string `json:"kubeConfigPath,omitempty"` /*  kubeConfig路径  */
+	Name           string      `json:"name,omitempty"`           /*  实例名称。  */
+	Revision       string      `json:"revision,omitempty"`       /*  版本  */
+	Namespace      string      `json:"namespace,omitempty"`      /*  命名空间  */
+	Updated        string      `json:"updated,omitempty"`        /*  更新时间  */
+	Status         string      `json:"status,omitempty"`         /*  状态  */
+	Chart          string      `json:"chart,omitempty"`          /*  Chart名称和版本  */
+	AppVersion     string      `json:"appVersion,omitempty"`     /*  版本  */
+	ClusterId      string      `json:"clusterId,omitempty"`      /*  集群ID  */
+	RepositoryId   interface{} `json:"repositoryId,omitempty"`   /*  仓库ID  */
+	ChartName      string      `json:"chartName,omitempty"`      /*  Chart名称  */
+	ChartVersion   string      `json:"chartVersion,omitempty"`   /*  Chart版本  */
+	ChartUrl       string      `json:"chartUrl,omitempty"`       /*  Chart地址  */
+	Icon           string      `json:"icon,omitempty"`           /*  icon地址  */
+	Description    string      `json:"description,omitempty"`    /*  描述  */
+	NextVersion    string      `json:"nextVersion,omitempty"`    /*  下一版本  */
+	TemplateName   string      `json:"templateName,omitempty"`   /*  模板类型  */
+	KubeConfigPath string      `json:"kubeConfigPath,omitempty"` /*  kubeConfig路径  */
 }

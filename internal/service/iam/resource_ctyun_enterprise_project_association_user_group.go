@@ -39,7 +39,7 @@ func (c *ctyunEnterpriseProjectAssociationUserGroup) Schema(_ context.Context, _
 		Attributes: map[string]schema.Attribute{
 			"enterprise_project_id": schema.StringAttribute{
 				Required:    true,
-				Description: "企业项目id",
+				Description: "企业项目ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

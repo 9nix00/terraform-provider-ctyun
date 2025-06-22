@@ -109,15 +109,15 @@ resource "ctyun_vpce_service" "test" {
 - `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
 - `subnet_id` (String) 服务后端子网id
 - `type` (String) 接口还是反向，interface:接口，reverse:反向
-- `vpc_id` (String) 关联的vpcID
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
 
-- `instance_id` (String) 服务后端实例id,当type为interface时，必填
+- `instance_id` (String) 服务后端实例ID,当type为interface时，必填
 - `instance_type` (String) 服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时，必填
-- `region_id` (String) 资源池ID
-- `rules` (Attributes Set) 节点服务规则,当type为interface时，必填 (see [below for nested schema](#nestedatt--rules))
-- `whitelist_email` (Set of String) 白名单邮箱
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `rules` (Attributes Set) 节点服务规则,当type为interface时必填 (see [below for nested schema](#nestedatt--rules))
+- `whitelist_email` (Set of String) 白名单邮箱，最多支持10个
 
 ### Read-Only
 

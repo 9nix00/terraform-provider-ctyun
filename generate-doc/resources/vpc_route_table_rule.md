@@ -64,7 +64,7 @@ resource "ctyun_vpc_route_table_rule" "rule_test"{
 ### Optional
 
 - `description` (String) 规则描述
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

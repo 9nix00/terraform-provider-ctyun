@@ -30,4 +30,4 @@ resource "ctyun_ebs_association_ecs" "ebs_association_ecs_test" {
 
 ### Optional
 
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

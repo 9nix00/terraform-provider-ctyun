@@ -37,7 +37,6 @@ func (c *CtyunMysqlSpecs) Configure(ctx context.Context, request datasource.Conf
 
 func (c *CtyunMysqlSpecs) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mysql_specs"
-
 }
 
 func (c *CtyunMysqlSpecs) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {

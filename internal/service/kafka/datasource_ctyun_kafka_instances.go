@@ -64,7 +64,7 @@ type CtyunKafkaInstancesConfig struct {
 
 func (c *ctyunKafkaInstances) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Computed:    true,
@@ -90,7 +90,7 @@ func (c *ctyunKafkaInstances) Schema(_ context.Context, _ datasource.SchemaReque
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Description: "每页数据量大小",
+				Description: "每页数据量大小，支持范围1-50",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},

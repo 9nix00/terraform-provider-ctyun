@@ -38,8 +38,8 @@ resource "ctyun_zos_bucket" "foo" {
 - `az_policy` (String) az策略，可选值为single-az、multi-az，分别表示单az、多az，默认为single-az
 - `cmk_uuid` (String) 密钥管理服务中创建的密钥ID，使用此参数时，isEncrypted必须为true。当isEncrypted为true但未指定此参数时，会自动创建密钥
 - `is_encrypted` (Boolean) 加密状态
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `storage_type` (String) 存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认STANDARD
 
 ### Read-Only

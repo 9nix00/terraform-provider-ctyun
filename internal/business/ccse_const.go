@@ -7,4 +7,28 @@ const (
 
 	CcseRefundedBizState  = 4
 	CcseRefundingBizState = 18
+
+	CcsePluginCalico  = "calico"
+	CcsePluginCubecni = "cubecni"
+
+	CcseContainerRuntimeContainerd = "containerd"
+	CcseContainerRuntimeDocker     = "docker"
+
+	CcseDeployTypeSingle = "single"
+	CcseDeployTypeMulti  = "multi"
+
+	CcseKubeProxyIptables = "iptables"
+	CcseKubeProxyIpvs     = "ipvs"
+
+	CcseSeriesTypeManagedbase = "managedbase"
+	CcseSeriesTypeManagedpro  = "managedpro"
+
+	CcseSlaveInstanceTypeEcs = "ecs"
+	CcseSlaveInstanceTypeEbm = "ebm"
 )
+
+var CcseApiServerElbSpecs = []string{"standardI", "standardII", "enhancedI", "enhancedII", "higherI"}
+
+var CcseClusterVersions = []string{"1.23.3", "1.25.6", "1.27.8", "1.29.3"}
+
+var CcseDiskTypes = []string{"SATA", "SSD", "SAS"}

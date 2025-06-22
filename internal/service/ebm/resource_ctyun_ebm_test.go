@@ -39,6 +39,7 @@ func TestAccCtyunEbm(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+			// 创建
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -49,7 +50,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -57,8 +57,10 @@ func TestAccCtyunEbm(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "hostname", initHostname),
 					resource.TestCheckResourceAttr(resourceName, "status", initStatus),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
+			// 更新
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -69,7 +71,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -79,6 +80,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
+			// 查询
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -89,7 +91,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -132,7 +133,6 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.vpcID,
 					dependence.systemRaid,
 					dependence.dataRaid,
-					dependence.supportCloud,
 					dependence.subnetID,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,

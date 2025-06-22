@@ -62,7 +62,7 @@ func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.Schem
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -70,21 +70,21 @@ func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.Schem
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点服务id",
+				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"endpoint_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点id",
+				Description: "终端节点ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"transit_ip": schema.StringAttribute{
 				Required:    true,
-				Description: "中转地址",
+				Description: "中转IP地址",
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
@@ -104,7 +104,7 @@ func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.Schem
 			},
 			"target_ip": schema.StringAttribute{
 				Required:    true,
-				Description: "目标地址",
+				Description: "目标IP地址",
 				Validators: []validator.String{
 					validator2.Ip(),
 				},

@@ -51,9 +51,26 @@ const (
 	PgsqlBindEipStatusDELETING            = "DELETING"              //中间状态-删除中
 	PgsqlBindEipStatusDELETED             = "DELETED"
 
-	PgsqlProdIDS1222  = 10003011
-	PgsqlProdIDMS1222 = 10003012
-	PgsqlProdIDS1417  = 10003013
+	PgsqlProdIDS1222    = 10003011
+	PgsqlProdIDMS1222   = 10003012
+	PgsqlProdIDS1417    = 10003013
+	PgsqlProdIDMS1417   = 10003014
+	PgsqlProdIDS1320    = 10003015
+	PgsqlProdIDMS1320   = 10003016
+	PgsqlProdIDRead1222 = 10003017
+	PgsqlProdIDRead1320 = 10003018
+	PgsqlProdIDRead1417 = 10003019
+	PgsqlProdIDS1512    = 10003021
+	PgsqlProdIDMS1512   = 10003022
+	PgsqlProdIDRead1512 = 10003023
+	PgsqlProdIDM2S1222  = 10003024
+	PgsqlProdIDM2S1417  = 10003025
+	PgsqlProdIDM2S1320  = 10003026
+	PgsqlProdIDM2S1512  = 10003027
+	PgsqlProdIDS168     = 10003028
+	PgsqlProdIDMS168    = 10003029
+	PgsqlProdIDM2S168   = 10003031
+	PgsqlProdIDRead168  = 10003030
 )
 
 var PgsqlBillModes = []string{
@@ -118,4 +135,27 @@ var PgsqlBindEipStatus = []string{
 	MysqlBindEipStatusBANDINGORUNBANGDING,
 	MysqlBindEipStatusDELETING,
 	MysqlBindEipStatusDELETED,
+}
+
+var PgsqlProdID = []int64{
+	PgsqlProdIDS1222,
+	PgsqlProdIDMS1222,
+	PgsqlProdIDS1417,
+	PgsqlProdIDMS1417,
+	PgsqlProdIDS1320,
+	PgsqlProdIDMS1320,
+	PgsqlProdIDRead1222,
+	PgsqlProdIDRead1320,
+	PgsqlProdIDRead1417,
+	PgsqlProdIDS1512,
+	PgsqlProdIDMS1512,
+	PgsqlProdIDRead1512,
+	PgsqlProdIDM2S1222,
+	PgsqlProdIDM2S1417,
+	PgsqlProdIDM2S1320,
+	PgsqlProdIDM2S1512,
+	PgsqlProdIDS168,
+	PgsqlProdIDMS168,
+	PgsqlProdIDM2S168,
+	PgsqlProdIDRead168,
 }

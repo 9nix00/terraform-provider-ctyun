@@ -2,6 +2,7 @@ package redis_test
 
 import (
 	"fmt"
+	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
@@ -33,15 +34,15 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 	updatedProtectionStatus := "false"
 
 	var shardCount, copiesCount string
-	if dependence.redisEngineEdition == "DirectClusterSingle" ||
-		dependence.redisEngineEdition == "DirectCluster" ||
-		dependence.redisEngineEdition == "ClusterOriginalProxy" {
+	if dependence.redisEngineEdition == business.RedisEditionDirectClusterSingle ||
+		dependence.redisEngineEdition == business.RedisEditionDirectCluster ||
+		dependence.redisEngineEdition == business.RedisEditionClusterOriginalProxy {
 		shardCount = "shard_count = 3"
 	}
-	if dependence.redisEngineEdition == "OriginalMultipleReadLvs" ||
-		dependence.redisEngineEdition == "StandardDual" ||
-		dependence.redisEngineEdition == "DirectCluster" ||
-		dependence.redisEngineEdition == "ClusterOriginalProxy" {
+	if dependence.redisEngineEdition == business.RedisEditionOriginalMultipleReadLvs ||
+		dependence.redisEngineEdition == business.RedisEditionStandardDual ||
+		dependence.redisEngineEdition == business.RedisEditionDirectCluster ||
+		dependence.redisEngineEdition == business.RedisEditionClusterOriginalProxy {
 		copiesCount = "copies_count = 2"
 	}
 

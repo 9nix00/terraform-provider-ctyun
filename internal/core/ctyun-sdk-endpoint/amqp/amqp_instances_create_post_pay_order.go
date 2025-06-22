@@ -6,33 +6,34 @@ import (
 	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
-type AmqpInstanceCreatePostPayOrderApi struct {
+type AmqpInstancesCreatePostPayOrderApi struct {
 	ctyunsdk.CtyunRequestBuilder
 	client *ctyunsdk.CtyunClient
 }
 
-func NewAmqpInstanceCreatePostPayOrderApi(client *ctyunsdk.CtyunClient) *AmqpInstanceCreatePostPayOrderApi {
-	return &AmqpInstanceCreatePostPayOrderApi{
+func NewAmqpInstancesCreatePostPayOrderApi(client *ctyunsdk.CtyunClient) *AmqpInstancesCreatePostPayOrderApi {
+	return &AmqpInstancesCreatePostPayOrderApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodGet,
+			Method:  http.MethodPost,
 			UrlPath: "/v3/instances/createPostPayOrder",
 		},
 	}
 }
 
-func (this *AmqpInstanceCreatePostPayOrderApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstanceCreatePostPayOrderRequest) (res *AmqpInstanceCreatePostPayOrderRequest, err error) {
+func (this *AmqpInstancesCreatePostPayOrderApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *AmqpInstancesCreatePostPayOrderRequest) (res *AmqpInstancesCreatePostPayOrderResponse, err error) {
 	builder := this.WithCredential(&credential)
 	_, err = builder.WriteJson(req)
 	if err != nil {
 		return
 	}
-	builder.AddHeader("regionId", req.RegionID)
+	builder.AddHeader("regionId", req.RegionId)
+	builder.AddHeader("projectId", req.ProjectId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointName, builder)
 	if err != nil {
 		return
 	}
-	res = &AmqpInstanceCreatePostPayOrderRequest{}
+	res = &AmqpInstancesCreatePostPayOrderResponse{}
 	err = resp.Parse(res)
 	if err != nil {
 		return
@@ -40,8 +41,9 @@ func (this *AmqpInstanceCreatePostPayOrderApi) Do(ctx context.Context, credentia
 	return res, nil
 }
 
-type AmqpInstanceCreatePostPayOrderRequest struct {
-	RegionID        string `json:"regionId"`
+type AmqpInstancesCreatePostPayOrderRequest struct {
+	RegionId        string `json:"regionId"`
+	ProjectId       string `json:"projectId"`
 	HostType        string `json:"hostType"`
 	DiskType        string `json:"diskType"`
 	DiskSize        string `json:"diskSize"`
@@ -57,17 +59,17 @@ type AmqpInstanceCreatePostPayOrderRequest struct {
 	AutoPay         bool   `json:"autoPay"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponse struct {
-	ReturnObj  *AmqpInstanceCreatePostPayOrderResponseReturnObj `json:"returnObj"`
-	Message    string                                           `json:"message"`
-	StatusCode string                                           `json:"statusCode"`
+type AmqpInstancesCreatePostPayOrderResponse struct {
+	ReturnObj  *AmqpInstancesCreatePostPayOrderResponseReturnObj `json:"returnObj"`
+	Message    string                                            `json:"message"`
+	StatusCode string                                            `json:"statusCode"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponseReturnObj struct {
-	Data AmqpInstanceCreatePostPayOrderResponseReturnObjData `json:"data"`
+type AmqpInstancesCreatePostPayOrderResponseReturnObj struct {
+	Data AmqpInstancesCreatePostPayOrderResponseReturnObjData `json:"data"`
 }
 
-type AmqpInstanceCreatePostPayOrderResponseReturnObjData struct {
+type AmqpInstancesCreatePostPayOrderResponseReturnObjData struct {
 	Submitted  bool   `json:"submitted"`
 	NewOrderId string `json:"newOrderId"`
 	NewOrderNo string `json:"newOrderNo"`

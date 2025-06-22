@@ -1,44 +1,55 @@
 package ebm_test
 
 import (
+	"fmt"
 	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
 func TestAccCtyunEbmAssociationEbs(t *testing.T) {
-	resourceName := "ctyun_ebm_association_ebs.test"
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_ebm_association_ebs." + rnd
+	resourceFile := "resource_ctyun_ebm_association_ebs.tf"
+
 	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: `
-provider "ctyun" {
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-  env                  = "prod"
-}
-
-resource "ctyun_ebs" "ebs_test" {
-  name       = "ebs-tf-test-0402"
-  mode       = "vbd"
-  type       = "sata"
-  size       = 60
-  cycle_type = "on_demand"
-}
-
-resource "ctyun_ebm_association_ebs" "test" {
-  ebs_id = ctyun_ebs.ebs_test.id
-  instance_id = "ss-uadmwtxinfp4tkbhvwp52vnzl2kn"
-}
-`,
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					dependence.ebsID,
+					dependence.ebmID,
+					dependence.az2,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
 			},
 			{
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					dependence.ebsID,
+					dependence.ebmID,
+					dependence.az2,
+				),
+				Destroy: true,
 			},
 		},
 	})
