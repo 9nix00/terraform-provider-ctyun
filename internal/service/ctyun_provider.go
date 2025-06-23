@@ -85,27 +85,30 @@ func (c *CtyunProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	resp.Schema.Attributes = map[string]schema.Attribute{
 		"ak": schema.StringAttribute{
 			Optional:    true,
-			Description: "身份信息ak",
+			Description: "身份信息AK",
 		},
 		"sk": schema.StringAttribute{
 			Optional:    true,
-			Description: "身份信息sk",
+			Description: "身份信息SK",
 		},
 		"env": schema.StringAttribute{
 			Optional:    true,
 			Description: "环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod",
+			Validators: []validator.String{
+				stringvalidator.OneOf(ctyunsdk.EnvironmentDev, ctyunsdk.EnvironmentTest, ctyunsdk.EnvironmentProd),
+			},
 		},
 		"region_id": schema.StringAttribute{
 			Optional:    true,
-			Description: "资源区域id",
+			Description: "资源池ID",
 		},
 		"az_name": schema.StringAttribute{
 			Optional:    true,
-			Description: "可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name",
+			Description: "可用区英文，填写选用资源池的az_name",
 		},
 		"project_id": schema.StringAttribute{
 			Optional:    true,
-			Description: "企业项目id，不填则使用用户默认的企业项目",
+			Description: "企业项目ID，不填则使用用户默认的企业项目",
 		},
 		"console_url": schema.StringAttribute{
 			Optional:    true,
