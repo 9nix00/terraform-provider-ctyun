@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -63,7 +64,7 @@ type CtyunCcseNodePoolConfig struct {
 	UseAffinityGroup         types.Bool                `tfsdk:"use_affinity_group"`
 	AffinityGroupID          types.String              `tfsdk:"affinity_group_id"`
 	ItemDefName              types.String              `tfsdk:"item_def_name"`
-	SysDisk                  CtyunCcseNodePoolDisk     `tfsdk:"sys_disk"`
+	SysDisk                  *CtyunCcseNodePoolDisk    `tfsdk:"sys_disk"`
 	DataDisks                []CtyunCcseNodePoolDisk   `tfsdk:"data_disks"`
 	MaxPodNum                types.Int32               `tfsdk:"max_pod_num"`
 	AzInfos                  []CtyunCcseNodePoolAzInfo `tfsdk:"az_infos"`
@@ -161,15 +162,35 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"mirror_id": schema.StringAttribute{
-				Required:    true,
-				Description: "镜像id, 可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				Optional:    true,
+				Description: "镜像id，实例为ecs类型必填，可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("instance_type"),
+						types.StringValue(business.CcseSlaveInstanceTypeEcs),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("instance_type"),
+						types.StringValue(business.CcseSlaveInstanceTypeEbm),
+					),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"mirror_name": schema.StringAttribute{
-				Required:    true,
-				Description: "镜像名称, 可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				Optional:    true,
+				Description: "镜像名称，实例为ebm类型必填，可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("instance_type"),
+						types.StringValue(business.CcseSlaveInstanceTypeEbm),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("instance_type"),
+						types.StringValue(business.CcseSlaveInstanceTypeEcs),
+					),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -246,7 +267,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"sys_disk": schema.SingleNestedAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "系统盘信息",
 				Attributes: map[string]schema.Attribute{
 					"type": schema.StringAttribute{
@@ -267,6 +288,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"az_infos": schema.ListNestedAttribute{
 				Required: true,
+				Validators: []validator.List{
+					listvalidator.SizeAtLeast(1),
+				},
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},
@@ -491,12 +515,20 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 		UseAffinityGroup:         plan.UseAffinityGroup.ValueBoolPointer(),
 		AffinityGroupUuid:        plan.AffinityGroupID.ValueString(),
 		MaxPodNum:                plan.MaxPodNum.ValueInt32(),
-		SysDiskType:              plan.SysDisk.Type.ValueString(),
-		SysDiskSize:              plan.SysDisk.Size.ValueInt32(),
-		ImageUuid:                plan.MirrorID.ValueString(),
 		ImageType:                plan.MirrorType.ValueInt32(),
-		ImageName:                plan.MirrorName.ValueString(),
 	}
+	if plan.SysDisk != nil {
+		params.SysDiskType = plan.SysDisk.Type.ValueString()
+		params.SysDiskSize = plan.SysDisk.Size.ValueInt32()
+	}
+
+	switch plan.InstanceType.ValueString() {
+	case business.CcseSlaveInstanceTypeEcs:
+		params.ImageUuid = plan.MirrorID.ValueString()
+	case business.CcseSlaveInstanceTypeEbm:
+		params.ImageName = plan.MirrorName.ValueString()
+	}
+
 	if plan.Password.ValueString() != "" {
 		params.LoginType = "password"
 		params.EcsPasswd = plan.Password.ValueString()
@@ -547,7 +579,7 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 		params.VmType = flavor.FlavorType
 	case business.CcseSlaveInstanceTypeEbm:
 		deviceType := plan.ItemDefName.ValueString()
-		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), "test")
+		flavor, err := business.NewEbmService(c.meta).GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), plan.AzInfos[0].AzName.ValueString())
 		if err != nil {
 			return err
 		}
@@ -620,18 +652,23 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 		return
 	}
 	p := records[0]
-	plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
-	plan.SysDisk.Type = types.StringValue(p.SysDiskType)
+	if plan.SysDisk != nil {
+		plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
+		plan.SysDisk.Type = types.StringValue(p.SysDiskType)
+	}
 	plan.VisibilityPostHostScript = types.StringValue(p.VisibilityPostHostScript)
 	plan.VisibilityHostScript = types.StringValue(p.VisibilityHostScript)
-	plan.SysDisk.Type = types.StringValue(p.SysDiskType)
-	plan.SysDisk.Size = types.Int32Value(p.SysDiskSize)
 	plan.MaxPodNum = types.Int32Value(p.MaxPodNum)
 	plan.AutoRenew = types.BoolValue(map[int32]bool{0: false, 1: true}[p.AutoRenewStatus])
-	plan.MirrorID = types.StringValue(p.ImageUuid)
-	plan.MirrorName = types.StringValue(p.ImageName)
 	plan.ItemDefName = types.StringValue(p.VmSpecName)
 	plan.KeyPairName = types.StringValue(p.KeyName)
+
+	switch plan.InstanceType.ValueString() {
+	case business.CcseSlaveInstanceTypeEcs:
+		plan.MirrorID = types.StringValue(p.ImageUuid)
+	case business.CcseSlaveInstanceTypeEbm:
+		plan.MirrorName = types.StringValue(p.ImageName)
+	}
 
 	switch p.BillMode {
 	case "1":

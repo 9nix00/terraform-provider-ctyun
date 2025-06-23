@@ -151,6 +151,7 @@ auto_renew = true
 					"password",
 					"az_infos",
 					"use_affinity_group",
+					"sys_disk",
 				},
 			},
 			{

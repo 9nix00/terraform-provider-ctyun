@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -25,6 +26,7 @@ import (
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -72,6 +74,7 @@ type CtyunCcseClusterBaseInfo struct {
 	EndPort               types.Int32  `tfsdk:"end_port"`
 	ElbProdCode           types.String `tfsdk:"elb_prod_code"`
 	PodCidr               types.String `tfsdk:"pod_cidr"`
+	ServiceCidr           types.String `tfsdk:"service_cidr"`
 	PodSubnetIdList       []string     `tfsdk:"pod_subnet_id_list"`
 	CycleType             types.String `tfsdk:"cycle_type"`
 	CycleCount            types.Int64  `tfsdk:"cycle_count"`
@@ -102,14 +105,14 @@ type CtyunCcseClusterAzInfo struct {
 }
 type CtyunCcseClusterMaster struct {
 	ItemDefName types.String             `tfsdk:"item_def_name"`
-	SysDisk     CtyunCcseClusterDisk     `tfsdk:"sys_disk"`
+	SysDisk     *CtyunCcseClusterDisk    `tfsdk:"sys_disk"`
 	DataDisks   []CtyunCcseClusterDisk   `tfsdk:"data_disks"`
 	AzInfos     []CtyunCcseClusterAzInfo `tfsdk:"az_infos"`
 }
 type CtyunCcseClusterSlave struct {
 	ItemDefName  types.String             `tfsdk:"item_def_name"`
 	AzInfos      []CtyunCcseClusterAzInfo `tfsdk:"az_infos"`
-	SysDisk      CtyunCcseClusterDisk     `tfsdk:"sys_disk"`
+	SysDisk      *CtyunCcseClusterDisk    `tfsdk:"sys_disk"`
 	DataDisks    []CtyunCcseClusterDisk   `tfsdk:"data_disks"`
 	InstanceType types.String             `tfsdk:"instance_type"`
 	MirrorID     types.String             `tfsdk:"mirror_id"`
@@ -229,6 +232,10 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Computed:    true,
 						Description: "pod网络cidr，使用cubecni作为网络插件时，podCidr不填，服务端会取vpcCidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。",
 						Validators: []validator.String{
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("base_info").AtName("network_plugin"),
+								types.StringValue(business.CcsePluginCalico),
+							),
 							validator2.ConflictsWithEqualString(
 								path.MatchRoot("base_info").AtName("network_plugin"),
 								types.StringValue(business.CcsePluginCubecni),
@@ -238,6 +245,15 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+					},
+					"service_cidr": schema.StringAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "服务cidr，默认10.96.0.0/16。网络插件为calico时，podCidr与vpcCidr与serviceCidr不能重叠。选择cubecni时，podCidr（vpcCidr）与serviceCidr不能重叠。",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+						Default: stringdefault.StaticString("10.96.0.0/16"),
 					},
 					"pod_subnet_id_list": schema.SetAttribute{
 						ElementType: types.StringType,
@@ -921,6 +937,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		ElbProdCode:               plan.BaseInfo.ElbProdCode.ValueString(),
 		PodSubnetUuidList:         plan.BaseInfo.PodSubnetIdList,
 		PodCidr:                   plan.BaseInfo.PodCidr.ValueString(),
+		ServiceCidr:               plan.BaseInfo.ServiceCidr.ValueString(),
 		ContainerRuntime:          plan.BaseInfo.ContainerRuntime.ValueString(),
 		Timezone:                  plan.BaseInfo.Timezone.ValueString(),
 		DeployType:                plan.BaseInfo.DeployType.ValueString(),
@@ -980,10 +997,12 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 			ItemDefName: flavorName,
 			ItemDefType: flavor.FlavorType,
 			Size:        totalSize,
-			SysDisk: &ccse2.CcseCreateClusterMasterHostSysDiskRequest{
+		}
+		if plan.MasterHost.SysDisk != nil {
+			masterHost.SysDisk = &ccse2.CcseCreateClusterMasterHostSysDiskRequest{
 				ItemDefName: plan.MasterHost.SysDisk.Type.ValueString(),
 				Size:        plan.MasterHost.SysDisk.Size.ValueInt32(),
-			},
+			}
 		}
 		for _, disk := range plan.MasterHost.DataDisks {
 			masterHost.DataDisks = append(masterHost.DataDisks, &ccse2.CcseCreateClusterMasterHostDataDisksRequest{
@@ -1008,12 +1027,14 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 	// 处理slaveHost
 
 	slaveHost := ccse2.CcseCreateClusterSlaveHostRequest{
-		Size: 0,
-		SysDisk: &ccse2.CcseCreateClusterSlaveHostSysDiskRequest{
+		Size:       0,
+		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
+	}
+	if plan.SlaveHost.SysDisk != nil {
+		slaveHost.SysDisk = &ccse2.CcseCreateClusterSlaveHostSysDiskRequest{
 			ItemDefName: plan.SlaveHost.SysDisk.Type.ValueString(),
 			Size:        plan.SlaveHost.SysDisk.Size.ValueInt32(),
-		},
-		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
+		}
 	}
 
 	for _, disk := range plan.SlaveHost.DataDisks {
@@ -1036,7 +1057,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 	}
 	plan.totalNodeNum += slaveHost.Size
 	switch plan.SlaveHost.InstanceType.ValueString() {
-	case "ecs":
+	case business.CcseSlaveInstanceTypeEcs:
 		slaveHost.ForeignMirrorId = plan.SlaveHost.MirrorID.ValueString()
 		flavorName := plan.SlaveHost.ItemDefName.ValueString()
 		flavor, err := c.ecsService.GetFlavorByName(ctx, flavorName, plan.RegionID.ValueString())
@@ -1047,7 +1068,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		slaveHost.Mem = int32(flavor.FlavorRam)
 		slaveHost.ItemDefName = flavorName
 		slaveHost.ItemDefType = flavor.FlavorType
-	case "ebm":
+	case business.CcseSlaveInstanceTypeEbm:
 		slaveHost.MirrorName = plan.SlaveHost.MirrorName.ValueString()
 		deviceType := plan.SlaveHost.ItemDefName.ValueString()
 		flavor, err := c.ebmService.GetDeviceType(ctx, deviceType, plan.RegionID.ValueString(), azName)
@@ -1058,6 +1079,13 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		slaveHost.Mem = flavor.MemAmount
 		slaveHost.ItemDefName = deviceType
 		slaveHost.ItemDefType = deviceType
+
+		if !utils.SecBool(flavor.CloudBoot) && slaveHost.SysDisk != nil {
+			return "", fmt.Errorf("裸金属规格 %s 不支持自定义系统盘", deviceType)
+		}
+		if !utils.SecBool(flavor.SupportCloud) && len(slaveHost.DataDisks) > 0 {
+			return "", fmt.Errorf("裸金属规格 %s 不支持自定义数据盘", deviceType)
+		}
 	}
 
 	params.ClusterBaseInfo = &clusterBaseInfo
@@ -1100,6 +1128,7 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
 	plan.BaseInfo.NetworkPlugin = types.StringValue(instance.NetworkPlugin)
 	plan.BaseInfo.PodCidr = types.StringValue(instance.PodCidr)
+	plan.BaseInfo.ServiceCidr = types.StringValue(instance.ServiceCidr)
 	plan.BaseInfo.Timezone = types.StringValue(instance.Timezone)
 	plan.BaseInfo.ClusterVersion = types.StringValue(instance.ClusterVersion)
 	plan.BaseInfo.KubeProxy = types.StringValue(instance.KubeProxyPattern)
@@ -1191,7 +1220,7 @@ func (c *ctyunCcseCluster) checkAfterCreate(ctx context.Context, plan CtyunCcseC
 // checkNodeStatus 检查节点状态
 func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 60)
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
 			var nodes []*ccse2.CcseListClusterNodesReturnObjResponse
