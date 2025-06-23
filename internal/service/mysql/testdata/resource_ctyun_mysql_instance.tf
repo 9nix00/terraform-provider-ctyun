@@ -25,3 +25,4 @@ resource "ctyun_mysql_instance" "%[1]s" {
   restart = %[25]t
   stop = %[26]t
 }
+

@@ -4,15 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 )
 
 var (
@@ -43,52 +43,137 @@ func (c *CtyunPgsqlSpecs) Schema(ctx context.Context, request datasource.SchemaR
 	response.Schema = schema.Schema{
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
+			"prod_type": schema.StringAttribute{
+				Required:    true,
+				Description: "产品类型，0=UNKNOWN, 1=RDS, 2=NoSql, 3=TOOL, 4=MemDB",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.ProdType...),
+				},
+			},
+			"prod_code": schema.StringAttribute{
+				Required:    true,
+				Description: "产品编码，取值范围：HBASE/DDS/HBASE/MYSQL/POSTGRESQL/SQLSERVER",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.ProdCode...),
+				},
+			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池id",
 			},
-			"inst_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "实例id",
-			},
-			"eip_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "弹性ip唯一标识",
+			"instance_type": schema.StringAttribute{
+				Required:    true,
+				Description: "实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "项目id",
 			},
-			"eips": schema.ListNestedAttribute{
-				Description: "eip 列表",
+			"specs": schema.ListNestedAttribute{
+				Computed:    true,
+				Description: "产品规格列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"eip_id": schema.StringAttribute{
+						"prod_id": schema.Int64Attribute{
 							Computed:    true,
-							Description: "弹性ip唯一标识",
+							Description: "产品id",
 						},
-						"eip": schema.StringAttribute{
+						"prod_code": schema.StringAttribute{
 							Computed:    true,
-							Description: "弹性IP",
-						},
-						"bind_status": schema.Int32Attribute{
-							Computed:    true,
-							Description: "0-未绑定，1-已绑定",
-							Validators: []validator.Int32{
-								int32validator.Between(0, 1),
-							},
-						},
-						"status": schema.StringAttribute{
-							Computed:    true,
-							Description: "状态标识：ACTIVE=已使用，DOWN=未使用，ERROR=中间状态-异常，UPDATING=中间状态-更新中，BANDING_OR_UNBANGDING=中间状态-绑定或解绑中，DELETING=中间状态-删除中，DELETED=中间状态-已删除",
+							Description: "产品编码",
 							Validators: []validator.String{
-								stringvalidator.OneOf(business.PgsqlBindEipStatus...),
+								stringvalidator.OneOf(business.ProdCode...),
 							},
 						},
-						"band_width": schema.Int32Attribute{
+						"prod_spec_name": schema.StringAttribute{
 							Computed:    true,
-							Description: "加入的共享带宽，单位M",
+							Description: "产品名称",
+						},
+						"prod_spec_desc": schema.StringAttribute{
+							Computed:    true,
+							Description: "产品描述",
+						},
+						"instance_desc": schema.StringAttribute{
+							Computed:    true,
+							Description: "实例描述",
+						},
+						"prod_version": schema.StringAttribute{
+							Computed:    true,
+							Description: "产品版本",
+						},
+						"host_spec": schema.StringAttribute{
+							Computed:    true,
+							Description: "主机规格",
+						},
+						"lvs_spec": schema.StringAttribute{
+							Computed:    true,
+							Description: "lvs规格",
+						},
+						"inst_spec_info_list": schema.ListNestedAttribute{
+							Computed:    true,
+							Description: "AZ支持的产品规格信息，以及规格代S6/S7",
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"spec_id": schema.StringAttribute{
+										Computed:    true,
+										Description: "spec id",
+									},
+									"prod_performance_spec": schema.StringAttribute{
+										Computed:    true,
+										Description: "规格名称",
+									},
+									"az_list": schema.StringAttribute{
+										Computed:    true,
+										Description: "该规格支持的AZ列表",
+									},
+									"spec_name": schema.StringAttribute{
+										Computed:    true,
+										Description: "主机世代完整名称",
+									},
+									"cpu_type": schema.StringAttribute{
+										Computed:    true,
+										Description: "cpu类型",
+									},
+									"generation": schema.StringAttribute{
+										Computed:    true,
+										Description: "主机世代缩写",
+									},
+									"min_rate": schema.StringAttribute{
+										Computed:    true,
+										Description: "带宽下限",
+									},
+									"max_rate": schema.StringAttribute{
+										Computed:    true,
+										Description: "带宽上限",
+									},
+								},
+							},
+						},
+						"prod_host_config": schema.ListNestedAttribute{
+							Computed:    true,
+							Description: "host实例",
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"host_type_name": schema.StringAttribute{
+										Computed:    true,
+										Description: "类型名称",
+									},
+									"host_type": schema.StringAttribute{
+										Computed:    true,
+										Description: "节点类型，当类型为mysql时，取值范围master（主节点）、readnode（只读节点）",
+									},
+									"prod_performance_specs": schema.StringAttribute{
+										Computed:    true,
+										Description: "支持的性能指标规格列表",
+									},
+									"host_default_num": schema.Int32Attribute{
+										Computed:    true,
+										Description: "节点默认数量",
+									},
+								},
+							},
 						},
 					},
 				},
@@ -115,42 +200,77 @@ func (c *CtyunPgsqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 		err = errors.New("region ID不能为空！")
 		return
 	}
-	params := &pgsql.PgsqlBoundEipListRequest{
-		RegionID: regionId,
+	params := &mysql.TeledbMysqlSpecsRequest{
+		ProdType:     config.ProdType.ValueString(),
+		ProdCode:     config.ProdCode.ValueString(),
+		RegionID:     regionId,
+		InstanceType: config.InstanceType.ValueString(),
 	}
-	if config.InstID.ValueString() != "" {
-		params.InstID = config.InstID.ValueStringPointer()
-	}
-	if config.EipID.ValueString() != "" {
-		params.EipID = config.EipID.ValueStringPointer()
-	}
-	header := &pgsql.PgsqlBoundEipListRequestHeader{}
+	headers := &mysql.TeledbMysqlSpecsRequestHeader{}
 	if config.ProjectID.ValueString() != "" {
-		header.ProjectID = config.ProjectID.ValueStringPointer()
+		headers.ProjectID = config.ProjectID.ValueStringPointer()
 	}
-	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlBoundEipListApi.Do(ctx, c.meta.Credential, params, header)
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbMysqlSpecsApi.Do(ctx, c.meta.Credential, params, headers)
 	if err != nil {
 		return
-	} else if resp.StatusCode != 0 {
-		err = fmt.Errorf("API return error. Message: %s ", *resp.Message)
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s ", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return
 	}
-	returnObj := resp.ReturnObj.Data
-	// 解析返回类型
-	eips := []CtyunPgsqlSpecInfoModel{}
-	for _, eipItem := range returnObj {
-		var eip CtyunPgsqlSpecInfoModel
-		eip.EipID = types.StringValue(eipItem.EipID)
-		eip.Eip = types.StringValue(eipItem.Eip)
-		eip.BindStatus = types.Int32Value(eipItem.BindStatus)
-		eip.Status = types.StringValue(eipItem.Status)
-		eip.BandWidth = types.Int32Value(eipItem.BandWidth)
-		eips = append(eips, eip)
+	// 解析产品规格
+	returnObjData := resp.ReturnObj.Data
+	var specs []CtyunPgsqlSpecInfoModel
+	for _, specItem := range returnObjData {
+		var spec CtyunPgsqlSpecInfoModel
+		spec.ProdId = types.Int64Value(specItem.ProdId)
+		spec.ProdCode = types.StringValue(specItem.ProdCode)
+		spec.ProdSpecName = types.StringValue(specItem.ProdSpecName)
+		spec.ProdSpecDesc = types.StringValue(specItem.ProdSpecDesc)
+		spec.InstanceDesc = types.StringValue(specItem.InstanceDesc)
+		spec.ProdVersion = types.StringValue(specItem.ProdVersion)
+		spec.HostSpec = types.StringValue(specItem.HostSpec)
+		spec.LvsSpec = types.StringValue(specItem.LvsSpec)
+		//InstSpecInfoList解析
+		var instSpecInfoList []InstSpecInfo
+		for _, instSpecInfoItem := range specItem.InstSpecInfoList {
+			var specInfo InstSpecInfo
+			specInfo.SpecId = types.StringValue(instSpecInfoItem.SpecId)
+			specInfo.ProdPerformanceSpec = types.StringValue(instSpecInfoItem.ProdPerformanceSpec)
+			specInfo.SpecName = types.StringValue(instSpecInfoItem.SpecName)
+			specInfo.CpuType = types.StringValue(instSpecInfoItem.CpuType)
+			specInfo.Generation = types.StringValue(instSpecInfoItem.Generation)
+			specInfo.MinRate = types.StringValue(instSpecInfoItem.MinRate)
+			specInfo.MaxRate = types.StringValue(instSpecInfoItem.MaxRate)
+			// 解析azList
+			var azList []string
+			for _, az := range instSpecInfoItem.AzList {
+				azList = append(azList, az)
+			}
+			specInfo.AzList = types.StringValue(strings.Join(azList, ","))
+			instSpecInfoList = append(instSpecInfoList, specInfo)
+		}
+		spec.InstSpecInfoList = instSpecInfoList
+		// ProdHostConfig解析
+		var prodHostConfigs []ProdHostConfig
+		for _, prodHostConfigItem := range specItem.ProdHostConfig.HostInsts {
+			var prodHostConfig ProdHostConfig
+			prodHostConfig.HostTypeName = types.StringValue(prodHostConfigItem.HostTypeName)
+			prodHostConfig.HostType = types.StringValue(prodHostConfigItem.HostType)
+			prodHostConfig.HostDefaultNum = types.Int32Value(prodHostConfigItem.HostDefaultNum)
+			var prodPerformanceSpeces []string
+			for _, performance := range prodHostConfigItem.ProdPerformanceSpeces {
+				prodPerformanceSpeces = append(prodPerformanceSpeces, performance)
+			}
+			prodHostConfig.ProdPerformanceSpecs = types.StringValue(strings.Join(prodPerformanceSpeces, ","))
+			prodHostConfigs = append(prodHostConfigs, prodHostConfig)
+		}
+		spec.ProdHostConfig = prodHostConfigs
+		specs = append(specs, spec)
 	}
-	config.Eips = eips
+	config.Specs = specs
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -158,16 +278,39 @@ func (c *CtyunPgsqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 }
 
 type CtyunPgsqlSpecsConfig struct {
-	RegionID  types.String              `tfsdk:"region_id"`  //资源池id
-	InstID    types.String              `tfsdk:"inst_id"`    //实例id
-	EipID     types.String              `tfsdk:"eip_id"`     //实例id
-	ProjectID types.String              `tfsdk:"project_id"` //项目id
-	Eips      []CtyunPgsqlSpecInfoModel `tfsdk:"eips"`       // eip列表
+	ProdType     types.String              `tfsdk:"prod_type"`
+	ProdCode     types.String              `tfsdk:"prod_code"`
+	RegionID     types.String              `tfsdk:"region_id"`
+	InstanceType types.String              `tfsdk:"instance_type"`
+	ProjectID    types.String              `tfsdk:"project_id"`
+	Specs        []CtyunPgsqlSpecInfoModel `tfsdk:"specs"`
 }
 type CtyunPgsqlSpecInfoModel struct {
-	EipID      types.String `tfsdk:"eip_id"`      // 弹性ip唯一标识
-	Eip        types.String `tfsdk:"eip"`         // 弹性IP
-	BindStatus types.Int32  `tfsdk:"bind_status"` // 0-未绑定，1-已绑定
-	Status     types.String `tfsdk:"status"`      // 状态标识：ACTIVE=已使用，DOWN=未使用，ERROR=中间状态-异常，UPDATING=中间状态-更新中，BANDING_OR_UNBANGDING=中间状态-绑定或解绑中，DELETING=中间状态-删除中，DELETED=中间状态-已删除
-	BandWidth  types.Int32  `tfsdk:"band_width"`  // 加入的共享带宽，单位M
+	ProdId           types.Int64      `tfsdk:"prod_id"`             // 产品id
+	ProdCode         types.String     `tfsdk:"prod_code"`           // 产品编码
+	ProdSpecName     types.String     `tfsdk:"prod_spec_name"`      // 产品名称
+	ProdSpecDesc     types.String     `tfsdk:"prod_spec_desc"`      // 产品描述
+	InstanceDesc     types.String     `tfsdk:"instance_desc"`       // 实例描述
+	ProdVersion      types.String     `tfsdk:"prod_version"`        // 产品版本
+	HostSpec         types.String     `tfsdk:"host_spec"`           // 主机规格
+	LvsSpec          types.String     `tfsdk:"lvs_spec"`            // lvs规格
+	InstSpecInfoList []InstSpecInfo   `tfsdk:"inst_spec_info_list"` // AZ支持的产品规格信息，以及规格代S6/S7
+	ProdHostConfig   []ProdHostConfig `tfsdk:"prod_host_config"`    //host实例
+}
+
+type InstSpecInfo struct {
+	SpecId              types.String `tfsdk:"spec_id"`               // 废弃
+	ProdPerformanceSpec types.String `tfsdk:"prod_performance_spec"` // 规格名称
+	AzList              types.String `tfsdk:"az_list"`               // 该规格支持的AZ列表
+	SpecName            types.String `tfsdk:"spec_name"`             // 主机世代完整名称
+	CpuType             types.String `tfsdk:"cpu_type"`              // cpu类型
+	Generation          types.String `tfsdk:"generation"`            // 主机世代缩写
+	MinRate             types.String `tfsdk:"min_rate"`              // 带宽下限
+	MaxRate             types.String `tfsdk:"max_rate"`              // 带宽上限
+}
+type ProdHostConfig struct {
+	HostTypeName         types.String `tfsdk:"host_type_name"`         // 类型名称
+	HostType             types.String `tfsdk:"host_type"`              // 节点类型，当类型为mysql时，取值范围master（主节点）、readnode（只读节点）
+	ProdPerformanceSpecs types.String `tfsdk:"prod_performance_specs"` // 支持的性能指标规格列表
+	HostDefaultNum       types.Int32  `tfsdk:"host_default_num"`       // 节点默认数量
 }

@@ -58,7 +58,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池Id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -66,12 +66,12 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"target_group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "后端服务组ID",
+				Description: "后端服务组Id",
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},",
+				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},",
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
@@ -82,7 +82,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
-				Description: "实例ID",
+				Description: "后端实例Id",
 			},
 			"instance_ip": schema.StringAttribute{
 				Optional:    true,
@@ -105,7 +105,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "后端服务组ID",
+				Description: "后端服务ID",
 			},
 			"health_check_status": schema.StringAttribute{
 				Computed:    true,

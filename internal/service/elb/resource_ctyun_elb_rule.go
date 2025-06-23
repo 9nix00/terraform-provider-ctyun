@@ -59,7 +59,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"region_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "区域ID",
+				Description: "资源池Id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -67,7 +67,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"listener_id": schema.StringAttribute{
 				Required:    true,
-				Description: "监听器ID",
+				Description: "监听器Id",
 			},
 			"priority": schema.Int32Attribute{
 				Optional:    true,
@@ -155,11 +155,11 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"project_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "项目ID",
+				Description: "项目Id",
 			},
 			"load_balancer_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "负载均衡ID",
+				Description: "负载均衡Id",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,

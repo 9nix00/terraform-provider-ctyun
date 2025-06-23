@@ -84,7 +84,7 @@ func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,
-							Description: "描述信息",
+							Description: "描述",
 						},
 						"subnet_cidr": schema.StringAttribute{
 							Computed:    true,

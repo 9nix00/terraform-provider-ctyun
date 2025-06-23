@@ -54,7 +54,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池Id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -69,21 +69,21 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
+				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "vpc ID",
+				Description: "vpc Id",
 			},
 			"health_check_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "健康检查ID",
+				Description: "健康检查Id",
 			},
 			"algorithm": schema.StringAttribute{
 				Required:    true,

@@ -88,7 +88,7 @@ locals {
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
-  cycle_type            = "2"
+  cycle_type            = "on_demand"
   prod_version          = "5.7"
   vpc_id                = local.real_vpc_id
   host_type             = "C7"
@@ -96,9 +96,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
   password              = "kqjwyk111"
-  cycle_count           = 1
   purchase_count        = 1
-  auto_renew_status     = 0
   prod_id               = 10001003
   node_type             = "master"
   inst_spec             = "1"

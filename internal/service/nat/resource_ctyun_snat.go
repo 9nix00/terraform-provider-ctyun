@@ -74,7 +74,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"region_id": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "区域id",
+				Description: "资源池id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -82,7 +82,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"nat_gateway_id": schema.StringAttribute{
 				Required:    true,
-				Description: "NAT网关ID",
+				Description: "NAT网关Id",
 			},
 			"source_subnet_id": schema.StringAttribute{
 				Optional:    true,
@@ -103,16 +103,16 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"snat_ips": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "弹性公网IP集合",
+				Description: "弹性公网IP集合，每个元素为eip id",
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "SNAT描述",
+				Description: "SNAT描述，可选",
 			},
 			"snat_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "snat id, 当 status != done 时，snatID 为 null",
+				Description: "snat id",
 			},
 			"subnet_type": schema.Int32Attribute{
 				Computed:    true,
