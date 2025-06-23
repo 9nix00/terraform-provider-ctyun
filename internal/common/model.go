@@ -17,6 +17,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"terraform-provider-ctyun/internal/core/ctzos"
@@ -77,6 +78,7 @@ type Apis struct {
 	SdkCtMysqlApis *mysql.Apis
 	SdkCtPgsqlApis *pgsql.Apis
 	SdkKafkaApis   *ctgkafka.Apis
+	SdkMongodbApis *mongodb.Apis
 	SdkAmqpApis    *amqp.Apis
 	SdkCrsApis     *crs.Apis
 }

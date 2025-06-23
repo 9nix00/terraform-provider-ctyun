@@ -25,7 +25,7 @@ type ctyunPgsqlInstances struct {
 	meta *common.CtyunMetadata
 }
 
-func NewPgsqlMysqlInstances() datasource.DataSource {
+func NewCtyunPgsqlInstances() datasource.DataSource {
 	return &ctyunPgsqlInstances{}
 }
 func (c *ctyunPgsqlInstances) Configure(ctx context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
@@ -55,12 +55,14 @@ func (c *ctyunPgsqlInstances) Schema(ctx context.Context, request datasource.Sch
 				Description: "项目ID",
 			},
 			"page_num": schema.Int32Attribute{
-				Required:    true,
-				Description: "当前页码",
+				Optional:    true,
+				Computed:    true,
+				Description: "当前页码。默认:1",
 			},
 			"page_size": schema.Int32Attribute{
-				Required:    true,
-				Description: "页大小，范围1-500",
+				Optional:    true,
+				Computed:    true,
+				Description: "页大小，范围1-500。默认:20",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 500),
 				},
@@ -195,9 +197,11 @@ func (c *ctyunPgsqlInstances) Read(ctx context.Context, request datasource.ReadR
 	params := &pgsql.PgsqlListRequest{}
 
 	if config.PageNum.ValueInt32() == 0 {
+		config.PageNum = types.Int32Value(1)
 		params.PageNum = 1
 	}
 	if config.PageSize.ValueInt32() == 0 {
+		config.PageSize = types.Int32Value(20)
 		params.PageSize = 20
 	}
 	if config.ProdInstID.ValueString() != "" {
@@ -264,8 +268,8 @@ func (c *ctyunPgsqlInstances) Read(ctx context.Context, request datasource.ReadR
 }
 
 type CtyunPgsqlInstancesConfig struct {
-	RegionID       types.String                  `json:"regionId"`        // 区域id
-	ProjectID      types.String                  `json:"projectId"`       // 项目id
+	RegionID       types.String                  `json:"region_id"`       // 区域id
+	ProjectID      types.String                  `json:"project_id"`      // 项目id
 	PageNum        types.Int32                   `tfsdk:"page_num"`       // 当前页（必填）
 	PageSize       types.Int32                   `tfsdk:"page_size"`      // 页大小，范围1-500（必填）
 	ProdInstName   types.String                  `tfsdk:"prod_inst_name"` // 实例名称，支持模糊匹配（可选）

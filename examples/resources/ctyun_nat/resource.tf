@@ -5,18 +5,26 @@ terraform {
     }
   }
 }
-
-provider "ctyun" {
-	region_id = "200000002530"
-	az_name = "az1"
+resource "ctyun_vpc" "vpc_test" {
+	name        = "tf-vpc-for-nat"
+	cidr        = "192.168.0.0/16"
+	description = "terraform测试使用"
+	enable_ipv6 = true
 }
 
 resource "ctyun_nat" "nat_test"{
-	region_id = "200000002530"
-	vpc_id = "vpc-wf029jgx2d"
+	vpc_id = ctyun_vpc.vpc_test.id
 	spec = 1
-	name = "nat-terraform-test"
-	description = "terraform测试"
+	name = "tf-nat"
+	description = "terraform测试使用"
 	cycle_type = "on_demand"
-	az_name = "cn-huanan2-1A-public-ctcloud"
+}
+
+resource "ctyun_nat" "nat_cycle_test" {
+	vpc_id = ctyun_vpc.vpc_test.id
+	spec = 1
+	name = "tf-nat-cycle"
+	description = "terraform测试使用"
+	cycle_type = "month"
+	cycle_count = 1
 }

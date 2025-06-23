@@ -16,7 +16,7 @@ func NewPgsqlUnBindEipApi(client *ctyunsdk.CtyunClient) *PgsqlUnBindEipApi {
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/teledb-dcp/v2/openapi/dcp-order-info/eips/bind",
+			UrlPath: "/teledb-dcp/v2/openapi/dcp-order-info/eips/unbind",
 		},
 	}
 }

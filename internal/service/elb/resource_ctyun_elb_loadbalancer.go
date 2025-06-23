@@ -48,7 +48,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池Id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -57,15 +57,15 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目 ID，默认为0",
+				Description: "企业项目 Id，默认为0",
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "vpc的ID",
+				Description: "vpc的Id",
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "子网的ID",
+				Description: "子网的Id",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -88,7 +88,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"sla_name": schema.StringAttribute{
 				Required:    true,
-				Description: "lb的规格名称,支持elb.s1.small和elb.default，默认为elb.default，均为经典型负载均衡",
+				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。 elb.s2.small: standardI（标准型Ⅰ）, elb.s2.large: standardII（标准型Ⅱ）、elb.s3.small: enhancedI（增强型Ⅰ）, elb.s3.large: enhancedII（增强型Ⅱ）、elb.s4.small: higherI（高阶型Ⅰ）, elb.s4.large: higherII（高阶型Ⅱ）、elb.s5.small: superI（超强型Ⅰ）, elb.s5.large: superII（超强型Ⅱ）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(append(business.ElbSlaNames, business.PgElbSlaNames...)...),
 				},
@@ -115,7 +115,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "负载均衡ID",
+				Description: "负载均衡Id",
 			},
 			"az_name": schema.StringAttribute{
 				Computed:    true,
@@ -188,11 +188,11 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					Attributes: map[string]schema.Attribute{
 						"resource_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "计费类资源ID",
+							Description: "计费类资源Id",
 						},
 						"eip_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "弹性公网IP的ID",
+							Description: "弹性公网IP的Id",
 						},
 						"bandwidth": schema.Float32Attribute{
 							Computed:    true,
@@ -254,8 +254,8 @@ func (c *CtyunElbLoadBalancerResource) Create(ctx context.Context, request resou
 	} else if c.isContains(plan.SlaName.ValueString(), business.ElbSlaNames) {
 		// 若slaName属于elb.s1.small和elb.default，则需要创建经典型负载均衡
 		// 先调用新版接口进行创建，若该region不支持新版接口，再使用旧版接口创建
-		returnObj, err := c.createElb(ctx, &plan)
-		if err != nil {
+		returnObj, err2 := c.createElb(ctx, &plan)
+		if err2 != nil {
 			return
 		}
 		// 同步接口，无需轮询

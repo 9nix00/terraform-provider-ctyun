@@ -42,6 +42,11 @@ const (
 	MongodbProdIDS60    = 10013025 // 6.0单机版
 	MongodbProdIDRead40 = 10013110 // 4.0只读版
 	MongodbProdIDRead34 = 10013119 // 3.4只读版
+
+	MongodbStorageTypeSSD       = "SSD"        // 超高IO
+	MongodbStorageTypeSAS       = "SAS"        // 高IO
+	MongodbStorageTypeSATA      = "SATA"       // 普通IO
+	MongodbStorageTypeSSDGenric = "SSD-Genric" // 通用型SSD
 )
 
 var MongodbRunningStatus = []int32{
@@ -58,4 +63,41 @@ var MongodbRunningStatus = []int32{
 	MongodbRunningStatusFailed,
 	MongodbRunningStatusUpgrading,
 	MongodbRunningStatusSwitch,
+}
+
+var MongodbProdID = []int64{
+	MongodbProdIDS34,
+	MongodbProdIDS40,
+	MongodbProdID3R34,
+	MongodbProdID3R40,
+	MongodbProdID5R34,
+	MongodbProdID5R40,
+	MongodbProdID7R34,
+	MongodbProdID7R40,
+	MongodbProdIDC34,
+	MongodbProdIDC40,
+	MongodbProdS42,
+	MongodbProdID3R42,
+	MongodbProdID5R42,
+	MongodbProdID7R42,
+	MongodbProdIDC42,
+	MongodbProdIDS50,
+	MongodbProdID3R50,
+	MongodbProdID5R50,
+	MongodbProdID7R50,
+	MongodbProdIDC50,
+	MongodbProdIDC60,
+	MongodbProdID3R60,
+	MongodbProdID5R60,
+	MongodbProdID7R60,
+	MongodbProdIDS60,
+	MongodbProdIDRead40,
+	MongodbProdIDRead34,
+}
+
+var MongodbStorageType = []string{
+	MongodbStorageTypeSSD,
+	MongodbStorageTypeSAS,
+	MongodbStorageTypeSATA,
+	MongodbStorageTypeSSDGenric,
 }

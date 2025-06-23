@@ -1,5 +1,5 @@
 resource "ctyun_postgresql_instance" "%[1]s" {
-  bill_mode              = "%[2]s"
+  cycle_type              = "%[2]s"
   host_type              = "%[3]s"
   prod_version           = "%[4]s"
   prod_id                =  %[5]d
@@ -15,4 +15,13 @@ resource "ctyun_postgresql_instance" "%[1]s" {
   subnet_id              = "%[15]s"
   security_group_id      = "%[16]s"
   availability_zone_info =  %[17]s
+  %[18]s  // backup_storage_space
+  start = %[19]t  // start
+  restart = %[20]t  // restart
+  stop = %[21]t  // stop
+  os_type = "%[22]s"
+  cpu_type = "%[23]s"
+  %[24]s // period
+  %[25]s // purchase_count
 }
+
