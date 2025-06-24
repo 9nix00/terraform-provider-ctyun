@@ -35,6 +35,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	mongodb2 "terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	pgsql2 "terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"terraform-provider-ctyun/internal/core/ctzos"
@@ -51,6 +52,7 @@ import (
 	"terraform-provider-ctyun/internal/service/iam"
 	"terraform-provider-ctyun/internal/service/image"
 	"terraform-provider-ctyun/internal/service/kafka"
+	"terraform-provider-ctyun/internal/service/mongodb"
 	mysql2 "terraform-provider-ctyun/internal/service/mysql"
 	"terraform-provider-ctyun/internal/service/nat"
 	"terraform-provider-ctyun/internal/service/pgsql"
@@ -316,6 +318,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkAmqpApis:    amqp.NewApis(client),
 			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis: pgsql2.NewApis(client),
+			SdkMongodbApis: mongodb2.NewApis(client),
 		},
 		*credential,
 		*SdkCredential,
@@ -376,7 +379,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		kafka.NewCtyunKafkaSpecs(),
 		rabbitmq.NewCtyunRabbitmqInstances(),
 		ccse.NewCtyunCcsePluginMarket(),
-		pgsql.NewPgsqlMysqlInstances(),
+		pgsql.NewCtyunPgsqlInstances(),
+		pgsql.NewCtyunPgsqlSpecs(),
 	)
 }
 
@@ -439,6 +443,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcsePlugin(),
 		pgsql.NewCtyunPostgresqlInstance(),
 		rabbitmq.NewCtyunRabbitmqInstance(),
+		pgsql.NewCtyunMysqlAssociationEip(),
+		mongodb.NewCtyunMongodbInstance(),
 	)
 }
 

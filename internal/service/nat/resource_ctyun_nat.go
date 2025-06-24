@@ -49,7 +49,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -63,7 +63,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"spec": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "规格 1~4, 1表示小型, 2表示中型, 3表示大型, 4表示超大型",
+				Description: "规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 4),
 				},
@@ -75,7 +75,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 					// todo 不能以 http: / https: 开头
@@ -85,7 +85,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
+				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
 			},
 			"cycle_type": schema.StringAttribute{
 				Optional:    true,
@@ -152,11 +152,12 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Description: "网关id",
 			},
 			"master_resource_id": schema.StringAttribute{
-				Computed: true,
+				Computed:    true,
+				Description: "资源池id",
 			},
 			"vpc_name": schema.StringAttribute{
 				Computed:    true,
-				Description: "NAT所属的专有网络名字",
+				Description: "NAT所属的vpc专有网络名字",
 			},
 			"vpc_cidr": schema.StringAttribute{
 				Computed:    true,

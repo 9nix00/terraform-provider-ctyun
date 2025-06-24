@@ -50,7 +50,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域id",
+				Description: "资源池id",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -59,7 +59,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"nat_gateway_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "需要查询的NAT id",
+				Description: "NAT网关Id",
 			},
 			"dnat_id": schema.StringAttribute{
 				Computed:    true,
@@ -83,7 +83,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"internal_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "内部 IP,virtualMachineType=2(自定义),必填",
+				Description: "内部 IP,virtual_machine_type=2(自定义),必填",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("virtual_machine_type"),
@@ -145,14 +145,14 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"virtual_machine_type": schema.Int32Attribute{
 				Optional:    true,
-				Description: "云主机类型1-选择云主机，serverType字段必传 2-自定义，internalIp必传",
+				Description: "云主机类型，1-选择云主机，serverType字段必传 2-自定义，internalIp必传",
 				//Validators: []validator.Int32{
 				//	int32validator.Between(1, 2),
 				//},
 			},
 			"server_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）",
+				Description: "当 virtual_machine_type 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("virtual_machine_type"),

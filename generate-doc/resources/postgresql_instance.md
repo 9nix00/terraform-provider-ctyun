@@ -11,23 +11,23 @@ pgsql provider
 ### Required
 
 - `availability_zone_info` (Attributes List) (see [below for nested schema](#nestedatt--availability_zone_info))
-- `bill_mode` (String) 计费模式：1=包周期，2=按需
 - `case_sensitive` (String) 是否区分大小写: 0=区分, 1=不区分, 2=待定
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `host_type` (String) 主机类型: S6 or S7
 - `name` (String) 集群名称(主实例名称，只读实例会加'-read')
 - `node_type` (String) 节点类型: master=实例规格, readNode=只读实例
 - `password` (String, Sensitive) 管理员密码(RSA公钥加密)
-- `prod_id` (Number) 产品ID
-- `prod_performance_spec` (String) 实例规格(例: 4C8G)
+- `prod_id` (Number) 产品ID。扩容过程中，不支持磁盘、规格和实例扩容同时进行
+- `prod_performance_spec` (String) 实例规格(例: 4C8G)。扩容过程中，不支持磁盘、规格和实例扩容同时进行
 - `prod_version` (String) 数据库版本(参考查询规格列表接口)
-- `storage_space` (Number) 主存储空间(单位:G，范围100-32768)
+- `storage_space` (Number) 主存储空间(单位:G，范围100-32768)。扩容过程中不支持磁盘、规格和实例扩容同时进行
 - `storage_type` (String) 主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
 
 ### Optional
 
 - `active_scale_rate` (String) 触发扩容百分比(1-100)
 - `appoint_vip` (String) 指定VIP
-- `auto_renew_status` (Number) 自动续订状态: 0=不自动续订, 1=自动续订
+- `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `auto_scale` (String) 存储自动扩容: 0=关闭, 1=开启
 - `backup_id` (String) 备份集ID(恢复到新实例时使用)
 - `backup_storage_space` (String) 备份存储空间大小
@@ -35,14 +35,14 @@ pgsql provider
 - `backup_time_point` (String) 恢复时间点(与backup_id互斥)
 - `cpu_type` (String) CPU类型: 10=鲲鹏, 20=海光, 30=intel, ...
 - `cross_instance_backup` (Boolean) 是否为恢复到新实例工单
-- `disks` (Number) 磁盘数量(默认1)
+- `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
+- `disks` (Number) 磁盘（默认为1）,2为Hbase，暂不支持
 - `inst_spec` (String) 实例规格: 1=通用型
 - `is_cross_region_recovery` (Boolean) 是否跨域恢复
 - `is_mgr` (String) 是否开启MRG，默认false
 - `max_scale` (Number) 存储扩容上限(单位G)
 - `os_type` (String) 操作系统类型: 0=裸机, 1=windows, 2=centos, ...
 - `param_template_id` (String) 参数模板ID
-- `period` (Number) 包周期时长(单位月，范围1-36)
 - `prod_spec_name` (String) 产品规格名称
 - `project_id` (String) 企业项目ID，默认0
 - `project_name` (String) 企业项目名称，默认default

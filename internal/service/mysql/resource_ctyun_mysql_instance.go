@@ -73,7 +73,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-12、24、36",
+				Description: "订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("cycle_type"),
@@ -83,7 +83,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 						path.MatchRoot("cycle_type"),
 						types.StringValue(business.OrderCycleTypeOnDemand),
 					),
-					int32validator.OneOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24, 36),
+					int32validator.Between(1, 36),
 				},
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
@@ -140,7 +140,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "安全组",
+				Description: "安全组Id",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -159,7 +159,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.Int64Attribute{
 				Required:    true,
-				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致",
+				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值：10001003-单实例 single5.7版本，10001103-单实例 single8.0版本，10001005-单实例 single 只读5.7版本，10001105-单实例 single 只读8.0版本，10001001-一主一备 master-slave 5.7版本，10001101-一主一备 master-slave 8.0版本，10001002-一主两备 master-2-slave 5.7版本，10001102-一主两备 master-2-slave 8.0版本",
 				Validators: []validator.Int64{
 					int64validator.OneOf(business.MysqlProdIDs...),
 				},
@@ -171,11 +171,11 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"node_type": schema.StringAttribute{
 				Required:    true,
-				Description: "master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
+				Description: "数据库类型，master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例",
 			},
 			"inst_spec": schema.StringAttribute{
 				Required:    true,
-				Description: "实例规格，取值范围1~15",
+				Description: "实例规格，取值范围:1-通用型， 2-计算增强型，3-内存增强型，4-HS， 5-HC， 6-HM，7-KS， 8-KM， 9-KC",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlHostType...),
 				},
@@ -236,7 +236,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"inst_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "实例ID",
+				Description: "实例Id",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,

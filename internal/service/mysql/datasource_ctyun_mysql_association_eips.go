@@ -37,7 +37,6 @@ func (c *CtyunMysqlAssociationEips) Configure(ctx context.Context, request datas
 
 func (c *CtyunMysqlAssociationEips) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mysql_association_eips"
-
 }
 
 func (c *CtyunMysqlAssociationEips) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {

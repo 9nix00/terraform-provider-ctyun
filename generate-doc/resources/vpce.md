@@ -39,9 +39,25 @@ resource "ctyun_subnet" "subnet_test" {
   enable_ipv6 = true
 }
 
+resource "ctyun_vpce_service" "test" {
+  name  = "tf-vpce-server-sss"
+  vpc_id = ctyun_vpc.vpc_test.id
+  subnet_id = ctyun_subnet.subnet_test.id
+  auto_connection = true
+  type = "interface"
+  instance_id = "d40b78e2-23de-4fa6-baf0-e500750f985b"
+  instance_type = "vm"
+  rules = [{
+    protocol = "TCP"
+    endpoint_port = 2
+    server_port = 2
+  },
+  ]
+}
+
 resource "ctyun_vpce" "test" {
   name  = "tf-vpce-123"
-  endpoint_service_id = "endpser-64at6dgmw0"
+  endpoint_service_id = ctyun_vpce_service.test.id
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   whitelist_flag = true

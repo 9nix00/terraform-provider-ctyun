@@ -6,20 +6,25 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"time"
 )
 
@@ -58,11 +63,14 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 	response.Schema = schema.Schema{
 		MarkdownDescription: "pgsql provider",
 		Attributes: map[string]schema.Attribute{
-			"bill_mode": schema.StringAttribute{
+			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "计费模式：1=包周期，2=按需",
+				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.PgsqlBillModes...),
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -88,7 +96,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"prod_id": schema.Int64Attribute{
 				Required:    true,
-				Description: "产品ID",
+				Description: "产品ID。扩容过程中，不支持磁盘、规格和实例扩容同时进行",
 			},
 			"project_name": schema.StringAttribute{
 				Optional:    true,
@@ -99,6 +107,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			// 存储与备份
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
 			},
 			"storage_type": schema.StringAttribute{
@@ -107,13 +116,14 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"storage_space": schema.Int32Attribute{
 				Required:    true,
-				Description: "主存储空间(单位:G，范围100-32768)",
+				Description: "主存储空间(单位:G，范围100-32768)。扩容过程中不支持磁盘、规格和实例扩容同时进行",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
 			},
 			"backup_storage_space": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "备份存储空间大小",
 			},
 			// 网络配置
@@ -168,13 +178,22 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 
 			// 订购选项
-			"period": schema.Int32Attribute{
+			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "包周期时长(单位月，范围1-36)",
-				Default:     int32default.StaticInt32(1),
+				Description: "订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36",
 				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+					),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
 					int32validator.Between(1, 36),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"purchase_count": schema.Int32Attribute{
@@ -186,13 +205,19 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					int32validator.Between(1, 50),
 				},
 			},
-			"auto_renew_status": schema.Int32Attribute{
+			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     int32default.StaticInt32(0),
-				Description: "自动续订状态: 0=不自动续订, 1=自动续订",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 1),
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月",
+				Default:     booldefault.StaticBool(false),
+				Validators: []validator.Bool{
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+				},
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			// 高级配置
@@ -285,13 +310,13 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"prod_performance_spec": schema.StringAttribute{
 				Required:    true,
-				Description: "实例规格(例: 4C8G)",
+				Description: "实例规格(例: 4C8G)。扩容过程中，不支持磁盘、规格和实例扩容同时进行",
 			},
 			"disks": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(1),
-				Description: "磁盘数量(默认1)",
+				Description: "磁盘（默认为1）,2为Hbase，暂不支持",
 			},
 			// 自动扩展配置
 			"auto_scale": schema.StringAttribute{
@@ -406,14 +431,20 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"restart": schema.BoolAttribute{
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 				Description: "控制是否需要重启实例",
 			},
 			"stop": schema.BoolAttribute{
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 				Description: "控制是否需要停止实例",
 			},
 			"start": schema.BoolAttribute{
 				Optional:    true,
+				Computed:    true,
+				Default:     booldefault.StaticBool(false),
 				Description: "控制是否需要启动实例",
 			},
 		},
@@ -498,6 +529,7 @@ func (c *CtyunPostgresqlInstance) Update(ctx context.Context, request resource.U
 	if response.Diagnostics.HasError() {
 		return
 	}
+
 	err = c.updatePgsqlInstance(ctx, &state, &plan)
 	if err != nil {
 		return
@@ -535,6 +567,13 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 	if state.ProjectID.ValueString() != "" {
 		deleteHeader.ProjectID = state.ProjectID.ValueStringPointer()
 	}
+
+	// 确保订单已完成状态才能退订
+	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, 60)
+	if err != nil {
+		return
+	}
+
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlRefundApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
 	if err != nil {
 		return
@@ -562,10 +601,11 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		err = errors.New("securityGroupID is required")
 		return
 	}
+	cycleType := config.CycleType.ValueString()
 	// 构建创建参数
 	params := &pgsql.PgsqlCreateRequest{
-		BillMode:              config.BillMode.ValueString(),
 		RegionId:              config.RegionID.ValueString(),
+		BillMode:              business.MysqlBillMode[cycleType],
 		HostType:              config.HostType.ValueString(),
 		ProdVersion:           config.ProdVersion.ValueString(),
 		ProdId:                config.ProdID.ValueInt64(),
@@ -575,19 +615,26 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		Name:                  config.Name.ValueString(),
 		Password:              config.Password.ValueString(),
 		ParamTemplateId:       config.ParamTemplateId.ValueString(),
-		Period:                config.Period.ValueInt32(),
+		Period:                config.CycleCount.ValueInt32(),
 		Count:                 config.PurchaseCount.ValueInt32(),
-		AutoRenewStatus:       config.AutoRenewStatus.ValueInt32(),
 		CaseSensitive:         config.CaseSensitive.ValueString(),
 		TimeZone:              config.TimeZone.ValueString(),
 		IsMGR:                 config.IsMGR.ValueStringPointer(),
 		CrossInstanceBackup:   config.CrossInstanceBackup.ValueBool(),
 		IsCrossRegionRecovery: config.IsCrossRegionRecovery.ValueBool(),
 	}
+
+	if config.CycleType.ValueString() == business.OnDemandCycleType {
+		params.AutoRenewStatus = 0
+	} else {
+		params.AutoRenewStatus = map[bool]int32{true: 1, false: 0}[config.AutoRenew.ValueBool()]
+	}
+
 	header := &pgsql.PgsqlCreateRequestHeader{}
 	if config.ResPoolCode.ValueString() != "" {
 		params.ResPoolCode = config.ResPoolCode.ValueStringPointer()
 	}
+
 	if config.ProjectID.ValueString() != "0" {
 		params.ProjectId = config.ProjectID.ValueStringPointer()
 		header.ProjectId = config.ProjectID.ValueStringPointer()
@@ -640,12 +687,12 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	// 处理MysqlNodeInfoList
 	mysqlNodeInfoList := []pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
 	mysqlNodeInfo := pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
-	mysqlNodeInfo.NodeType = config.NodeType.ValueString()
 	mysqlNodeInfo.InstSpec = config.InstSpec.ValueString()
 	mysqlNodeInfo.StorageType = config.StorageType.ValueString()
 	mysqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mysqlNodeInfo.ProdPerformanceSpec = config.ProdPerformanceSpec.ValueString()
 	mysqlNodeInfo.Disks = config.Disks.ValueInt32()
+	mysqlNodeInfo.NodeType = config.NodeType.ValueString()
 	if config.BackupStorageType.ValueString() != "" {
 		mysqlNodeInfo.BackupStorageType = config.BackupStorageSpace.ValueStringPointer()
 	}
@@ -692,7 +739,7 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	if err != nil {
 		return err
 	} else if resp.StatusCode != 200 {
-		//err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
 	//else if resp.ReturnObj == nil {
@@ -780,9 +827,11 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.ProdDbEngine = types.StringValue(returnObj.ProdDbEngine)
 	config.Name = types.StringValue(returnObj.ProdInstName)
 	config.ProdType = types.Int32Value(returnObj.ProdType)
+	prodId, err := strconv.ParseInt(returnObj.SpuCode, 10, 64)
+	config.ProdID = types.Int64Value(prodId)
 	config.ReadPort = types.Int32Value(returnObj.ReadPort)
 	config.WritePort = types.StringValue(returnObj.WritePort)
-	config.BillMode = types.StringValue(fmt.Sprintf("%d", returnObj.BillMode))
+	config.CycleType = types.StringValue(map[int32]string{1: "month", 2: "on_demand"}[returnObj.BillMode])
 	config.SecurityGroupId = types.StringValue(returnObj.SecurityGroupId)
 	config.SecurityGroupName = types.StringValue(returnObj.SecurityGroup)
 	config.VpcName = types.StringValue(returnObj.NetName)
@@ -791,6 +840,9 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.ProdOrderStatus = types.Int32Value(returnObj.ProdOrderStatus)
 	config.ProdRunninStatus = types.Int32Value(returnObj.ProdRunningStatus)
 	config.ToolType = types.Int32Value(returnObj.ToolType)
+	config.BackupStorageType = types.StringValue(returnObj.BackupDiskType)
+	backupDiskSize := c.ParseStorageSize(&returnObj.BackupDiskSize)
+	config.BackupStorageSpace = types.StringValue(backupDiskSize)
 	return
 }
 
@@ -862,9 +914,19 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 	if state.ProjectID.ValueString() != "" {
 		upgradeHeaders.ProjectID = state.ProjectID.ValueStringPointer()
 	}
-	// 若StorageSpace不为空，触发扩容存储空间，且plan storageSpace与state不相同时
+	// 若StorageSpace不为空，触发扩容主存储空间，且plan storageSpace与state不相同时
 	if plan.StorageSpace.ValueInt32() != 0 && plan.StorageSpace.ValueInt32() != state.StorageSpace.ValueInt32() {
 		upgradeParams.DiskVolume = plan.StorageSpace.ValueInt32Pointer()
+	}
+	// 若backupStorageSpace不为空，触发备用存储空间扩容，且plan backupStorageSpace与state不相同
+	if plan.BackupStorageSpace.ValueString() != "" && plan.BackupStorageSpace.ValueString() != state.BackupStorageSpace.ValueString() {
+		storageSize, err2 := strconv.Atoi(plan.BackupStorageSpace.ValueString())
+		if err2 != nil {
+			err = err2
+			return
+		}
+		storageSize32 := int32(storageSize)
+		upgradeParams.DiskVolume = &storageSize32
 	}
 	// 规格扩容
 	if plan.ProdPerformanceSpec.ValueString() != "" && plan.ProdPerformanceSpec.ValueString() != state.ProdPerformanceSpec.ValueString() {
@@ -879,7 +941,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
 		var availabilityZoneList []AvailabilityZoneModel
 		var azInfoList []pgsql.PgsqlUpgradeRequestAzList
-		diags := plan.AvailabilityZoneInfo.ElementsAs(ctx, availabilityZoneList, true)
+		diags := plan.AvailabilityZoneInfo.ElementsAs(ctx, &availabilityZoneList, true)
 		if diags.HasError() {
 			return
 		}
@@ -898,6 +960,32 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		if err != nil {
 			return
 		}
+		// 若机器刚创建完成，需要同步实例远端状态
+		err = c.getAndMergePgsqlInstance(ctx, state)
+		if err != nil {
+			return
+		}
+		// 判断prod_id 和spec和disks是否同时需要更新，若是，则返回报错
+		if c.countSame(plan, state) > 1 {
+			err = errors.New("不支持磁盘、规格和主备扩容同时进行！")
+			return
+		}
+
+		detailParams := &pgsql.PgsqlDetailRequest{
+			ProdInstId: state.ID.ValueString(),
+		}
+		detailHeaders := &pgsql.PgsqlDetailRequestHeader{
+			RegionID: state.RegionID.ValueString(),
+		}
+		if state.ProjectID.ValueString() != "" {
+			detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+		}
+		respt, errt := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+		fmt.Println(respt.ReturnObj.ProdRunningStatus, respt.ReturnObj.ProdOrderStatus)
+		if errt != nil {
+			err = errt
+			return
+		}
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlUpgradeApi.Do(ctx, c.meta.Credential, upgradeParams, upgradeHeaders)
 		if err2 != nil {
 			return err2
@@ -913,6 +1001,10 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		// 扩容完成后，同步state AvailabilityZoneModel 状态
 		if !plan.AvailabilityZoneInfo.IsNull() {
 			state.AvailabilityZoneInfo = plan.AvailabilityZoneInfo
+		}
+		// 扩容完成后，同步state nodeType信息
+		if !plan.NodeType.IsNull() {
+			state.NodeType = plan.NodeType
 		}
 	}
 	// 启动实例
@@ -963,7 +1055,8 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
 			return
 		}
-		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.PgsqlProdOrderStatusFreeze)
+		// todo 待pgsql研发确定
+		err = c.RunningStatusLoop(ctx, state, business.PgsqlProdRunningStatusStopped, business.MysqlOrderStatusStarted)
 		if err != nil {
 			return
 		}
@@ -996,6 +1089,9 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			return
 		}
 	}
+	state.Start = plan.Start
+	state.Stop = plan.Stop
+	state.Restart = plan.Restart
 	return
 }
 
@@ -1042,10 +1138,14 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
+	// 设置一个容忍机制，根据pgsql定制，pgsql开通等操作可能出现报错回滚，此期间会存在查询不到实例情况
+	tolerateCount := 20
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
 	}
+	// 因为pgsql console和openapi有一个同步误差时间，需要多轮询几轮，目前暂定4轮
+	syncCount := 4
 	result := retryer.Start(
 		func(currentTime int) bool {
 			detailParams := &pgsql.PgsqlDetailRequest{
@@ -1059,19 +1159,35 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 			}
 			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
 			if err2 != nil {
-				err = err2
-				return false
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = err2
+					return false
+				}
+				return true
 			} else if resp.StatusCode != 800 {
-				err = fmt.Errorf("API return error. Message: %s", resp.Message)
-				return false
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = fmt.Errorf("API return error. Message: %s", resp.Message)
+					return false
+				}
+				return true
 			} else if resp.ReturnObj == nil {
-				err = common.InvalidReturnObjError
-				return false
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = common.InvalidReturnObjError
+					return false
+				}
+				return true
 			}
 			detailRunningStatus := resp.ReturnObj.ProdRunningStatus
 			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
 			if detailRunningStatus == runningStatus && detailOrderStatus == orderStatus {
-				return false
+				if syncCount <= 0 {
+					return false
+				} else {
+					syncCount--
+				}
 			}
 			return true
 		})
@@ -1123,7 +1239,7 @@ func (c *CtyunPostgresqlInstance) InfoLoop(ctx context.Context, state *CtyunPost
 				}
 			}
 			if plan.SecurityGroupId.ValueString() != "" {
-				if plan.SecurityGroupId.ValueString() == resp.ReturnObj.ProdInstName {
+				if plan.SecurityGroupId.ValueString() == resp.ReturnObj.SecurityGroupId {
 					flagSecurityGroup = true
 				}
 			}
@@ -1174,7 +1290,14 @@ func (c *CtyunPostgresqlInstance) UpgradeLoop(ctx context.Context, state *CtyunP
 			runningStatus := returnObj.ProdRunningStatus
 			orderStatus := returnObj.ProdOrderStatus
 			if returnObj.DiskSize == plan.StorageSpace.ValueInt32() && returnObj.MachineSpec == plan.ProdPerformanceSpec.ValueString() && returnObj.SpuCode == fmt.Sprintf("%d", plan.ProdID.ValueInt64()) {
-				if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted {
+				flag := false
+				if plan.BackupStorageSpace.ValueString() == "" {
+					flag = true
+				}
+				if plan.BackupStorageSpace.ValueString() != "" && c.ParseStorageSize(&returnObj.BackupDiskSize) == plan.BackupStorageSpace.ValueString() {
+					flag = true
+				}
+				if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted && flag {
 					return false
 				}
 			}
@@ -1186,6 +1309,62 @@ func (c *CtyunPostgresqlInstance) UpgradeLoop(ctx context.Context, state *CtyunP
 	return
 }
 
+func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, orderStatus int32, loopCount ...int) (err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	// 设置一个容忍机制，根据pgsql定制，pgsql开通等操作可能出现报错回滚，此期间会存在查询不到实例情况
+	tolerateCount := 30
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			detailParams := &pgsql.PgsqlDetailRequest{
+				ProdInstId: state.ID.ValueString(),
+			}
+			detailHeaders := &pgsql.PgsqlDetailRequestHeader{
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+			if err2 != nil {
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = err2
+					return false
+				}
+				return true
+			} else if resp.StatusCode != 800 {
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = fmt.Errorf("API return error. Message: %s", resp.Message)
+					return false
+				}
+				return true
+			} else if resp.ReturnObj == nil {
+				tolerateCount--
+				if tolerateCount < 0 {
+					err = common.InvalidReturnObjError
+					return false
+				}
+				return true
+			}
+			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
+			if detailOrderStatus == orderStatus {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未启动成功！")
+	}
+	return
+}
 func (c *CtyunPostgresqlInstance) RefundLoop(ctx context.Context, config *CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
@@ -1231,8 +1410,35 @@ func (c *CtyunPostgresqlInstance) RefundLoop(ctx context.Context, config *CtyunP
 	return
 }
 
+func (c *CtyunPostgresqlInstance) ParseStorageSize(storageSize *string) string {
+	str := *storageSize
+	if str[len(str)-1] == 'G' {
+		str = str[:len(str)-1]
+	} else {
+		str = "0"
+	}
+	return str
+}
+
+func (c *CtyunPostgresqlInstance) countSame(plan *CtyunPostgresqlInstanceConfig, state *CtyunPostgresqlInstanceConfig) int {
+	count := 0
+	if plan.BackupStorageSpace.ValueString() != "" && state.BackupStorageSpace.ValueString() != plan.BackupStorageSpace.ValueString() {
+		count += 1
+	}
+	if plan.StorageSpace.ValueInt32() != 0 && state.StorageSpace.ValueInt32() != plan.StorageSpace.ValueInt32() {
+		count += 1
+	}
+	if plan.ProdID.ValueInt64() != 0 && state.ProdID.ValueInt64() != plan.ProdID.ValueInt64() {
+		count += 1
+	}
+	if plan.ProdPerformanceSpec.ValueString() != "" && state.ProdPerformanceSpec.ValueString() != plan.ProdPerformanceSpec.ValueString() {
+		count += 1
+	}
+	return count
+}
+
 type CtyunPostgresqlInstanceConfig struct {
-	BillMode              types.String `tfsdk:"bill_mode"`                // 计费模式： 1是包周期，2是按需
+	CycleType             types.String `tfsdk:"cycle_type"`               // 计费模式： 1是包周期，2是按需
 	RegionID              types.String `tfsdk:"region_id"`                // 目标资源池Id
 	ResPoolCode           types.String `tfsdk:"res_pool_code"`            // 资源池名称
 	HostType              types.String `tfsdk:"host_type"`                //主机类型 host type: S6 or S7
@@ -1250,9 +1456,9 @@ type CtyunPostgresqlInstanceConfig struct {
 	Name                  types.String `tfsdk:"name"`                     // 集群名称(若开通只读实例，默认在主实例名称后面加"-read")
 	Password              types.String `tfsdk:"password"`                 // 管理员密码（RSA公钥加密）
 	ParamTemplateId       types.String `tfsdk:"param_template_id"`        // 参数模板ID
-	Period                types.Int32  `tfsdk:"period"`                   // 购买时长：单位月（范围：1-36）
+	CycleCount            types.Int32  `tfsdk:"cycle_count"`              // 购买时长：单位月（范围：1-36）
 	PurchaseCount         types.Int32  `tfsdk:"purchase_count"`           // 购买数量(范围:1-50)
-	AutoRenewStatus       types.Int32  `tfsdk:"auto_renew_status"`        // 自动续订状态 （0-不自动续订,1-自动续订）
+	AutoRenew             types.Bool   `tfsdk:"auto_renew"`               // 自动续订状态 （0-不自动续订,1-自动续订）
 	CaseSensitive         types.String `tfsdk:"case_sensitive"`           // 是否区分大小写 0 区分 1 不区分 2待定
 	TimeZone              types.String `tfsdk:"time_zone"`                // 时区
 	OsType                types.String `tfsdk:"os_type"`                  // 操作系统类型，默认2，0=裸机，1=windows，2=centos，3=ubuntu，4=android，5=redhat，6=kylin，7=uos，8=suse，9=asianux，10=open_euler，11=ctyunos，12=euler
@@ -1278,21 +1484,22 @@ type CtyunPostgresqlInstanceConfig struct {
 	AutoScale             types.String `tfsdk:"auto_scale"`               // 0 不自动扩容 1 自动扩存储
 	MaxScale              types.Int64  `tfsdk:"max_scale"`                // 存储扩容上限，单位G
 	ActiveScaleRate       types.String `tfsdk:"active_scale_rate"`        // 触发扩容百分比，取值范围1-100
+	ID                    types.String `tfsdk:"id"`                       // 实例ID
+	Alive                 types.Int32  `tfsdk:"alive"`                    // 实例是否存活,0:存活，-1:异常
+	DiskRated             types.Int32  `tfsdk:"disk_rated"`               // 磁盘使用率
+	OuterProdInstId       types.String `tfsdk:"outer_prod_inst_id"`       // 对外的实例ID，对应PaaS平台
+	ProdDbEngine          types.String `tfsdk:"prod_db_engine"`           // 数据库实例引擎
+	ProdOrderStatus       types.Int32  `tfsdk:"prod_order_status"`        // 订单状态，0：正常，1：冻结，2：删除，3：操作中，4：失败,2005:扩容中
+	ProdRunninStatus      types.Int32  `tfsdk:"prod_running_status"`      // 实例状态
+	ProdType              types.Int32  `tfsdk:"prod_type"`                // 实例部署方式 0：单机部署,1：主备部署
+	ReadPort              types.Int32  `tfsdk:"read_port"`                // 读端口
+	WritePort             types.String `tfsdk:"write_port"`               // 写端口
+	ToolType              types.Int32  `tfsdk:"tool_type"`                // 备份工具类型，1：pg_baseback，2：pgbackrest，3：s3
+	Restart               types.Bool   `tfsdk:"restart"`                  // 控制是否需要重启实例
+	Stop                  types.Bool   `tfsdk:"stop"`                     // 控制是否需要停止实例
+	Start                 types.Bool   `tfsdk:"start"`                    // 控制是否需要启动实例
 	//NewOrderID            types.String `tfsdk:"new_order_id"`             // 订单id
-	ID               types.String `tfsdk:"id"`                  // 实例ID
-	Alive            types.Int32  `tfsdk:"alive"`               // 实例是否存活,0:存活，-1:异常
-	DiskRated        types.Int32  `tfsdk:"disk_rated"`          // 磁盘使用率
-	OuterProdInstId  types.String `tfsdk:"outer_prod_inst_id"`  // 对外的实例ID，对应PaaS平台
-	ProdDbEngine     types.String `tfsdk:"prod_db_engine"`      // 数据库实例引擎
-	ProdOrderStatus  types.Int32  `tfsdk:"prod_order_status"`   // 订单状态，0：正常，1：冻结，2：删除，3：操作中，4：失败,2005:扩容中
-	ProdRunninStatus types.Int32  `tfsdk:"prod_running_status"` // 实例状态
-	ProdType         types.Int32  `tfsdk:"prod_type"`           // 实例部署方式 0：单机部署,1：主备部署
-	ReadPort         types.Int32  `tfsdk:"read_port"`           // 读端口
-	WritePort        types.String `tfsdk:"write_port"`          // 写端口
-	ToolType         types.Int32  `tfsdk:"tool_type"`           // 备份工具类型，1：pg_baseback，2：pgbackrest，3：s3
-	Restart          types.Bool   `tfsdk:"restart"`             // 控制是否需要重启实例
-	Stop             types.Bool   `tfsdk:"stop"`                // 控制是否需要停止实例
-	Start            types.Bool   `tfsdk:"start"`               // 控制是否需要启动实例
+
 }
 
 type AvailabilityZoneModel struct {
