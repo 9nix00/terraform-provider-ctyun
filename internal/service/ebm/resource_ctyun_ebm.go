@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -212,12 +213,18 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.EbmExtIp...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"ip_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4",
 				Default:     stringdefault.StaticString("ipv4"),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"band_width": schema.Int32Attribute{
 				Optional:    true,
@@ -235,6 +242,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						types.StringValue(business.EbmExtIpUseExist),
 					),
 					int32validator.Between(1, 2000),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"public_ip": schema.StringAttribute{
@@ -261,6 +271,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID",
 				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
 			},
 			"disk_list": schema.ListNestedAttribute{
 				Optional:    true,
@@ -286,10 +299,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 						"title": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "磁盘名称，长度2~64,不支持中文",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
+							Description: "磁盘名称，长度2~64，不支持中文",
 						},
 						"type": schema.StringAttribute{
 							Required:    true,
@@ -308,6 +318,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"network_card_list": schema.ListNestedAttribute{
 				Required:    true,
 				Description: "网卡",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"port_id": schema.StringAttribute{
@@ -330,11 +343,15 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 							Description: "内网IPv4地址",
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 						"master": schema.BoolAttribute{
 							Required:    true,
 							Description: "是否主节点",
+							PlanModifiers: []planmodifier.Bool{
+								boolplanmodifier.RequiresReplace(),
+							},
 						},
 						"ipv6": schema.StringAttribute{
 							Optional:    true,
@@ -342,11 +359,15 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 							Description: "内网IPv6地址",
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.UseStateForUnknown(),
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 						"subnet_id": schema.StringAttribute{
 							Required:    true,
 							Description: "子网id",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 					},
 				},
@@ -358,6 +379,10 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 16384),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"key_pair_name": schema.StringAttribute{
