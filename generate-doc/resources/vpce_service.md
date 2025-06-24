@@ -38,58 +38,13 @@ resource "ctyun_subnet" "subnet_test" {
   enable_ipv6 = true
 }
 
-data "ctyun_images" "image_test1" {
-  name       = "CtyunOS 23"
-  visibility = "public"
-  page_no = 1
-  page_size = 10
-}
-
-data "ctyun_ecs_flavors" "ecs_flavor_test1" {
-  cpu    = 2
-  ram    = 4
-  arch   = "x86"
-  series = "S"
-  type   = "CPU_S7"
-}
-
-
-resource "ctyun_ecs" "ecs_test1" {
-  instance_name       = "tf1-ecs-test"
-  display_name        = "tf1-ecs-test"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
-  image_id            = data.ctyun_images.image_test1.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
-  cycle_type          = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
-  is_destroy_instance = false
-}
-
-
-resource "ctyun_ecs" "ecs_test2" {
-  instance_name       = "tf2-ecs-test"
-  display_name        = "tf2-ecs-test"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
-  image_id            = data.ctyun_images.image_test1.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
-  cycle_type          = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
-  is_destroy_instance = false
-}
-
 resource "ctyun_vpce_service" "test" {
   name  = "tf-vpce-server-sss"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
   type = "interface"
-  instance_id = ctyun_ecs.ecs_test2.id
+  instance_id = "d40b78e2-23de-4fa6-baf0-e500750f985b"
   instance_type = "vm"
   rules = [{
     protocol = "TCP"

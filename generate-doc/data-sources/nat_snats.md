@@ -30,7 +30,7 @@
 Read-Only:
 
 - `creation_time` (String) 创建时间
-- `description` (String) 描述信息
+- `description` (String) 描述
 - `eips` (Attributes List) 绑定的 eip 信息 (see [below for nested schema](#nestedatt--snats--eips))
 - `nat_gateway_id` (String) nat 网关 ID
 - `snat_id` (String) snat id

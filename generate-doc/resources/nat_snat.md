@@ -10,13 +10,13 @@
 
 ### Required
 
-- `nat_gateway_id` (String) NAT网关ID
-- `snat_ips` (Set of String) 弹性公网IP集合
+- `nat_gateway_id` (String) NAT网关Id
+- `snat_ips` (Set of String) 弹性公网IP集合，每个元素为eip id
 
 ### Optional
 
-- `description` (String) SNAT描述
-- `region_id` (String) 区域id
+- `description` (String) SNAT描述，可选
+- `region_id` (String) 资源池id
 - `source_cidr` (String) 自定义输入VPC、交换机或ECS实例的网段，还可以输入任意网段。【自定义子网信息必传】】
 - `source_subnet_id` (String) 子网id，【非自定义情况必传 sourceCIDR和sourceSubnetID二选一必传】｜ 5fe30709-93ef-522f-a1a0-d8c8f6803e0d
 
@@ -24,7 +24,7 @@
 
 - `create_time` (String) 创建时间
 - `eips` (Attributes List) 绑定的 eip 信息 (see [below for nested schema](#nestedatt--eips))
-- `snat_id` (String) snat id, 当 status != done 时，snatID 为 null
+- `snat_id` (String) snat id
 - `subnet_type` (Number) 子网类型：1-有vpcID的子网，0-自定义
 
 <a id="nestedatt--eips"></a>

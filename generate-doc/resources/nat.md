@@ -13,20 +13,28 @@ terraform {
     }
   }
 }
-
-provider "ctyun" {
-	region_id = "200000002530"
-	az_name = "az1"
+resource "ctyun_vpc" "vpc_test" {
+	name        = "tf-vpc-for-nat"
+	cidr        = "192.168.0.0/16"
+	description = "terraform测试使用"
+	enable_ipv6 = true
 }
 
 resource "ctyun_nat" "nat_test"{
-	region_id = "200000002530"
-	vpc_id = "vpc-wf029jgx2d"
+	vpc_id = ctyun_vpc.vpc_test.id
 	spec = 1
-	name = "nat-terraform-test"
-	description = "terraform测试"
+	name = "tf-nat"
+	description = "terraform测试使用"
 	cycle_type = "on_demand"
-	az_name = "cn-huanan2-1A-public-ctcloud"
+}
+
+resource "ctyun_nat" "nat_cycle_test" {
+	vpc_id = ctyun_vpc.vpc_test.id
+	spec = 1
+	name = "tf-nat-cycle"
+	description = "terraform测试使用"
+	cycle_type = "month"
+	cycle_count = 1
 }
 ```
 
@@ -39,21 +47,21 @@ resource "ctyun_nat" "nat_test"{
 - `creation_time` (String) NAT网关的创建时间
 - `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 - `cycle_type` (String) 订购类型：month（包月） / year（包年）/ on_demand（按需）
-- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
+- `description` (String) nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
 - `expired_time` (String) NAT网关实例的过期时间
 - `master_resource_status` (String) 资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）
-- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+- `name` (String) nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `pay_voucher_price` (String) 代金券金额，支持到小数点后两位
 - `project_id` (String) 企业项目，不传默认为 0
-- `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `spec` (Number) 规格 1~4, 1表示小型, 2表示中型, 3表示大型, 4表示超大型
+- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `spec` (Number) 规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型
 - `vpc_id` (String) 需要创建 NAT 网关的 VPC 的 ID
 
 ### Read-Only
 
 - `master_order_id` (String) 订单id
 - `master_order_no` (String) 订单编号, 可以为 null
-- `master_resource_id` (String)
+- `master_resource_id` (String) 资源池id
 - `nat_gateway_id` (String) 网关id
 - `vpc_cidr` (String) 当前网关所属的vpc cidr
-- `vpc_name` (String) NAT所属的专有网络名字
+- `vpc_name` (String) NAT所属的vpc专有网络名字

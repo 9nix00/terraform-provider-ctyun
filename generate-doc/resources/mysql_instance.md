@@ -68,15 +68,15 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `disks` (Number) 磁盘（默认为1）,2为Hbase，暂不支持
 - `host_type` (String) 主机类型 host type: S6 or S7,需要大写
-- `inst_spec` (String) 实例规格，取值范围1~15
+- `inst_spec` (String) 实例规格，取值范围:1-通用型， 2-计算增强型，3-内存增强型，4-HS， 5-HC， 6-HM，7-KS， 8-KM， 9-KC
 - `name` (String) 集群名称(若开通只读实例，默认在主实例名称后面加'-read')
-- `node_type` (String) master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
+- `node_type` (String) 数据库类型，master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
 - `os_type` (String) 系统类型：0是裸机，1是windows，2是centos，3是ubuntu，4是android，5是redhat，6是kylin，7是uos,8是suse，9是asianux，10是open_euler，11是ctyunos，12是euler
-- `prod_id` (Number) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致
+- `prod_id` (Number) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值：10001003-单实例 single5.7版本，10001103-单实例 single8.0版本，10001005-单实例 single 只读5.7版本，10001105-单实例 single 只读8.0版本，10001001-一主一备 master-slave 5.7版本，10001101-一主一备 master-slave 8.0版本，10001002-一主两备 master-2-slave 5.7版本，10001102-一主两备 master-2-slave 8.0版本
 - `prod_performance_spec` (String) 规格(例: 4C8G),不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致
 - `prod_version` (String) 版本
 - `purchase_count` (Number) 购买数量(范围:1-50)
-- `security_group_id` (String) 安全组
+- `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 - `subnet_id` (String) 子网Id
@@ -87,7 +87,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `availability_zone` (Set of String) 可用区名称
 - `availability_zone_info` (Attributes List) 可用区信息，扩容时，该字段不填写 (see [below for nested schema](#nestedatt--availability_zone_info))
-- `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-12、24、36
+- `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `password` (String) 管理员密码（RSA公钥加密）
 - `prod_performance_specs` (Set of String) 该产品下面的单节点规格
 - `prod_spec_name` (String) 产品名称规格名称
@@ -103,7 +103,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `audit_log_status` (Number) 日志审计开关
 - `eip` (String) 弹性ip
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding
-- `inst_id` (String) 实例ID
+- `inst_id` (String) 实例Id
 - `inst_release_protection_status` (Number) 实例释放保护开关 1:on,0:off
 - `mysql_port` (String) 数据库端口
 - `new_mysql_version` (String) mysql版本

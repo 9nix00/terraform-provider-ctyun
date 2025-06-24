@@ -12,9 +12,9 @@
 
 - `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `resource_type` (String) 资源类型。internal：内网负载均衡，external：公网负载均衡
-- `sla_name` (String) lb的规格名称,支持elb.s1.small和elb.default，默认为elb.default，均为经典型负载均衡
-- `subnet_id` (String) 子网的ID
-- `vpc_id` (String) vpc的ID
+- `sla_name` (String) lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。 elb.s2.small: standardI（标准型Ⅰ）, elb.s2.large: standardII（标准型Ⅱ）、elb.s3.small: enhancedI（增强型Ⅰ）, elb.s3.large: enhancedII（增强型Ⅱ）、elb.s4.small: higherI（高阶型Ⅰ）, elb.s4.large: higherII（高阶型Ⅱ）、elb.s5.small: superI（超强型Ⅰ）, elb.s5.large: superII（超强型Ⅱ）
+- `subnet_id` (String) 子网的Id
+- `vpc_id` (String) vpc的Id
 
 ### Optional
 
@@ -25,8 +25,8 @@
 - `eip_id` (String) 弹性公网IP的ID。当resourceType=external为必填
 - `pay_voucher_price` (String) 代金券金额，支持到小数点后两位
 - `private_ip_address` (String) 负载均衡的私有IP地址，不指定则自动分配
-- `project_id` (String) 企业项目 ID，默认为0
-- `region_id` (String) 区域ID
+- `project_id` (String) 企业项目 Id，默认为0
+- `region_id` (String) 资源池Id
 
 ### Read-Only
 
@@ -34,7 +34,7 @@
 - `az_name` (String) 可用区名称
 - `created_time` (String) 创建时间，为UTC格式
 - `eip_info` (Attributes List) 弹性公网IP信息 (see [below for nested schema](#nestedatt--eip_info))
-- `id` (String) 负载均衡ID
+- `id` (String) 负载均衡Id
 - `ipv6_address` (String) 负载均衡实例的IPv6地址
 - `port_id` (String) 负载均衡实例默认创建port ID
 - `status` (String) 负载均衡状态: DOWN / ACTIVE
@@ -46,6 +46,6 @@
 Read-Only:
 
 - `bandwidth` (Number) 弹性公网IP的带宽
-- `eip_id` (String) 弹性公网IP的ID
+- `eip_id` (String) 弹性公网IP的Id
 - `is_talk_order` (Boolean) 是否按需资源
-- `resource_id` (String) 计费类资源ID
+- `resource_id` (String) 计费类资源Id
