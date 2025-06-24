@@ -14,16 +14,16 @@ resource "ctyun_ecs" "jdxutuzpfr" {
   system_disk_type   = "sata"
   system_disk_size   = 60
   vpc_id             = "vpc-0ein2p8bs8"
-
   subnet_id          = "subnet-0oiyrpu8nk"
-
   key_pair_name      = "tf-keypair-for-ecs"
-
   cycle_type         = "on_demand"
-
 }
-#
-#
+
+
+#variable "password" {
+#  type      = string
+#  sensitive = true
+#}
 # provider "ctyun" {
 #   region_id  = "bb9fdb42056f11eda1610242ac110002"
 #   project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
@@ -54,7 +54,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 #   system_disk_type    = "sata"
 #   system_disk_size    = 40
 #   vpc_id              = "vpc-r7kv00qbz5"
-#   password            = "P@ssW0rd_1"
+#   password            = var.password
 #   cycle_type          = "month"
 #   cycle_count         = 1
 #   auto_renew          = true
@@ -93,7 +93,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 #   system_disk_type   = "sata"
 #   system_disk_size   = 50
 #   vpc_id             = "vpc-d7zxz8j05c"
-#   password           = "P@ssW0rd_1"
+#   password           = var.password
 #   cycle_type         = "on_demand"
 #   subnet_id          = "subnet-5jtwyd0m15"
 #   security_group_ids = [
