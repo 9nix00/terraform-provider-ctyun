@@ -629,7 +629,7 @@ func (c *CtyunElbLoadBalancerResource) orderLoop(ctx context.Context, params *ct
 				err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 				return false
 			} else if resp.Description == "订单已取消或撤单" {
-				err = fmt.Errorf("订单已取消或撤单, 请检查参数")
+				err = fmt.Errorf("订单已取消或撤单, 请检查参数或避免并发创建")
 				return false
 			}
 

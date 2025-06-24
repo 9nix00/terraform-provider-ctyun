@@ -614,6 +614,9 @@ func (c *ctyunNat) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGa
 			} else if resp.StatusCode == common.ErrorStatusCode {
 				err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 				return false
+			} else if *resp.Description == "订单已取消或撤单" {
+				err = fmt.Errorf("订单已取消或撤单, 请检查参数或避免并发创建")
+				return false
 			}
 
 			status := *resp.ReturnObj.MasterResourceStatus
