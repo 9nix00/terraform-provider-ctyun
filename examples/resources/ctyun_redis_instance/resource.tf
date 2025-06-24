@@ -32,7 +32,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 #   instance_name = "tf-redis-cbppywerkb"
 #   version = "BASIC"
 #   edition = "StandardSingle"
-#   password = "P@sssxdxxnsvgr"
+#   password = var.password
 #   engine_version = "7.0"
 #   maintenance_time = "02:00-04:00"
 #   protection_status = false
