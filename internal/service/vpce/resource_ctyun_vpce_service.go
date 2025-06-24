@@ -101,6 +101,9 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+				},
 			},
 			"instance_type": schema.StringAttribute{
 				Optional:    true,
