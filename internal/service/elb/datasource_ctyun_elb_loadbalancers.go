@@ -240,17 +240,14 @@ func (c *ctyunElbLoadBalancers) Read(ctx context.Context, request datasource.Rea
 		elb.UpdatedTime = types.StringValue(elbItem.UpdatedTime)
 		EipInfoList := elbItem.EipInfo
 		var eipInfos []EipInfoModel
-		if EipInfoList != nil && len(EipInfoList) > 0 {
-			for _, eipItem := range EipInfoList {
-				var eipInfo EipInfoModel
-				eipInfo.ResourceID = types.StringValue(eipItem.ResourceID)
-				eipInfo.EipID = types.StringValue(eipItem.EipID)
-				eipInfo.Bandwidth = types.Float32Value(float32(eipItem.Bandwidth))
-				if eipItem.IsTalkOrder != nil {
-					eipInfo.IsTalkOrder = types.BoolValue(*eipItem.IsTalkOrder)
-				}
-				eipInfos = append(eipInfos, eipInfo)
+		for _, eipItem := range EipInfoList {
+			var eipInfo EipInfoModel
+			eipInfo.EipID = types.StringValue(eipItem.EipID)
+			eipInfo.Bandwidth = types.Float32Value(float32(eipItem.Bandwidth))
+			if eipItem.IsTalkOrder != nil {
+				eipInfo.IsTalkOrder = types.BoolValue(*eipItem.IsTalkOrder)
 			}
+			eipInfos = append(eipInfos, eipInfo)
 		}
 		elb.EipInfo = eipInfos
 		if elbItem.DeleteProtection != nil {

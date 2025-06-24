@@ -10,23 +10,23 @@
 
 ### Required
 
+- `cycle_type` (String) 订购周期类型，取值范围：year：按年，month：按月，on_demand：按需。当此值为month或year时，cycle_count为必填
 - `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `resource_type` (String) 资源类型。internal：内网负载均衡，external：公网负载均衡
-- `sla_name` (String) lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。 elb.s2.small: standardI（标准型Ⅰ）, elb.s2.large: standardII（标准型Ⅱ）、elb.s3.small: enhancedI（增强型Ⅰ）, elb.s3.large: enhancedII（增强型Ⅱ）、elb.s4.small: higherI（高阶型Ⅰ）, elb.s4.large: higherII（高阶型Ⅱ）、elb.s5.small: superI（超强型Ⅰ）, elb.s5.large: superII（超强型Ⅱ）
-- `subnet_id` (String) 子网的Id
-- `vpc_id` (String) vpc的Id
+- `sla_name` (String) lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。
+- `subnet_id` (String) 子网ID
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
 
-- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年，用于升级保障型负载均衡。当升级时，必填
-- `cycle_type` (String) 订购类型：month（包月） / year（包年）,用于升级保障型负载均衡。当升级时，必填
+- `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 - `delete_protection` (Boolean) 删除保护。false（不开启）、true（开）。 默认：不开启
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
-- `eip_id` (String) 弹性公网IP的ID。当resourceType=external为必填
+- `eip_id` (String) 弹性公网IP的ID。当resource_type=external为必填
 - `pay_voucher_price` (String) 代金券金额，支持到小数点后两位
 - `private_ip_address` (String) 负载均衡的私有IP地址，不指定则自动分配
-- `project_id` (String) 企业项目 Id，默认为0
-- `region_id` (String) 资源池Id
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 
@@ -48,4 +48,3 @@ Read-Only:
 - `bandwidth` (Number) 弹性公网IP的带宽
 - `eip_id` (String) 弹性公网IP的Id
 - `is_talk_order` (Boolean) 是否按需资源
-- `resource_id` (String) 计费类资源Id
