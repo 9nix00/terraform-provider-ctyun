@@ -19,7 +19,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
-	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
@@ -337,10 +336,8 @@ func (c *CtyunMongodbInstance) Read(ctx context.Context, request resource.ReadRe
 	// 查询远端
 	err = c.getAndMergeMongodbInstance(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			response.State.RemoveResource(ctx)
-			err = nil
-		}
+		response.State.RemoveResource(ctx)
+		err = nil
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
@@ -576,6 +573,10 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 		return
 	}
 	listReturnObj := listResp.ReturnObj.List[0]
+
+	if config.ID.ValueString() == "" {
+		err = errors.New("查询实例详情时，实例id为空")
+	}
 	// 2）查询实例详情，获取allowBeMaster信息和eip id信息
 	detailParams := &mongodb.MongodbQueryDetailRequest{
 		ProdInstId: config.ID.ValueString(),
@@ -612,14 +613,14 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	config.ProdID = types.Int64Value(prodID)
 	config.HostIp = types.StringValue(detailReturnObj.Host)
 	config.ProdPerformanceSpec = types.StringValue(listReturnObj.MachineSpec)
-	//if config.ProjectID.IsNull() || config.ProjectID.IsUnknown() {
-	//	config.ProjectID = types.StringValue("0")
-	//}
 	return
 }
 
 func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
-
+	if state.ID.ValueString() == "" {
+		err = errors.New("在变配实例过程中， 实例id为空")
+		return
+	}
 	// 修改实例名称
 	if plan.Name.ValueString() != "" && state.Name.ValueString() != plan.Name.ValueString() {
 		// 修改实例前，确定实例状态为running
