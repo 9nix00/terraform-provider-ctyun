@@ -111,7 +111,7 @@ func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "虚拟机展示名称",
 						},
-						"virtual_machine_id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "虚拟机id",
 						},
@@ -261,6 +261,6 @@ type CtyunDNatModel struct {
 	Protocol                  types.String `tfsdk:"protocol"`                     //TCP:转发TCP协议的报文 UDP：转发UDP协议的报文
 	State                     types.String `tfsdk:"state"`                        //运行状态: ACTIVE / FREEZING / CREATING
 	VirtualMachineDisplayName types.String `tfsdk:"virtual_machine_display_name"` //虚拟机展示名称
-	VirtualMachineId          types.String `tfsdk:"virtual_machine_id"`           //虚拟机id
+	VirtualMachineId          types.String `tfsdk:"instance_id"`                  //虚拟机id
 	VirtualMachineName        types.String `tfsdk:"virtual_machine_name"`         //虚拟机名称
 }

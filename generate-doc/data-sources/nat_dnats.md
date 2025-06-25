@@ -38,5 +38,5 @@ Read-Only:
 - `protocol` (String) TCP:转发TCP协议的报文 UDP：转发UDP协议的报文
 - `state` (String) 运行状态: ACTIVE / FREEZING / CREATING
 - `virtual_machine_display_name` (String) 虚拟机展示名称
-- `virtual_machine_id` (String) 虚拟机id
+- `instance_id` (String) 虚拟机id
 - `virtual_machine_name` (String) 虚拟机名称

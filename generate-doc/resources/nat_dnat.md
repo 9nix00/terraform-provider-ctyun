@@ -28,7 +28,7 @@
 - `region_id` (String) 资源池id
 - `server_type` (String) 当 dnat_type 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
 - `status` (String) 绑定状态，取值 in_progress / done
-- `virtual_machine_id` (String) 虚拟机id
+- `instance_id` (String) 虚拟机id
 - `dnat_type` (Number) 云主机类型，1-选择云主机，serverType字段必传 2-自定义，internalIp必传
 
 ### Read-Only
