@@ -22,7 +22,7 @@
 - `description` (String) 描述
 - `instance_id` (String) 云主机或物理机实例ID，当且仅当dnat_type为instance时必填
 - `internal_ip` (String) 内部IP，当且仅当dnat_type为custom时必填
-- `region_id` (String) 资源池id
+- `region_id` (String) 资源池id，默认使用provider ctyun总region_id 或者环境变量
 - `server_type` (String) 服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM
 
 ### Read-Only
