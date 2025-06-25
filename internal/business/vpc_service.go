@@ -33,12 +33,16 @@ func (v VpcService) MustExist(ctx context.Context, vpcId, regionId, projectId st
 }
 
 func (v VpcService) GetVpcSubnet(ctx context.Context, vpcId, regionId, projectId string) (map[string]ctvpc.SubnetListSubnetsResponse, error) {
-	resp, err := v.meta.Apis.CtVpcApis.VpcQueryApi.Do(ctx, v.meta.Credential, &ctvpc.VpcQueryRequest{
+	params := &ctvpc.VpcQueryRequest{
 		RegionId:    regionId,
 		ProjectId:   projectId,
 		ClientToken: uuid.NewString(),
 		VpcId:       vpcId,
-	})
+	}
+	if projectId != "" {
+		params.ProjectId = projectId
+	}
+	resp, err := v.meta.Apis.CtVpcApis.VpcQueryApi.Do(ctx, v.meta.Credential, params)
 	if err != nil {
 		if err.ErrorCode() == common.OpenapiVpcNotFound {
 			return nil, fmt.Errorf("vpc %s 不存在", vpcId)

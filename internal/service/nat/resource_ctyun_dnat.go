@@ -58,17 +58,17 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id",
+				Description: "资源池id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"nat_gateway_id": schema.StringAttribute{
 				Required:    true,
 				Description: "NAT网关Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"external_id": schema.StringAttribute{
@@ -419,6 +419,7 @@ func (c *ctyunDnatResource) isPort(port types.Int32, flag string) bool {
 func (c *ctyunDnatResource) checkBeforeCreateDnat(ctx context.Context, plan CtyunDnatConfig) (err error) {
 	_, err = business.NewNatService(c.meta).GetNatByID(ctx, plan.NatGatewayID.ValueString(), plan.RegionID.ValueString())
 	if err != nil {
+		err = fmt.Errorf("校验nat网关失败" + err.Error())
 		return
 	}
 	return
@@ -533,6 +534,7 @@ func (c *ctyunDnatResource) updateLoop(ctx context.Context, state *CtyunDnatConf
 		}
 		return false
 	})
+	time.Sleep(5 * time.Second)
 	if result.ReturnReason == business.ReachMaxLoopTime {
 		return errors.New("轮询已达最大次数，资源仍未更新!Dnat: " + state.DNatID.ValueString())
 	}
@@ -565,6 +567,7 @@ func (c *ctyunDnatResource) DeleteLoop(ctx context.Context, state CtyunDnatConfi
 			}
 		},
 	)
+	time.Sleep(5 * time.Second)
 	if result.ReturnReason == business.ReachMaxLoopTime {
 		return errors.New("轮询已达最大次数，资源仍未删除!Dnat: " + state.DNatID.ValueString())
 	}
