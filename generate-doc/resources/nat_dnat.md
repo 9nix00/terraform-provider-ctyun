@@ -20,16 +20,16 @@
 - `created_at` (String) 创建时间
 - `description` (String) 描述
 - `device_id` (String) 网卡对应的设备ID
-- `internal_ip` (String) 内部 IP,virtualMachineType=2(自定义),必填
+- `internal_ip` (String) 内部 IP,virtual_machine_type=2(自定义),必填
 - `ip_expire_time` (String) ip到期时间
-- `nat_gateway_id` (String) 需要查询的NAT id
+- `nat_gateway_id` (String) NAT网关Id
 - `port_id` (String) 对应网卡id
 - `port_name` (String) 网卡名称
-- `region_id` (String) 区域id
-- `server_type` (String) 当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
+- `region_id` (String) 资源池id
+- `server_type` (String) 当 virtual_machine_type 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
 - `status` (String) 绑定状态，取值 in_progress / done
 - `virtual_machine_id` (String) 虚拟机id
-- `virtual_machine_type` (Number) 云主机类型1-选择云主机，serverType字段必传 2-自定义，internalIp必传
+- `virtual_machine_type` (Number) 云主机类型，1-选择云主机，serverType字段必传 2-自定义，internalIp必传
 
 ### Read-Only
 

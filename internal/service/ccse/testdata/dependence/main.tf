@@ -1,5 +1,5 @@
 data "ctyun_vpcs" "vpc_test" {
-
+       page_size = 50
 }
 
 locals {
@@ -92,7 +92,7 @@ resource "ctyun_ccse_cluster" "test" {
     ]
 
     sys_disk = {
-      type = "SATA"
+      type = "SSD"
       size = 80
     }
 

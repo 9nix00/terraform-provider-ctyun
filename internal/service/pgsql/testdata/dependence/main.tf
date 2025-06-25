@@ -1,5 +1,5 @@
 data "ctyun_vpcs" "vpc_test" {
-
+  page_size = 50
 }
 
 locals {

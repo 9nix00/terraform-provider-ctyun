@@ -2,6 +2,7 @@ package ccse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -298,6 +299,9 @@ func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePl
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
 			plugin, err = c.getByPluginName(ctx, plan)
 			if err != nil {
+				if errors.Is(err, common.InvalidReturnObjResultsError) {
+					return true
+				}
 				return false
 			}
 			if plugin.Status == "failed" {
@@ -541,6 +545,10 @@ func (c *ctyunCcsePlugin) checkAfterDelete(ctx context.Context, plan CtyunCcsePl
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
 			plugin, err = c.getByPluginName(ctx, plan)
 			if err != nil {
+				if errors.Is(err, common.InvalidReturnObjResultsError) {
+					err = nil
+					executeSuccessFlag = true
+				}
 				return false
 			}
 			if plugin.Status != "uninstalled" {

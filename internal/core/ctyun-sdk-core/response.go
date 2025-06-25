@@ -24,6 +24,7 @@ type CtyunResponseModel struct {
 	ErrorCode   interface{} `json:"errorCode"`
 	Message     string      `json:"message"`
 	Description string      `json:"description"`
+	ErrorMsg    string      `json:"error_msg"`
 	ReturnObj   interface{} `json:"returnObj,omitempty"`
 }
 
@@ -75,10 +76,17 @@ func (c CtyunResponse) ParseByStandardModelWithCheck(obj interface{}) CtyunReque
 		if model.Message != "" {
 			errInfos = append(errInfos, model.Message)
 		}
+		if model.ErrorMsg != "" {
+			errInfos = append(errInfos, model.ErrorMsg)
+		}
 		code := model.ParseErrorCode()
 		if code == "" {
 			code = model.ParseStatusCode()
 		}
+		for i, e := range errInfos {
+			errInfos[i] = "API return error. " + e
+		}
+
 		err := errors.New(strings.Join(errInfos, ","))
 		wrapError := WrapWithErrorCode(err, code, &c)
 		return wrapError
