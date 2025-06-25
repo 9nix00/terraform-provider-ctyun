@@ -9,7 +9,7 @@
 
 ### Required
 
-- `instance_type` (String) 实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）
+- `instance_series` (String) 实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)
 - `prod_code` (String) 产品编码，取值范围：HBASE/DDS/HBASE/MYSQL/POSTGRESQL/SQLSERVER
 - `prod_type` (String) 产品类型，0=UNKNOWN, 1=RDS, 2=NoSql, 3=TOOL, 4=MemDB
 

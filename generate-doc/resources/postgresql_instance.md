@@ -11,57 +11,38 @@ pgsql provider
 ### Required
 
 - `availability_zone_info` (Attributes List) (see [below for nested schema](#nestedatt--availability_zone_info))
-- `case_sensitive` (String) 是否区分大小写: 0=区分, 1=不区分, 2=待定
+- `cpu_type` (String) cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `host_type` (String) 主机类型: S6 or S7
-- `name` (String) 集群名称(主实例名称，只读实例会加'-read')
-- `node_type` (String) 节点类型: master=实例规格, readNode=只读实例
-- `password` (String, Sensitive) 管理员密码(RSA公钥加密)
-- `prod_id` (Number) 产品ID。扩容过程中，不支持磁盘、规格和实例扩容同时进行
-- `prod_performance_spec` (String) 实例规格(例: 4C8G)。扩容过程中，不支持磁盘、规格和实例扩容同时进行
-- `prod_version` (String) 数据库版本(参考查询规格列表接口)
+- `host_type` (String) 主机类型 host type: S6 or S7等。可根据data.ctyun_postgresql_specs查询
+- `instance_series` (String) 实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)
+- `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
+- `os_type` (String) 系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler
+- `prod_id` (String) 产品ID。Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘、规格和实例扩容同时进行
+- `prod_performance_spec` (String) 实例规格(例: 4C8G)。可根据data.ctyun_postgresql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时与原配置不一致
+- `prod_version` (String) 数据库版本，取值范围：12.22, 13.20, 14.17, 15.12, 16.8
+- `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 主存储空间(单位:G，范围100-32768)。扩容过程中不支持磁盘、规格和实例扩容同时进行
 - `storage_type` (String) 主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
+- `subnet_id` (String) 子网Id
+- `vpc_id` (String) 虚拟私有云Id
 
 ### Optional
 
-- `active_scale_rate` (String) 触发扩容百分比(1-100)
+- `active_scale_rate` (Number) 触发扩容百分比(1-100)
 - `appoint_vip` (String) 指定VIP
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `auto_scale` (String) 存储自动扩容: 0=关闭, 1=开启
-- `backup_id` (String) 备份集ID(恢复到新实例时使用)
-- `backup_storage_space` (String) 备份存储空间大小
+- `auto_scale` (Boolean) 存储自动扩容: false=关闭, true=开启。默认关闭
+- `backup_storage_space` (Number) 备份存储空间大小
 - `backup_storage_type` (String) 备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
-- `backup_time_point` (String) 恢复时间点(与backup_id互斥)
-- `cpu_type` (String) CPU类型: 10=鲲鹏, 20=海光, 30=intel, ...
-- `cross_instance_backup` (Boolean) 是否为恢复到新实例工单
+- `case_sensitive` (Boolean) 是否区分大小写: true=区分, false=不区分。默认不区分
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `disks` (Number) 磁盘（默认为1）,2为Hbase，暂不支持
-- `inst_spec` (String) 实例规格: 1=通用型
-- `is_cross_region_recovery` (Boolean) 是否跨域恢复
-- `is_mgr` (String) 是否开启MRG，默认false
+- `is_mgr` (Boolean) 是否开启MRG，默认false
 - `max_scale` (Number) 存储扩容上限(单位G)
-- `os_type` (String) 操作系统类型: 0=裸机, 1=windows, 2=centos, ...
-- `param_template_id` (String) 参数模板ID
-- `prod_spec_name` (String) 产品规格名称
-- `project_id` (String) 企业项目ID，默认0
-- `project_name` (String) 企业项目名称，默认default
-- `purchase_count` (Number) 购买数量(范围1-50，默认1)
-- `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `res_pool_code` (String) 资源池名称
-- `restart` (Boolean) 控制是否需要重启实例
-- `security_group_id` (String) 安全组ID(回收站恢复时非必传)
-- `security_group_name` (String) 安全组名称(回收站恢复时非必传)
-- `server_collation` (String) 数据库字符集
-- `source_inst_id` (String) 源实例ID(跨域恢复/回收站恢复时必填)
-- `start` (Boolean) 控制是否需要启动实例
-- `stop` (Boolean) 控制是否需要停止实例
-- `subnet_id` (String) 子网ID(回收站恢复时非必传)
-- `subnet_name` (String) 子网名称(回收站恢复时非必传)
-- `time_zone` (String) 时区
+- `password` (String, Sensitive) 管理员密码(RSA公钥加密)
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `running_control` (String) 控制是否暂停，启用和重启实例，取值范围：stop, start, restart
 - `vpc_cidr` (String) VPC网段
-- `vpc_id` (String) 虚拟私有云ID(回收站恢复时非必传)
-- `vpc_name` (String) VPC名称(回收站恢复时非必传)
 
 ### Read-Only
 
@@ -85,8 +66,3 @@ Required:
 - `availability_zone_count` (Number) 资源池可用区总数
 - `availability_zone_name` (String) 资源池可用区名称
 - `node_type` (String) 节点类型(master/readNode)
-
-Optional:
-
-- `display_name` (String) 可用区显示名
-- `spec_id` (String) 规格ID
