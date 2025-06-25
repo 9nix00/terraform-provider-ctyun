@@ -11,7 +11,7 @@ output "vpc_id" {
 }
 
 output "nat_id" {
-  value = ctyun_nat.nat_test.nat_gateway_id
+  value = ctyun_nat.nat_test.id
 }
 
 output "subnet_id1" {
@@ -19,4 +19,8 @@ output "subnet_id1" {
 }
 output "subnet_id2" {
   value = ctyun_subnet.subnet_test2.id
+}
+
+output "ecs_id" {
+  value = ctyun_ecs.ecs_test.id
 }
