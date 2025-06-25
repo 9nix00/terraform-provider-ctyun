@@ -29,8 +29,8 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 	//eipId := "eip-140rfs2and"
 	eipAddress := dependence.eipAddress
 	//eipAddress := "150.223.193.123"
-	//instId := dependence.mysqlID
-	instId := dependence.subnetID
+	instId := dependence.mysqlID
+	//instId := dependence.subnetID
 
 	instanceType := "1"
 

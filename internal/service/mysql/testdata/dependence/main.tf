@@ -1,6 +1,6 @@
 // main.tf负责创建或查询单测依赖的前置资源
 data "ctyun_vpcs" "vpc_test" {
-
+  page_size = 50
 }
 
 locals {
@@ -93,17 +93,16 @@ data "ctyun_mysql_specs" "mysql_specs"{
 
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
-  prod_version          = "5.7"
   vpc_id                = local.real_vpc_id
+  instance_series         = "S"
   host_type             = "C7"
+  prod_performance_spec = "2C4G"
+  prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
   security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
-  prod_id               = "Single57"
-  instance_series         = "S"
   storage_type          = "SATA"
   storage_space         = 100
-  prod_performance_spec = "2C4G"
   availability_zone_info = [
     { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]

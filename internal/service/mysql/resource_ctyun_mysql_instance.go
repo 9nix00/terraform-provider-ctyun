@@ -113,16 +113,6 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_version": schema.StringAttribute{
-				Required:    true,
-				Description: "版本，mysql支持5.7和8.0两个版本",
-				Validators: []validator.String{
-					stringvalidator.OneOf("5.7", "8.0"),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云Id",
@@ -132,7 +122,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"host_type": schema.StringAttribute{ //host_type
 				Required:    true,
-				Description: "主机类型 host type: S6 or S7。可根据data.ctyun_mysql_specs获取",
+				Description: "主机类型 host type: S6 or S7等。可根据data.ctyun_mysql_specs获取",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -172,7 +162,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, ReadOnly57（单实例只读5.7版本）, ReadOnly80（单实例只读8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）",
+				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlProdIds...),
 				},
@@ -487,7 +477,7 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 	params := &mysql.TeledbCreateRequest{
 		BillMode:        business.MysqlBillMode[cycleType],
 		RegionId:        config.RegionID.ValueString(),
-		ProdVersion:     config.ProdVersion.ValueString(),
+		ProdVersion:     business.MysqlProdVersionDict[config.ProdID.ValueString()],
 		VpcId:           config.VpcID.ValueString(),
 		HostType:        config.HostType.ValueString(),
 		SubnetId:        config.SubnetID.ValueString(),
@@ -640,7 +630,6 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 	config.PauseEnable = types.BoolValue(returnOjb.PauseEnable)
 	config.MysqlPort = types.StringValue(returnOjb.MysqlPort)
 	config.SecurityGroupStatus = types.Int32Value(returnOjb.SecurityGroupStatus)
-	config.ProjectID = types.StringValue(returnOjb.ProjectId)
 	config.Name = types.StringValue(returnOjb.ProdInstName)
 	writePort, err := strconv.ParseInt(returnOjb.WritePort, 10, 32)
 	if err != nil {
@@ -1262,7 +1251,6 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 type CtyunMysqlInstanceConfig struct {
 	CycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 支持on_demand和month
 	RegionID                    types.String `tfsdk:"region_id"`                      // 资源池Id
-	ProdVersion                 types.String `tfsdk:"prod_version"`                   // 版本
 	VpcID                       types.String `tfsdk:"vpc_id"`                         // 虚拟私有云Id
 	HostType                    types.String `tfsdk:"host_type"`                      // 主机类型 host type: S6 or S7
 	SubnetID                    types.String `tfsdk:"subnet_id"`                      // 子网Id

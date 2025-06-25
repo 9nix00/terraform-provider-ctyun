@@ -32,11 +32,11 @@ Read-Only:
 - `external_ip` (String) 弹性 IP 地址
 - `external_port` (Number) 外部访问端口
 - `id` (String) dnatID 值
+- `instance_id` (String) 虚拟机id
 - `internal_ip` (String) 内网 IP 地址
 - `internal_port` (Number) 内部访问端口
 - `ip_expire_time` (String) ip到期时间
 - `protocol` (String) TCP:转发TCP协议的报文 UDP：转发UDP协议的报文
 - `state` (String) 运行状态: ACTIVE / FREEZING / CREATING
 - `virtual_machine_display_name` (String) 虚拟机展示名称
-- `virtual_machine_id` (String) 虚拟机id
 - `virtual_machine_name` (String) 虚拟机名称

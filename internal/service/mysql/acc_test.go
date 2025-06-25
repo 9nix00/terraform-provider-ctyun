@@ -15,8 +15,8 @@ type Dependence struct {
 	securityGroupID string
 	eipID           string
 	eipAddress      string
-	//mysqlID         string
-	azName string
+	mysqlID         string
+	azName          string
 }
 
 var dependence Dependence
@@ -38,7 +38,8 @@ func TestMain(m *testing.M) {
 		securityGroupID: outputs["security_group_id"].Value,
 		eipID:           outputs["eip_id"].Value,
 		eipAddress:      outputs["eip_address"].Value,
-		//mysqlID:         outputs["mysql_id"].Value,
+		mysqlID:         outputs["mysql_id"].Value,
+		//mysqlID: "",
 		azName: outputs["az_name"].Value,
 	}
 
