@@ -10,29 +10,26 @@
 
 ### Required
 
-- `external_id` (String) 弹性公网id
-- `external_port` (Number) 弹性IP公网端口, 1 - 1024
-- `internal_port` (Number) 主机内网端口，1-65535
+- `dnat_type` (String) dnat规则类型，支持传递instance或custom。
+- `external_id` (String) 弹性IP的ID，形如eip-xxxxx
+- `external_port` (Number) 弹性IP公网端口，1 - 1024
+- `internal_port` (Number) 主机内网端口，1 - 65535
+- `nat_gateway_id` (String) NAT网关Id
 - `protocol` (String) 协议：tcp/udp
 
 ### Optional
 
-- `created_at` (String) 创建时间
 - `description` (String) 描述
-- `device_id` (String) 网卡对应的设备ID
-- `internal_ip` (String) 内部 IP,virtual_machine_type=2(自定义),必填
-- `ip_expire_time` (String) ip到期时间
-- `nat_gateway_id` (String) NAT网关Id
-- `port_id` (String) 对应网卡id
-- `port_name` (String) 网卡名称
+- `instance_id` (String) 云主机或物理机实例ID，当且仅当dnat_type为instance时必填
+- `internal_ip` (String) 内部IP，当且仅当dnat_type为custom时必填
 - `region_id` (String) 资源池id
-- `server_type` (String) 当 virtual_machine_type 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
-- `status` (String) 绑定状态，取值 in_progress / done
-- `virtual_machine_id` (String) 虚拟机id
-- `virtual_machine_type` (Number) 云主机类型，1-选择云主机，serverType字段必传 2-自定义，internalIp必传
+- `server_type` (String) 服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM
 
 ### Read-Only
 
+- `created_at` (String) 创建时间
 - `dnat_id` (String) Dnat规则的id
-- `external_ip` (String) 弹性公网ip
+- `external_ip` (String) 弹性公网IP地址
+- `id` (String) ID，同dnat_id
+- `ip_expire_time` (String) ip到期时间
 - `state` (String) 运行状态: ACTIVE / FREEZING / CREATING

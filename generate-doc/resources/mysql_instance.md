@@ -62,16 +62,18 @@ resource "ctyun_mysql_instance" "mysql_test" {
 
 ### Required
 
-- `availability_zone_info` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--availability_zone_info))
-- `cpu_type` (String) cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)
+- `cpu_type` (String) cpu类型：10是鲲鹏，20是海光，30是intel,40是amd,50是飞腾，60是龙芯，70是兆芯
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `host_type` (String) 主机类型 host type: S6 or S7。可根据data.ctyun_mysql_specs获取
-- `instance_series` (String) 实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)
-- `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
-- `os_type` (String) 系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler
-- `prod_id` (String) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, ReadOnly57（单实例只读5.7版本）, ReadOnly80（单实例只读8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）
-- `prod_performance_spec` (String) 规格(例: 4C8G),可根据data.ctyun_mysql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时与原配置不一致
-- `prod_version` (String) 版本，mysql支持5.7和8.0两个版本
+- `disks` (Number) 磁盘（默认为1）,2为Hbase，暂不支持
+- `host_type` (String) 主机类型 host type: S6 or S7,需要大写
+- `inst_spec` (String) 实例规格，取值范围:1-通用型， 2-计算增强型，3-内存增强型，4-HS， 5-HC， 6-HM，7-KS， 8-KM， 9-KC
+- `name` (String) 集群名称(若开通只读实例，默认在主实例名称后面加'-read')
+- `node_type` (String) 数据库类型，master:实例类型(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
+- `os_type` (String) 系统类型：0是裸机，1是windows，2是centos，3是ubuntu，4是android，5是redhat，6是kylin，7是uos,8是suse，9是asianux，10是open_euler，11是ctyunos，12是euler
+- `prod_id` (Number) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值：10001003-单实例 single5.7版本，10001103-单实例 single8.0版本，10001005-单实例 single 只读5.7版本，10001105-单实例 single 只读8.0版本，10001001-一主一备 master-slave 5.7版本，10001101-一主一备 master-slave 8.0版本，10001002-一主两备 master-2-slave 5.7版本，10001102-一主两备 master-2-slave 8.0版本
+- `prod_performance_spec` (String) 规格(例: 4C8G),不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致
+- `prod_version` (String) 版本
+- `purchase_count` (Number) 购买数量(范围:1-50)
 - `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
@@ -81,29 +83,34 @@ resource "ctyun_mysql_instance" "mysql_test" {
 ### Optional
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `backup_storage_space` (Number) 备份节点存储空间(单位:G，范围100,32768)，不支持主备磁盘空间同时升配。若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间
+- `availability_zone` (Set of String) 可用区名称
+- `availability_zone_info` (Attributes List) 可用区信息，扩容时，该字段不填写 (see [below for nested schema](#nestedatt--availability_zone_info))
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `password` (String, Sensitive) 实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。
-- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `password` (String) 管理员密码（RSA公钥加密）
+- `prod_performance_specs` (Set of String) 该产品下面的单节点规格
+- `prod_spec_name` (String) 产品名称规格名称
+- `project_id` (String) 项目id
 - `region_id` (String) 资源池Id
-- `running_control` (String) 控制是否暂停，启用和重启实例，取值范围：freeze, unfreeze, restart
-- `write_port` (Number) 写数据端口
+- `restart` (Boolean) 控制是否重启，需要重启=true，不需要重启不填或者，为false
+- `start` (Boolean) 控制时候启动实例，需要启动=true，不需要为false
+- `stop` (Boolean) 控制是否暂停服务，需要暂停=true，不需要暂停不填或者，为false
+- `write_port` (String) 写数据端口
 
 ### Read-Only
 
 - `audit_log_status` (Number) 日志审计开关
 - `eip` (String) 弹性ip
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding
-- `id` (String) 实例Id
 - `inst_id` (String) 实例Id
 - `inst_release_protection_status` (Number) 实例释放保护开关 1:on,0:off
-- `master_order_id` (String) 订单id
 - `mysql_port` (String) 数据库端口
 - `new_mysql_version` (String) mysql版本
+- `new_order_id` (String) 订单id
 - `pause_enable` (Boolean) 是否允许暂停
 - `prod_db_engine` (String) 数据库引擎
 - `prod_order_status` (Number) 0.正常 1.欠费暂停 2.已注销 3.创建中 4.施工失败 5.到期退订状态 6.新增的状态-openApi暂停 7.创建完成等待变更单 8.待注销 9.手动暂停 10.手动退订
 - `prod_running_status` (Number) 0.正常 1.重启中 2.备份中 3.恢复中 4.修改参数中 5.应用参数组中 6.扩容预处理中 7.扩容预处理完成 8.修改端口中 9.迁移中 10.重置密码中 11.修改数据复制方式中 12.缩容预处理中 13.缩容预处理完成 15.内核小版本升级 17.迁移可用区中 18.修改备份配置中 20.停止中 21.已停止 22.启动中 26.白名单配置中
+- `prod_type` (Number) 0:单机,1:一主一从,2:一主两从,4:只读实例
 - `read_port` (String) 读端口
 - `security_group_status` (Number) 安全组状态 0->normal, 1->changing, 2->deleted
 - `ssl_status` (Number) Ssl状态 0->off，1->on
