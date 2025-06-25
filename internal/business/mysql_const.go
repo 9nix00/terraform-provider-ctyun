@@ -218,8 +218,8 @@ var MysqlProdIdRevDict = map[int64]string{
 var MysqlProdIds = []string{
 	"Single57",
 	"Single80",
-	"ReadOnly57",
-	"ReadOnly80",
+	//"ReadOnly57",
+	//"ReadOnly80",
 	"MasterSlave57",
 	"MasterSlave80",
 	"Master2Slave57",
@@ -235,6 +235,17 @@ var NodeTypeDict = map[string]string{
 	"MasterSlave80":  "master",   // 一主一备 master-slave 8.0版本
 	"Master2Slave57": "master",   // 一主两备 master-2-slave 5.7版本
 	"Master2Slave80": "master",   // 一主两备 master-2-slave 8.0版本
+}
+
+var MysqlProdVersionDict = map[string]string{
+	"Single57":       "5.7", // 单实例 single5.7版本
+	"Single80":       "8.0", // 单实例 single8.0版本
+	"ReadOnly57":     "5.7", // 单实例 single 只读5.7版本
+	"ReadOnly80":     "8.0", // 单实例 single 只读8.0版本
+	"MasterSlave57":  "5.7", // 一主一备 master-slave 5.7版本
+	"MasterSlave80":  "8.0", // 一主一备 master-slave 8.0版本
+	"Master2Slave57": "5.7", // 一主两备 master-2-slave 5.7版本
+	"Master2Slave80": "8.0", // 一主两备 master-2-slave 8.0版本
 }
 
 var MysqlInstanceSeries = []string{
