@@ -52,8 +52,6 @@ resource "ctyun_ebm" "ebm_test" {
   data_volume_raid_uuid = length(data.ctyun_ebm_device_raids.data_raid.raids) > 0 ? data.ctyun_ebm_device_raids.data_raid.raids[0].uuid : ""
   status = "running"
   cycle_type = "on_demand"
-  # cycle_count = 3
-  # band_width = "100"
   disk_list = data.ctyun_ebm_device_types.test.device_types[0].cloud_boot ? [{
     disk_type = "system"
     size = "100"
@@ -135,4 +133,4 @@ Required:
 
 Optional:
 
-- `title` (String) 磁盘名称，长度2~64,不支持中文
+- `title` (String) 磁盘名称，长度2~64，不支持中文

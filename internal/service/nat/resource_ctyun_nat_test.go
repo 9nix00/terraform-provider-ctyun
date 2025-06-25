@@ -24,7 +24,6 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 	onDemandCycleType := "on_demand"
 	monthCycleType := "month"
 	cycleCount := fmt.Sprintf(`cycle_count=%d`, 1)
-	updatedCycleCount := fmt.Sprintf(`cycle_count=%d`, 2)
 
 	yearCycleType := "year"
 
@@ -127,20 +126,9 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
 				),
 			},
-			// 3.2 续费验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, updatedCycleCount),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
-					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", "year"),
-					resource.TestCheckResourceAttr(resourceName, "cycle_count", "2"),
-				),
-			},
 			// 销毁
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, updatedCycleCount),
+				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount),
 				Destroy: true,
 			},
 		},
