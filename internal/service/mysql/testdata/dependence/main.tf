@@ -83,8 +83,12 @@ resource "ctyun_eip" "eip_test" {
 
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-  # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  # az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+}
+
+data "ctyun_mysql_specs" "mysql_specs"{
+  instance_series = "S"
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
@@ -95,20 +99,16 @@ resource "ctyun_mysql_instance" "mysql_test" {
   subnet_id             = local.real_subnet_id
   security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
-  password              = "kqjwyk111"
-  purchase_count        = 1
-  prod_id               = 10001003
-  node_type             = "master"
-  inst_spec             = "1"
+  prod_id               = "Single57"
+  instance_series         = "S"
   storage_type          = "SATA"
   storage_space         = 100
   prod_performance_spec = "2C4G"
-  disks                 = 1
   availability_zone_info = [
     { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "30"
-  os_type  = "11"
+  cpu_type = "Intel"
+  os_type  = "ctyunos"
 }
 
 locals {

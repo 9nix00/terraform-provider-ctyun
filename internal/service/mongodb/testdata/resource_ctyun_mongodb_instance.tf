@@ -13,4 +13,5 @@ resource "ctyun_mongodb_instance" "%[1]s" {
   node_info_list = [%[13]s]
   %[14]s  // read_port
   %[15]s //  is_upgrade_back_up
+  region_id = "bb9fdb42056f11eda1610242ac110002"
 }

@@ -1,4 +1,3 @@
-
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
@@ -26,28 +25,26 @@ resource "ctyun_security_group" "security_group_test" {
   }
 }
 
+data "ctyun_mysql_specs" "mysql_specs" {
+  instance_series = "S"
+}
+
 resource "ctyun_mysql_instance" "mysql_test" {
-  cycle_type            = "month"
+  cycle_type            = "on_demand"
   prod_version          = "5.7"
-  vpc_id                =  ctyun_vpc.vpc_test.id
-  host_type             = "C7"
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.security_group_test.id
-  name                  = "tf-mysql"
-  password              = "**********"
-  cycle_count           = 1
-  purchase_count        = 1
-  auto_renew            = true
-  prod_id               = 10001003
-  node_type             = "master"
-  inst_spec             = "1"
+  vpc_id                = local.real_vpc_id
+  host_type             = "S7"
+  subnet_id             = local.real_subnet_id
+  security_group_id     = local.real_security_group_id
+  name                  = local.mysql_name
+  prod_id               = "Single57"
+  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 100
   prod_performance_spec = "2C4G"
-  disks                 = 1
   availability_zone_info = [
-    { "availability_zone_name" : "cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
+    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "30"
-  os_type  = "11"
+  cpu_type = "Intel"
+  os_type  = "ctyunos"
 }

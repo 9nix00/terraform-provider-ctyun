@@ -4,7 +4,7 @@ import ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 const (
 	EndpointNameMongodb = "mongodb"
-	UrlPordMongodb      = "mongodb-global.ctapi.ctyun.cnn"
+	UrlPordMongodb      = "mongodb-global.ctapi.ctyun.cn"
 	UrlTestMongodb      = ""
 )
 

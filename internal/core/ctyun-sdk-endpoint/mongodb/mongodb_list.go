@@ -18,7 +18,7 @@ func NewMongodbGetListApi(client *ctyunsdk.CtyunClient) *MongodbGetListApi {
 	return &MongodbGetListApi{
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
-			Method:  http.MethodPost,
+			Method:  http.MethodGet,
 			UrlPath: "/DDS2/v1/openApi/getAllInstances",
 		},
 	}
@@ -41,6 +41,15 @@ func (this *MongodbGetListApi) Do(ctx context.Context, credential ctyunsdk.Crede
 		return nil, err
 	}
 	builder.AddHeader("regionId", header.RegionID)
+	if req.ProdInstName != nil {
+		builder.AddParam("prodInstName", *req.ProdInstName)
+	}
+	if req.ResDbEngine != nil {
+		builder.AddParam("resDbEngine", *req.ResDbEngine)
+	}
+	if req.LabelIds != nil {
+		builder.AddParam("labelIds", *req.LabelIds)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +106,7 @@ type MongodbGetListResponseReturnDetailList struct {
 	MaintainTime                string  `json:"maintainTime"`                //可维护时间
 	Subnet                      string  `json:"subnet"`                      //子网
 	LogStatus                   bool    `json:"logStatus"`                   //实例日志审计状态
-	OrderId                     string  `json:"orderId"`                     //订单ID
+	OrderId                     int64   `json:"orderId"`                     //订单ID
 	NetName                     string  `json:"netName"`                     //专有网络
 	VersionNum                  *string `json:"versionNum"`                  // 版本号
 	SecurityGroupId             string  `json:"securityGroupId"`             // 安全组ID

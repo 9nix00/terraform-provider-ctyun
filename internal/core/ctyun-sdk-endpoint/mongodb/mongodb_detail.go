@@ -37,9 +37,7 @@ func (this *MongodbQueryDetailApi) Do(ctx context.Context, credentials ctyunsdk.
 		err = errors.New("ProdInstId is empty")
 		return
 	}
-	if err != nil {
-		return
-	}
+	builder.AddParam("prodInstId", req.ProdInstId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameMongodb, builder)
 	if err != nil {
 		return

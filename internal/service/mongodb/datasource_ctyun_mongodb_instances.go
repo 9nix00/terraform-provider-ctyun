@@ -91,7 +91,7 @@ func (c *ctyunMongodbInstances) Schema(ctx context.Context, request datasource.S
 							Description: "实例日志审计状态",
 							Computed:    true,
 						},
-						"order_id": schema.StringAttribute{
+						"order_id": schema.Int64Attribute{
 							Description: "订单ID",
 							Computed:    true,
 						},
@@ -337,7 +337,7 @@ func (c *ctyunMongodbInstances) Read(ctx context.Context, request datasource.Rea
 		mongodbInst.MaintainTime = types.StringValue(mongodbItem.MaintainTime)
 		mongodbInst.Subnet = types.StringValue(mongodbItem.Subnet)
 		mongodbInst.LogStatus = types.BoolValue(mongodbItem.LogStatus)
-		mongodbInst.OrderId = types.StringValue(mongodbItem.OrderId)
+		mongodbInst.OrderId = types.Int64Value(mongodbItem.OrderId)
 		mongodbInst.NetName = types.StringValue(mongodbItem.NetName)
 		mongodbInst.VersionNum = utils.SecStringValue(mongodbItem.VersionNum)
 		mongodbInst.SecurityGroupId = types.StringValue(mongodbItem.SecurityGroupId)
@@ -405,7 +405,7 @@ type CtyunMongodbInstanceModel struct {
 	MaintainTime                types.String `tfsdk:"maintain_time"`                  //可维护时间
 	Subnet                      types.String `tfsdk:"subnet"`                         //子网
 	LogStatus                   types.Bool   `tfsdk:"log_status"`                     //实例日志审计状态
-	OrderId                     types.String `tfsdk:"order_id"`                       //订单ID
+	OrderId                     types.Int64  `tfsdk:"order_id"`                       //订单ID
 	NetName                     types.String `tfsdk:"net_name"`                       //专有网络
 	VersionNum                  types.String `tfsdk:"version_num"`                    //版本号
 	SecurityGroupId             types.String `tfsdk:"security_group_id"`              //安全组ID

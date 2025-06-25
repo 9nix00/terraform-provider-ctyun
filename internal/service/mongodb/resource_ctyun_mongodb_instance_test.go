@@ -33,7 +33,7 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 	password := "BwLnOyOob+wbuDq0qI+EFMWmOtkFiJiIVIvlknaf1fJzfTfUAG7IwGM+368VIOZ9vuGX8QOUTVhzqT6ZKlaBzEHXUbHxQ8TeruEUZx5d4I8o4396WFZOu8+LuVklKDYx6V1tm8FDpXRXwAOsU+fYM8tQi3cu2oynET5TeQMVYxw="
 	purchase_count := 1
 	prodId := 10013001
-	nodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
+	nodeInfoList := `{"node_type":"s","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
 	updatedPort := "read_port=12345"
 	updateName := "tf-mongodb-new" + utils.GenerateRandomString()
 	updatedIsUpgradeBackUp := `is_upgrade_back_up=true`

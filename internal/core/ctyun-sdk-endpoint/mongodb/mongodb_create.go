@@ -63,7 +63,7 @@ type MongodbCreateRequest struct {
 	AutoRenewStatus      int32                        `json:"autoRenewStatus"`
 	ProdId               int64                        `json:"prodId"`
 	ProdPerformanceSpecs []string                     `json:"prodPerformanceSpeces,omitempty"`
-	MysqlNodeInfoList    []MongodbNodeInfoListRequest `json:"mysqlNodeInfoList,omitempty"`
+	MysqlNodeInfoList    []MongodbNodeInfoListRequest `json:"nodeInfoList,omitempty"`
 }
 type MongodbCreateRequestHeader struct {
 	ProjectID *string `json:"project_id"`
