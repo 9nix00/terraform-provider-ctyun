@@ -29,7 +29,7 @@ resource "ctyun_eip" "eip_test" {
 }
 
 resource "ctyun_nat_snat" "snat_test"{
-  nat_gateway_id = ctyun_nat.nat_test.nat_gateway_id
+  nat_gateway_id = ctyun_nat.nat_test.id
   source_cidr = "192.168.0.0/24"
   snat_ips = [ctyun_eip.eip_test.id]
 }

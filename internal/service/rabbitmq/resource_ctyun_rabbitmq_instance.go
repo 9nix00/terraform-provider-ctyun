@@ -839,7 +839,7 @@ func (c *ctyunRabbitmqInstance) getByName(ctx context.Context, plan CtyunRabbitm
 	params := &amqp.AmqpInstancesQueryRequest{
 		RegionId: plan.RegionID.ValueString(),
 		PageNum:  1,
-		PageSize: 10,
+		PageSize: 100,
 	}
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {

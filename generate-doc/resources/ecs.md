@@ -27,17 +27,16 @@ resource "ctyun_ecs" "jdxutuzpfr" {
   cycle_type         = "on_demand"
 }
 
-
-#variable "password" {
-#  type      = string
-#  sensitive = true
-#}
 # provider "ctyun" {
 #   region_id  = "bb9fdb42056f11eda1610242ac110002"
 #   project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
 #   az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
 # }
 #
+# variable "password" {
+#   type      = string
+#   sensitive = true
+# }
 # data "ctyun_images" "image_test1" {
 #   name       = "Ubuntu 22.04"
 #   visibility = "public"
