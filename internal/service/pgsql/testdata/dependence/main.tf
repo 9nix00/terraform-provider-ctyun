@@ -56,6 +56,11 @@ locals {
     for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas"
   ]
   data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
+
+  security_groups2 = [
+    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas2"
+  ]
+  data_security_group_id2 = length(local.security_groups2) > 0 ? local.security_groups2[0].security_group_id : ""
 }
 
 resource "ctyun_security_group" "security_group_test1" {
@@ -71,7 +76,7 @@ resource "ctyun_security_group" "security_group_test2" {
   count = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas2"
-  description = "terraform测试使用"
+  description = "terraform测试使用2"
   lifecycle {
     prevent_destroy = true
   }
@@ -79,7 +84,7 @@ resource "ctyun_security_group" "security_group_test2" {
 
 locals {
   real_security_group_id1 = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test1[0].id, "") : local.data_security_group_id
-  real_security_group_id2 = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
+  real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
 }
 
 resource "ctyun_eip" "eip_test" {

@@ -23,29 +23,28 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 	datasourceFile := "datasource_ctyun_pgsql_instances.tf"
 
-	billMode := "on_demand"
+	cycleType := "on_demand"
 	hostType := "S7"
 	prodVersion := "12.22"
-	prodId := 10003011
+	prodId := "Single1222"
 	storageType := "SATA"
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
-	caseCensitive := "0"
-	nodeType := "master"
-	instSpec := "1"
+	caseCensitive := true
+	instanceSeries := "S"
 	prodPerformanceSpce := "2C4G"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	azInfo := `[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
-	osType := "11"
-	cpuType := "30"
+	osType := "ctyunos"
+	cpuType := "Intel"
 
 	updatedName := "pgsql-new" + utils.GenerateRandomString()
 	updatedSecurityGroupID := dependence.securityGroupID2
 	updatedProdPerformanceSpce := "2C8G"
-	updatedProdID := 10003012
+	updatedProdID := "MasterSlave1222"
 	updatedStorageSpace := 120
 	updatedAzInfo := `[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
 	updatedBackupStorageSpace := fmt.Sprintf(`backup_storage_space="%d"`, updatedStorageSpace)
@@ -63,24 +62,24 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// 1. 按需验证，单节点创建，扩容至1主1备，修改名称，修改安全组， 规格扩容,磁盘扩容。
 			// create 验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, prodId, storageType, StorageSpace, name, password, caseCensitive,
-					nodeType, instSpec, prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", false, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, name, password, caseCensitive,
+					instanceSeries, prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType)),
 			},
 			// update验证--姓名, 安全组，规格扩容
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", false, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
@@ -89,13 +88,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--backup磁盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					"backup", instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, false, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
@@ -105,13 +104,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--master磁盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", false, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
@@ -120,39 +119,39 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--主备，关机，开机，重启
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", false, false, true, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="stop"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", updatedProdID)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", true, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="start"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", updatedProdID)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", false, true, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="restart"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cycle_type", billMode),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", updatedProdID)),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
 					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", updatedProdPerformanceSpce),
@@ -160,22 +159,22 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", false, false, false, osType, cpuType, "", "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", "", osType, cpuType, "") +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_id=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.cycle_type", billMode),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.prod_id", fmt.Sprintf("%d", updatedProdID)),
+					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.cycle_type", cycleType),
+					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.prod_id", "MasterSlave1222"),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.subnet_id", subnetID),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.host_type", hostType),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, billMode, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					nodeType, instSpec, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", false, false, false, osType, cpuType, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", "", osType, cpuType, ""),
 				Destroy: true,
 			},
 		},
