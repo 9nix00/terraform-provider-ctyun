@@ -21,8 +21,7 @@ func TestAccCtyunDNat(t *testing.T) {
 	datasourceFile := "datasource_ctyun_nat_dnat.tf"
 
 	natGatewayId := dependence.natID
-	externalId := dependence.eipID
-	virtualMachineType := 2
+	dnatType := "custom"
 	internalPort := utils.GenerateRandomPort(0, 65535)
 	updatedInternalPort := utils.GenerateRandomPort(0, 65535)
 	externalPort := utils.GenerateRandomPort(0, 1024)
@@ -46,32 +45,31 @@ func TestAccCtyunDNat(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1resource create/ delete 验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, externalPort, virtualMachineType, internalIp, internalPort, protocol),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID, protocol, externalPort, internalPort, dnatType, internalIp),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "internal_port", strconv.Itoa(internalPort)),
 					resource.TestCheckResourceAttr(resourceName, "external_port", strconv.Itoa(externalPort)),
 					resource.TestCheckResourceAttr(resourceName, "internal_ip", internalIp),
 					resource.TestCheckResourceAttr(resourceName, "protocol", protocol),
-					resource.TestCheckResourceAttr(resourceName, "dnat_type", strconv.Itoa(virtualMachineType)),
+					resource.TestCheckResourceAttr(resourceName, "dnat_type", dnatType),
 					resource.TestCheckResourceAttrSet(resourceName, "dnat_id"),
 				),
 			},
 			{
 				//	2 resource update验证
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, updatedInternalIp),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "internal_port", strconv.Itoa(updatedInternalPort)),
 					resource.TestCheckResourceAttr(resourceName, "external_port", strconv.Itoa(updatedExternalPort)),
 					resource.TestCheckResourceAttr(resourceName, "internal_ip", updatedInternalIp),
 					resource.TestCheckResourceAttr(resourceName, "protocol", updatedProtocol),
-					resource.TestCheckResourceAttr(resourceName, "dnat_type", strconv.Itoa(virtualMachineType)),
+					resource.TestCheckResourceAttr(resourceName, "dnat_type", dnatType),
 					resource.TestCheckResourceAttrSet(resourceName, "dnat_id"),
 				),
 			},
 			{
 				// 3 datasource 验证
-				//Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol) +
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, updatedInternalIp) +
 					utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "dnats.#", "1"),
@@ -82,7 +80,70 @@ func TestAccCtyunDNat(t *testing.T) {
 				),
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalId, updatedExternalPort, virtualMachineType, updatedInternalIp, updatedInternalPort, updatedProtocol),
+				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, updatedInternalIp),
+				Destroy: true,
+			},
+		},
+	})
+}
+
+func TestAccCtyunDNat2(t *testing.T) {
+	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_nat_dnat." + rnd
+	datasourceName := "data.ctyun_nat_dnats." + dnd
+
+	resourceFile := "resource_ctyun_nat_dnat2.tf"
+	datasourceFile := "datasource_ctyun_nat_dnat.tf"
+
+	natGatewayId := dependence.natID
+	dnatType := "instance"
+	serverType := "VM"
+	internalPort := utils.GenerateRandomPort(0, 65535)
+	updatedInternalPort := utils.GenerateRandomPort(0, 65535)
+	externalPort := utils.GenerateRandomPort(0, 1024)
+	updatedExternalPort := utils.GenerateRandomPort(0, 1024)
+
+	protocol := "tcp"
+	updatedProtocol := "udp"
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 1resource create/ delete 验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID, protocol, externalPort, internalPort, dnatType, serverType, dependence.eipID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "internal_port", strconv.Itoa(internalPort)),
+					resource.TestCheckResourceAttr(resourceName, "external_port", strconv.Itoa(externalPort)),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", dependence.eipID),
+					resource.TestCheckResourceAttr(resourceName, "protocol", protocol),
+					resource.TestCheckResourceAttr(resourceName, "dnat_type", dnatType),
+					resource.TestCheckResourceAttrSet(resourceName, "dnat_id"),
+				),
+			},
+			{
+				// 3 datasource 验证
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, serverType, dependence.eipID) +
+					utils.LoadTestCase(datasourceFile, dnd, natGatewayId),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "dnats.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "dnats.0.internal_port", strconv.Itoa(updatedInternalPort)),
+					resource.TestCheckResourceAttr(datasourceName, "dnats.0.external_port", strconv.Itoa(updatedExternalPort)),
+					resource.TestCheckResourceAttr(datasourceName, "dnats.0.protocol", updatedProtocol),
+					resource.TestCheckResourceAttr(datasourceName, "dnats.0.instance_id", dependence.eipID),
+				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, serverType, dependence.eipID),
 				Destroy: true,
 			},
 		},

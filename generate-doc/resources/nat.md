@@ -48,19 +48,19 @@ resource "ctyun_nat" "nat_cycle_test" {
 ### Optional
 
 - `az_name` (String) 可用区名称
-- `creation_time` (String) NAT网关的创建时间
 - `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 - `description` (String) nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
-- `expired_time` (String) NAT网关实例的过期时间
 - `name` (String) nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `pay_voucher_price` (String) 代金券金额，支持到小数点后两位
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池id，默认使用provider ctyun总region_id 或者环境变量
 - `spec` (Number) 规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型
 - `vpc_id` (String) 需要创建 NAT 网关的 VPC 的 ID
 
 ### Read-Only
 
+- `creation_time` (String) NAT网关的创建时间
+- `expired_time` (String) NAT网关实例的过期时间
 - `id` (String) ID，值与nat_gateway_id相同
 - `master_order_id` (String) 订单id
 - `nat_gateway_id` (String) 网关id

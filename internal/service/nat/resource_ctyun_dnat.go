@@ -116,7 +116,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 						path.MatchRoot("dnat_type"),
 						types.StringValue(business.VirtualMachineTypeCloud),
 					),
-					validator2.AlsoRequiresEqualString(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("dnat_type"),
 						types.StringValue(business.VirtualMachineTypeCustom),
 					),
@@ -131,11 +131,10 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 						path.MatchRoot("dnat_type"),
 						types.StringValue(business.VirtualMachineTypeCloud),
 					),
-					validator2.AlsoRequiresEqualString(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("dnat_type"),
 						types.StringValue(business.VirtualMachineTypeCustom),
 					),
-					stringvalidator.OneOf(business.ServerTypeVM, business.ServerTypeBM),
 				},
 			},
 			"internal_ip": schema.StringAttribute{
@@ -277,6 +276,10 @@ func (c *ctyunDnatResource) Update(ctx context.Context, request resource.UpdateR
 	if err != nil {
 		return
 	}
+	state.DnatType = plan.DnatType
+	state.InstanceID = plan.InstanceID
+	state.ServerType = plan.ServerType
+	state.InternalIP = plan.InternalIP
 	// 查询远端信息
 	err = c.getAndMergeDnat(ctx, &state)
 	if err != nil {
@@ -382,17 +385,17 @@ func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatC
 	cfg.IpExpireTime = utils.SecStringValue(dnat.IpExpireTime)
 	cfg.ExternalIP = utils.SecStringValue(dnat.ExternalIp)
 	cfg.ExternalID = utils.SecStringValue(dnat.ExternalID)
-	cfg.InternalIP = utils.SecStringValue(dnat.InternalIp)
 	cfg.Protocol = utils.SecStringValue(dnat.Protocol)
 	cfg.State = utils.SecStringValue(dnat.State)
-	externalPort := types.Int32Value(dnat.ExternalPort)
-	if c.isPort(externalPort, "external") {
-		cfg.ExternalPort = externalPort
+	cfg.ExternalPort = types.Int32Value(dnat.ExternalPort)
+	cfg.InternalPort = types.Int32Value(dnat.InternalPort)
+	switch cfg.DnatType.ValueString() {
+	case business.VirtualMachineTypeCloud:
+		cfg.InstanceID = utils.SecStringValue(dnat.VirtualMachineID)
+	case business.VirtualMachineTypeCustom:
+		cfg.InternalIP = utils.SecStringValue(dnat.InternalIp)
 	}
-	internalPort := types.Int32Value(dnat.InternalPort)
-	if c.isPort(internalPort, "internal") {
-		cfg.InternalPort = internalPort
-	}
+
 	return nil
 }
 
@@ -439,6 +442,7 @@ func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig
 	switch plan.DnatType.ValueString() {
 	case business.VirtualMachineTypeCloud:
 		params.VirtualMachineID = plan.InstanceID.ValueStringPointer()
+		params.ServerType = plan.ServerType.ValueStringPointer()
 	case business.VirtualMachineTypeCustom:
 		params.InternalIp = plan.InternalIP.ValueStringPointer()
 	}
@@ -527,23 +531,6 @@ func (c *ctyunDnatResource) updateLoop(ctx context.Context, state *CtyunDnatConf
 			err = common.InvalidReturnObjError
 			return false
 		}
-
-		dnatInfo := resp.ReturnObj
-		if updatedParams.ExternalID != nil && *dnatInfo.ExternalID != *updatedParams.ExternalID {
-			return true
-		}
-		if updatedParams.ExternalPort != 0 && dnatInfo.ExternalPort != updatedParams.ExternalPort {
-			return true
-		}
-		if updatedParams.InternalIp != nil && *dnatInfo.InternalIp != *updatedParams.InternalIp {
-			return true
-		}
-		if updatedParams.InternalPort != 0 && dnatInfo.InternalPort != updatedParams.InternalPort {
-			return true
-		}
-		if updatedParams.Description != nil && *dnatInfo.Description != *updatedParams.Description {
-			return true
-		}
 		return false
 	})
 	if result.ReturnReason == business.ReachMaxLoopTime {
@@ -586,24 +573,18 @@ func (c *ctyunDnatResource) DeleteLoop(ctx context.Context, state CtyunDnatConfi
 
 func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfig, plan CtyunDnatConfig) (err error) {
 	params := &ctvpc.CtvpcUpdateDnatEntryAttributeRequest{
-		RegionID:           plan.RegionID.ValueString(),
+		ClientToken:        uuid.NewString(),
+		RegionID:           state.RegionID.ValueString(),
 		DNatID:             state.DNatID.ValueString(),
 		Protocol:           plan.Protocol.ValueString(),
-		VirtualMachineType: map[string]int32{business.VirtualMachineTypeCustom: 2, business.VirtualMachineTypeCloud: 1}[plan.DnatType.ValueString()],
-		ClientToken:        uuid.NewString(),
-		ServerType:         plan.Description.ValueStringPointer(),
-	}
-	if !plan.ExternalID.Equal(state.ExternalIP) {
-		params.ExternalID = plan.ExternalID.ValueStringPointer()
-	}
-	if !plan.InternalIP.Equal(state.InternalIP) {
-		params.InternalIp = plan.InternalIP.ValueStringPointer()
-	}
-	if !plan.Description.Equal(state.Description) {
-		params.Description = plan.Description.ValueStringPointer()
-	}
-	if plan.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud && plan.ServerType.ValueString() != "" {
-		params.ServerType = plan.ServerType.ValueStringPointer()
+		VirtualMachineType: map[string]int32{business.VirtualMachineTypeCloud: 1, business.VirtualMachineTypeCustom: 2}[plan.DnatType.ValueString()],
+		ExternalPort:       plan.ExternalPort.ValueInt32(),
+		ExternalID:         plan.ExternalID.ValueStringPointer(),
+		InternalIp:         plan.InternalIP.ValueStringPointer(),
+		InternalPort:       plan.InternalPort.ValueInt32(),
+		Description:        plan.Description.ValueStringPointer(),
+		ServerType:         plan.ServerType.ValueStringPointer(),
+		VirtualMachineID:   plan.InstanceID.ValueStringPointer(),
 	}
 
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateDnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, params)
@@ -619,8 +600,6 @@ func (c *ctyunDnatResource) updateDNat(ctx context.Context, state CtyunDnatConfi
 	}
 	return
 }
-
-//func (c *ctyunDnatResource) deleteDNat(ctx context.Context, state CtyunDnatConfig)
 
 // contains 方法用于判断value时候被包含在list中，区分大小写
 func (c *ctyunDnatResource) contains(value string, list []string) bool {

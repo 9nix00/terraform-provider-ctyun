@@ -111,11 +111,6 @@ var SNatSubnetTypes = []int32{
 	SubnetTypeCustom,
 }
 
-var DNatVirtualMachineTypes = []int32{
-	VirtualMachineTypeCloud,
-	VirtualMachineTypeCustom,
-}
-
 var ServerTypes = []string{
 	ServerTypeVM,
 	ServerTypeBM,
