@@ -154,12 +154,10 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Description: "当前网关所属的vpc cidr",
 			},
 			"creation_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关的创建时间",
 			},
 			"expired_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关实例的过期时间",
 			},

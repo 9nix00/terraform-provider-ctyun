@@ -47,6 +47,14 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 	response.Schema = schema.Schema{
 		MarkdownDescription: `详细说明请见文档：`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID，同dnat_id",
+			},
+			"dnat_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "Dnat规则的id",
+			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -57,58 +65,29 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"nat_gateway_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
+				Required:    true,
 				Description: "NAT网关Id",
-			},
-			"dnat_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "Dnat规则的id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"external_id": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性公网id",
-			},
-			"external_ip": schema.StringAttribute{
-				Computed:    true,
-				Description: "弹性公网ip",
+				Description: "弹性IP的ID，形如eip-xxxxx",
 			},
 			"external_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "弹性IP公网端口, 1 - 1024",
+				Description: "弹性IP公网端口，1 - 1024",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1024),
 				},
 			},
-			"internal_ip": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "内部 IP,virtual_machine_type=2(自定义),必填",
-				Validators: []validator.String{
-					validator2.AlsoRequiresEqualString(
-						path.MatchRoot("virtual_machine_type"),
-						types.Int32Value(business.VirtualMachineTypeCustom),
-					),
-				},
-			},
 			"internal_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "主机内网端口，1-65535",
+				Description: "主机内网端口，1 - 65535",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
-			},
-			"port_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "对应网卡id",
-			},
-			"port_name": schema.StringAttribute{
-				Optional:    true,
-				Description: "网卡名称",
-			},
-			"device_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "网卡对应的设备ID",
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
@@ -117,56 +96,62 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringvalidator.OneOf(business.DNatProtocols...),
 				},
 			},
-			"state": schema.StringAttribute{
-				Computed:    true,
-				Description: "运行状态: ACTIVE / FREEZING / CREATING",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.DNatStatus...),
-				},
-			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "创建时间",
-			},
-			"ip_expire_time": schema.StringAttribute{
-				Computed:    true,
-				Optional:    true,
-				Description: "ip到期时间",
-			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "描述",
 			},
-			"virtual_machine_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "虚拟机id",
-			},
-			"virtual_machine_type": schema.Int32Attribute{
-				Optional:    true,
-				Description: "云主机类型，1-选择云主机，serverType字段必传 2-自定义，internalIp必传",
-				//Validators: []validator.Int32{
-				//	int32validator.Between(1, 2),
-				//},
+			"dnat_type": schema.StringAttribute{
+				Required:    true,
+				Description: "dnat规则类型，支持传递instance或custom。",
+				Validators: []validator.String{
+					stringvalidator.OneOf("instance", "custom"),
+				},
 			},
 			"server_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "当 virtual_machine_type 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）",
+				Description: "服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
-						path.MatchRoot("virtual_machine_type"),
-						types.Int32Value(business.VirtualMachineTypeCloud),
+						path.MatchRoot("dnat_type"),
+						types.StringValue(business.VirtualMachineTypeCloud),
+					),
+					stringvalidator.OneOf(business.ServerTypeVM, business.ServerTypeBM),
+				},
+			},
+
+			"internal_ip": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "内部IP，当dnat_type=2时必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("dnat_type"),
+						types.Int32Value(business.VirtualMachineTypeCustom),
 					),
 				},
 			},
-			"status": schema.StringAttribute{
+
+			"virtual_machine_id": schema.StringAttribute{
 				Optional:    true,
+				Description: "机器ID",
+			},
+
+			"external_ip": schema.StringAttribute{
 				Computed:    true,
-				Description: "绑定状态，取值 in_progress / done",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.DnatStatus...),
-				},
+				Description: "弹性公网IP地址",
+			},
+			"state": schema.StringAttribute{
+				Computed:    true,
+				Description: "运行状态: ACTIVE / FREEZING / CREATING",
+			},
+			"created_at": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间",
+			},
+			"ip_expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "ip到期时间",
 			},
 		},
 	}
@@ -253,10 +238,8 @@ func (c *ctyunDnatResource) Read(ctx context.Context, request resource.ReadReque
 		Description:        state.Description.ValueStringPointer(),
 	}
 	if state.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCloud {
-		// 如果云主机类型为1-选择云主机，传参数serverType
 		params.ServerType = state.ServerType.ValueStringPointer()
 	} else if state.VirtualMachineType.ValueInt32() == business.VirtualMachineTypeCustom {
-		// 如果云主机类型为2 - 自定义，internalIp必传
 		params.InternalIp = state.InternalIP.ValueStringPointer()
 	}
 	// 通过创建的参数进行同步
@@ -400,12 +383,12 @@ func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatC
 	}
 	dnat := resp.ReturnObj
 	cfg.DNatID = utils.SecStringValue(dnat.DNatID)
+	cfg.ID = utils.SecStringValue(dnat.DNatID)
 	cfg.CreatedAt = utils.SecStringValue(dnat.CreationTime)
 	cfg.Description = utils.SecStringValue(dnat.Description)
 	cfg.IpExpireTime = utils.SecStringValue(dnat.IpExpireTime)
 	cfg.ExternalIP = utils.SecStringValue(dnat.ExternalIp)
 	cfg.ExternalID = utils.SecStringValue(dnat.ExternalID)
-	//cfg.ExternalPort = types.Int32Value(dnat.ExternalPort)
 	cfg.InternalIP = utils.SecStringValue(dnat.InternalIp)
 	cfg.Protocol = utils.SecStringValue(dnat.Protocol)
 	cfg.State = utils.SecStringValue(dnat.State)
@@ -659,7 +642,6 @@ func (c *ctyunDnatResource) acquireAndSetIdIfCreateNotFinished(ctx context.Conte
 	}
 	// 如果请求成功的话，则把id取出
 	state.DNatID = loopResponse.DNatID
-	state.Status = loopResponse.Status
 	response.State.Set(ctx, state)
 	return true
 
@@ -726,26 +708,23 @@ func (c *ctyunDnatResource) contains(value string, list []string) bool {
 }
 
 type CtyunDnatConfig struct {
-	RegionID           types.String `tfsdk:"region_id"`            //区域id
-	NatGatewayID       types.String `tfsdk:"nat_gateway_id"`       //要查询的私网NAT的ID
-	DNatID             types.String `tfsdk:"dnat_id"`              //DNAT规则的ID
-	ExternalID         types.String `tfsdk:"external_id"`          //中转IP ID
-	ExternalIP         types.String `tfsdk:"external_ip"`          //中转IP
-	ExternalPort       types.Int32  `tfsdk:"external_port"`        //外部端口
-	InternalIP         types.String `tfsdk:"internal_ip"`          //内部IP
-	InternalPort       types.Int32  `tfsdk:"internal_port"`        //内部端口
-	PortID             types.String `tfsdk:"port_id"`              //对应的网卡ID
-	PortName           types.String `tfsdk:"port_name"`            //网卡名称
-	DeviceID           types.String `tfsdk:"device_id"`            //网卡对应的设备ID
-	Protocol           types.String `tfsdk:"protocol"`             //协议: tcp/udp
-	State              types.String `tfsdk:"state"`                //DNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期
-	CreatedAt          types.String `tfsdk:"created_at"`           //创建时间
-	IpExpireTime       types.String `tfsdk:"ip_expire_time"`       //ip到期时间
-	Description        types.String `tfsdk:"description"`          //描述
-	VirtualMachineID   types.String `tfsdk:"virtual_machine_id"`   //云主机
-	VirtualMachineType types.Int32  `tfsdk:"virtual_machine_type"` //云主机类型1-选择云主机，serverType字段必传 ;2-自定义，internalIp必传
-	ServerType         types.String `tfsdk:"server_type"`          //当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
-	Status             types.String `tfsdk:"status"`               //绑定状态，取值 in_progress / done
+	ID                 types.String `tfsdk:"id"`
+	RegionID           types.String `tfsdk:"region_id"`          //区域id
+	NatGatewayID       types.String `tfsdk:"nat_gateway_id"`     //要查询的私网NAT的ID
+	DNatID             types.String `tfsdk:"dnat_id"`            //DNAT规则的ID
+	ExternalID         types.String `tfsdk:"external_id"`        //中转IP ID
+	ExternalIP         types.String `tfsdk:"external_ip"`        //中转IP
+	ExternalPort       types.Int32  `tfsdk:"external_port"`      //外部端口
+	InternalIP         types.String `tfsdk:"internal_ip"`        //内部IP
+	InternalPort       types.Int32  `tfsdk:"internal_port"`      //内部端口
+	Protocol           types.String `tfsdk:"protocol"`           //协议: tcp/udp
+	State              types.String `tfsdk:"state"`              //DNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期
+	Description        types.String `tfsdk:"description"`        //描述
+	VirtualMachineID   types.String `tfsdk:"virtual_machine_id"` //云主机
+	VirtualMachineType types.Int32  `tfsdk:"dnat_type"`          //云主机类型1-选择云主机，serverType字段必传 ;2-自定义，internalIp必传
+	ServerType         types.String `tfsdk:"server_type"`        //当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
+	CreatedAt          types.String `tfsdk:"created_at"`         //创建时间
+	IpExpireTime       types.String `tfsdk:"ip_expire_time"`     //ip到期时间
 }
 
 type DnatLoopCreateResponse struct {
