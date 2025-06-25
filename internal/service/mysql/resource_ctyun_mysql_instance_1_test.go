@@ -26,28 +26,25 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "terraform-provider-ctyun" + utils.GenerateRandomString()
-	password := "kqjwyk"
-	period := 1
-	count := 1
-	autoRenewStatus := 0
+	password := "kqjwyk111111"
+	//period := 1
+	//autoRenewStatus := 0
 
-	nodeType := "master"
-	instSpec := "1"
+	instanceSeries := "S"
 	storageType := "SATA"
 	storageSpace := 100
 	prodPerformanceSpec := "2C4G"
-	disks := 1
 	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"slave"}]`, dependence.azName)
 
-	cpuType := "30"
-	osType := "11"
+	cpuType := "Intel"
+	osType := "ctyunos"
 	// 单节点
-	ProdId := 10001003
+	ProdId := "Single57"
 	// 单机到一主一备
 	//updatedProdID := 10001001
 	// 一主两备
-	updatedDoubleProId := 10001002
-	cycleBillMode := "1"
+	updatedDoubleProId := "Master2Slave57"
+	cycleBillMode := "on_demand"
 	NodeOneAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"}]`, dependence.azName)
 
 	resource.Test(t, resource.TestCase{
@@ -64,23 +61,23 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			// 创建1主1备-》1主2备已经完成
 			// 单节点-》1主2备,验证通过
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, ProdId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, NodeOneAvailabilityZoneInfo, false, false, false),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", ProdId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, NodeOneAvailabilityZoneInfo, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", 10001003)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single57"),
 				),
 			},
 			// 升级1主2备
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, false),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", 10001002)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},
 			// 关机验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, true),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="freeze"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -89,7 +86,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 开机验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, true, false, false),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="unfreeze"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -98,7 +95,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 重启验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, true, false),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="restart"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -107,7 +104,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 销毁
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, period, count, autoRenewStatus, updatedDoubleProId, cpuType, osType, "", nodeType, instSpec, storageType, storageSpace, prodPerformanceSpec, disks, updatedDiskAvailabilityZoneInfo, false, false, false),
+				Config:  utils.LoadTestCase(resourceFile, rnd, cycleBillMode, prodVersion, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, "", ""),
 				Destroy: true,
 			},
 		},

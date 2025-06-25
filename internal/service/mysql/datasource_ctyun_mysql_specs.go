@@ -43,28 +43,14 @@ func (c *CtyunMysqlSpecs) Schema(ctx context.Context, request datasource.SchemaR
 	response.Schema = schema.Schema{
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
-			"prod_type": schema.StringAttribute{
-				Required:    true,
-				Description: "产品类型，0=UNKNOWN, 1=RDS, 2=NoSql, 3=TOOL, 4=MemDB",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ProdType...),
-				},
-			},
-			"prod_code": schema.StringAttribute{
-				Required:    true,
-				Description: "产品编码，取值范围：HBASE/DDS/HBASE/MYSQL/POSTGRESQL/SQLSERVER",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ProdCode...),
-				},
-			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池id",
 			},
-			"instance_type": schema.StringAttribute{
+			"instance_series": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）",
+				Description: "实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -136,7 +122,7 @@ func (c *CtyunMysqlSpecs) Schema(ctx context.Context, request datasource.SchemaR
 										Computed:    true,
 										Description: "cpu类型",
 									},
-									"generation": schema.StringAttribute{
+									"host_type": schema.StringAttribute{
 										Computed:    true,
 										Description: "主机世代缩写",
 									},
@@ -201,10 +187,10 @@ func (c *CtyunMysqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 		return
 	}
 	params := &mysql.TeledbMysqlSpecsRequest{
-		ProdType:     config.ProdType.ValueString(),
-		ProdCode:     config.ProdCode.ValueString(),
+		ProdType:     "1", // RDS
+		ProdCode:     "MYSQL",
 		RegionID:     regionId,
-		InstanceType: config.InstanceType.ValueString(),
+		InstanceType: business.MysqlInstanceSeriesDict[config.InstanceSeries.ValueString()],
 	}
 	headers := &mysql.TeledbMysqlSpecsRequestHeader{}
 	if config.ProjectID.ValueString() != "" {
@@ -241,7 +227,7 @@ func (c *CtyunMysqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 			specInfo.ProdPerformanceSpec = types.StringValue(instSpecInfoItem.ProdPerformanceSpec)
 			specInfo.SpecName = types.StringValue(instSpecInfoItem.SpecName)
 			specInfo.CpuType = types.StringValue(instSpecInfoItem.CpuType)
-			specInfo.Generation = types.StringValue(instSpecInfoItem.Generation)
+			specInfo.HostType = types.StringValue(instSpecInfoItem.Generation)
 			specInfo.MinRate = types.StringValue(instSpecInfoItem.MinRate)
 			specInfo.MaxRate = types.StringValue(instSpecInfoItem.MaxRate)
 			// 解析azList
@@ -278,12 +264,10 @@ func (c *CtyunMysqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 }
 
 type CtyunMysqlSpecsConfig struct {
-	ProdType     types.String              `tfsdk:"prod_type"`
-	ProdCode     types.String              `tfsdk:"prod_code"`
-	RegionID     types.String              `tfsdk:"region_id"`
-	InstanceType types.String              `tfsdk:"instance_type"`
-	ProjectID    types.String              `tfsdk:"project_id"`
-	Specs        []CtyunMysqlSpecInfoModel `tfsdk:"specs"`
+	RegionID       types.String              `tfsdk:"region_id"`
+	InstanceSeries types.String              `tfsdk:"instance_series"`
+	ProjectID      types.String              `tfsdk:"project_id"`
+	Specs          []CtyunMysqlSpecInfoModel `tfsdk:"specs"`
 }
 type CtyunMysqlSpecInfoModel struct {
 	ProdId           types.Int64      `tfsdk:"prod_id"`             // 产品id
@@ -303,7 +287,7 @@ type InstSpecInfo struct {
 	AzList              types.String `tfsdk:"az_list"`               // 该规格支持的AZ列表
 	SpecName            types.String `tfsdk:"spec_name"`             // 主机世代完整名称
 	CpuType             types.String `tfsdk:"cpu_type"`              // cpu类型
-	Generation          types.String `tfsdk:"generation"`            // 主机世代缩写
+	HostType            types.String `tfsdk:"host_type"`             // 主机世代缩写
 	MinRate             types.String `tfsdk:"min_rate"`              // 带宽下限
 	MaxRate             types.String `tfsdk:"max_rate"`              // 带宽上限
 }

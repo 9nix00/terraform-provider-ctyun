@@ -11,10 +11,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -76,43 +74,57 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"res_pool_code": schema.StringAttribute{
-				Optional:    true,
-				Description: "资源池名称",
-			},
 			"host_type": schema.StringAttribute{
 				Required:    true,
-				Description: "主机类型: S6 or S7",
+				Description: "主机类型 host type: S6 or S7等。可根据data.ctyun_postgresql_specs查询",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"prod_version": schema.StringAttribute{
 				Required:    true,
-				Description: "数据库版本(参考查询规格列表接口)",
+				Description: "数据库版本，取值范围：12.22, 13.20, 14.17, 15.12, 16.8",
+				Validators: []validator.String{
+					stringvalidator.OneOf("12.22", "13.20", "14.17", "15.12", "16.8"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"prod_id": schema.Int64Attribute{
+			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品ID。扩容过程中，不支持磁盘、规格和实例扩容同时进行",
-			},
-			"project_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("default"),
-				Description: "企业项目名称，默认default",
+				Description: "产品ID。Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘、规格和实例扩容同时进行",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.PgsqlProdIds...),
+				},
 			},
 			// 存储与备份
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.StorageType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"storage_type": schema.StringAttribute{
 				Required:    true,
 				Description: "主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.StorageType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"storage_space": schema.Int32Attribute{
 				Required:    true,
@@ -121,62 +133,66 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					int32validator.Between(100, 32768),
 				},
 			},
-			"backup_storage_space": schema.StringAttribute{
+			// todo 修改成int
+			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "备份存储空间大小",
 			},
 			// 网络配置
 			"vpc_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "虚拟私有云ID(回收站恢复时非必传)",
+				Required:    true,
+				Description: "虚拟私有云Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "子网ID(回收站恢复时非必传)",
+				Required:    true,
+				Description: "子网Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "安全组ID(回收站恢复时非必传)",
+				Required:    true,
+				Description: "安全组Id",
 			},
 			"appoint_vip": schema.StringAttribute{
 				Optional:    true,
 				Description: "指定VIP",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
-			"vpc_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "VPC名称(回收站恢复时非必传)",
-			},
-			"subnet_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "子网名称(回收站恢复时非必传)",
-			},
-			"security_group_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "安全组名称(回收站恢复时非必传)",
-			},
+			// todo 确认控制台是否支持
 			"vpc_cidr": schema.StringAttribute{
 				Optional:    true,
 				Description: "VPC网段",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			// 实例配置
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "集群名称(主实例名称，只读实例会加'-read')",
+				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(4, 64),
+				},
 			},
+			// todo 确定有没有rsa加密
 			"password": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Sensitive:   true,
 				Description: "管理员密码(RSA公钥加密)",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				//Validators: []validator.String{
+				//	stringvalidator.LengthBetween(4, 64),
+				//},
 			},
-			"param_template_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "参数模板ID",
-			},
-
 			// 订购选项
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
@@ -196,15 +212,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					int32planmodifier.RequiresReplace(),
 				},
 			},
-			"purchase_count": schema.Int32Attribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     int32default.StaticInt32(1),
-				Description: "购买数量(范围1-50，默认1)",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 50),
-				},
-			},
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -221,117 +228,129 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				},
 			},
 			// 高级配置
-			"case_sensitive": schema.StringAttribute{
-				Required:    true,
-				Description: "是否区分大小写: 0=区分, 1=不区分, 2=待定",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.PgsqlCaseSensitive...),
-				},
-			},
-			"time_zone": schema.StringAttribute{
-				Optional:    true,
-				Description: "时区",
-			},
-			"os_type": schema.StringAttribute{
+			"case_sensitive": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("2"),
-				Description: "操作系统类型: 0=裸机, 1=windows, 2=centos, ...",
+				Description: "是否区分大小写: true=区分, false=不区分。默认不区分",
+				Default:     booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+			//"time_zone": schema.StringAttribute{
+			//	Optional:    true,
+			//	Description: "时区",
+			//	PlanModifiers: []planmodifier.String{
+			//		stringplanmodifier.RequiresReplace(),
+			//	},
+			//},
+			"os_type": schema.StringAttribute{
+				Required:    true,
+				Description: "系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.PgsqlOsType...),
+					stringvalidator.OneOf(business.MysqlOSType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"cpu_type": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("30"),
-				Description: "CPU类型: 10=鲲鹏, 20=海光, 30=intel, ...",
-			},
-			"server_collation": schema.StringAttribute{
-				Optional:    true,
-				Description: "数据库字符集",
+				Required:    true,
+				Description: "cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.MysqlCpuType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			// 项目相关
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("0"),
-				Description: "企业项目ID，默认0",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
-
-			// 规格相关
-			"prod_spec_name": schema.StringAttribute{
-				Optional:    true,
-				Description: "产品规格名称",
-			},
-			"is_mgr": schema.StringAttribute{
+			"is_mgr": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("false"),
 				Description: "是否开启MRG，默认false",
+				Default:     booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
-
 			// 恢复相关
-			"cross_instance_backup": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "是否为恢复到新实例工单",
-			},
-			"source_inst_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "源实例ID(跨域恢复/回收站恢复时必填)",
-			},
-			"backup_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "备份集ID(恢复到新实例时使用)",
-			},
-			"backup_time_point": schema.StringAttribute{
-				Optional:    true,
-				Description: "恢复时间点(与backup_id互斥)",
-			},
-			"is_cross_region_recovery": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "是否跨域恢复",
-			},
+			//"cross_instance_backup": schema.BoolAttribute{
+			//	Optional:    true,
+			//	Computed:    true,
+			//	Default:     booldefault.StaticBool(false),
+			//	Description: "是否为恢复到新实例工单",
+			//},
+			//"source_inst_id": schema.StringAttribute{
+			//	Optional:    true,
+			//	Description: "源实例ID(跨域恢复/回收站恢复时必填)",
+			//},
+			//"backup_id": schema.StringAttribute{
+			//	Optional:    true,
+			//	Description: "备份集ID(恢复到新实例时使用)",
+			//},
+			//"backup_time_point": schema.StringAttribute{
+			//	Optional:    true,
+			//	Description: "恢复时间点(与backup_id互斥)",
+			//},
+			//"is_cross_region_recovery": schema.BoolAttribute{
+			//	Optional:    true,
+			//	Computed:    true,
+			//	Default:     booldefault.StaticBool(false),
+			//	Description: "是否跨域恢复",
+			//},
 
 			// 节点配置 (重要: 嵌套对象列表)
-			"node_type": schema.StringAttribute{
+			"instance_series": schema.StringAttribute{
 				Required:    true,
-				Description: "节点类型: master=实例规格, readNode=只读实例",
-			},
-			"inst_spec": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString("1"),
-				Description: "实例规格: 1=通用型",
+				Description: "实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.MysqlInstanceSeries...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"prod_performance_spec": schema.StringAttribute{
 				Required:    true,
-				Description: "实例规格(例: 4C8G)。扩容过程中，不支持磁盘、规格和实例扩容同时进行",
-			},
-			"disks": schema.Int32Attribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     int32default.StaticInt32(1),
-				Description: "磁盘（默认为1）,2为Hbase，暂不支持",
+				Description: "实例规格(例: 4C8G)。可根据data.ctyun_postgresql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时与原配置不一致",
 			},
 			// 自动扩展配置
-			"auto_scale": schema.StringAttribute{
+			"auto_scale": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     stringdefault.StaticString("0"),
-				Description: "存储自动扩容: 0=关闭, 1=开启",
+				Default:     booldefault.StaticBool(false),
+				Description: "存储自动扩容: false=关闭, true=开启。默认关闭",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
-			"max_scale": schema.Int64Attribute{
+			// todo validator
+			"max_scale": schema.Int32Attribute{
 				Optional:    true,
 				Description: "存储扩容上限(单位G)",
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
 			},
-			"active_scale_rate": schema.StringAttribute{
+			"active_scale_rate": schema.Int32Attribute{
 				Optional:    true,
 				Description: "触发扩容百分比(1-100)",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 100),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Required: true,
@@ -349,14 +368,14 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 							Required:    true,
 							Description: "节点类型(master/readNode)",
 						},
-						"display_name": schema.StringAttribute{
-							Optional:    true,
-							Description: "可用区显示名",
-						},
-						"spec_id": schema.StringAttribute{
-							Optional:    true,
-							Description: "规格ID",
-						},
+						//"display_name": schema.StringAttribute{
+						//	Optional:    true,
+						//	Description: "可用区显示名",
+						//},
+						//"spec_id": schema.StringAttribute{
+						//	Optional:    true,
+						//	Description: "规格ID",
+						//},
 					},
 				},
 			},
@@ -371,16 +390,10 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"alive": schema.Int32Attribute{
 				Computed:    true,
 				Description: "实例是否存活,0:存活，-1:异常",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 1),
-				},
 			},
 			"disk_rated": schema.Int32Attribute{
 				Computed:    true,
 				Description: "磁盘使用率",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 100),
-				},
 			},
 			"outer_prod_inst_id": schema.StringAttribute{
 				Computed:    true,
@@ -393,30 +406,18 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"prod_order_status": schema.Int32Attribute{
 				Computed:    true,
 				Description: "订单状态，0：正常，1：冻结，2：删除，3：操作中，4：失败,2005:扩容中",
-				Validators: []validator.Int32{
-					int32validator.OneOf(business.PgsqlProdOrderStatus...),
-				},
 			},
 			"prod_running_status": schema.Int32Attribute{
 				Computed:    true,
 				Description: "实例状态",
-				Validators: []validator.Int32{
-					int32validator.OneOf(business.PgsqlProdRunningStatus...),
-				},
 			},
 			"prod_type": schema.Int32Attribute{
 				Computed:    true,
 				Description: "实例部署方式 0：单机部署,1：主备部署",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 1),
-				},
 			},
 			"read_port": schema.Int32Attribute{
 				Computed:    true,
 				Description: "读端口",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 65535),
-				},
 			},
 			"write_port": schema.StringAttribute{
 				Computed:    true,
@@ -425,27 +426,14 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"tool_type": schema.Int32Attribute{
 				Computed:    true,
 				Description: "备份工具类型，1：pg_baseback，2：pgbackrest，3：s3",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 3),
+			},
+
+			"running_control": schema.StringAttribute{
+				Optional:    true,
+				Description: "控制是否暂停，启用和重启实例，取值范围：stop, start, restart",
+				Validators: []validator.String{
+					stringvalidator.OneOf("stop", "start", "restart"),
 				},
-			},
-			"restart": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "控制是否需要重启实例",
-			},
-			"stop": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "控制是否需要停止实例",
-			},
-			"start": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "控制是否需要启动实例",
 			},
 		},
 	}
@@ -602,28 +590,32 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		return
 	}
 	cycleType := config.CycleType.ValueString()
+	isMgr := fmt.Sprintf("%t", config.IsMGR.ValueBool())
+
 	// 构建创建参数
 	params := &pgsql.PgsqlCreateRequest{
 		RegionId:              config.RegionID.ValueString(),
 		BillMode:              business.MysqlBillMode[cycleType],
 		HostType:              config.HostType.ValueString(),
 		ProdVersion:           config.ProdVersion.ValueString(),
-		ProdId:                config.ProdID.ValueInt64(),
+		ProdId:                business.PgsqlProdIDDict[config.ProdID.ValueString()],
 		VpcId:                 config.VpcID.ValueString(),
 		SubnetId:              config.SubnetId.ValueString(),
 		SecurityGroupId:       config.SecurityGroupId.ValueString(),
 		Name:                  config.Name.ValueString(),
 		Password:              config.Password.ValueString(),
-		ParamTemplateId:       config.ParamTemplateId.ValueString(),
 		Period:                config.CycleCount.ValueInt32(),
-		Count:                 config.PurchaseCount.ValueInt32(),
-		CaseSensitive:         config.CaseSensitive.ValueString(),
+		Count:                 1,
+		IsMGR:                 &isMgr,
 		TimeZone:              config.TimeZone.ValueString(),
-		IsMGR:                 config.IsMGR.ValueStringPointer(),
 		CrossInstanceBackup:   config.CrossInstanceBackup.ValueBool(),
 		IsCrossRegionRecovery: config.IsCrossRegionRecovery.ValueBool(),
 	}
-
+	if config.CaseSensitive.ValueBool() {
+		params.CaseSensitive = "0"
+	} else {
+		params.CaseSensitive = "1"
+	}
 	if config.CycleType.ValueString() == business.OnDemandCycleType {
 		params.AutoRenewStatus = 0
 	} else {
@@ -631,16 +623,9 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	}
 
 	header := &pgsql.PgsqlCreateRequestHeader{}
-	if config.ResPoolCode.ValueString() != "" {
-		params.ResPoolCode = config.ResPoolCode.ValueStringPointer()
-	}
-
 	if config.ProjectID.ValueString() != "0" {
 		params.ProjectId = config.ProjectID.ValueStringPointer()
 		header.ProjectId = config.ProjectID.ValueStringPointer()
-	}
-	if config.ProjectName.ValueString() != "" {
-		params.ProjectName = config.ProjectName.ValueStringPointer()
 	}
 	if config.BackupStorageType.ValueString() != "" {
 		params.BackupStorageType = config.BackupStorageType.ValueStringPointer()
@@ -651,29 +636,16 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	if config.AppointVip.ValueString() != "" {
 		params.AppointVip = config.AppointVip.ValueStringPointer()
 	}
-	if config.VpcName.ValueString() != "" {
-		params.VpcName = config.VpcName.ValueStringPointer()
-	}
-	if config.SubnetName.ValueString() != "" {
-		params.SubnetName = config.SubnetName.ValueStringPointer()
-	}
-	if config.SecurityGroupName.ValueString() != "" {
-		params.SecurityGroupName = config.SecurityGroupName.ValueStringPointer()
-	}
 	if config.OsType.ValueString() != "" {
-		params.OsType = config.OsType.ValueStringPointer()
+		osType := business.MysqlOSTypeDict[config.OsType.ValueString()]
+		params.OsType = &osType
 	}
 	if config.CpuType.ValueString() != "" {
-		params.CpuType = config.CpuType.ValueStringPointer()
-	}
-	if config.ProdSpecName.ValueString() != "" {
-		params.ProdSpecName = config.ProdSpecName.ValueStringPointer()
+		cpuType := business.MysqlCpuTypeDict[config.CpuType.ValueString()]
+		params.CpuType = &cpuType
 	}
 	if config.VpcCIDR.ValueString() != "" {
 		params.VpcCIDR = config.VpcCIDR.ValueStringPointer()
-	}
-	if config.ServerCollation.ValueString() != "" {
-		params.ServerCollation = config.ServerCollation.ValueStringPointer()
 	}
 	if config.SourceInstID.ValueString() != "" {
 		params.SourceInstId = config.SourceInstID.ValueStringPointer()
@@ -687,17 +659,19 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	// 处理MysqlNodeInfoList
 	mysqlNodeInfoList := []pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
 	mysqlNodeInfo := pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
-	mysqlNodeInfo.InstSpec = config.InstSpec.ValueString()
+	mysqlNodeInfo.InstSpec = business.PgsqlInstanceSeriesDict[config.InstanceSeries.ValueString()]
 	mysqlNodeInfo.StorageType = config.StorageType.ValueString()
 	mysqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mysqlNodeInfo.ProdPerformanceSpec = config.ProdPerformanceSpec.ValueString()
-	mysqlNodeInfo.Disks = config.Disks.ValueInt32()
-	mysqlNodeInfo.NodeType = config.NodeType.ValueString()
+	mysqlNodeInfo.Disks = 1
+	mysqlNodeInfo.NodeType = business.PgsqlNodeTypeDict[config.ProdID.ValueString()]
 	if config.BackupStorageType.ValueString() != "" {
-		mysqlNodeInfo.BackupStorageType = config.BackupStorageSpace.ValueStringPointer()
+		storageType := business.PgsqlStorageTypeBackUp
+		mysqlNodeInfo.BackupStorageType = &storageType
 	}
-	if config.BackupStorageSpace.ValueString() != "" {
-		mysqlNodeInfo.BackupStorageSpace = config.BackupStorageSpace.ValueStringPointer()
+	if config.BackupStorageSpace.ValueInt32() != 0 {
+		backupStorageSpace := fmt.Sprintf("%d", config.BackupStorageSpace.ValueInt32())
+		mysqlNodeInfo.BackupStorageSpace = &backupStorageSpace
 	}
 	// 处理availabilityZoneInfo
 	azModelList := []pgsql.PgsqlCreateRequestAvailabilityZoneInfo{}
@@ -722,14 +696,12 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	params.MysqlNodeInfoList = mysqlNodeInfoList
 	// 处理AutoScaleParam
 	autoScaleParams := pgsql.PgsqlCreateRequestAutoScaleParam{}
-	if config.AutoScale.ValueString() != "" {
-		autoScaleParams.AutoScale = config.AutoScale.ValueString()
+	autoScaleParams.AutoScale = fmt.Sprintf("%t", config.AutoScale.ValueBool())
+	if config.MaxScale.ValueInt32() != 0 {
+		autoScaleParams.MaxScale = int64(config.MaxScale.ValueInt32())
 	}
-	if config.MaxScale.ValueInt64() != 0 {
-		autoScaleParams.MaxScale = config.MaxScale.ValueInt64()
-	}
-	if config.ActiveScaleRate.ValueString() != "" {
-		autoScaleParams.ActiveScaleRate = config.ActiveScaleRate.ValueString()
+	if config.ActiveScaleRate.ValueInt32() != 0 {
+		autoScaleParams.ActiveScaleRate = fmt.Sprintf("%d", config.ActiveScaleRate.ValueInt32())
 	}
 	if autoScaleParams.AutoScale != "" || autoScaleParams.MaxScale != 0 || autoScaleParams.ActiveScaleRate != "" {
 		params.AutoScaleParam = &autoScaleParams
@@ -828,21 +800,22 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.Name = types.StringValue(returnObj.ProdInstName)
 	config.ProdType = types.Int32Value(returnObj.ProdType)
 	prodId, err := strconv.ParseInt(returnObj.SpuCode, 10, 64)
-	config.ProdID = types.Int64Value(prodId)
+	config.ProdID = types.StringValue(business.PgsqlProdIDRevDict[prodId])
 	config.ReadPort = types.Int32Value(returnObj.ReadPort)
 	config.WritePort = types.StringValue(returnObj.WritePort)
 	config.CycleType = types.StringValue(map[int32]string{1: "month", 2: "on_demand"}[returnObj.BillMode])
 	config.SecurityGroupId = types.StringValue(returnObj.SecurityGroupId)
-	config.SecurityGroupName = types.StringValue(returnObj.SecurityGroup)
-	config.VpcName = types.StringValue(returnObj.NetName)
-	config.SubnetName = types.StringValue(returnObj.Subnet)
 	config.DiskRated = types.Int32Value(returnObj.DiskRated)
 	config.ProdOrderStatus = types.Int32Value(returnObj.ProdOrderStatus)
 	config.ProdRunninStatus = types.Int32Value(returnObj.ProdRunningStatus)
 	config.ToolType = types.Int32Value(returnObj.ToolType)
 	config.BackupStorageType = types.StringValue(returnObj.BackupDiskType)
 	backupDiskSize := c.ParseStorageSize(&returnObj.BackupDiskSize)
-	config.BackupStorageSpace = types.StringValue(backupDiskSize)
+	diskSize, err := strconv.ParseInt(backupDiskSize, 10, 32)
+	if err != nil {
+		return
+	}
+	config.BackupStorageSpace = types.Int32Value(int32(diskSize))
 	return
 }
 
@@ -905,9 +878,10 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 
 	// 扩容云数据库实例
 	// 扩容磁盘
+	nodeType := business.NodeTypeDict[plan.ProdID.ValueString()]
 	upgradeParams := &pgsql.PgsqlUpgradeRequest{
 		InstId:   state.ID.ValueString(),
-		NodeType: plan.NodeType.ValueStringPointer(),
+		NodeType: &nodeType,
 	}
 
 	upgradeHeaders := &pgsql.PgsqlUpgradeRequestHeader{}
@@ -919,14 +893,11 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		upgradeParams.DiskVolume = plan.StorageSpace.ValueInt32Pointer()
 	}
 	// 若backupStorageSpace不为空，触发备用存储空间扩容，且plan backupStorageSpace与state不相同
-	if plan.BackupStorageSpace.ValueString() != "" && plan.BackupStorageSpace.ValueString() != state.BackupStorageSpace.ValueString() {
-		storageSize, err2 := strconv.Atoi(plan.BackupStorageSpace.ValueString())
-		if err2 != nil {
-			err = err2
-			return
-		}
-		storageSize32 := int32(storageSize)
+	if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() != state.BackupStorageSpace.ValueInt32() {
+		storageSize32 := plan.BackupStorageSpace.ValueInt32()
 		upgradeParams.DiskVolume = &storageSize32
+		nodeType = "backup"
+		upgradeParams.NodeType = &nodeType
 	}
 	// 规格扩容
 	if plan.ProdPerformanceSpec.ValueString() != "" && plan.ProdPerformanceSpec.ValueString() != state.ProdPerformanceSpec.ValueString() {
@@ -934,8 +905,9 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 	}
 	// 类型扩容,单机到一主一备， 单机到一主两备，一主一备到一主两备
 	// 若plan.prodID不为空
-	if plan.ProdID.ValueInt64() != 0 && plan.ProdID.ValueInt64() != state.ProdID.ValueInt64() {
-		upgradeParams.ProdId = plan.ProdID.ValueInt64Pointer()
+	if plan.ProdID.ValueString() != "" && plan.ProdID.ValueString() != state.ProdID.ValueString() {
+		prodId := business.PgsqlProdIDDict[plan.ProdID.ValueString()]
+		upgradeParams.ProdId = &prodId
 	}
 	// 若规格不为空或者prodID不为空的情况下，需要配置azList参数
 	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
@@ -1002,13 +974,10 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		if !plan.AvailabilityZoneInfo.IsNull() {
 			state.AvailabilityZoneInfo = plan.AvailabilityZoneInfo
 		}
-		// 扩容完成后，同步state nodeType信息
-		if !plan.NodeType.IsNull() {
-			state.NodeType = plan.NodeType
-		}
+
 	}
 	// 启动实例
-	if plan.Start.ValueBool() {
+	if plan.RunningControl.ValueString() == "start" {
 		startParams := &pgsql.PgsqlStartRequest{
 			ProdInstId: state.ID.ValueString(),
 		}
@@ -1033,7 +1002,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 	}
 	// 停用实例
 	// 当state ProdRunningState = started时，才可以停用实例
-	if plan.Stop.ValueBool() && state.ProdRunninStatus.ValueInt32() == business.PgsqlProdRunningStatusStarted {
+	if plan.RunningControl.ValueString() == "stop" && state.ProdRunninStatus.ValueInt32() == business.PgsqlProdRunningStatusStarted {
 		// 确保操作时，实例处于running状态，避免更新失败
 		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 30)
 		if err != nil {
@@ -1062,7 +1031,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		}
 	}
 	// 重启实例
-	if plan.Restart.ValueBool() {
+	if plan.RunningControl.ValueString() == "restart" {
 		// 确保操作时，实例处于running状态，避免更新失败
 		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 30)
 		if err != nil {
@@ -1089,9 +1058,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			return
 		}
 	}
-	state.Start = plan.Start
-	state.Stop = plan.Stop
-	state.Restart = plan.Restart
+	state.RunningControl = plan.RunningControl
 	return
 }
 
@@ -1289,12 +1256,12 @@ func (c *CtyunPostgresqlInstance) UpgradeLoop(ctx context.Context, state *CtyunP
 			returnObj := resp.ReturnObj
 			runningStatus := returnObj.ProdRunningStatus
 			orderStatus := returnObj.ProdOrderStatus
-			if returnObj.DiskSize == plan.StorageSpace.ValueInt32() && returnObj.MachineSpec == plan.ProdPerformanceSpec.ValueString() && returnObj.SpuCode == fmt.Sprintf("%d", plan.ProdID.ValueInt64()) {
+			if returnObj.DiskSize == plan.StorageSpace.ValueInt32() && returnObj.MachineSpec == plan.ProdPerformanceSpec.ValueString() && returnObj.SpuCode == fmt.Sprintf("%d", business.PgsqlProdIDDict[plan.ProdID.ValueString()]) {
 				flag := false
-				if plan.BackupStorageSpace.ValueString() == "" {
+				if plan.BackupStorageSpace.ValueInt32() == 0 {
 					flag = true
 				}
-				if plan.BackupStorageSpace.ValueString() != "" && c.ParseStorageSize(&returnObj.BackupDiskSize) == plan.BackupStorageSpace.ValueString() {
+				if plan.BackupStorageSpace.ValueInt32() != 0 && c.ParseStorageSize(&returnObj.BackupDiskSize) == fmt.Sprintf("%d", plan.BackupStorageSpace.ValueInt32()) {
 					flag = true
 				}
 				if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted && flag {
@@ -1422,13 +1389,13 @@ func (c *CtyunPostgresqlInstance) ParseStorageSize(storageSize *string) string {
 
 func (c *CtyunPostgresqlInstance) countSame(plan *CtyunPostgresqlInstanceConfig, state *CtyunPostgresqlInstanceConfig) int {
 	count := 0
-	if plan.BackupStorageSpace.ValueString() != "" && state.BackupStorageSpace.ValueString() != plan.BackupStorageSpace.ValueString() {
+	if plan.BackupStorageSpace.ValueInt32() != 0 && state.BackupStorageSpace.ValueInt32() != plan.BackupStorageSpace.ValueInt32() {
 		count += 1
 	}
 	if plan.StorageSpace.ValueInt32() != 0 && state.StorageSpace.ValueInt32() != plan.StorageSpace.ValueInt32() {
 		count += 1
 	}
-	if plan.ProdID.ValueInt64() != 0 && state.ProdID.ValueInt64() != plan.ProdID.ValueInt64() {
+	if plan.ProdID.ValueString() != "" && state.ProdID.ValueString() != plan.ProdID.ValueString() {
 		count += 1
 	}
 	if plan.ProdPerformanceSpec.ValueString() != "" && state.ProdPerformanceSpec.ValueString() != plan.ProdPerformanceSpec.ValueString() {
@@ -1440,50 +1407,39 @@ func (c *CtyunPostgresqlInstance) countSame(plan *CtyunPostgresqlInstanceConfig,
 type CtyunPostgresqlInstanceConfig struct {
 	CycleType             types.String `tfsdk:"cycle_type"`               // 计费模式： 1是包周期，2是按需
 	RegionID              types.String `tfsdk:"region_id"`                // 目标资源池Id
-	ResPoolCode           types.String `tfsdk:"res_pool_code"`            // 资源池名称
 	HostType              types.String `tfsdk:"host_type"`                //主机类型 host type: S6 or S7
 	ProdVersion           types.String `tfsdk:"prod_version"`             // 版本（参考查询规格列表接口）
-	ProdID                types.Int64  `tfsdk:"prod_id"`                  // 产品id
-	ProjectName           types.String `tfsdk:"project_name"`             // 企业项目名称，默认default
+	ProdID                types.String `tfsdk:"prod_id"`                  // 产品id
 	BackupStorageType     types.String `tfsdk:"backup_storage_type"`      // 备份存储类型, SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 	VpcID                 types.String `tfsdk:"vpc_id"`                   // 虚拟私有云Id，，回收站恢复到新实例场景非必传则取原实例配置
 	SubnetId              types.String `tfsdk:"subnet_id"`                // 子网Id，，回收站恢复到新实例场景非必传则取原实例配置
 	SecurityGroupId       types.String `tfsdk:"security_group_id"`        // 安全组，回收站恢复到新实例场景非必传则取原实例配置
 	AppointVip            types.String `tfsdk:"appoint_vip"`              // 指定vip
-	VpcName               types.String `tfsdk:"vpc_name"`                 // vpc名称，回收站恢复到新实例场景非必传则取原实例配置
-	SubnetName            types.String `tfsdk:"subnet_name"`              // 子网名称，回收站恢复到新实例场景非必传则取原实例配置
-	SecurityGroupName     types.String `tfsdk:"security_group_name"`      // 安全组名称，回收站恢复到新实例场景非必传则取原实例配置
 	Name                  types.String `tfsdk:"name"`                     // 集群名称(若开通只读实例，默认在主实例名称后面加"-read")
 	Password              types.String `tfsdk:"password"`                 // 管理员密码（RSA公钥加密）
-	ParamTemplateId       types.String `tfsdk:"param_template_id"`        // 参数模板ID
 	CycleCount            types.Int32  `tfsdk:"cycle_count"`              // 购买时长：单位月（范围：1-36）
-	PurchaseCount         types.Int32  `tfsdk:"purchase_count"`           // 购买数量(范围:1-50)
 	AutoRenew             types.Bool   `tfsdk:"auto_renew"`               // 自动续订状态 （0-不自动续订,1-自动续订）
-	CaseSensitive         types.String `tfsdk:"case_sensitive"`           // 是否区分大小写 0 区分 1 不区分 2待定
+	CaseSensitive         types.Bool   `tfsdk:"case_sensitive"`           // 是否区分大小写 0 区分 1 不区分 2待定
 	TimeZone              types.String `tfsdk:"time_zone"`                // 时区
 	OsType                types.String `tfsdk:"os_type"`                  // 操作系统类型，默认2，0=裸机，1=windows，2=centos，3=ubuntu，4=android，5=redhat，6=kylin，7=uos，8=suse，9=asianux，10=open_euler，11=ctyunos，12=euler
 	CpuType               types.String `tfsdk:"cpu_type"`                 // cpu类型，默认30，10=鲲鹏，20=海光，30=intel，40=amd，50=飞腾，60=龙芯，70=兆芯
 	ProjectID             types.String `tfsdk:"project_id"`               // 企业项目ID，默认0
-	ProdSpecName          types.String `tfsdk:"prod_spec_name"`           // 产品名称规格名称
-	IsMGR                 types.String `tfsdk:"is_mgr"`                   // 是否开启MRG，默认false
+	IsMGR                 types.Bool   `tfsdk:"is_mgr"`                   // 是否开启MRG，默认false
 	VpcCIDR               types.String `tfsdk:"vpc_cidr"`                 // vpc网段
-	ServerCollation       types.String `tfsdk:"server_collation"`         // 数据库字符集，sqlserver组件跨域恢复到新实例有用到，枚举：Chinese_PRC_CI_AS，Chinese_PRC_CS_AS，Chinese_PRC_CI_AI，SQL_Latin1_General_CP1_CI_AS，Chinese_PRC_90_CI_AI，Cyrillic_General_CI_AS，THAI_CI_AS
 	CrossInstanceBackup   types.Bool   `tfsdk:"cross_instance_backup"`    // 是否为恢复到新实例工单，true：是，false：否（恢复到新实例时需要传入）
 	SourceInstID          types.String `tfsdk:"source_inst_id"`           // 源实例id（跨域恢复、恢复到新实例、回收站恢复时需要传入该字段）
 	BackupID              types.String `tfsdk:"backup_id"`                // 备份集id,恢复到新实例时，传入该字段，则使用该备份集进行恢复新实例（跨域恢复和恢复到新实例时需传入）,恢复到新实例时，backupId和backupTimePoint不能同时为空
 	BackupTimePoint       types.String `tfsdk:"backup_time_point"`        // 恢复时间点，恢复到新实例时，传入该字段，则使用该时间点恢复新实例（恢复到新实例时需传入，若同时传入backupId和backupTimePoint，则优先使用backupId）
 	IsCrossRegionRecovery types.Bool   `tfsdk:"is_cross_region_recovery"` // 是否跨域恢复到新实例标记位
-	NodeType              types.String `tfsdk:"node_type"`                // master:实例规格(单机，一主一备，一主两备), readNode: 高级设置: 只读实例
-	InstSpec              types.String `tfsdk:"inst_spec"`                // 实例规格（默认：通用型=1）
+	InstanceSeries        types.String `tfsdk:"instance_series"`          // 实例规格（默认：通用型=1） InstSpec
 	StorageType           types.String `tfsdk:"storage_type"`             // 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 	StorageSpace          types.Int32  `tfsdk:"storage_space"`            // 存储空间(单位:G，范围100,32768)
 	ProdPerformanceSpec   types.String `tfsdk:"prod_performance_spec"`    // 规格(例: 4C8G)
-	Disks                 types.Int32  `tfsdk:"disks"`                    // 磁盘（默认为1）
 	AvailabilityZoneInfo  types.List   `tfsdk:"availability_zone_info"`   // 可用区信息
-	BackupStorageSpace    types.String `tfsdk:"backup_storage_space"`     // 备份存储空间大小
-	AutoScale             types.String `tfsdk:"auto_scale"`               // 0 不自动扩容 1 自动扩存储
-	MaxScale              types.Int64  `tfsdk:"max_scale"`                // 存储扩容上限，单位G
-	ActiveScaleRate       types.String `tfsdk:"active_scale_rate"`        // 触发扩容百分比，取值范围1-100
+	BackupStorageSpace    types.Int32  `tfsdk:"backup_storage_space"`     // 备份存储空间大小
+	AutoScale             types.Bool   `tfsdk:"auto_scale"`               // 0 不自动扩容 1 自动扩存储
+	MaxScale              types.Int32  `tfsdk:"max_scale"`                // 存储扩容上限，单位G
+	ActiveScaleRate       types.Int32  `tfsdk:"active_scale_rate"`        // 触发扩容百分比，取值范围1-100
 	ID                    types.String `tfsdk:"id"`                       // 实例ID
 	Alive                 types.Int32  `tfsdk:"alive"`                    // 实例是否存活,0:存活，-1:异常
 	DiskRated             types.Int32  `tfsdk:"disk_rated"`               // 磁盘使用率
@@ -1495,11 +1451,8 @@ type CtyunPostgresqlInstanceConfig struct {
 	ReadPort              types.Int32  `tfsdk:"read_port"`                // 读端口
 	WritePort             types.String `tfsdk:"write_port"`               // 写端口
 	ToolType              types.Int32  `tfsdk:"tool_type"`                // 备份工具类型，1：pg_baseback，2：pgbackrest，3：s3
-	Restart               types.Bool   `tfsdk:"restart"`                  // 控制是否需要重启实例
-	Stop                  types.Bool   `tfsdk:"stop"`                     // 控制是否需要停止实例
-	Start                 types.Bool   `tfsdk:"start"`                    // 控制是否需要启动实例
+	RunningControl        types.String `tfsdk:"running_control"`          //
 	//NewOrderID            types.String `tfsdk:"new_order_id"`             // 订单id
-
 }
 
 type AvailabilityZoneModel struct {

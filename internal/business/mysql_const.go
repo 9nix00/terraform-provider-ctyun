@@ -86,6 +86,13 @@ const (
 	ProdCodeMYSQL      = "MYSQL"      // MYSQL
 	ProdCodePOSTGRESQL = "POSTGRESQL" //POSTGRESQL
 	ProdCodeSQLSERVER  = "SQLSERVER"  // SQLSERVER
+
+	StorageTypeSSD       = "SSD"        // 超高IO
+	StorageTypeSATA      = "SATA"       //普通IO
+	StorageTypeSAS       = "SAS"        //高IO
+	StorageTypeSSDGenric = "SSD-genric" //通用型SSD
+	StorageTypeFASTSSD   = "FAST-SSD"   //极速型SSD
+
 )
 
 var ProdType = []string{
@@ -184,4 +191,113 @@ var MysqlHostType = []string{
 var MysqlBillMode = map[string]string{
 	MonthCycleType:    MysqlBillModeCycle,
 	OnDemandCycleType: MysqlBillModeOnDemand,
+}
+
+var MysqlProdIdDict = map[string]int64{
+	"Single57":       ProdIDSI57,   // 单实例 single5.7版本
+	"Single80":       ProdIDSI80,   // 单实例 single8.0版本
+	"ReadOnly57":     ProdIDSIRO57, // 单实例 single 只读5.7版本
+	"ReadOnly80":     ProdIDSIRO80, // 单实例 single 只读8.0版本
+	"MasterSlave57":  ProdIDMS57,   // 一主一备 master-slave 5.7版本
+	"MasterSlave80":  ProdIDMS80,   // 一主一备 master-slave 8.0版本
+	"Master2Slave57": ProdIDM2S57,  // 一主两备 master-2-slave 5.7版本
+	"Master2Slave80": ProdIDM2S80,  // 一主两备 master-2-slave 8.0版本
+}
+
+var MysqlProdIdRevDict = map[int64]string{
+	ProdIDSI57:   "Single57",       // 单实例 single5.7版本
+	ProdIDSI80:   "Single80",       // 单实例 single8.0版本
+	ProdIDSIRO57: "ReadOnly57",     // 单实例 single 只读5.7版本
+	ProdIDSIRO80: "ReadOnly80",     // 单实例 single 只读8.0版本
+	ProdIDMS57:   "MasterSlave57",  // 一主一备 master-slave 5.7版本
+	ProdIDMS80:   "MasterSlave80",  // 一主一备 master-slave 8.0版本
+	ProdIDM2S57:  "Master2Slave57", // 一主两备 master-2-slave 5.7版本
+	ProdIDM2S80:  "Master2Slave80", // 一主两备 master-2-slave 8.0版本
+}
+
+var MysqlProdIds = []string{
+	"Single57",
+	"Single80",
+	"ReadOnly57",
+	"ReadOnly80",
+	"MasterSlave57",
+	"MasterSlave80",
+	"Master2Slave57",
+	"Master2Slave80",
+}
+
+var NodeTypeDict = map[string]string{
+	"Single57":       "master",   // 单实例 single5.7版本
+	"Single80":       "master",   // 单实例 single8.0版本
+	"ReadOnly57":     "readNode", // 单实例 single 只读5.7版本
+	"ReadOnly80":     "readNode", // 单实例 single 只读8.0版本
+	"MasterSlave57":  "master",   // 一主一备 master-slave 5.7版本
+	"MasterSlave80":  "master",   // 一主一备 master-slave 8.0版本
+	"Master2Slave57": "master",   // 一主两备 master-2-slave 5.7版本
+	"Master2Slave80": "master",   // 一主两备 master-2-slave 8.0版本
+}
+
+var MysqlInstanceSeries = []string{
+	"S", // 通用型
+	"C", // 计算增强型
+	"M", // 内存增强型
+}
+var MysqlInstanceSeriesDict = map[string]string{
+	"S": "1",
+	"C": "2",
+	"M": "3",
+}
+var MysqlCpuType = []string{
+	"KunPeng",  // 鲲鹏
+	"Hygon",    // 海光
+	"Intel",    // intel
+	"AMD",      // amd
+	"Phytium",  // 飞腾
+	"Loongson", // 龙芯
+}
+var MysqlCpuTypeDict = map[string]string{
+	"KunPeng":  "10",
+	"Hygon":    "20",
+	"Intel":    "30",
+	"AMD":      "40",
+	"Phytium":  "50",
+	"Loongson": "60",
+}
+var MysqlOSType = []string{
+	"nil", // 裸机
+	"windows",
+	"centos",
+	"ubuntu",
+	"android",
+	"redHat",
+	"kylin",
+	"uos",
+	"suse",
+	"asianux",
+	"open_euler",
+	"ctyunos",
+	"euler",
+}
+var MysqlOSTypeDict = map[string]string{
+	"nil":        "0",
+	"windows":    "1",
+	"centos":     "2",
+	"ubuntu":     "3",
+	"android":    "4",
+	"redHat":     "5",
+	"kylin":      "6",
+	"uos":        "7",
+	"suse":       "8",
+	"asianux":    "9",
+	"open_euler": "10",
+	"ctyunos":    "11",
+	"euler":      "12",
+}
+
+var StorageType = []string{
+	StorageTypeSSD,
+	StorageTypeSATA,
+	StorageTypeSAS,
+	StorageTypeSSDGenric,
+	StorageTypeFASTSSD,
 }

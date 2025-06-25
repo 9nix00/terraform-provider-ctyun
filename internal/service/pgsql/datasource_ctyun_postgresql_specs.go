@@ -62,9 +62,9 @@ func (c *CtyunPgsqlSpecs) Schema(ctx context.Context, request datasource.SchemaR
 				Computed:    true,
 				Description: "资源池id",
 			},
-			"instance_type": schema.StringAttribute{
+			"instance_series": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）",
+				Description: "实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -201,10 +201,10 @@ func (c *CtyunPgsqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 		return
 	}
 	params := &mysql.TeledbMysqlSpecsRequest{
-		ProdType:     config.ProdType.ValueString(),
-		ProdCode:     config.ProdCode.ValueString(),
+		ProdType:     "1",
+		ProdCode:     "POSTGRESQL",
 		RegionID:     regionId,
-		InstanceType: config.InstanceType.ValueString(),
+		InstanceType: config.InstanceSeries.ValueString(),
 	}
 	headers := &mysql.TeledbMysqlSpecsRequestHeader{}
 	if config.ProjectID.ValueString() != "" {
@@ -278,12 +278,12 @@ func (c *CtyunPgsqlSpecs) Read(ctx context.Context, request datasource.ReadReque
 }
 
 type CtyunPgsqlSpecsConfig struct {
-	ProdType     types.String              `tfsdk:"prod_type"`
-	ProdCode     types.String              `tfsdk:"prod_code"`
-	RegionID     types.String              `tfsdk:"region_id"`
-	InstanceType types.String              `tfsdk:"instance_type"`
-	ProjectID    types.String              `tfsdk:"project_id"`
-	Specs        []CtyunPgsqlSpecInfoModel `tfsdk:"specs"`
+	ProdType       types.String              `tfsdk:"prod_type"`
+	ProdCode       types.String              `tfsdk:"prod_code"`
+	RegionID       types.String              `tfsdk:"region_id"`
+	InstanceSeries types.String              `tfsdk:"instance_series"`
+	ProjectID      types.String              `tfsdk:"project_id"`
+	Specs          []CtyunPgsqlSpecInfoModel `tfsdk:"specs"`
 }
 type CtyunPgsqlSpecInfoModel struct {
 	ProdId           types.Int64      `tfsdk:"prod_id"`             // 产品id

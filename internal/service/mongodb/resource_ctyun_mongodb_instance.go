@@ -185,7 +185,11 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "项目id",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, true),
+				//PlanModifiers: []planmodifier.String{
+				//	stringplanmodifier.RequiresReplace(),
+				//},
 			},
 			"new_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -220,7 +224,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Description: "允许切换成为备用节点",
 			},
 			"is_upgrade_back_up": schema.BoolAttribute{
-				Computed:    true,
+				Optional:    true,
 				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容",
 			},
 			"id": schema.StringAttribute{
@@ -608,6 +612,9 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	config.ProdID = types.Int64Value(prodID)
 	config.HostIp = types.StringValue(detailReturnObj.Host)
 	config.ProdPerformanceSpec = types.StringValue(listReturnObj.MachineSpec)
+	//if config.ProjectID.IsNull() || config.ProjectID.IsUnknown() {
+	//	config.ProjectID = types.StringValue("0")
+	//}
 	return
 }
 
@@ -1137,14 +1144,12 @@ func (c *CtyunMongodbInstance) UpgradeLoop(ctx context.Context, state *CtyunMong
 			if planNodeInfoList[0].ProdPerformanceSpec.ValueString() != machineSpec {
 				specFlag = false
 			}
-
 			// 验证prodID
 			prodIDFlag := true
 			prodID := listResp.ReturnObj.List[0].ProdId
 			if plan.ProdID.ValueInt64() != 0 && prodID != fmt.Sprintf("%d", plan.ProdID.ValueInt64()) {
 				prodIDFlag = false
 			}
-
 			if masterDiskFlag && backupDiskFlag && specFlag && prodIDFlag {
 				return false
 			}
