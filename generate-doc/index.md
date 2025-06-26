@@ -10,7 +10,7 @@
 
 ## 依赖
 
-- terraform最新版本（v1.6.6），[下载地址](https://developer.hashicorp.com/terraform/install)，请按照官方指引安装
+- terraform最新版本（v1.11.2），[下载地址](https://developer.hashicorp.com/terraform/install)，请按照官方指引安装
 - terraform-provider-ctyun插件，linux请使用terraform-provider-ctyun，windows使用terraform-provider-ctyun.exe
 - 配置样例若干
 - 插件使用说明：
@@ -59,6 +59,7 @@ provider_installation {
 ```
 
 - 创建目录：
+
 ```
 # Linux 示例
 mkdir -p ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64
@@ -68,6 +69,7 @@ mkdir -p ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.
 ```
 
 - 将可执行文件复制到目录中
+
 ```
 # Linux 示例
 cp terraform-provider-ctyun ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64/
@@ -179,8 +181,13 @@ chmod +x /home/terraform-provider-ctyun
 
 | 区域名称   | region_id                        | 可用区名称 | az_name                           |
 | ---------- | -------------------------------- | ---------- | --------------------------------- |
+| 呼和浩特3   | 200000003573                     | 可用区1    | cn-nm-het3-1a-public-ctcloud      |
+| 乌鲁木齐7   | 200000004098                     | 可用区1    | cn-xj-urc7-1a-public-ctcloud      |
+| 西南2-贵州  | 200000002927                     | 可用区1    | cn-xinan2-gz-1a-public-ctcloud    |
+| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区1    | cn-huadong1-jsnj1A-public-ctcloud |
+| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区2    | cn-huadong1-jsnj2A-public-ctcloud |
+| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区3    | cn-huadong1-jsnj3A-public-ctcloud |
 | 太原4      | 200000002689                     | 可用区1    | cn-sx-tyn4-1a-public-ctcloud      |
-| 西南2-贵州 | 200000002927                     | 可用区1    | cn-xinan2-gz-1a-public-ctcloud    |
 | 郑州5      | 200000002586                     | 可用区1    | cn-ha-cgo5-1a-public-ctcloud      |
 | 青岛20     | 200000001703                     | 可用区1    | cn-sd-qd20-sdqd1A-public-ctcloud  |
 | 武汉41     | 200000001781                     | 可用区1    | cn-hb-wh41-hbwh1A-public-ctcloud  |
@@ -193,9 +200,20 @@ chmod +x /home/terraform-provider-ctyun
 | 西南1      | 200000002368                     | 可用区2    | cn-xinan1-xn2A-public-ctcloud     |
 | 长沙42     | 200000002401                     | 可用区1    | cn-hn-cs42-hncs1A-public-ctcloud  |
 | 南昌5      | 200000002527                     | 可用区1    | cn-jx-nc5-jxnc1A-public-ctcloud   |
-| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区1    | cn-huadong1-jsnj1A-public-ctcloud |
-| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区2    | cn-huadong1-jsnj2A-public-ctcloud |
-| 华东1      | bb9fdb42056f11eda1610242ac110002 | 可用区3    | cn-huadong1-jsnj3A-public-ctcloud |
+| 上海32     | 200000001625                     | 可用区1    | cn-sh32-sh1A-public-ctcloud       |
+| 杭州7      | 200000003329                     | 可用区1    | cn-zj-hgh7-1a-public-ctcloud      |
+| 芜湖4      | 200000003327                     | 可用区1    | cn-ah-whi4-1a-public-ctcloud      |
+| 庆阳2      | 200000003664                     | 可用区1    | cn-gs-qyi2-1a-public-ctcloud      |
+| 香港2      | 200000002374                     | 可用区1    | hk-hk3-1A-public-ctcloud          |
+| 香港2      | 200000002374                     | 可用区2    | cn-hk2-hk2A-public-ctcloud        |
+| 澳门1      | 200000002533                     | 可用区1    | mo-mo1-1a-public-ctcloud          |
+| 印度尼西亚1 | 200000003424                     | 可用区1    | id-jkt1-1a-public-ctcloud         |
+| 新加坡4     | 200000002670                     | 可用区1    | sg-SINP4-1A-public-ctcloud        |
+| 新加坡4     | 200000002670                     | 可用区2    | sg-SINP4-2A-public-ctcloud        |
+| 菲律宾1     | 200000002769                     | 可用区1    | ph-bdy1-1a-public-ctcloud         |
+
+
+
 
 
 ## 样例
