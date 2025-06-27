@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_idp" "idp_test" {
   file        = file("./metadata-saml-idp.xml")
   file_name   = "metadata-saml-idp.xml"

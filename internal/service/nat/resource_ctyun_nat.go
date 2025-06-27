@@ -44,7 +44,7 @@ func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=5778&data=94&isNormal=1&vid=88",
+		MarkdownDescription: "**详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -154,12 +154,10 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Description: "当前网关所属的vpc cidr",
 			},
 			"creation_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关的创建时间",
 			},
 			"expired_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关实例的过期时间",
 			},
@@ -265,7 +263,7 @@ func (c *ctyunNat) Read(ctx context.Context, request resource.ReadRequest, respo
 	// 查询远端
 	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}

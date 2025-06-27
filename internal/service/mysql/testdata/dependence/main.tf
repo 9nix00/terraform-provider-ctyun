@@ -101,7 +101,6 @@ resource "ctyun_mysql_instance" "mysql_test" {
   subnet_id             = local.real_subnet_id
   security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
-  password = "Kqjwyk123."
   storage_type          = "SATA"
   storage_space         = 100
   availability_zone_info = [

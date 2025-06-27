@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 data "ctyun_rabbitmq_specs" "test"{
 
 }

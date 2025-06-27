@@ -8,7 +8,6 @@ terraform {
 
 provider "ctyun" {
   env = "prod"
-  region_id   = "200000001852"
 }
 
 resource "ctyun_bandwidth" "bandwidth_test1" {

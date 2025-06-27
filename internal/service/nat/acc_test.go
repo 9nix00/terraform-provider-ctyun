@@ -16,6 +16,7 @@ type Dependence struct {
 	natID     string
 	subnetID1 string
 	subnetID2 string
+	ecsID     string
 }
 
 var dependence Dependence
@@ -35,6 +36,7 @@ func TestMain(m *testing.M) {
 		natID:     outputs["nat_id"].Value,
 		subnetID1: outputs["subnet_id1"].Value,
 		subnetID2: outputs["subnet_id2"].Value,
+		ecsID:     outputs["ecs_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

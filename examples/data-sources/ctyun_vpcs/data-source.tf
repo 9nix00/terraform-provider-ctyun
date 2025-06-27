@@ -6,11 +6,9 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
-
 
 data "ctyun_vpcs" "test" {
   page_no = 1

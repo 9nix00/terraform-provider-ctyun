@@ -57,9 +57,9 @@ const (
 	NatCreateStatusING  = "in_progress"
 	NatCreateStatusDone = "done"
 
-	// DNAT云主机类型
-	VirtualMachineTypeCloud  = 1 //云主机
-	VirtualMachineTypeCustom = 2 //自定义
+	// DNAT类型
+	VirtualMachineTypeCloud  = "instance" //服务器
+	VirtualMachineTypeCustom = "custom"   //自定义
 
 	// DNAT serverType
 	ServerTypeVM = "VM"
@@ -109,11 +109,6 @@ var DNatStates = []string{
 var SNatSubnetTypes = []int32{
 	SubnetTypeVPC,
 	SubnetTypeCustom,
-}
-
-var DNatVirtualMachineTypes = []int32{
-	VirtualMachineTypeCloud,
-	VirtualMachineTypeCustom,
 }
 
 var ServerTypes = []string{

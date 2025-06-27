@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 查找1c1g x86架构的通用型的规格
 data "ctyun_ecs_flavors" "ctyun_ecs_flavors_test1" {
   cpu    = 1

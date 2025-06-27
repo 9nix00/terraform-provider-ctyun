@@ -1,4 +1,5 @@
 # ctyun_iam_user (Resource)
+**详细说明请见文档：https://www.ctyun.cn/document/10345725/10355289**
 
 
 
@@ -13,6 +14,9 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
 
 variable "password" {
   type      = string

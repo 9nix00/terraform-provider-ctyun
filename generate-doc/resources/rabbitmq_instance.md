@@ -1,5 +1,5 @@
 # ctyun_rabbitmq_instance (Resource)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10000118/10001967**
 
 
 
@@ -12,6 +12,10 @@ terraform {
       source = "ctyun-it/ctyun"
     }
   }
+}
+
+provider "ctyun" {
+  env = "prod"
 }
 
 resource "ctyun_vpc" "vpc_test" {

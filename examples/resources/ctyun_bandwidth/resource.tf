@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 创建一个按需，大小为5Mbit/s的带宽
 resource "ctyun_bandwidth" "bandwidth_test1" {
   name       = "bandwidth-test1"

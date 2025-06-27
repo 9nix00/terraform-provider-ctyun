@@ -1,4 +1,14 @@
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
 
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-nat"
@@ -35,7 +45,7 @@ resource "ctyun_nat_dnat" "dnat_test"{
   external_id = ctyun_eip.eip_test.id
   external_port = 80
   internal_ip = "127.0.0.1"
-  virtual_machine_type = 2
+  dnat_type = 2
   internal_port = 12454
   protocol = "tcp"
 }

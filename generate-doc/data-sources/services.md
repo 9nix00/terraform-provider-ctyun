@@ -1,4 +1,5 @@
 # ctyun_services (Data Source)
+**服务和产品**
 
 
 
@@ -11,6 +12,10 @@ terraform {
       source = "ctyun-it/ctyun"
     }
   }
+}
+
+provider "ctyun" {
+  env = "prod"
 }
 
 # 查询服务

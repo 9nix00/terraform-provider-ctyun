@@ -122,7 +122,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"host_type": schema.StringAttribute{ //host_type
 				Required:    true,
-				Description: "主机类型 host type: S6 or S7等。可根据data.ctyun_mysql_specs获取",
+				Description: "主机类型host_type: S6 or S7等。可根据data.ctyun_mysql_specs获取",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -169,7 +169,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"instance_series": schema.StringAttribute{
 				Required:    true,
-				Description: "实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)",
+				Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlInstanceSeries...),
 				},

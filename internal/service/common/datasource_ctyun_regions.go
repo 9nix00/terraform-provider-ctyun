@@ -23,6 +23,7 @@ func (c *ctyunRegions) Metadata(_ context.Context, req datasource.MetadataReques
 
 func (c *ctyunRegions) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: `**资源池列表**`,
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Optional:    true,

@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 data "ctyun_kafka_instances" "tbidgqvfbs" {
   instance_name = "123"
 }

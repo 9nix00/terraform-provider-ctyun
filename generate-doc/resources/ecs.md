@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_ecs" "jdxutuzpfr" {
   instance_name      = "tf-test-ecs"
   display_name       = "tf-test-init-ecs"
@@ -27,12 +31,6 @@ resource "ctyun_ecs" "jdxutuzpfr" {
   cycle_type         = "on_demand"
 }
 
-# provider "ctyun" {
-#   region_id  = "bb9fdb42056f11eda1610242ac110002"
-#   project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
-#   az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-# }
-#
 # variable "password" {
 #   type      = string
 #   sensitive = true
