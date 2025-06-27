@@ -14,11 +14,8 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
-  env                  = "prod"
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
+  env = "prod"
 }
 
 resource "ctyun_ebm_interface" "test" {

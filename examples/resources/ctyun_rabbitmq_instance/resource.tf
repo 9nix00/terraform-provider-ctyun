@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "vpc-test-mq"
   cidr        = "192.168.0.0/16"

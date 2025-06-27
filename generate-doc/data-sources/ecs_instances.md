@@ -15,8 +15,7 @@ terraform {
 }
 
 provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  env = "prod"
 }
 
 data "ctyun_ecs_instances" "test" {

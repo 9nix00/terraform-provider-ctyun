@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 data "ctyun_iam_user_groups" "iam_user_groups_test" {
   name      = "terraform"
   page_size = 1000

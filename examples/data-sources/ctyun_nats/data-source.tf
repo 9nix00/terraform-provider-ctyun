@@ -1,4 +1,3 @@
-
 terraform {
   required_providers {
     ctyun = {
@@ -7,9 +6,9 @@ terraform {
   }
 }
 
- provider "ctyun" {
-   region_id            = "200000002530"
- }
+provider "ctyun" {
+  env = "prod"
+}
 
  data "ctyun_nats" "test"{
      region_id = "200000002530"

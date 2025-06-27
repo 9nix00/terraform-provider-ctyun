@@ -44,7 +44,7 @@ func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=5778&data=94&isNormal=1&vid=88",
+		MarkdownDescription: "**详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

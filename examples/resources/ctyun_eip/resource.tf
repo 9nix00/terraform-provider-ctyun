@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 创建带宽大小为1Mbps的弹性ip，付费模式为包周期1个月
 resource "ctyun_eip" "eip_test1" {
   name        = "eip-test1"

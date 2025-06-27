@@ -1,5 +1,5 @@
 # ctyun_nat_snat (Resource)
-**详细说明请见文档：https://work.ctyun.cn/git/vnet/openapi-docs/src/branch/master/network/ctvpc/%E5%88%9B%E5%BB%BASNAT%E8%A7%84%E5%88%99%E6%8E%A5%E5%8F%A3.md
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166268
 
 
 

@@ -10,7 +10,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
   cpu    = 4
   ram    = 8

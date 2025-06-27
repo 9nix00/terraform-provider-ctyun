@@ -25,10 +25,11 @@ mongodb provider
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `availability_zone` (Set of String) 可用区名称
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
+- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容
 - `prod_performance_specs` (Set of String) 该产品下面的单节点规格
 - `prod_spec_name` (String) 产品名称规格名称
 - `prod_version` (String) 版本
-- `project_id` (String) 项目id
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `purchase_count` (Number) 购买数量(范围:1-50)
 - `read_port` (String) 读端口,创建阶段不可填写，更新阶段可填
 - `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
@@ -41,7 +42,6 @@ mongodb provider
 - `id` (String) mongodb实例id
 - `innodb_buffer_pool_size` (String) 缓存池大小
 - `innodb_thread_concurrency` (Number) 线程数
-- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容
 - `new_order_id` (String) 订单id
 - `prod_performance_spec` (String) mongodb实例主机配置
 - `prod_running_status` (Number) 实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中,3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中

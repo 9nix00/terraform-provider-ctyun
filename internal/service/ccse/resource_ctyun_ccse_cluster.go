@@ -67,6 +67,7 @@ type CtyunCcseClusterBaseInfo struct {
 	ProjectID             types.String `tfsdk:"project_id"`
 	VpcID                 types.String `tfsdk:"vpc_id"`
 	SubnetID              types.String `tfsdk:"subnet_id"`
+	SecurityGroupID       types.String `tfsdk:"security_group_id"`
 	ClusterName           types.String `tfsdk:"cluster_name"`
 	ClusterDomain         types.String `tfsdk:"cluster_domain"`
 	NetworkPlugin         types.String `tfsdk:"network_plugin"`
@@ -169,6 +170,14 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"subnet_id": schema.StringAttribute{
 						Required:    true,
 						Description: "子网ID",
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
+					},
+					"security_group_id": schema.StringAttribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "安全组ID，需属于所选vpc。使用自定义安全组时，需要配置如下规则，参考<a href=\"https://www.ctyun.cn/document/10083472/10915714\">集群安全组规则配置</a>",
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
@@ -955,6 +964,12 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
 		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
 	}
+	if plan.BaseInfo.SecurityGroupID.ValueString() != "" {
+		f := false
+		clusterBaseInfo.AutoGenerateSecurityGroup = &f
+		clusterBaseInfo.SecurityGroupUuid = plan.BaseInfo.SecurityGroupID.ValueString()
+	}
+
 	switch plan.BaseInfo.CycleType.ValueString() {
 	case business.OnDemandCycleType:
 		clusterBaseInfo.BillMode = "2"
@@ -1125,6 +1140,7 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	}
 
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
+	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
 	plan.BaseInfo.NetworkPlugin = types.StringValue(instance.NetworkPlugin)
 	plan.BaseInfo.PodCidr = types.StringValue(instance.PodCidr)

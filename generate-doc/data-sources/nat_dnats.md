@@ -1,5 +1,5 @@
 # ctyun_nat_dnats (Data Source)
-**详细说明请见文档：https://work.ctyun.cn/git/vnet/openapi-docs/src/branch/master/network/ctvpc/%E6%9F%A5%E8%AF%A2dnat%E5%88%97%E8%A1%A8.md
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166345
 
 
 

@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "vpca-ccs"
   cidr        = "10.0.0.0/8"

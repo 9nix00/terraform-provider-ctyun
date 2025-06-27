@@ -1,3 +1,15 @@
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-elb"
   cidr        = "192.168.0.0/16"

@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_iam_policy" "iam_policy_test" {
   name        = "terraform_policy_test1"
   description = "terraform测试新建策略"

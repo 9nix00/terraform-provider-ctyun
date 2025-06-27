@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 #resource "ctyun_security_group_rule" "security_group_rule_ingress" {
 #  security_group_id = "sg-nyq29edx57"
 #  direction         = "ingress"

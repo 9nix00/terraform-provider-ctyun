@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = "vpc-d7zxz8j05c"
   name        = "subnet-test"
