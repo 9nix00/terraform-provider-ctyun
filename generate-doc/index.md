@@ -105,58 +105,15 @@ provider "ctyun" {
 
 - 执行`terraform init`命令查看是否成功
 
+## Terraform 基本命令
 
+- `terraform plan`：预览配置变更将对基础设施造成的影响（创建、更新、删除）。
 
-## 开发调试指南（开发者阅读）
+- `terraform apply`：执行变更。
 
-### Windows
+- `terraform destroy`：删除所有通过 Terraform 管理的资源。
 
-- 在`C:\Users\用户名\AppData\Roaming`目录中新建terraform.rc
-
-- 在文件中写入
-
-```
-provider_installation {
-
-  dev_overrides {
-      "ctyun-it/ctyun"="D:/Go/gobin/"
-  }
-
-  # For all other providers, install them directly from their origin provider
-  # registries as normal. If you omit this, Terraform will _only_ use
-  # the dev_overrides block, and so no other providers will be available.
-  direct {}
-}
-```
-
-- 将编译好的可执行文件放到terraform.rc中指定的目录，这里是`D:/Go/gobin/`
-
-### Linux\MacOS
-
-- vi ~/.terraformrc
-
-- 在文件中写入下列内容，注意要将${pwd}替换成terraform-provider-ctyun文件所在目录
-
-```
-provider_installation {
-
-  dev_overrides {
-      "ctyun-it/ctyun"="${pwd}"
-  }
-
-  # For all other providers, install them directly from their origin provider
-  # registries as normal. If you omit this, Terraform will _only_ use
-  # the dev_overrides block, and so no other providers will be available.
-  direct {}
-}
-```
-
-- 如出现权限问题，可使用以下命令，如：
-
-```
-chmod +x /home/terraform-provider-ctyun
-```
-
+- `terraform refresh`：同步远程数据到本地state文件。
 
 
 ## 最佳实践&建议配置
@@ -246,7 +203,7 @@ provider "ctyun" {
 # 下面例子为多provider配置，可以用于不同资源池的配置
 # 选用华北2、可用区2为可选资源池
 provider "ctyun" {
-  alias     = "huabei"
+  alias     = "huabei"                          # 别名
   region_id = "200000001852"
   az_name   = "cn-huabei2-tj-2a-public-ctcloud"
 }
@@ -262,28 +219,20 @@ provider "ctyun" {
 }
 
 # 不指定provider选用默认的provider
-resource "ctyun_security_group_rule" "security_group_rule_ingress_in_common" {
-  security_group_id = "sg-5we39vmesy"
-  direction         = "ingress"
-  action            = "accept"
-  priority          = 60
-  protocol          = "any"
-  ether_type        = "IPv4"
-  dest_cidr_ip      = "0.0.0.0/0"
-  description       = "80-90端口"
+resource "ctyun_vpc" "vpc_test" {
+  name        = "tf-vpc"
+  cidr        = "192.168.0.0/16"
+  description = "terraform测试使用"
+  enable_ipv6 = true
 }
 
 # 通过指定provider方式，在华北2创建资源
-resource "ctyun_security_group_rule" "security_group_rule_ingress_in_huabei" {
-  provider          = ctyun.huabei
-  security_group_id = "sg-8ks24nnukg"
-  direction         = "ingress"
-  action            = "accept"
-  priority          = 60
-  protocol          = "any"
-  ether_type        = "IPv4"
-  dest_cidr_ip      = "0.0.0.0/0"
-  description       = "80-90端口"
+resource "ctyun_vpc" "vpc_test" {
+  provider    = ctyun.huabei
+  name        = "tf-vpc"
+  cidr        = "192.168.0.0/16"
+  description = "terraform测试使用"
+  enable_ipv6 = true
 }
 ```
 
@@ -300,3 +249,53 @@ resource "ctyun_security_group_rule" "security_group_rule_ingress_in_huabei" {
 - `project_id` (String) 企业项目ID，不填则使用用户默认的企业项目
 - `region_id` (String) 资源池ID
 - `sk` (String) 身份信息SK
+
+## 开发调试指南（开发者阅读）
+
+### Windows
+
+- 在`C:\Users\用户名\AppData\Roaming`目录中新建terraform.rc
+
+- 在文件中写入
+
+```
+provider_installation {
+
+  dev_overrides {
+      "ctyun-it/ctyun"="D:/Go/gobin/"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+- 将编译好的可执行文件放到terraform.rc中指定的目录，这里是`D:/Go/gobin/`
+
+### Linux\MacOS
+
+- vi ~/.terraformrc
+
+- 在文件中写入下列内容，注意要将${pwd}替换成terraform-provider-ctyun文件所在目录
+
+```
+provider_installation {
+
+  dev_overrides {
+      "ctyun-it/ctyun"="${pwd}"
+  }
+
+  # For all other providers, install them directly from their origin provider
+  # registries as normal. If you omit this, Terraform will _only_ use
+  # the dev_overrides block, and so no other providers will be available.
+  direct {}
+}
+```
+
+- 如出现权限问题，可使用以下命令，如：
+
+```
+chmod +x /${pwd}/terraform-provider-ctyun
+```
