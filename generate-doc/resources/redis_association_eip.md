@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_eip" "eip_test2" {
  name                = "eip-test2"
  bandwidth           = 10

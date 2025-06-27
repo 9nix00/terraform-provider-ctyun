@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 查询服务
 data "ctyun_services" "ctyun_services_test" {
   type = "region"

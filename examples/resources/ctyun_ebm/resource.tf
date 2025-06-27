@@ -7,9 +7,7 @@ terraform {
 }
 
 provider "ctyun" {
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
-  env                  = "prod"
+  env = "prod"
 }
 
 data "ctyun_ebm_device_types" "test" {

@@ -14,7 +14,6 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }

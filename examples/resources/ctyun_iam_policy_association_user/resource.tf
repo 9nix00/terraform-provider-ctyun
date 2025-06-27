@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_iam_policy" "iam_policy_global_test" {
   name        = "terraform_policy_global"
   description = "terraform测试全局策略"

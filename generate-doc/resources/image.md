@@ -14,6 +14,9 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_image" "image_test" {
   name         = "image-test2"

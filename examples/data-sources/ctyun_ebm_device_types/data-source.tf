@@ -6,9 +6,8 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
-  env                  = "prod"
+  env = "prod"
 }
 
 data "ctyun_ebm_device_types" "test" {

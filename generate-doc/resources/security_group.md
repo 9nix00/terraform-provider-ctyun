@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_security_group" "security_group_test" {
   vpc_id      = "vpc-r7kv00qbz5"
   name        = "terraform-minchiang-test55"

@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 全部资源池
 data "ctyun_regions" "test" {
 

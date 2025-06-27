@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_kafka_instance" "tbidgqvfbs" {
   instance_name = "tf-kafka-34ywerkb"
   engine_version = "3.6"

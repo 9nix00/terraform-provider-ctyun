@@ -1,4 +1,5 @@
 # ctyun_regions (Data Source)
+**资源池列表**
 
 
 
@@ -11,6 +12,10 @@ terraform {
       source = "ctyun-it/ctyun"
     }
   }
+}
+
+provider "ctyun" {
+  env = "prod"
 }
 
 # 全部资源池

@@ -6,9 +6,9 @@ terraform {
   }
 }
 
- provider "ctyun" {
-   region_id            = "200000002530"
- }
+provider "ctyun" {
+  env = "prod"
+}
 
  data "ctyun_elb_loadbalancers" "test"{
      region_id = "200000002530"

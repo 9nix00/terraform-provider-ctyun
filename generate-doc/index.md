@@ -48,7 +48,7 @@ provider_installation {
 
 - vi ~/.terraformrc
 
-- 在文件中写入下列内容，注意要将${pwd}替换成terraform-provider-ctyun文件所在目录
+- 在文件中写入下列内容：
 
 ```
 provider_installation {

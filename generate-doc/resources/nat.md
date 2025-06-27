@@ -1,5 +1,5 @@
 # ctyun_nat (Resource)
-**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=5778&data=94&isNormal=1&vid=88
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140
 
 
 
@@ -7,12 +7,17 @@
 
 ```terraform
 terraform {
-  required_providers {
-    ctyun = {
-      source = "ctyun-it/ctyun"
-    }
-  }
+	required_providers {
+		ctyun = {
+			source = "ctyun-it/ctyun"
+		}
+	}
 }
+
+provider "ctyun" {
+	env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
 	name        = "tf-vpc-for-nat"
 	cidr        = "192.168.0.0/16"

@@ -5,6 +5,18 @@
 ## 样例
 
 ```terraform
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_elb_certificate" "%[1]s" {
   name        = "tf_elb_certifiate"
   type        = "Server"

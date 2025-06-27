@@ -14,12 +14,9 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
-
-
 
 data "ctyun_vpce_services" "test" {
 

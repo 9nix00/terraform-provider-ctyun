@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_ebs" "ebs_test" {
   name       = "ebs-test"
   mode       = "vbd"

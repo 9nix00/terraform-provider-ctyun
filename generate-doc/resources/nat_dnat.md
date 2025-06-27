@@ -1,5 +1,5 @@
 # ctyun_nat_dnat (Resource)
-详细说明请见文档：
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166345
 
 
 

@@ -6,6 +6,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 查可用插件列表
 # data "ctyun_ccse_plugin_market" "test" {
 #

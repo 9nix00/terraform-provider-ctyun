@@ -14,6 +14,9 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
 
 data "ctyun_kafka_specs" "test" {
   

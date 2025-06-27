@@ -1,5 +1,5 @@
 # ctyun_nats (Data Source)
-**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5647&data=88&isNormal=1&vid=82
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140
 
 
 
@@ -14,9 +14,9 @@ terraform {
   }
 }
 
- provider "ctyun" {
-   region_id            = "200000002530"
- }
+provider "ctyun" {
+  env = "prod"
+}
 
  data "ctyun_nats" "test"{
      region_id = "200000002530"
