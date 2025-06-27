@@ -57,7 +57,7 @@ provider_installation {
 ```
 provider_installation {
   filesystem_mirror {
-    path = "$HOME/.terraform.d/provider-cache"
+    path = "/opt/.terraform.d/provider-cache"
   }
 }
 ```
@@ -66,23 +66,23 @@ provider_installation {
 
 ```
 # Linux 示例
-mkdir -p ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64
+mkdir -p /opt/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64
 
 # MacOS 示例
-mkdir -p ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/darwin_amd64
+mkdir -p /opt/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/darwin_amd64
 ```
 
 - 将可执行文件复制到目录中
 
 ```
 # Linux 示例
-cp terraform-provider-ctyun ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64/
+cp terraform-provider-ctyun /opt/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/linux_amd64/
 
 # MacOS 示例
-cp terraform-provider-ctyun ~/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/darwin_amd64/
+cp terraform-provider-ctyun /opt/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/darwin_amd64/
 ```
 
-- 添加可执行权限：`chmod +x ~/.terraform.d/provider-cache/.../terraform-provider-ctyun`
+- 添加可执行权限：`chmod +x /opt/.terraform.d/provider-cache/registry.terraform.io/ctyun-it/ctyun/1.1.0/darwin_amd64/terraform-provider-ctyun`
 
 
 ## 安装验证
