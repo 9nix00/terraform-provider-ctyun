@@ -7,8 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -18,6 +20,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -57,9 +60,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
-				Description: "资源池Id",
+				Computed:    true,
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -67,11 +70,15 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"listener_id": schema.StringAttribute{
 				Required:    true,
-				Description: "监听器Id",
+				Description: "监听器listener Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"priority": schema.Int32Attribute{
 				Optional:    true,
 				Description: "优先级，数字越小优先级越高，取值范围为：1-100(目前不支持配置此参数,只取默认值100)",
+				Default:     int32default.StaticInt32(100),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 100),
 				},
@@ -87,7 +94,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 					Attributes: map[string]schema.Attribute{
 						"type": schema.StringAttribute{
 							Required:    true,
-							Description: "类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
+							Description: "匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleConditionTypes...),
 							},
@@ -95,12 +102,24 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_server_name": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'",
+							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写",
+							Validators: []validator.String{
+								validator2.AlsoRequiresEqualString(
+									path.MatchRoot("type"),
+									types.StringValue(business.ElbRuleConditionTypeServerName),
+								),
+							},
 						},
 						"condition_url_paths": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "匹配路径",
+							Description: "匹配路径。当type = url_path填写",
+							Validators: []validator.String{
+								validator2.AlsoRequiresEqualString(
+									path.MatchRoot("type"),
+									types.StringValue(business.ElbRuleConditionTypeUrlPath),
+								),
+							},
 						},
 						"condition_match_type": schema.StringAttribute{
 							Optional:    true,
@@ -108,6 +127,10 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 							Description: "匹配类型。取值范围：ABSOLUTE，PREFIX，REG",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleMatchTypes...),
+								validator2.AlsoRequiresEqualString(
+									path.MatchRoot("type"),
+									types.StringValue(business.ElbRuleConditionTypeUrlPath),
+								),
 							},
 						},
 					},
@@ -115,7 +138,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"action_type": schema.StringAttribute{
 				Required:    true,
-				Description: "默认规则动作类型。取值范围：forward、redirect、deny(目前暂不支持配置为deny)",
+				Description: "默认规则动作类型。取值范围：forward、redirect",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleActionType...),
 				},
@@ -133,6 +156,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 							Optional:    true,
 							Computed:    true,
 							Description: "权重，取值范围：1-256。默认为100",
+							Default:     int32default.StaticInt32(100),
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
 							},
@@ -143,7 +167,13 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"action_redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "重定向监听器ID，当type为redirect时，此字段必填",
+				Description: "重定向监听器ID，当action_type = redirect时，此字段必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("action_type"),
+						types.StringValue(business.ElbRuleActionTypeRedirect),
+					),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -164,9 +194,6 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "状态: ACTIVE / DOWN",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbRuleStatus...),
-				},
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,

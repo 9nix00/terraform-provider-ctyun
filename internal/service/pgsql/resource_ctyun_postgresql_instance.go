@@ -87,16 +87,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_version": schema.StringAttribute{
-				Required:    true,
-				Description: "数据库版本，取值范围：12.22, 13.20, 14.17, 15.12, 16.8",
-				Validators: []validator.String{
-					stringvalidator.OneOf("12.22", "13.20", "14.17", "15.12", "16.8"),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
 				Description: "产品ID。Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘、规格和实例扩容同时进行",
@@ -133,7 +123,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					int32validator.Between(100, 32768),
 				},
 			},
-			// todo 修改成int
 			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
@@ -165,14 +154,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			// todo 确认控制台是否支持
-			"vpc_cidr": schema.StringAttribute{
-				Optional:    true,
-				Description: "VPC网段",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 			// 实例配置
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -181,17 +162,16 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringvalidator.LengthBetween(4, 64),
 				},
 			},
-			// todo 确定有没有rsa加密
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "管理员密码(RSA公钥加密)",
+				Description: "实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(8, 32),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				//Validators: []validator.String{
-				//	stringvalidator.LengthBetween(4, 64),
-				//},
 			},
 			// 订购选项
 			"cycle_count": schema.Int32Attribute{
@@ -565,17 +545,21 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		RegionId:        config.RegionID.ValueString(),
 		BillMode:        business.MysqlBillMode[cycleType],
 		HostType:        config.HostType.ValueString(),
-		ProdVersion:     config.ProdVersion.ValueString(),
+		ProdVersion:     business.PgsqlProdVersionDict[config.ProdID.ValueString()],
 		ProdId:          business.PgsqlProdIDDict[config.ProdID.ValueString()],
 		VpcId:           config.VpcID.ValueString(),
 		SubnetId:        config.SubnetId.ValueString(),
 		SecurityGroupId: config.SecurityGroupId.ValueString(),
 		Name:            config.Name.ValueString(),
-		Password:        config.Password.ValueString(),
 		Period:          config.CycleCount.ValueInt32(),
 		Count:           1,
 		IsMGR:           &isMgr,
 	}
+	// 处理密码，并对密码进行RSA加密
+	encodePassword := business.Encode(config.Password.ValueString())
+	params.Password = encodePassword
+	//config.Password = types.StringValue(encodePassword)
+	//params.Password = config.Password.ValueString()
 	if config.CaseSensitive.ValueBool() {
 		params.CaseSensitive = "0"
 	} else {
@@ -609,9 +593,6 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		cpuType := business.MysqlCpuTypeDict[config.CpuType.ValueString()]
 		params.CpuType = &cpuType
 	}
-	if config.VpcCIDR.ValueString() != "" {
-		params.VpcCIDR = config.VpcCIDR.ValueStringPointer()
-	}
 
 	// 处理MysqlNodeInfoList
 	mysqlNodeInfoList := []pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
@@ -635,6 +616,7 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	availabilityZoneModel := []AvailabilityZoneModel{}
 	diag := config.AvailabilityZoneInfo.ElementsAs(ctx, &availabilityZoneModel, true)
 	if diag.HasError() {
+		err = errors.New("AvailabilityZoneInfo解析错误")
 		return
 	}
 	for _, azModelItem := range availabilityZoneModel {
@@ -642,10 +624,6 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		azModel.AvailabilityZoneName = azModelItem.AvailabilityZoneName.ValueString()
 		azModel.AvailabilityZoneCount = azModelItem.AvailabilityZoneCount.ValueInt32()
 		azModel.NodeType = azModelItem.NodeType.ValueString()
-		azModel.SpecId = azModelItem.SpecID.ValueString()
-		if azModelItem.DisplayName.ValueString() != "" {
-			azModel.DisplayName = azModelItem.DisplayName.ValueStringPointer()
-		}
 		azModelList = append(azModelList, azModel)
 	}
 	mysqlNodeInfo.AvailabilityZoneInfo = azModelList
@@ -1372,7 +1350,6 @@ type CtyunPostgresqlInstanceConfig struct {
 	CycleType            types.String `tfsdk:"cycle_type"`             // 计费模式： 1是包周期，2是按需
 	RegionID             types.String `tfsdk:"region_id"`              // 目标资源池Id
 	HostType             types.String `tfsdk:"host_type"`              //主机类型 host type: S6 or S7
-	ProdVersion          types.String `tfsdk:"prod_version"`           // 版本（参考查询规格列表接口）
 	ProdID               types.String `tfsdk:"prod_id"`                // 产品id
 	BackupStorageType    types.String `tfsdk:"backup_storage_type"`    // 备份存储类型, SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 	VpcID                types.String `tfsdk:"vpc_id"`                 // 虚拟私有云Id，，回收站恢复到新实例场景非必传则取原实例配置
@@ -1388,7 +1365,6 @@ type CtyunPostgresqlInstanceConfig struct {
 	CpuType              types.String `tfsdk:"cpu_type"`               // cpu类型，默认30，10=鲲鹏，20=海光，30=intel，40=amd，50=飞腾，60=龙芯，70=兆芯
 	ProjectID            types.String `tfsdk:"project_id"`             // 企业项目ID，默认0
 	IsMGR                types.Bool   `tfsdk:"is_mgr"`                 // 是否开启MRG，默认false
-	VpcCIDR              types.String `tfsdk:"vpc_cidr"`               // vpc网段
 	InstanceSeries       types.String `tfsdk:"instance_series"`        // 实例规格（默认：通用型=1） InstSpec
 	StorageType          types.String `tfsdk:"storage_type"`           // 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 	StorageSpace         types.Int32  `tfsdk:"storage_space"`          // 存储空间(单位:G，范围100,32768)
@@ -1417,6 +1393,4 @@ type AvailabilityZoneModel struct {
 	AvailabilityZoneName  types.String `tfsdk:"availability_zone_name"`  // 资源池可用区名称
 	AvailabilityZoneCount types.Int32  `tfsdk:"availability_zone_count"` // 资源池可用区总数
 	NodeType              types.String `tfsdk:"node_type"`               // 分布AZ的节点类型
-	DisplayName           types.String `tfsdk:"display_name"`            // 可用区显示名
-	SpecID                types.String `tfsdk:"spec_id"`                 // 规格ID
 }

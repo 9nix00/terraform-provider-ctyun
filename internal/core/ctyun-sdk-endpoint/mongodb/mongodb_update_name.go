@@ -17,7 +17,7 @@ func NewMongodbUpdateInstanceNameApi(client *ctyunsdk.CtyunClient) *MongodbUpdat
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/v1/openApi/modifyDBInstanceDescription",
+			UrlPath: "/DDS2/v2/openApi/modifyDBInstanceDescription",
 		},
 	}
 }
@@ -32,6 +32,10 @@ func (this *MongodbUpdateInstanceNameApi) Do(ctx context.Context, credential cty
 		err = errors.New("missing required field: RegionID")
 		return
 	}
+	if header.ProjectID != nil {
+		builder.AddHeader("project-id", *header.ProjectID)
+	}
+
 	builder.AddHeader("regionId", header.RegionID)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameMongodb, builder)
 	if err != nil {
@@ -51,9 +55,8 @@ type MongodbUpdateInstanceNameRequest struct {
 }
 
 type MongodbUpdateInstanceNameRequestHeader struct {
-	CustomInfo *string `json:"customInfo,omitempty"`
-	AccountId  string  `json:"accountId"` // PaaS组件实例所归属天翼云账号标识
-	RegionID   string  `json:"regionId"`
+	ProjectID *string `json:"projectId"`
+	RegionID  string  `json:"regionId"`
 }
 
 type MongodbUpdateInstanceNameResponse struct {

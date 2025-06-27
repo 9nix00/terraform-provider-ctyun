@@ -16,7 +16,7 @@ func NewMongodbUpgradeApi(client *ctyunsdk.CtyunClient) *MongodbUpgradeApi {
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/Mongodb-acceptor/v2/openapi/accept-order-info/upgrade",
+			UrlPath: "/teledb-acceptor/v2/openapi/accept-order-info/upgrade",
 		},
 	}
 }
@@ -48,7 +48,7 @@ type MongodbUpgradeRequest struct {
 	ProdId              *int64                 `json:"prodId,omitempty"`              // 产品ID，非必填
 	DiskVolume          *int32                 `json:"diskVolume,omitempty"`          // 升级到的磁盘容量，单位G，非必填
 	ProdPerformanceSpec *string                `json:"prodPerformanceSpec,omitempty"` // 产品规格，非必填
-	IsUpgradeBackup     bool                   `json:"isUpgradeBackup,omitempty"`     // DDS模块磁盘扩容时候会使用 是否主磁盘与备磁盘一起扩容
+	IsUpgradeBackup     *bool                  `json:"isUpgradeBackup,omitempty"`     // DDS模块磁盘扩容时候会使用 是否主磁盘与备磁盘一起扩容
 	AzList              []AvailabilityZoneInfo `json:"azList,omitempty"`              // 可用区节点相关信息，非必填
 }
 

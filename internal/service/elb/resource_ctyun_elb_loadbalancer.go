@@ -45,7 +45,7 @@ func (c *CtyunElbLoadBalancerResource) Metadata(_ context.Context, request resou
 
 func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**文档详情：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5643&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "**文档详情：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5643&data=88&isNormal=1&vid=82。elb产品建构顺序：创建elb->创建listener->",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -151,8 +151,14 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Description: "负载均衡Id",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"port_id": schema.StringAttribute{
 				Computed:    true,

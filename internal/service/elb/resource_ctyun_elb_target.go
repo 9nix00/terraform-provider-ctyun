@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -53,12 +54,12 @@ func (c *ctyunElbTarget) ImportState(ctx context.Context, request resource.Impor
 
 func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**新增/读取/编辑/删除 后端主机",
+		MarkdownDescription: "弹性负载均衡--后端主机新增/读取/编辑/删除，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5665&data=88&isNormal=1&vid=82",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池Id",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -67,6 +68,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"target_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "后端服务组Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -75,18 +79,27 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型。取值范围：VM、BM、ECI、IP",
+				Description: "实例类型。取值范围：VM-虚拟云主机、BM-物理机、ECI-弹性容器",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbTargetInstanceType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
-				Description: "后端实例Id",
+				Description: "云主机或物理机，或弹性容器实例ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"instance_ip": schema.StringAttribute{
 				Optional:    true,
-				Description: "后端服务 ip",
+				Description: "后端实例ip",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"protocol_port": schema.Int32Attribute{
 				Required:    true,
@@ -98,21 +111,19 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"weight": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "权重。取值范围：1-256，默认为100",
+				Description: "后端实例权重。取值范围：1-256，默认为100",
+				Default:     int32default.StaticInt32(100),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 256),
 				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "后端服务ID",
+				Description: "后端主机服务ID",
 			},
 			"health_check_status": schema.StringAttribute{
 				Computed:    true,
 				Description: "IPv4的健康检查状态: offline / online / unknown",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbTargetIpStatus...),
-				},
 			},
 			"health_check_status_ipv6": schema.StringAttribute{
 				Computed:    true,
@@ -137,12 +148,23 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				Description: "更新时间，为UTC格式",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 		},
 	}

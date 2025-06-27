@@ -7,9 +7,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -18,6 +21,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 )
 
 var (
@@ -80,11 +84,15 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.HealthCheckProtocols...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒",
+				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(2, 60),
 				},
@@ -93,6 +101,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒",
+				Default:     int32default.StaticInt32(5),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 20940),
 				},
@@ -101,6 +110,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "最大重试次数，取值范围：1-10次，默认为2次",
+				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10),
 				},
@@ -111,14 +121,23 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Description: "仅当protocol为HTTP时必填且生效,HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.HttpMethods...),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolHTTP),
+					),
 				},
 			},
 			"http_url_path": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "仅当protocol为HTTP时必填且生效,默认为'/',支持的最大字符长度：80",
+				Default:     stringdefault.StaticString("/"),
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(80),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolHTTP),
+					),
 				},
 			},
 			"http_expected_codes": schema.SetAttribute{
@@ -126,6 +145,12 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Computed:    true,
 				ElementType: types.StringType,
 				Description: "利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx",
+				Validators: []validator.Set{
+					validator2.AlsoRequiresEqualSet(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolHTTP),
+					),
+				},
 			},
 			"protocol_port": schema.Int32Attribute{
 				Optional:    true,
@@ -140,19 +165,27 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Description: "健康检查ID",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"status": schema.Int32Attribute{
 				Computed:    true,
-				Description: "状态 1 表示 UP, 0 表示 DOWN",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 1),
-				},
+				Description: "状态 1 - UP, 0 - DOWN",
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
@@ -293,9 +326,9 @@ func (c *CtyunElbHealthCheck) createHealthCheck(ctx context.Context, plan *Ctyun
 		RegionID:    plan.RegionID.ValueString(),
 		Name:        plan.Name.ValueString(),
 		Protocol:    plan.Protocol.ValueString(),
-		Timeout:     2,
-		Interval:    10,
-		MaxRetry:    2,
+		Timeout:     plan.Timeout.ValueInt32(),
+		Interval:    plan.Interval.ValueInt32(),
+		MaxRetry:    plan.MaxRetry.ValueInt32(),
 	}
 	if !plan.Description.IsNull() {
 		params.Description = plan.Description.ValueString()

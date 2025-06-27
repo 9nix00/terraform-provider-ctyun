@@ -254,6 +254,29 @@ var PgsqlNodeTypeDict = map[string]string{
 	"Master2Slave168":  "master",
 	"ReadOnly168":      "readNode",
 }
+
+var PgsqlProdVersionDict = map[string]string{
+	"Single1222":       "12.22",
+	"MasterSlave1222":  "12.22",
+	"Single1417":       "14.17",
+	"MasterSlave1417":  "14.17",
+	"Single1320":       "13.20",
+	"MasterSlave1320":  "13.20",
+	"ReadOnly1222":     "12.22",
+	"ReadOnly1320":     "13.20",
+	"ReadOnly1417":     "14.17",
+	"Single1512":       "15.12",
+	"MasterSlave1512":  "15.12",
+	"ReadOnly1512":     "15.12",
+	"Master2Slave1222": "12.22",
+	"Master2Slave1417": "14.17",
+	"Master2Slave1320": "13.20",
+	"Master2Slave1512": "15.12",
+	"Single168":        "16.8",
+	"MasterSlave168":   "16.8",
+	"Master2Slave168":  "16.8",
+	"ReadOnly168":      "16.8",
+}
 var PgsqlInstanceSeriesDict = map[string]string{
 	"S": "1",
 	"C": "2",

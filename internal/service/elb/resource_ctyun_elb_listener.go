@@ -8,8 +8,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -20,6 +22,7 @@ import (
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -56,7 +59,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -65,6 +68,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"loadbalancer_id": schema.StringAttribute{
 				Required:    true,
 				Description: "负载均衡实例ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -93,21 +99,40 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Optional:    true,
 				Computed:    true,
 				Description: "证书ID。当protocol为HTTPS时,此参数必选",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTPS),
+					),
+				},
 			},
 			"ca_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启双向认证。false（不开启）、true（开启）",
+				Description: "是否开启双向认证。true（开启），false（不开启）",
 			},
 			"client_certificate_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "双向认证的证书ID",
+				Description: "双向认证的证书ID，当ca_enabled=ture，必填。",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("ca_enabled"),
+						types.BoolValue(true),
+					),
+				},
 			},
 			"access_control_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "访问控制ID",
+				Description: "访问控制ID,如果access_control_type=white或者black，此项必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("access_control_type"),
+						types.StringValue(business.ListenerAccessControlTypeWhite),
+						types.StringValue(business.ListenerAccessControlTypeBlack),
+					),
+				},
 			},
 			"access_control_type": schema.StringAttribute{
 				Optional:    true,
@@ -138,17 +163,28 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Description: "重定向监听器ID，当type为redirect时，此字段必填",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "监听器状态: DOWN / ACTIVE",
+				Description: "监听器状态: DOWN / ACTIVE，可以控制监听器开关。",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleStatus...),
 				},
@@ -199,6 +235,13 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Optional:    true,
 				Computed:    true,
 				Description: "cps 大小,仅支持协议为 TCP / UDP 的监听器。",
+				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
+				},
 			},
 			"target_groups": schema.ListNestedAttribute{
 				Optional:    true,
@@ -212,6 +255,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 						"weight": schema.Int32Attribute{
 							Optional:    true,
 							Computed:    true,
+							Default:     int32default.StaticInt32(100),
 							Description: "后端主机权重，取值范围：1-256。默认为100",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
