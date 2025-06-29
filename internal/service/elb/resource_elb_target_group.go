@@ -2,6 +2,7 @@ package elb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -73,6 +74,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -370,6 +374,14 @@ func (c *CtyunElbTargetGroup) createTargetGroup(ctx context.Context, plan *Ctyun
 	}
 	sessionSticky := &ctelb.CtelbCreateTargetGroupSessionStickyRequest{SessionStickyMode: "CLOSE"}
 	if plan.SessionStickyMode.ValueString() != "" {
+		// 若protocol=HTTPS或HTTPS时， session_sticky_mode 仅支持INSERT/REWRITE
+		if plan.Protocol.ValueString() != "" && plan.Protocol.ValueString() == business.ListenerProtocolHTTP || plan.Protocol.ValueString() == business.ListenerProtocolHTTPS {
+			if plan.SessionStickyMode.ValueString() != business.TargetGroupSessionStickyModeINSERT && plan.SessionStickyMode.ValueString() != business.TargetGroupSessionStickyModeREWRITE {
+				err = errors.New("protocol=HTTPS或HTTPS时， session_sticky_mode 仅支持INSERT/REWRITE")
+				return err
+			}
+
+		}
 		sessionSticky.SessionStickyMode = plan.SessionStickyMode.ValueString()
 		if plan.Algorithm.ValueString() == business.TargetGroupAlgorithmLC || plan.Algorithm.ValueString() == business.TargetGroupAlgorithmSH {
 			//当 algorithm 为 lc / sh 时，sessionStickyMode 必须为 CLOSE
@@ -542,7 +554,6 @@ func (c *CtyunElbTargetGroup) getAndMergeTargetGroup(ctx context.Context, plan *
 	}
 	// 解析详情接口返回值
 	returnObj := resp.ReturnObj[0]
-	plan.ProjectID = types.StringValue(returnObj.ProjectID)
 	plan.Status = types.StringValue(returnObj.Status)
 	plan.CreatedTime = types.StringValue(returnObj.CreatedTime)
 	plan.UpdatedTime = types.StringValue(returnObj.UpdatedTime)

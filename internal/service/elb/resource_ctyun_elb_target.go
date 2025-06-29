@@ -119,7 +119,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "后端主机服务ID",
+				Description: "后端主机服务(elb_target)ID",
 			},
 			"health_check_status": schema.StringAttribute{
 				Computed:    true,
@@ -128,16 +128,10 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"health_check_status_ipv6": schema.StringAttribute{
 				Computed:    true,
 				Description: "IPv6的健康检查状态: offline / online / unknown",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbTargetIpStatus...),
-				},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "状态: DOWN / ACTIVE",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbRuleStatus...),
-				},
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -150,9 +144,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				// az时候有必要设定默认值
-				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -373,8 +367,6 @@ func (c *ctyunElbTarget) getAndMergeElbTarget(ctx context.Context, plan *CtyunEl
 	returnObj := resp.ReturnObj
 
 	plan.Description = types.StringValue(returnObj.Description)
-	plan.AzName = types.StringValue(returnObj.AzName)
-	plan.ProjectID = types.StringValue(returnObj.ProjectID)
 	plan.ProtocolPort = types.Int32Value(returnObj.ProtocolPort)
 	plan.HealthCheckStatus = types.StringValue(returnObj.HealthCheckStatus)
 	plan.HealthCheckStatusIpv6 = types.StringValue(returnObj.HealthCheckStatusIpv6)

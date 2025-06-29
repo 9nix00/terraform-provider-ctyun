@@ -54,7 +54,7 @@ func (c *CtyunElbListener) Metadata(ctx context.Context, request resource.Metada
 
 func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5650&data=88&isNormal=1&vid=82",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -167,7 +167,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Computed:    true,
 				Description: "可用区名称",
 				// az时候有必要设定默认值
-				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -200,35 +200,58 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"enable_nat_64": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启 nat64",
+				Description: "是否开启 nat64，elb需要支持ipv6能力",
 			},
 			"listener_qps": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "qps 大小",
+				Description: "qps 大小,仅支持协议为 HTTP / HTTPS 的监听器",
+				Validators: []validator.Int32{
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
+				},
 			},
 			"establish_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "建立连接超时时间，单位秒，取值范围： 1 - 1800",
+				Description: "建立连接超时时间，单位秒，取值范围： 1 - 1800。不支持协议为 UDP / HTTP / HTTPS 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1800),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTP),
+						types.StringValue(business.ListenerProtocolHTTPS),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"idle_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300",
+				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300,不支持协议为 TCP / UDP 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"response_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "响应超时，单位秒，取值范围：1 - 300",
+				Description: "响应超时，单位秒，取值范围：1 - 300。不支持协议为 TCP / UDP 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"listener_cps": schema.Int32Attribute{
@@ -236,10 +259,10 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Computed:    true,
 				Description: "cps 大小,仅支持协议为 TCP / UDP 的监听器。",
 				Validators: []validator.Int32{
-					validator2.AlsoRequiresEqualInt32(
+					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("protocol"),
-						types.StringValue(business.ListenerProtocolTCP),
-						types.StringValue(business.ListenerProtocolUDP),
+						types.StringValue(business.ListenerProtocolHTTP),
+						types.StringValue(business.ListenerProtocolHTTPS),
 					),
 				},
 			},
@@ -291,6 +314,37 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
+
+	err = c.setNat64(ctx, &plan, &plan)
+	if err != nil {
+		return
+	}
+	//设置QPS,仅支持协议为 HTTP / HTTPS 的监听器
+	err = c.setQPS(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	// 设置CPS，仅支持协议为 TCP / UDP 的监听器。
+	err = c.setCPS(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置establish_timeout,不支持协议为 UDP / HTTP / HTTPS 的监听器
+	err = c.setEstablishTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置idle_timeout,不支持协议为 TCP / UDP 的监听器
+	err = c.setIdleTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置response_timeout,不支持协议为 TCP / UDP 的监听器
+	err = c.setResponseTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+
 	// 创建后反查创建后的nat信息
 	err = c.getAndMergeListener(ctx, &plan)
 	if err != nil {
@@ -374,27 +428,27 @@ func (c *CtyunElbListener) Update(ctx context.Context, request resource.UpdateRe
 		return
 	}
 	//设置QPS,仅支持协议为 HTTP / HTTPS 的监听器
-	err = c.setQPS(ctx, &state, &plan)
+	err = c.setQPS(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	// 设置CPS，仅支持协议为 TCP / UDP 的监听器。
-	err = c.setCPS(ctx, &state, &plan)
+	err = c.setCPS(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置establish_timeout,不支持协议为 UDP / HTTP / HTTPS 的监听器
-	err = c.setEstablishTimeout(ctx, &state, &plan)
+	err = c.setEstablishTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置idle_timeout,不支持协议为 TCP / UDP 的监听器
-	err = c.setIdleTimeout(ctx, &state, &plan)
+	err = c.setIdleTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置response_timeout,不支持协议为 TCP / UDP 的监听器
-	err = c.setResponseTimeout(ctx, &state, &plan)
+	err = c.setResponseTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
@@ -652,8 +706,6 @@ func (c *CtyunElbListener) getAndMergeListener(ctx context.Context, plan *CtyunE
 
 	// 解析返回listener详情
 	respObj := resp.ReturnObj[0]
-	plan.AzName = types.StringValue(respObj.AzName)
-	plan.ProjectID = types.StringValue(respObj.ProjectID)
 	plan.Description = types.StringValue(respObj.Description)
 	plan.Status = types.StringValue(respObj.Status)
 	plan.CreatedTime = types.StringValue(respObj.CreatedTime)
@@ -748,6 +800,9 @@ func (c *CtyunElbListener) stopListener(ctx context.Context, state *CtyunElbList
 func (c *CtyunElbListener) setNat64(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
 	// 验证负载均衡是否开启ipv6
 	if !c.enableElbIpv6(ctx, state) {
+		if plan.EnableNat64.ValueBool() {
+			err = errors.New("elb未开启ipv6，不支持nat64")
+		}
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerNat64Request{
@@ -761,14 +816,11 @@ func (c *CtyunElbListener) setNat64(ctx context.Context, state *CtyunElbListener
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
 	return
 }
 
-func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 仅支持协议为 HTTP / HTTPS 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolUDP || state.Protocol.ValueString() == business.ListenerProtocolTCP {
 		return
@@ -777,7 +829,7 @@ func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerCo
 		return
 	}
 	// 如何plan qps 和state qps相同，直接返回
-	if plan.ListenerQps.ValueInt32() == state.ListenerQps.ValueInt32() {
+	if isUpdate && plan.ListenerQps.ValueInt32() == state.ListenerQps.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerQpsRequest{
@@ -795,7 +847,7 @@ func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerCo
 	return
 }
 
-func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 仅支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() != business.ListenerProtocolUDP && state.Protocol.ValueString() != business.ListenerProtocolTCP {
 		return
@@ -804,7 +856,7 @@ func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerCo
 		return
 	}
 	// 如果plan cps与state cps相同，直接返回
-	if plan.ListenerCps.ValueInt32() == state.ListenerCps.ValueInt32() {
+	if isUpdate && plan.ListenerCps.ValueInt32() == state.ListenerCps.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerCpsRequest{
@@ -822,7 +874,7 @@ func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerCo
 	return
 }
 
-func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	//不支持协议为 UDP / HTTP / HTTPS 的监听器
 	if state.Protocol.ValueString() != business.ListenerProtocolTCP {
 		return
@@ -831,7 +883,7 @@ func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *Ctyun
 	if plan.EstablishTimeout.ValueInt32() == 0 {
 		return
 	}
-	if plan.EstablishTimeout.ValueInt32() == state.EstablishTimeout.ValueInt32() {
+	if isUpdate && plan.EstablishTimeout.ValueInt32() == state.EstablishTimeout.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerEstabTimeoutRequest{
@@ -849,7 +901,7 @@ func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *Ctyun
 	return
 }
 
-func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 不支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
@@ -857,7 +909,7 @@ func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbLi
 	if plan.IdleTimeout.ValueInt32() == 0 {
 		return
 	}
-	if plan.IdleTimeout.ValueInt32() == state.IdleTimeout.ValueInt32() {
+	if isUpdate && plan.IdleTimeout.ValueInt32() == state.IdleTimeout.ValueInt32() {
 		return
 	}
 
@@ -877,7 +929,7 @@ func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbLi
 	return
 }
 
-func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 不支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
@@ -885,7 +937,7 @@ func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunE
 	if plan.ResponseTimeout.ValueInt32() == 0 {
 		return
 	}
-	if plan.ResponseTimeout.ValueInt32() == state.ResponseTimeout.ValueInt32() {
+	if isUpdate && plan.ResponseTimeout.ValueInt32() == state.ResponseTimeout.ValueInt32() {
 		return
 	}
 

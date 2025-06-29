@@ -55,6 +55,8 @@ func TestAccCtyunElbListener(t *testing.T) {
 	// response_timeout，支持http/https
 	tfResponseTimeout := fmt.Sprintf(`response_timeout=%d`, 100)
 
+	tfEnableNat64 := fmt.Sprintf("enable_nat_64=%t", false)
+
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -65,6 +67,34 @@ func TestAccCtyunElbListener(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, protocolTCP, protocolPort, defaultActionType, tfTargetGroupID, tfEnableNat64, "", tfCPS, tfEstablishTimeout, "", ""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "enable_nat_64", "false"),
+					resource.TestCheckResourceAttr(resourceName, "listener_cps", "1"),
+					resource.TestCheckResourceAttr(resourceName, "establish_timeout", "100"),
+				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, protocolTCP, protocolPort, defaultActionType, tfTargetGroupID, tfEnableNat64, "", tfCPS, tfEstablishTimeout, "", ""),
+				Destroy: true,
+			},
+
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, ProtocolHTTP, protocolPort, defaultActionType, tfTargetGroupID, tfEnableNat64, tfQPS, "", "", tfIdleTimeout, tfResponseTimeout),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "enable_nat_64", "false"),
+					resource.TestCheckResourceAttr(resourceName, "listener_qps", "1"),
+					resource.TestCheckResourceAttr(resourceName, "idle_timeout", "100"),
+					resource.TestCheckResourceAttr(resourceName, "response_timeout", "100"),
+				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, ProtocolHTTP, protocolPort, defaultActionType, tfTargetGroupID, tfEnableNat64, tfQPS, "", "", tfIdleTimeout, tfResponseTimeout),
+				Destroy: true,
+			},
+
 			// 1. protocol=TCP， defaultActionType=forward, targetGroupID必填
 			// 1.1 Create验证
 			{
@@ -104,6 +134,7 @@ func TestAccCtyunElbListener(t *testing.T) {
 				Config:  utils.LoadTestCase(resourceFile, rnd, loadbalanceID, updatedName, protocolTCP, protocolPort, defaultActionType, tfTargetGroupID, "", "", tfCPS, tfEstablishTimeout, "", ""),
 				Destroy: true,
 			},
+
 			// 2 详细信息验证，protocol=HTTP， defaultActionType=forward, targetGroupID必填
 			// 2.1 Create
 			{
@@ -132,7 +163,7 @@ func TestAccCtyunElbListener(t *testing.T) {
 			},
 			// 2.3 destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, loadbalanceID, updatedName, protocolTCP, protocolPort, defaultActionType, updatedTargetGroupID, "", tfQPS, "", "", tfIdleTimeout, tfResponseTimeout),
+				Config:  utils.LoadTestCase(resourceFile, rnd, loadbalanceID, updatedName, ProtocolHTTP, protocolPort, defaultActionType, updatedTargetGroupID, "", tfQPS, "", "", tfIdleTimeout, tfResponseTimeout),
 				Destroy: true,
 			},
 		},

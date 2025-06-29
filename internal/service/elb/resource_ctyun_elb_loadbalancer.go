@@ -112,7 +112,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"sla_name": schema.StringAttribute{
 				Required:    true,
-				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。 ",
+				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large",
 				Validators: []validator.String{
 					stringvalidator.OneOf(append(business.ElbSlaNames, business.PgElbSlaNames...)...),
 				},
@@ -523,7 +523,6 @@ func (c *CtyunElbLoadBalancerResource) getAndMergeElb(ctx context.Context, confi
 		err = fmt.Errorf("详情elb id(%s)与plan的elb id(%s)不一致！", elbObj.RegionID, config.RegionID.ValueString())
 		return
 	}
-	config.AzName = types.StringValue(elbObj.AzName)
 	config.Name = types.StringValue(elbObj.Name)
 	config.Description = types.StringValue(elbObj.Description)
 	config.VpcID = types.StringValue(elbObj.VpcID)

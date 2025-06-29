@@ -33,16 +33,20 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dependence = Dependence{
-		vpcID:          outputs["vpc_id"].Value,
-		subnetID:       outputs["subnet_id"].Value,
-		loadBalanceID:  outputs["loadbalancer_id"].Value,
+		vpcID:         outputs["vpc_id"].Value,
+		subnetID:      outputs["subnet_id"].Value,
+		loadBalanceID: outputs["loadbalancer_id"].Value,
+		//loadBalanceID:  "",
 		loadBalanceID2: outputs["loadbalancer_id_rule"].Value,
+		//loadBalanceID2: "",
 		healthCheckID:  outputs["health_check_id"].Value,
 		targetGroupID:  outputs["target_group_id"].Value,
 		targetGroupID2: outputs["target_group_id2"].Value,
 		targetGroupID3: outputs["target_group_id3"].Value,
 		listenerID:     outputs["listener_id"].Value,
-		instanceID:     outputs["instance_id"].Value,
+		//listenerID: "",
+		instanceID: outputs["instance_id"].Value,
+		//instanceID: "",
 	}
 
 	fmt.Println("依赖资源初始化完毕")

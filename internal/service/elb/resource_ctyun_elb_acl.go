@@ -85,9 +85,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				// az时候有必要设定默认值
-				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -285,8 +285,6 @@ func (c *CtyunElbAcl) getAndMergeAcl(ctx context.Context, config *CtyunElbAclCon
 	}
 	returnObj := resp.ReturnObj
 	//解析acl详情
-	config.AzName = types.StringValue(returnObj.AzName)
-	config.ProjectID = types.StringValue(returnObj.ProjectID)
 	config.Name = types.StringValue(returnObj.Name)
 	config.Description = types.StringValue(returnObj.Description)
 	config.CreateTime = types.StringValue(returnObj.CreateTime)

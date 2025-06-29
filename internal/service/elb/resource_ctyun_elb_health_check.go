@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -52,7 +51,7 @@ func (c *CtyunElbHealthCheck) Metadata(_ context.Context, request resource.Metad
 
 func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡--健康检查创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5675&data=88&isNormal=1&vid=82",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -125,18 +124,27 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 						path.MatchRoot("protocol"),
 						types.StringValue(business.HealthCheckProtocolHTTP),
 					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolUDP),
+						types.StringValue(business.HealthCheckProtocolTCP),
+					),
 				},
 			},
 			"http_url_path": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "仅当protocol为HTTP时必填且生效,默认为'/',支持的最大字符长度：80",
-				Default:     stringdefault.StaticString("/"),
+				Description: "仅当protocol为HTTP时必填且生效,支持的最大字符长度：80",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(80),
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("protocol"),
 						types.StringValue(business.HealthCheckProtocolHTTP),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolUDP),
+						types.StringValue(business.HealthCheckProtocolTCP),
 					),
 				},
 			},
@@ -149,6 +157,11 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("protocol"),
 						types.StringValue(business.HealthCheckProtocolHTTP),
+					),
+					validator2.ConflictsWithEqualSet(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.HealthCheckProtocolUDP),
+						types.StringValue(business.HealthCheckProtocolTCP),
 					),
 				},
 			},
@@ -163,16 +176,6 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "健康检查ID",
-			},
-			"az_name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "可用区名称",
-				// az时候有必要设定默认值
-				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -450,8 +453,6 @@ func (c *CtyunElbHealthCheck) getAndMergeHealthCheck(ctx context.Context, plan *
 	}
 
 	// 解析详情
-	plan.AzName = types.StringValue(resp.ReturnObj.AzName)
-	plan.ProjectID = types.StringValue(resp.ReturnObj.ProjectID)
 	plan.Status = types.Int32Value(resp.ReturnObj.Status)
 	plan.CreateTime = types.StringValue(resp.ReturnObj.CreateTime)
 	plan.Description = types.StringValue(resp.ReturnObj.Description)
@@ -492,7 +493,6 @@ type CtyunElbHealthCheckConfig struct {
 	HttpExpectedCodes types.Set    `tfsdk:"http_expected_codes"` //仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx
 	ProtocolPort      types.Int32  `tfsdk:"protocol_port"`       //健康检查端口 1 - 65535
 	ID                types.String `tfsdk:"id"`                  //健康检查ID
-	AzName            types.String `tfsdk:"az_name"`             //可用区名称
 	ProjectID         types.String `tfsdk:"project_id"`          //	项目ID
 	Status            types.Int32  `tfsdk:"status"`              //状态 1 表示 UP, 0 表示 DOWN
 	CreateTime        types.String `tfsdk:"create_time"`         //	创建时间，为UTC格式
