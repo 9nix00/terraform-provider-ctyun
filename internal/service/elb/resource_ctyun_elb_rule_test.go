@@ -24,10 +24,10 @@ func TestAccCtyunElbRule(t *testing.T) {
 
 	listenerId := dependence.listenerID
 	//conditions := fmt.Sprintf(`{"type": "%s", "condition_server_name": "%s", "condition_url_paths":"%s","condition_match_type":"%s"}`, "server_name", "terraform-test.com", "/test", "PREFIX")
-	conditions := fmt.Sprintf(`{"type": "%s", "condition_server_name": "%s"}`, "server_name", "terraform-test.com")
+	conditions := fmt.Sprintf(`{"condition_type": "%s", "condition_server_name": "%s"}`, "server_name", "terraform-test.com")
 	//updatedConditions := fmt.Sprintf(`{"type": "%s", "condition_server_name": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "server_name", "terraform-test-new.com", "test_new", "PREFIX")
-	updatedConditions := fmt.Sprintf(`{"type": "%s", "condition_server_name": "%s"}`, "server_name", "terraform-test-new.com")
-	pathConditions := fmt.Sprintf(`{"type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test", "PREFIX")
+	updatedConditions := fmt.Sprintf(`{"condition_type": "%s", "condition_server_name": "%s"}`, "server_name", "terraform-test-new.com")
+	pathConditions := fmt.Sprintf(`{"condition_type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test", "PREFIX")
 	//updatedPathConditions := fmt.Sprintf(`{"type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test-new", "PREFIX")
 	actionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID2)
 	//updatedActionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID)
@@ -48,7 +48,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "listener_id", listenerId),
-					resource.TestCheckResourceAttr(resourceName, "conditions.0.type", "server_name"),
+					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_type", "server_name"),
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_server_name", "terraform-test.com"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
@@ -62,7 +62,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "listener_id", listenerId),
-					resource.TestCheckResourceAttr(resourceName, "conditions.0.type", "server_name"),
+					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_type", "server_name"),
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_server_name", "terraform-test-new.com"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test_new"),
@@ -77,7 +77,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.listener_id", listenerId),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.type", "server_name"),
+					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.condition_type", "server_name"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.server_name", "terraform-test-new.com"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_type", actionType),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID2),
@@ -96,7 +96,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "listener_id", listenerId),
-					resource.TestCheckResourceAttr(resourceName, "conditions.0.type", "server_name"),
+					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_type", "server_name"),
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),
@@ -109,7 +109,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "listener_id", listenerId),
-					resource.TestCheckResourceAttr(resourceName, "conditions.0.type", "url_path"),
+					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_type", "url_path"),
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),

@@ -17,7 +17,7 @@ func NewMongodbUpdatePortApi(client *ctyunsdk.CtyunClient) *MongodbUpdatePortApi
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/DDS2/v1/managementOpenApi/modifyPort",
+			UrlPath: "/DDS2/v2/openApi/modifyPort",
 		},
 	}
 }
@@ -28,7 +28,7 @@ func (this *MongodbUpdatePortApi) Do(ctx context.Context, credential ctyunsdk.Cr
 	if err != nil {
 		return
 	}
-	if *headers.ProjectID != "" {
+	if headers.ProjectID != nil {
 		builder.AddHeader("project-id", *headers.ProjectID)
 	}
 	if headers.RegionID == "" {

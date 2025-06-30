@@ -97,7 +97,7 @@ func (c *ctyunElbRules) Schema(ctx context.Context, request datasource.SchemaReq
 							Description: "匹配规则数据",
 							NestedObject: schema.NestedAttributeObject{
 								Attributes: map[string]schema.Attribute{
-									"type": schema.StringAttribute{
+									"condition_type": schema.StringAttribute{
 										Computed:    true,
 										Description: "类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
 										Validators: []validator.String{
@@ -229,7 +229,7 @@ func (c *ctyunElbRules) Read(ctx context.Context, request datasource.ReadRequest
 		var conditions []ConditionModel
 		for _, conditionItem := range rule.Conditions {
 			var condition ConditionModel
-			condition.Type = types.StringValue(conditionItem.RawType)
+			condition.ConditionType = types.StringValue(conditionItem.RawType)
 			condition.ServerName = types.StringValue(conditionItem.ServerNameConfig.ServerName)
 			condition.UrlPaths = types.StringValue(conditionItem.UrlPathConfig.UrlPaths)
 			condition.MatchType = types.StringValue(conditionItem.UrlPathConfig.MatchType)
@@ -282,8 +282,8 @@ type ElbRuelModel struct {
 }
 
 type ConditionModel struct {
-	Type       types.String `tfsdk:"type"`        //类型。取值范围：server_name（服务名称）、url_path（匹配路径）
-	ServerName types.String `tfsdk:"server_name"` //服务名称
-	UrlPaths   types.String `tfsdk:"url_paths"`   //匹配路径
-	MatchType  types.String `tfsdk:"match_type"`  //匹配类型。取值范围：ABSOLUTE，PREFIX，REG
+	ConditionType types.String `tfsdk:"condition_type"` //类型。取值范围：server_name（服务名称）、url_path（匹配路径）
+	ServerName    types.String `tfsdk:"server_name"`    //服务名称
+	UrlPaths      types.String `tfsdk:"url_paths"`      //匹配路径
+	MatchType     types.String `tfsdk:"match_type"`     //匹配类型。取值范围：ABSOLUTE，PREFIX，REG
 }

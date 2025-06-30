@@ -2,6 +2,7 @@ package elb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -9,7 +10,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -49,12 +53,12 @@ func (c *CtyunElbTargetGroup) Metadata(ctx context.Context, request resource.Met
 
 func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡--后端主机组创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5658&data=88&isNormal=1&vid=82",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池Id",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -70,6 +74,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -78,12 +85,15 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "vpc Id",
+				Description: "需要创建后端主机组的 VPC 的 ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"health_check_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "健康检查Id",
+				Description: "需要关联的健康检查Id",
 			},
 			"algorithm": schema.StringAttribute{
 				Required:    true,
@@ -95,23 +105,37 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"proxy_protocol": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "1 开启，0 关闭，只有protocol=tcp的时候，才可以开启proxy_protocol。不支持更改",
+				Description: "1 开启，0 关闭，只有protocol=tcp的时候,可填写（关闭/开启proxy_protocol），其他协议默认关闭。不支持更改",
+				Default:     int32default.StaticInt32(0),
 				Validators: []validator.Int32{
 					int32validator.Between(0, 1),
+					validator2.AlsoRequiresEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+					),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"session_sticky_mode": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写），当 algorithm 为 lc / sh 时，sessionStickyMode 必须为 CLOSE",
+				Description: "会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）。当 algorithm 为 lc / sh 时，sessionStickyMode无需填写，默认为 CLOSE",
+				Default:     stringdefault.StaticString("CLOSE"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.TargetGroupSessionStickyModes...),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("algorithm"),
+						types.StringValue(business.TargetGroupAlgorithmLC),
+						types.StringValue(business.TargetGroupAlgorithmSH),
+					),
 				},
 			},
 			"cookie_expire": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "cookie过期时间。INSERT模式必填",
+				Description: "cookie过期时间。session_sticky_mode = INSERT模式必填",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("session_sticky_mode"),
@@ -166,9 +190,6 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "状态: ACTIVE / DOWN",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbRuleStatus...),
-				},
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -179,8 +200,13 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Description: "更新时间，为UTC格式",
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 		},
 	}
@@ -348,6 +374,14 @@ func (c *CtyunElbTargetGroup) createTargetGroup(ctx context.Context, plan *Ctyun
 	}
 	sessionSticky := &ctelb.CtelbCreateTargetGroupSessionStickyRequest{SessionStickyMode: "CLOSE"}
 	if plan.SessionStickyMode.ValueString() != "" {
+		// 若protocol=HTTPS或HTTPS时， session_sticky_mode 仅支持INSERT/REWRITE
+		if plan.Protocol.ValueString() != "" && plan.Protocol.ValueString() == business.ListenerProtocolHTTP || plan.Protocol.ValueString() == business.ListenerProtocolHTTPS {
+			if plan.SessionStickyMode.ValueString() != business.TargetGroupSessionStickyModeINSERT && plan.SessionStickyMode.ValueString() != business.TargetGroupSessionStickyModeREWRITE {
+				err = errors.New("protocol=HTTPS或HTTPS时， session_sticky_mode 仅支持INSERT/REWRITE")
+				return err
+			}
+
+		}
 		sessionSticky.SessionStickyMode = plan.SessionStickyMode.ValueString()
 		if plan.Algorithm.ValueString() == business.TargetGroupAlgorithmLC || plan.Algorithm.ValueString() == business.TargetGroupAlgorithmSH {
 			//当 algorithm 为 lc / sh 时，sessionStickyMode 必须为 CLOSE
@@ -520,7 +554,6 @@ func (c *CtyunElbTargetGroup) getAndMergeTargetGroup(ctx context.Context, plan *
 	}
 	// 解析详情接口返回值
 	returnObj := resp.ReturnObj[0]
-	plan.ProjectID = types.StringValue(returnObj.ProjectID)
 	plan.Status = types.StringValue(returnObj.Status)
 	plan.CreatedTime = types.StringValue(returnObj.CreatedTime)
 	plan.UpdatedTime = types.StringValue(returnObj.UpdatedTime)

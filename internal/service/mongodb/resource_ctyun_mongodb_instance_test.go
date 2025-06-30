@@ -30,16 +30,15 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb" + utils.GenerateRandomString()
-	password := "BwLnOyOob+wbuDq0qI+EFMWmOtkFiJiIVIvlknaf1fJzfTfUAG7IwGM+368VIOZ9vuGX8QOUTVhzqT6ZKlaBzEHXUbHxQ8TeruEUZx5d4I8o4396WFZOu8+LuVklKDYx6V1tm8FDpXRXwAOsU+fYM8tQi3cu2oynET5TeQMVYxw="
-	purchase_count := 1
-	prodId := 10013001
-	nodeInfoList := `{"node_type":"s","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
+	password := "Kqjwyk123="
+	prodId := "Single34"
+	nodeInfoList := `{"node_type":"s","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
 	updatedPort := "read_port=12345"
 	updateName := "tf-mongodb-new" + utils.GenerateRandomString()
 	updatedIsUpgradeBackUp := `is_upgrade_back_up=true`
-	updateNodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":120,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
-	updateBackUpDiskUpgradeNodeInfoList := `{"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
-	updateSpecUpgradeNodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
+	updateNodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":120,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
+	updateBackUpDiskUpgradeNodeInfoList := `{"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
+	updateSpecUpgradeNodeInfoList := `{"node_type":"master","inst_spec":"1","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C8G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"s"}]}`
 	//updateProdIDUpgradeNodeInfoList := `{"node_type"="master","inst_spec"=1,"storage_type"="SATA","storage_space"=130,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":["availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"]}`
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -53,26 +52,26 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建mongodb实例
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, nodeInfoList, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, nodeInfoList, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", prodId),
 				),
 			},
 			// 更新mongodb实例名称和端口号
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, updateName, password, purchase_count, prodId, nodeInfoList, updatedPort, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, updateName, password, prodId, nodeInfoList, updatedPort, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updateName),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", fmt.Sprintf("%d", prodId)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", prodId),
 					resource.TestCheckResourceAttr(resourceName, "read_port", "12345"),
 				),
 			},
 			// 升配mongodb-主+备份空间磁盘扩容,
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateNodeInfoList, updatedPort, updatedIsUpgradeBackUp),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateNodeInfoList, updatedPort, updatedIsUpgradeBackUp),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -80,7 +79,7 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 			},
 			// 升配备份空间磁盘扩容
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateBackUpDiskUpgradeNodeInfoList, updatedPort, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateBackUpDiskUpgradeNodeInfoList, updatedPort, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -88,7 +87,7 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 			},
 			// 升配规格升级
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -101,7 +100,7 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 			//},
 			// datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateSpecUpgradeNodeInfoList, updatedPort, "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateSpecUpgradeNodeInfoList, updatedPort, "") +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_name=%s", updateName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "mongodb_instances.#", "1"),
@@ -111,7 +110,7 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 			},
 			// destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
+				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
 				Destroy: true,
 			},
 		},

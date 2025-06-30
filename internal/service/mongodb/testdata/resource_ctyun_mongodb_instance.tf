@@ -8,10 +8,9 @@ resource "ctyun_mongodb_instance" "%[1]s" {
   security_group_id = "%[8]s"
   name              = "%[9]s"
   password          = "%[10]s"
-  purchase_count    = %[11]d
-  prod_id           = %[12]d
-  node_info_list = [%[13]s]
-  %[14]s  // read_port
-  %[15]s //  is_upgrade_back_up
+  prod_id           = "%[11]s"
+  node_info_list = [%[12]s]
+  %[13]s  // read_port
+  %[14]s //  is_upgrade_back_up
   region_id = "bb9fdb42056f11eda1610242ac110002"
 }

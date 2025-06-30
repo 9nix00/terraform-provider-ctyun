@@ -5,9 +5,9 @@ output "vpc_id" {
 output "subnet_id" {
   value = ctyun_subnet.subnet_test.id
 }
-output "loadbalancer_id" {
-  value = ctyun_elb_loadbalancer.test.id
-}
+# output "loadbalancer_id" {
+#   value = ctyun_elb_loadbalancer.test.id
+# }
 output "loadbalancer_id_rule" {
   value = ctyun_elb_loadbalancer.listener_test.id
 }

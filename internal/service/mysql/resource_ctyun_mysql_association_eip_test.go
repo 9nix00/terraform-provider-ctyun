@@ -32,7 +32,7 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 	instId := dependence.mysqlID
 	//instId := dependence.subnetID
 
-	instanceType := "1"
+	instance_series := "S"
 
 	specDatasourceName := "data.ctyun_mysql_specs." + dnd
 	specDatasourceFile := "datasource_ctyun_mysql_specs.tf"
@@ -67,7 +67,7 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(specDatasourceFile, dnd, instanceType),
+				Config: utils.LoadTestCase(specDatasourceFile, dnd, instance_series),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
 				),

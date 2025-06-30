@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -16,6 +17,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 )
 
 var (
@@ -51,7 +53,7 @@ func (c *CtyunElbCertificate) Metadata(ctx context.Context, request resource.Met
 
 func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡-证书管理，openapi接口链接：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5685&data=88&isNormal=1&vid=82",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -64,12 +66,18 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32\t",
+				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128\t",
+				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 128),
+				},
 			},
 			"type": schema.StringAttribute{
 				Required:    true,
@@ -77,14 +85,33 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.CertificateTypes...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"private_key": schema.StringAttribute{
 				Optional:    true,
 				Description: "服务器证书私钥，type=Server服务器证书此字段必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.CertificateTypeServer),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.CertificateTypeCA),
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"certificate": schema.StringAttribute{
 				Required:    true,
 				Description: "type为Server该字段表示服务器证书公钥Pem内容;type为Ca该字段表示Ca证书Pem内容",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -103,12 +130,23 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				Description: "更新时间，为UTC格式",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 		},
 	}
@@ -364,8 +402,6 @@ func (c *CtyunElbCertificate) getAndMergeCertificate(ctx context.Context, config
 	config.UpdatedTime = types.StringValue(returnObj.UpdatedTime)
 	config.Name = types.StringValue(returnObj.Name)
 	config.Description = types.StringValue(returnObj.Description)
-	config.AzName = types.StringValue(returnObj.AzName)
-	config.ProjectID = types.StringValue(returnObj.ProjectID)
 	return
 }
 
