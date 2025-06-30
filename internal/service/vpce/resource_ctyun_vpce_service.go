@@ -753,11 +753,15 @@ func (c *ctyunVpceService) updateBackend(ctx context.Context, plan, state CtyunV
 	}
 
 	endpointServiceID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
+	p := plan.InstanceType.ValueString()
+	if p == "lb" {
+		p = "elb"
+	}
 	params := &ctvpc.CtvpcVpceUpdateBackendRequest{
 		RegionID:          regionID,
 		EndpointServiceID: endpointServiceID,
 		InstanceID:        plan.InstanceID.ValueString(),
-		InstanceType:      plan.InstanceType.ValueString(),
+		InstanceType:      p,
 	}
 
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcVpceUpdateBackendApi.Do(ctx, c.meta.SdkCredential, params)
