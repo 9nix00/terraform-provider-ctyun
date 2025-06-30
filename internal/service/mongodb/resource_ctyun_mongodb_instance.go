@@ -590,7 +590,7 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	config.ProdID = types.StringValue(business.MongodbProdIDRevDict[prodID])
 	config.HostIp = types.StringValue(detailReturnObj.Host)
 	config.ProdPerformanceSpec = types.StringValue(listReturnObj.MachineSpec)
-	
+
 	return
 }
 
@@ -801,6 +801,12 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 				return
 			}
 		}
+
+		// 更新完成后，将plan.NodeInfoList同步给state.NodeInfoList
+		state.NodeInfoList = plan.NodeInfoList
+		// 将state.upGradeBackup同步给plan
+		state.IsUpgradeBackUp = plan.IsUpgradeBackUp
+
 	}
 	return
 }
@@ -848,7 +854,7 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
-	syncCount := 3
+	syncCount := 2
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return nil, err

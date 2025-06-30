@@ -62,7 +62,7 @@ func Encode(pw string) string {
 
 	// 4. 输出Base64编码的密文（便于传输）
 	encoded := base64.StdEncoding.EncodeToString(cipherText)
-	fmt.Println("加密结果 (Base64):")
-	fmt.Println(encoded)
+	//fmt.Println("加密结果 (Base64):")
+	//fmt.Println(encoded)
 	return encoded
 }
