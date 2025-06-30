@@ -52,7 +52,7 @@ Read-Only:
 
 Read-Only:
 
+- `condition_type` (String) 类型。取值范围：server_name（服务名称）、url_path（匹配路径）
 - `match_type` (String) 匹配类型。取值范围：ABSOLUTE，PREFIX，REG
 - `server_name` (String) 服务名称
-- `type` (String) 类型。取值范围：server_name（服务名称）、url_path（匹配路径）
 - `url_paths` (String) 匹配路径

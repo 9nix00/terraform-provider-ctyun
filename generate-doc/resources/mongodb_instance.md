@@ -12,10 +12,10 @@ mongodb provider
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `host_type` (String) 主机类型 host type: S6 or S7
-- `name` (String) 集群名称(若开通只读实例，默认在主实例名称后面加-read)
+- `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `node_info_list` (Attributes List) DDS节点 (see [below for nested schema](#nestedatt--node_info_list))
-- `password` (String) 管理员密码（RSA公钥加密）
-- `prod_id` (Number) 产品id
+- `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
+- `prod_id` (String) 产品id
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
@@ -23,15 +23,10 @@ mongodb provider
 ### Optional
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `availability_zone` (Set of String) 可用区名称
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容
-- `prod_performance_specs` (Set of String) 该产品下面的单节点规格
-- `prod_spec_name` (String) 产品名称规格名称
-- `prod_version` (String) 版本
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `purchase_count` (Number) 购买数量(范围:1-50)
-- `read_port` (String) 读端口,创建阶段不可填写，更新阶段可填
+- `read_port` (Number) 读端口,创建阶段不可填写。若需要更新读取端口时可填，取值范围：1~65535
 - `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 
 ### Read-Only
@@ -42,7 +37,7 @@ mongodb provider
 - `id` (String) mongodb实例id
 - `innodb_buffer_pool_size` (String) 缓存池大小
 - `innodb_thread_concurrency` (Number) 线程数
-- `new_order_id` (String) 订单id
+- `master_order_id` (String) 订单id
 - `prod_performance_spec` (String) mongodb实例主机配置
 - `prod_running_status` (Number) 实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中,3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中
 
@@ -52,15 +47,14 @@ mongodb provider
 Required:
 
 - `availability_zone_info` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--node_info_list--availability_zone_info))
-- `disks` (Number) 磁盘（默认为1）,2为Hbase，暂不支持
-- `inst_spec` (String) 实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）
+- `instance_series` (String) 实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)
 - `node_type` (String) 节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；readonly=只读节点；ms=副本集；s=单机版；backup=备份机
 - `storage_space` (Number) 存储空间(单位:G) 单机版和副本集必传：范围100-32768 、集群版shard和bckup节点必传：单个shard:范围100-2024，backup为单个shard的容量乘以shard的个数（注意：每一个shard对应3个availabilityZoneCount，参考下面字段的描述或者请求样例）
 - `storage_type` (String) 存储类型: SSD=超高IO, SAS=高IO, SATA=普通IO，SSD-genric=通用型SSD
 
 Optional:
 
-- `prod_performance_spec` (String) 规格: 4C8G 当 nodeType为backup类型 可不传
+- `prod_performance_spec` (String) 规格: 4C8G 当nodeType为backup类型 可不传
 
 <a id="nestedatt--node_info_list--availability_zone_info"></a>
 ### Nested Schema for `node_info_list.availability_zone_info`
