@@ -6,14 +6,11 @@ terraform {
   }
 }
 
-provider "ctyun" {
-  env = "prod"
+
+data "ctyun_nats" "test" {
+  nat_gateway_id = "natgw-asdsmh8scy"
 }
-
- data "ctyun_nats" "test"{
-     region_id = "200000002530"
- }
-
  output "ctyun_nat_test"{
      value = data.ctyun_nats.test
  }
+
