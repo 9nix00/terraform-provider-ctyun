@@ -46,5 +46,5 @@ resource "ctyun_vpc_route_table" "route" {
 
 ### Read-Only
 
-- `id` (String) ID
-- `route_table_id` (String) 路由表id
+- `id` (String) ID，值与路由表ID相同
+- `route_table_id` (String) 路由表ID

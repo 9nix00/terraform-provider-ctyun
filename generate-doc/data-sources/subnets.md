@@ -61,7 +61,7 @@ output "ctyun_test" {
 - `page_size` (Number) 分页查询时每页的行数，最大值为50，默认值为10。
 - `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `subnet_id` (String) 子网ID
-- `vpc_id` (String) 多个VPC的ID之间用半角逗号（,）隔开。
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Read-Only
 
