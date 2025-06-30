@@ -245,7 +245,7 @@ func (c *ctyunZosBucketObject) Read(ctx context.Context, request resource.ReadRe
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "NoSuchKey") {
+		if strings.Contains(err.Error(), "NoSuchKey") || strings.Contains(err.Error(), "NotFound") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}

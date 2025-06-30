@@ -22,6 +22,7 @@ import (
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
+	"time"
 )
 
 var (
@@ -175,6 +176,8 @@ func (c *ctyunZosBucket) Create(ctx context.Context, request resource.CreateRequ
 	if err != nil {
 		return
 	}
+	c.getAndMerge(ctx, &plan)
+	time.Sleep(30 * time.Second)
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
