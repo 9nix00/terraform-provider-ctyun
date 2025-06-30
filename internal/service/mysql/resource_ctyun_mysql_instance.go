@@ -221,7 +221,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
-							Description: "表示分布AZ的节点类型，master/slave/readNode",
+							Description: "表示分布AZ的节点类型，master/slave",
 						},
 					},
 				},
@@ -387,7 +387,7 @@ func (c *CtyunMysqlInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMergeMysqlInstance(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not exist") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -593,6 +593,10 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 		}
 	}
 	// 获取实例详情
+	if config.InstID.ValueString() == "" {
+		err = errors.New("查询实例详情时，实例 ID为空")
+		return err
+	}
 	detailParams := &mysql.TeledbQueryDetailRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 	}
@@ -1023,6 +1027,10 @@ func (c *CtyunMysqlInstance) DeleteLoop(ctx context.Context, state *CtyunMysqlIn
 }
 
 func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig) (err error) {
+	if state.InstID.ValueString() == "" {
+		err = errors.New("变配实例时，实例ID为空！")
+		return err
+	}
 	// 修改实例名称
 	if plan.Name.ValueString() != "" && state.Name.ValueString() != plan.Name.ValueString() {
 		updateNameParams := &mysql.TeledbUpdateInstanceNameRequest{
@@ -1293,7 +1301,7 @@ type CtyunMysqlInstanceConfig struct {
 type AvailabilityZoneModel struct {
 	AvailabilityZoneName  types.String `tfsdk:"availability_zone_name"`  // 资源池可用区名称
 	AvailabilityZoneCount types.Int32  `tfsdk:"availability_zone_count"` // 资源池可用区总数
-	NodeType              types.String `tfsdk:"node_type"`               // 表示分布AZ的节点类型，master/slave/readNode
+	NodeType              types.String `tfsdk:"node_type"`               // 表示分布AZ的节点类型，master/slave
 }
 
 type UpdatedAZModel struct {

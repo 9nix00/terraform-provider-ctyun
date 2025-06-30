@@ -31,7 +31,6 @@ data "ctyun_mysql_specs" "mysql_specs" {
 
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
-  prod_version          = "5.7"
   vpc_id                = local.real_vpc_id
   host_type             = "S7"
   subnet_id             = local.real_subnet_id

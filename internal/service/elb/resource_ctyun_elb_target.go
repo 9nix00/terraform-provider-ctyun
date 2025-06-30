@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -53,12 +54,12 @@ func (c *ctyunElbTarget) ImportState(ctx context.Context, request resource.Impor
 
 func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**新增/读取/编辑/删除 后端主机",
+		MarkdownDescription: "弹性负载均衡--后端主机新增/读取/编辑/删除，文档地址：https://www.ctyun.cn/document/10026756/10196689",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池Id",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -67,6 +68,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"target_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "后端服务组Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -75,18 +79,27 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型。取值范围：VM、BM、ECI、IP",
+				Description: "实例类型。取值范围：VM-虚拟云主机、BM-物理机、ECI-弹性容器",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbTargetInstanceType...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
-				Description: "后端实例Id",
+				Description: "云主机或物理机，或弹性容器实例ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"instance_ip": schema.StringAttribute{
 				Optional:    true,
-				Description: "后端服务 ip",
+				Description: "后端实例ip",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"protocol_port": schema.Int32Attribute{
 				Required:    true,
@@ -98,35 +111,27 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"weight": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "权重。取值范围：1-256，默认为100",
+				Description: "后端实例权重。取值范围：1-256，默认为100",
+				Default:     int32default.StaticInt32(100),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 256),
 				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "后端服务ID",
+				Description: "后端主机服务(elb_target)ID",
 			},
 			"health_check_status": schema.StringAttribute{
 				Computed:    true,
 				Description: "IPv4的健康检查状态: offline / online / unknown",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbTargetIpStatus...),
-				},
 			},
 			"health_check_status_ipv6": schema.StringAttribute{
 				Computed:    true,
 				Description: "IPv6的健康检查状态: offline / online / unknown",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbTargetIpStatus...),
-				},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "状态: DOWN / ACTIVE",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbRuleStatus...),
-				},
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -137,12 +142,23 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				Description: "更新时间，为UTC格式",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 		},
 	}
@@ -197,7 +213,7 @@ func (c *ctyunElbTarget) Read(ctx context.Context, request resource.ReadRequest,
 	// 查询远端
 	err = c.getAndMergeElbTarget(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -281,22 +297,6 @@ func (c *ctyunElbTarget) CrateElbTarget(ctx context.Context, plan *CtyunElbTarge
 		err = errors.New("创建ELB后端主机时，regionID不能为空")
 		return
 	}
-	if plan.TargetGroupID.IsNull() {
-		err = errors.New("创建ELB后端主机时，TargetGroupID不能为空")
-		return
-	}
-	if plan.InstanceType.IsNull() {
-		err = errors.New("创建ELB后端主机时，InstanceType不能为空")
-		return
-	}
-	if plan.InstanceID.IsNull() {
-		err = errors.New("创建ELB后端主机时，InstanceID不能为空")
-		return
-	}
-	if plan.ProtocolPort.IsNull() {
-		err = errors.New("创建ELB后端主机时，ProtocolPort不能为空")
-		return
-	}
 
 	params := &ctelb.CtelbCreateTargetRequest{
 		ClientToken:   uuid.NewString(),
@@ -351,8 +351,6 @@ func (c *ctyunElbTarget) getAndMergeElbTarget(ctx context.Context, plan *CtyunEl
 	returnObj := resp.ReturnObj
 
 	plan.Description = types.StringValue(returnObj.Description)
-	plan.AzName = types.StringValue(returnObj.AzName)
-	plan.ProjectID = types.StringValue(returnObj.ProjectID)
 	plan.ProtocolPort = types.Int32Value(returnObj.ProtocolPort)
 	plan.HealthCheckStatus = types.StringValue(returnObj.HealthCheckStatus)
 	plan.HealthCheckStatusIpv6 = types.StringValue(returnObj.HealthCheckStatusIpv6)
@@ -375,12 +373,12 @@ func (c *ctyunElbTarget) updateElbTarget(ctx context.Context, state *CtyunElbTar
 	params := &ctelb.CtelbUpdateTargetRequest{
 		RegionID: state.RegionID.ValueString(),
 		TargetID: state.ID.ValueString(),
-		Weight:   0,
+		Weight:   100,
 	}
 	if !plan.ProtocolPort.IsNull() {
 		params.ProtocolPort = plan.ProtocolPort.ValueInt32()
 	}
-	if plan.Weight.ValueInt32() != 0 {
+	if !plan.Weight.IsNull() {
 		params.Weight = plan.Weight.ValueInt32()
 	}
 

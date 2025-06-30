@@ -45,7 +45,7 @@ func (c *CtyunElbLoadBalancerResource) Metadata(_ context.Context, request resou
 
 func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**文档详情：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5643&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "**文档详情：https://www.ctyun.cn/document/10026756/10138703",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -112,7 +112,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"sla_name": schema.StringAttribute{
 				Required:    true,
-				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large。 ",
+				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large",
 				Validators: []validator.String{
 					stringvalidator.OneOf(append(business.ElbSlaNames, business.PgElbSlaNames...)...),
 				},
@@ -151,8 +151,14 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Description: "负载均衡Id",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"port_id": schema.StringAttribute{
 				Computed:    true,
@@ -303,7 +309,7 @@ func (c *CtyunElbLoadBalancerResource) Read(ctx context.Context, request resourc
 	// 查询远端
 	err = c.getAndMergeElb(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -517,7 +523,6 @@ func (c *CtyunElbLoadBalancerResource) getAndMergeElb(ctx context.Context, confi
 		err = fmt.Errorf("详情elb id(%s)与plan的elb id(%s)不一致！", elbObj.RegionID, config.RegionID.ValueString())
 		return
 	}
-	config.AzName = types.StringValue(elbObj.AzName)
 	config.Name = types.StringValue(elbObj.Name)
 	config.Description = types.StringValue(elbObj.Description)
 	config.VpcID = types.StringValue(elbObj.VpcID)

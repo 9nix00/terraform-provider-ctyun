@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"terraform-provider-ctyun/internal/common"
@@ -44,7 +47,7 @@ func (c *CtyunElbAcl) Metadata(ctx context.Context, request resource.MetadataReq
 
 func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡-访问控制，文档地址：https://www.ctyun.cn/document/10026756/10032777",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -58,6 +61,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -68,18 +74,32 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				Required:    true,
 				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据",
 				ElementType: types.StringType,
+				Validators: []validator.Set{
+					setvalidator.SizeAtMost(10),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "访问控制ID",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
@@ -136,7 +156,7 @@ func (c *CtyunElbAcl) Read(ctx context.Context, request resource.ReadRequest, re
 	// 查询远端
 	err = c.getAndMergeAcl(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -221,7 +241,7 @@ func (c *CtyunElbAcl) createAcl(ctx context.Context, config *CtyunElbAclConfig) 
 		RegionID:    config.RegionID.ValueString(),
 		Name:        config.Name.ValueString(),
 	}
-	if config.Description.ValueString() != "" {
+	if !config.Description.IsNull() {
 		params.Description = config.Description.ValueString()
 	}
 	var sourceIps []string
@@ -265,8 +285,6 @@ func (c *CtyunElbAcl) getAndMergeAcl(ctx context.Context, config *CtyunElbAclCon
 	}
 	returnObj := resp.ReturnObj
 	//解析acl详情
-	config.AzName = types.StringValue(returnObj.AzName)
-	config.ProjectID = types.StringValue(returnObj.ProjectID)
 	config.Name = types.StringValue(returnObj.Name)
 	config.Description = types.StringValue(returnObj.Description)
 	config.CreateTime = types.StringValue(returnObj.CreateTime)
@@ -286,10 +304,10 @@ func (c *CtyunElbAcl) updateAclInfo(ctx context.Context, state *CtyunElbAclConfi
 		SourceIps:       nil,
 		AccessControlID: state.ID.ValueString(),
 	}
-	if plan.Name.ValueString() != "" && plan.Name.ValueString() != state.Name.ValueString() {
+	if !plan.Name.IsNull() && plan.Name.ValueString() != state.Name.ValueString() {
 		params.Name = plan.Name.ValueString()
 	}
-	if plan.Description.ValueString() != "" && plan.Description.ValueString() != state.Description.ValueString() {
+	if !plan.Description.IsNull() && plan.Description.ValueString() != state.Description.ValueString() {
 		params.Description = plan.Description.ValueString()
 	}
 	var planSourceIps []string
