@@ -106,7 +106,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"cmk_uuid": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥管理服务中创建的密钥ID，使用此参数时，isEncrypted必须为true。当isEncrypted为true但未指定此参数时，会自动创建密钥",
+				Description: "密钥管理服务中创建的密钥ID，使用此参数时，is_encrypted必须为true。当is_encrypted为true但未指定此参数时，会自动创建密钥",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -120,7 +120,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"is_encrypted": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "加密状态",
+				Description: "加密状态，默认false",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
