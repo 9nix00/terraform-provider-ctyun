@@ -41,13 +41,13 @@ resource "ctyun_zos_bucket_object" "test" {
 
 - `acl` (String) 权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'
 - `cache_control` (String) 指定缓存行为，对应S3协议Header中的Cache-Control
-- `content` (String) 内容
+- `content` (String) 内容，和source有且只能有其1
 - `content_disposition` (String) 指定该对象的表示性信息，对应S3协议Header中的Content-Disposition
 - `content_encoding` (String) 指定已对该对象应用哪些内容编码方式，对应S3协议Header中的Content-Encoding
 - `content_type` (String) 描述对象类型，对应S3协议Header中的Content-Type
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
-- `source` (String) 文件路径
-- `storage_type` (String) 存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认STANDARD，
+- `source` (String) 文件路径，和content有且只能有其1
+- `storage_type` (String) 存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认使用桶的storage_type
 - `tags` (Map of String) 标签
 
 ### Read-Only

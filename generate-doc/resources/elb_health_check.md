@@ -1,4 +1,5 @@
 # ctyun_elb_health_check (Resource)
+弹性负载均衡--健康检查创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10032101
 
 
 
@@ -43,17 +44,16 @@ resource "ctyun_elb_health_check" "health_check_test" {
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
 - `http_expected_codes` (Set of String) 利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx
 - `http_method` (String) 仅当protocol为HTTP时必填且生效,HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}
-- `http_url_path` (String) 仅当protocol为HTTP时必填且生效,默认为'/',支持的最大字符长度：80
+- `http_url_path` (String) 仅当protocol为HTTP时必填且生效,支持的最大字符长度：80
 - `interval` (Number) 负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒
 - `max_retry` (Number) 最大重试次数，取值范围：1-10次，默认为2次
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `protocol_port` (Number) 健康检查端口 1 - 65535
 - `region_id` (String) 区域ID
 - `timeout` (Number) 健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒
 
 ### Read-Only
 
-- `az_name` (String) 可用区名称
 - `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 健康检查ID
-- `project_id` (String) 项目ID
-- `status` (Number) 状态 1 表示 UP, 0 表示 DOWN
+- `status` (Number) 状态 1 - UP, 0 - DOWN

@@ -25,12 +25,12 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 
 	cycleType := "on_demand"
 	hostType := "S7"
-	prodVersion := "12.22"
 	prodId := "Single1222"
 	storageType := "SATA"
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
+	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
+	password := "Kqjwyk123="
 	caseCensitive := true
 	instanceSeries := "S"
 	prodPerformanceSpce := "2C4G"
@@ -62,7 +62,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// 1. 按需验证，单节点创建，扩容至1主1备，修改名称，修改安全组， 规格扩容,磁盘扩容。
 			// create 验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, name, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, name, password, caseCensitive,
 					instanceSeries, prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -73,7 +73,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--姓名, 安全组，规格扩容
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -88,7 +88,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--backup磁盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -104,7 +104,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--master磁盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, azInfo, "", "", osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -119,7 +119,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// update验证--主备，关机，开机，重启
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="stop"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -132,7 +132,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="start"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -145,7 +145,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="restart"`, osType, cpuType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -159,7 +159,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			// datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", "", osType, cpuType, "") +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_id=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -173,7 +173,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodVersion, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					instanceSeries, updatedProdPerformanceSpce, vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", "", osType, cpuType, ""),
 				Destroy: true,
 			},

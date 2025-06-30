@@ -381,6 +381,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcsePluginMarket(),
 		pgsql.NewCtyunPgsqlInstances(),
 		pgsql.NewCtyunPgsqlSpecs(),
+		common2.NewCtyunZones(),
 	)
 }
 

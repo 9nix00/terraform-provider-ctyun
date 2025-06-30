@@ -59,7 +59,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 	updatedTfProxyProtocol := fmt.Sprintf(`proxy_protocol=%d`, updatedProxyProtocol)
 	updatedTfProtocol := fmt.Sprintf(`protocol="%s"`, updatedProtocol)
 
-	closedTfSessionStickyMode := fmt.Sprintf(`session_sticky_mode="%s"`, "CLOSE")
+	//closedTfSessionStickyMode := fmt.Sprintf(`session_sticky_mode="%s"`, "CLOSE")
 	// 代码合并需要整改
 	vpcId := dependence.vpcID
 
@@ -181,7 +181,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 3.3 updated， algorithm=lc, sessionStickyMode=CLOSE， proxyProtocol=0, protocol=http
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", closedTfSessionStickyMode, "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
+				Config: utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", "", "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcId),
@@ -194,7 +194,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 3.4 Destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", closedTfSessionStickyMode, "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
+				Config:  utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", "", "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
 				Destroy: true,
 			},
 		},

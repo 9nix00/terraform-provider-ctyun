@@ -1,4 +1,5 @@
 # ctyun_elb_rule (Resource)
+弹性负载均衡--转发规则，文档地址：https://www.ctyun.cn/document/10026756/10032110
 
 
 
@@ -68,25 +69,24 @@ resource "ctyun_elb_rule" "rule_test" {
 
 ### Required
 
-- `action_type` (String) 默认规则动作类型。取值范围：forward、redirect、deny(目前暂不支持配置为deny)
+- `action_type` (String) 默认规则动作类型。取值范围：forward、redirect
 - `conditions` (Attributes List) 匹配规则数据 (see [below for nested schema](#nestedatt--conditions))
-- `listener_id` (String) 监听器Id
+- `listener_id` (String) 监听器listener Id
 
 ### Optional
 
-- `action_redirect_listener_id` (String) 重定向监听器ID，当type为redirect时，此字段必填
+- `action_redirect_listener_id` (String) 重定向监听器ID，当action_type = redirect时，此字段必填
 - `action_target_groups` (Attributes List) 后端服务组 (see [below for nested schema](#nestedatt--action_target_groups))
+- `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}
-- `priority` (Number) 优先级，数字越小优先级越高，取值范围为：1-100(目前不支持配置此参数,只取默认值100)
-- `region_id` (String) 资源池Id
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
 
 ### Read-Only
 
-- `az_name` (String) 可用区名称
 - `created_time` (String) 创建时间，为UTC格式
 - `id` (String) 转发规则 ID
 - `load_balancer_id` (String) 负载均衡Id
-- `project_id` (String) 项目Id
 - `status` (String) 状态: ACTIVE / DOWN
 - `updated_time` (String) 更新时间，为UTC格式
 
@@ -95,13 +95,13 @@ resource "ctyun_elb_rule" "rule_test" {
 
 Required:
 
-- `type` (String) 类型。取值范围：server_name（服务名称）、url_path（匹配路径）
+- `condition_type` (String) 匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径）
 
 Optional:
 
 - `condition_match_type` (String) 匹配类型。取值范围：ABSOLUTE，PREFIX，REG
-- `condition_server_name` (String) 服务名称,格式为：xxx.xxx结构，不支持下划线'_'
-- `condition_url_paths` (String) 匹配路径
+- `condition_server_name` (String) 服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写
+- `condition_url_paths` (String) 匹配路径。当type = url_path填写
 
 
 <a id="nestedatt--action_target_groups"></a>

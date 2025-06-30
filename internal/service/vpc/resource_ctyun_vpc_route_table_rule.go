@@ -86,7 +86,7 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"next_hop_type": schema.StringAttribute{
 				Required:    true,
-				Description: "下一跳设备类型",
+				Description: "下一跳设备类型，支持vpcpeering、havip、bm、vm、natgw、igw、igw6、dc、ticc、vpngw、enic",
 				Validators: []validator.String{
 					stringvalidator.OneOf("vpcpeering", "havip", "bm", "vm", "natgw", "igw", "igw6", "dc", "ticc", "vpngw", "enic"),
 				},

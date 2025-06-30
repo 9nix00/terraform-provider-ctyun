@@ -7,8 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -18,6 +20,7 @@ import (
 	"terraform-provider-ctyun/internal/common"
 	ctelb "terraform-provider-ctyun/internal/core/ctelb"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 	"terraform-provider-ctyun/internal/utils"
 )
 
@@ -54,12 +57,12 @@ func (c *CtyunElbRule) Metadata(ctx context.Context, request resource.MetadataRe
 
 func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡--转发规则，文档地址：https://www.ctyun.cn/document/10026756/10032110",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
-				Computed:    true,
 				Optional:    true,
-				Description: "资源池Id",
+				Computed:    true,
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -67,13 +70,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"listener_id": schema.StringAttribute{
 				Required:    true,
-				Description: "监听器Id",
-			},
-			"priority": schema.Int32Attribute{
-				Optional:    true,
-				Description: "优先级，数字越小优先级越高，取值范围为：1-100(目前不支持配置此参数,只取默认值100)",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 100),
+				Description: "监听器listener Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"description": schema.StringAttribute{
@@ -85,9 +84,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				Description: "匹配规则数据",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"type": schema.StringAttribute{
+						"condition_type": schema.StringAttribute{
 							Required:    true,
-							Description: "类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
+							Description: "匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleConditionTypes...),
 							},
@@ -95,12 +94,32 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_server_name": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'",
+							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写",
+							Validators: []validator.String{
+								validator2.AlsoRequiresEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeServerName),
+								),
+								validator2.ConflictsWithEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeUrlPath),
+								),
+							},
 						},
 						"condition_url_paths": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "匹配路径",
+							Description: "匹配路径。当type = url_path填写",
+							Validators: []validator.String{
+								validator2.AlsoRequiresEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeUrlPath),
+								),
+								validator2.ConflictsWithEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeServerName),
+								),
+							},
 						},
 						"condition_match_type": schema.StringAttribute{
 							Optional:    true,
@@ -108,6 +127,14 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 							Description: "匹配类型。取值范围：ABSOLUTE，PREFIX，REG",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleMatchTypes...),
+								validator2.AlsoRequiresEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeUrlPath),
+								),
+								validator2.ConflictsWithEqualString(
+									path.MatchRelative().AtParent().AtName("condition_type"),
+									types.StringValue(business.ElbRuleConditionTypeServerName),
+								),
 							},
 						},
 					},
@@ -115,7 +142,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"action_type": schema.StringAttribute{
 				Required:    true,
-				Description: "默认规则动作类型。取值范围：forward、redirect、deny(目前暂不支持配置为deny)",
+				Description: "默认规则动作类型。取值范围：forward、redirect",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleActionType...),
 				},
@@ -133,6 +160,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 							Optional:    true,
 							Computed:    true,
 							Description: "权重，取值范围：1-256。默认为100",
+							Default:     int32default.StaticInt32(100),
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
 							},
@@ -143,19 +171,36 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"action_redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "重定向监听器ID，当type为redirect时，此字段必填",
+				Description: "重定向监听器ID，当action_type = redirect时，此字段必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("action_type"),
+						types.StringValue(business.ElbRuleActionTypeRedirect),
+					),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "转发规则 ID",
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
+				Description: "可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目Id",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"load_balancer_id": schema.StringAttribute{
 				Computed:    true,
@@ -164,9 +209,6 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "状态: ACTIVE / DOWN",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ElbRuleStatus...),
-				},
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -231,7 +273,7 @@ func (c *CtyunElbRule) Read(ctx context.Context, request resource.ReadRequest, r
 	err = c.getAndMergeRule(ctx, &state)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -336,12 +378,12 @@ func (c *CtyunElbRule) createElbRule(ctx context.Context, plan *CtyunElbRuleConf
 	}
 	for _, conditionItem := range conditionList {
 		condition := &ctelb.CtelbCreateRuleConditionsRequest{}
-		if conditionItem.Type.IsNull() {
+		if conditionItem.ConditionType.IsNull() {
 			err = errors.New("创建转发规则时，condition_type不能为空")
 			return
 		}
-		condition.RawType = conditionItem.Type.ValueString()
-		if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeServerName {
+		condition.RawType = conditionItem.ConditionType.ValueString()
+		if conditionItem.ConditionType.ValueString() == business.ElbRuleConditionTypeServerName {
 			// 若conditionType = server_name,传递serverName参数
 			condition.ServerNameConfig = &ctelb.CtelbCreateRuleConditionsServerNameConfigRequest{}
 			if conditionItem.ConditionServerName.IsNull() {
@@ -349,7 +391,7 @@ func (c *CtyunElbRule) createElbRule(ctx context.Context, plan *CtyunElbRuleConf
 				return
 			}
 			condition.ServerNameConfig.ServerName = conditionItem.ConditionServerName.ValueString()
-		} else if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeUrlPath {
+		} else if conditionItem.ConditionType.ValueString() == business.ElbRuleConditionTypeUrlPath {
 			condition.UrlPathConfig = &ctelb.CtelbCreateRuleConditionsUrlPathConfigRequest{}
 			if !conditionItem.ConditionMatchType.IsNull() {
 				err = errors.New("当condition type = url_path时，urlPaths和matchType必填！")
@@ -446,8 +488,6 @@ func (c *CtyunElbRule) getAndMergeRule(ctx context.Context, plan *CtyunElbRuleCo
 	}
 	returnObj := resp.ReturnObj
 	//解析rule明细，将远端明细合并至本地
-	plan.AzName = types.StringValue(returnObj.AzName)
-	plan.ProjectID = types.StringValue(returnObj.ProjectID)
 	plan.LoadBalancerID = types.StringValue(returnObj.LoadBalancerID)
 	plan.Status = types.StringValue(returnObj.Status)
 	plan.CreatedTime = types.StringValue(returnObj.CreatedTime)
@@ -458,7 +498,7 @@ func (c *CtyunElbRule) getAndMergeRule(ctx context.Context, plan *CtyunElbRuleCo
 	var conditions []ConditionsModel
 	for _, conditionItem := range conditionList {
 		var condition ConditionsModel
-		condition.Type = types.StringValue(conditionItem.RawType)
+		condition.ConditionType = types.StringValue(conditionItem.RawType)
 		condition.ConditionServerName = types.StringValue(conditionItem.ServerNameConfig.ServerName)
 		condition.ConditionUrlPaths = types.StringValue(conditionItem.UrlPathConfig.UrlPaths)
 		condition.ConditionMatchType = types.StringValue(conditionItem.UrlPathConfig.MatchType)
@@ -501,20 +541,20 @@ func (c *CtyunElbRule) updateElbRule(ctx context.Context, state CtyunElbRuleConf
 	if len(conditionList) > 0 {
 		for _, conditionItem := range conditionList {
 			condition := &ctelb.CtelbUpdateRuleConditionsRequest{}
-			if conditionItem.Type.IsNull() {
+			if conditionItem.ConditionType.IsNull() {
 				err = errors.New("更新转发规则时，condition_type不能为空")
 				return
 			}
 
-			condition.RawType = conditionItem.Type.ValueString()
-			if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeServerName {
+			condition.RawType = conditionItem.ConditionType.ValueString()
+			if conditionItem.ConditionType.ValueString() == business.ElbRuleConditionTypeServerName {
 				condition.ServerNameConfig = &ctelb.CtelbUpdateRuleConditionsServerNameConfigRequest{}
 
 				if conditionItem.ConditionServerName.IsNull() {
 					err = errors.New("当condition type为server_name, server name必填")
 				}
 				condition.ServerNameConfig.ServerName = conditionItem.ConditionServerName.ValueString()
-			} else if conditionItem.Type.ValueString() == business.ElbRuleConditionTypeUrlPath {
+			} else if conditionItem.ConditionType.ValueString() == business.ElbRuleConditionTypeUrlPath {
 				condition.UrlPathConfig = &ctelb.CtelbUpdateRuleConditionsUrlPathConfigRequest{}
 
 				if conditionItem.ConditionMatchType.IsNull() || conditionItem.ConditionUrlPaths.IsNull() {
@@ -598,7 +638,6 @@ func (c *CtyunElbRule) acquireAndSetIdIfOrderNotFinished(ctx context.Context, st
 type CtyunElbRuleConfig struct {
 	RegionID                 types.String `tfsdk:"region_id"`                   //区域ID
 	ListenerID               types.String `tfsdk:"listener_id"`                 //监听器ID
-	Priority                 types.Int32  `tfsdk:"priority"`                    //优先级，数字越小优先级越高，取值范围为：1-100(目前不支持配置此参数,只取默认值100)
 	Description              types.String `tfsdk:"description"`                 //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},
 	Conditions               types.List   `tfsdk:"conditions"`                  //匹配规则数据
 	ActionType               types.String `tfsdk:"action_type"`                 //默认规则动作类型。取值范围：forward、redirect、deny(目前暂不支持配置为deny)
@@ -614,7 +653,7 @@ type CtyunElbRuleConfig struct {
 }
 
 type ConditionsModel struct {
-	Type                types.String `tfsdk:"type"`                  //类型。取值范围：server_name（服务名称）、url_path（匹配路径）
+	ConditionType       types.String `tfsdk:"condition_type"`        //类型。取值范围：server_name（服务名称）、url_path（匹配路径）
 	ConditionServerName types.String `tfsdk:"condition_server_name"` //服务名称
 	ConditionUrlPaths   types.String `tfsdk:"condition_url_paths"`   //匹配路径
 	ConditionMatchType  types.String `tfsdk:"condition_match_type"`  //匹配类型。取值范围：ABSOLUTE，PREFIX，REG

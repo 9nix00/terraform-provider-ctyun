@@ -102,7 +102,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Required:    true,
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(2, 32),
+					validator2.NetworkName(),
 				},
 			},
 			"instance_type": schema.StringAttribute{
@@ -753,11 +753,15 @@ func (c *ctyunVpceService) updateBackend(ctx context.Context, plan, state CtyunV
 	}
 
 	endpointServiceID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
+	p := plan.InstanceType.ValueString()
+	if p == "lb" {
+		p = "elb"
+	}
 	params := &ctvpc.CtvpcVpceUpdateBackendRequest{
 		RegionID:          regionID,
 		EndpointServiceID: endpointServiceID,
 		InstanceID:        plan.InstanceID.ValueString(),
-		InstanceType:      plan.InstanceType.ValueString(),
+		InstanceType:      p,
 	}
 
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcVpceUpdateBackendApi.Do(ctx, c.meta.SdkCredential, params)

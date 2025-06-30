@@ -66,7 +66,7 @@ func (c *ctyunVpcRouteTables) Schema(_ context.Context, _ datasource.SchemaReque
 			},
 			"vpc_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "多个VPC的ID之间用半角逗号（,）隔开。",
+				Description: "虚拟私有云ID",
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,

@@ -1,4 +1,5 @@
 # ctyun_elb_acl (Resource)
+弹性负载均衡-访问控制，文档地址：https://www.ctyun.cn/document/10026756/10032777
 
 
 
@@ -33,12 +34,12 @@ resource "ctyun_elb_acl" "%[1]s" {
 
 ### Optional
 
+- `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 区域ID
 
 ### Read-Only
 
-- `az_name` (String) 可用区名称
 - `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 访问控制ID
-- `project_id` (String) 项目ID

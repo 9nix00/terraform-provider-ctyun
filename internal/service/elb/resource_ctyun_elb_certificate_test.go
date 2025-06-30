@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
 func TestAccCtyunElbCertificate(t *testing.T) {
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -105,7 +105,7 @@ func TestAccCtyunElbCertificate(t *testing.T) {
 			},
 			// 2.3 destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, updatedName, serverCertificateType, caCertificate, tfDescription),
+				Config:  utils.LoadTestCase(resourceFile, rnd, updatedName, caCertificateType, caCertificate, tfDescription),
 				Destroy: true,
 			},
 		},
