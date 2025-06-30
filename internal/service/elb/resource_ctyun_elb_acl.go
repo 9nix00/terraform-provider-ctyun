@@ -47,7 +47,7 @@ func (c *CtyunElbAcl) Metadata(ctx context.Context, request resource.MetadataReq
 
 func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡-访问控制，文档地址：https://www.ctyun.cn/document/10026756/10032777",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -156,7 +156,7 @@ func (c *CtyunElbAcl) Read(ctx context.Context, request resource.ReadRequest, re
 	// 查询远端
 	err = c.getAndMergeAcl(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -241,7 +241,7 @@ func (c *CtyunElbAcl) createAcl(ctx context.Context, config *CtyunElbAclConfig) 
 		RegionID:    config.RegionID.ValueString(),
 		Name:        config.Name.ValueString(),
 	}
-	if config.Description.ValueString() != "" {
+	if !config.Description.IsNull() {
 		params.Description = config.Description.ValueString()
 	}
 	var sourceIps []string
@@ -304,10 +304,10 @@ func (c *CtyunElbAcl) updateAclInfo(ctx context.Context, state *CtyunElbAclConfi
 		SourceIps:       nil,
 		AccessControlID: state.ID.ValueString(),
 	}
-	if plan.Name.ValueString() != "" && plan.Name.ValueString() != state.Name.ValueString() {
+	if !plan.Name.IsNull() && plan.Name.ValueString() != state.Name.ValueString() {
 		params.Name = plan.Name.ValueString()
 	}
-	if plan.Description.ValueString() != "" && plan.Description.ValueString() != state.Description.ValueString() {
+	if !plan.Description.IsNull() && plan.Description.ValueString() != state.Description.ValueString() {
 		params.Description = plan.Description.ValueString()
 	}
 	var planSourceIps []string

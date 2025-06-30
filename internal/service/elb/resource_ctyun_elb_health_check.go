@@ -51,7 +51,7 @@ func (c *CtyunElbHealthCheck) Metadata(_ context.Context, request resource.Metad
 
 func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--健康检查创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5675&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡--健康检查创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10032101",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -245,7 +245,7 @@ func (c *CtyunElbHealthCheck) Read(ctx context.Context, request resource.ReadReq
 	// 查询远端
 	err = c.getAndMergeHealthCheck(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -345,10 +345,10 @@ func (c *CtyunElbHealthCheck) createHealthCheck(ctx context.Context, plan *Ctyun
 	if plan.MaxRetry.ValueInt32() > 0 {
 		params.MaxRetry = plan.MaxRetry.ValueInt32()
 	}
-	if plan.Protocol.ValueString() == business.ListenerProtocolHTTP && plan.HttpMethod.ValueString() != "" {
+	if !plan.HttpMethod.IsNull() {
 		params.HttpMethod = plan.HttpMethod.ValueString()
 	}
-	if plan.Protocol.ValueString() == business.ListenerProtocolHTTP && plan.HttpUrlPath.ValueString() != "" {
+	if !plan.HttpUrlPath.IsNull() {
 		params.HttpUrlPath = plan.HttpUrlPath.ValueString()
 	}
 	httpExpectedCodes := []string{"http_2xx"}
@@ -359,7 +359,7 @@ func (c *CtyunElbHealthCheck) createHealthCheck(ctx context.Context, plan *Ctyun
 		}
 		params.HttpExpectedCodes = httpExpectedCodes
 	}
-	if plan.ProtocolPort.ValueInt32() > 0 {
+	if !plan.ProtocolPort.IsNull() && !plan.ProtocolPort.IsUnknown() {
 		params.ProtocolPort = plan.ProtocolPort.ValueInt32()
 	}
 
@@ -396,13 +396,13 @@ func (c *CtyunElbHealthCheck) updateHealthCheck(ctx context.Context, state *Ctyu
 	if plan.Description.ValueString() != "" && !plan.Description.Equal(state.Description) {
 		params.Description = plan.Description.ValueString()
 	}
-	if plan.Timeout.ValueInt32() > 0 {
+	if !plan.Timeout.IsNull() {
 		params.Timeout = plan.Timeout.ValueInt32()
 	}
-	if plan.MaxRetry.ValueInt32() > 0 {
+	if !plan.MaxRetry.IsNull() {
 		params.MaxRetry = plan.MaxRetry.ValueInt32()
 	}
-	if plan.Interval.ValueInt32() > 0 {
+	if !plan.Interval.IsNull() {
 		params.Interval = plan.Interval.ValueInt32()
 	}
 	if plan.HttpMethod.ValueString() != "" && !plan.HttpMethod.Equal(state.HttpMethod) {

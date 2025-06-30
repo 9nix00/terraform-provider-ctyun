@@ -54,7 +54,7 @@ func (c *CtyunElbListener) Metadata(ctx context.Context, request resource.Metada
 
 func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5650&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10140276",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -373,7 +373,7 @@ func (c *CtyunElbListener) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMergeListener(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -534,25 +534,25 @@ func (c *CtyunElbListener) CreateElbListener(ctx context.Context, plan *CtyunElb
 		Protocol:       plan.Protocol.ValueString(),
 		ProtocolPort:   plan.ProtocolPort.ValueInt32(),
 	}
-	if !plan.Description.IsNull() {
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		params.Description = plan.Description.ValueString()
 	}
-	if !plan.CertificateID.IsNull() {
+	if !plan.CertificateID.IsNull() && !plan.CertificateID.IsUnknown() {
 		params.CertificateID = plan.CertificateID.ValueString()
 	}
-	if !plan.CaEnabled.IsNull() {
+	if !plan.CaEnabled.IsNull() && !plan.CaEnabled.IsUnknown() {
 		params.CaEnabled = plan.CaEnabled.ValueBoolPointer()
 	}
-	if !plan.ClientCertificateID.IsNull() {
+	if !plan.ClientCertificateID.IsNull() && !plan.ClientCertificateID.IsUnknown() {
 		params.ClientCertificateID = plan.ClientCertificateID.ValueString()
 	}
-	if !plan.AccessControlID.IsNull() {
+	if !plan.AccessControlID.IsNull() && !plan.AccessControlID.IsUnknown() {
 		params.AccessControlID = plan.AccessControlID.ValueString()
 	}
-	if !plan.AccessControlType.IsNull() {
+	if !plan.AccessControlType.IsNull() && !plan.AccessControlType.IsUnknown() {
 		params.AccessControlType = plan.AccessControlType.ValueString()
 	}
-	if !plan.ForwardedForEnabled.IsNull() {
+	if !plan.ForwardedForEnabled.IsNull() && !plan.ForwardedForEnabled.IsUnknown() {
 		params.ForwardedForEnabled = plan.ForwardedForEnabled.ValueBoolPointer()
 	}
 
@@ -825,7 +825,7 @@ func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerCo
 	if state.Protocol.ValueString() == business.ListenerProtocolUDP || state.Protocol.ValueString() == business.ListenerProtocolTCP {
 		return
 	}
-	if plan.ListenerQps.ValueInt32() == 0 {
+	if plan.ListenerQps.IsNull() || plan.ListenerQps.IsUnknown() {
 		return
 	}
 	// 如何plan qps 和state qps相同，直接返回
@@ -852,7 +852,7 @@ func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerCo
 	if state.Protocol.ValueString() != business.ListenerProtocolUDP && state.Protocol.ValueString() != business.ListenerProtocolTCP {
 		return
 	}
-	if plan.ListenerCps.ValueInt32() == 0 {
+	if plan.ListenerCps.IsNull() || plan.ListenerCps.IsUnknown() {
 		return
 	}
 	// 如果plan cps与state cps相同，直接返回
@@ -880,7 +880,7 @@ func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *Ctyun
 		return
 	}
 
-	if plan.EstablishTimeout.ValueInt32() == 0 {
+	if plan.EstablishTimeout.IsNull() || plan.EstablishTimeout.IsUnknown() {
 		return
 	}
 	if isUpdate && plan.EstablishTimeout.ValueInt32() == state.EstablishTimeout.ValueInt32() {
@@ -906,7 +906,7 @@ func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbLi
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
 	}
-	if plan.IdleTimeout.ValueInt32() == 0 {
+	if plan.IdleTimeout.IsNull() || plan.IdleTimeout.IsUnknown() {
 		return
 	}
 	if isUpdate && plan.IdleTimeout.ValueInt32() == state.IdleTimeout.ValueInt32() {
@@ -934,7 +934,7 @@ func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunE
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
 	}
-	if plan.ResponseTimeout.ValueInt32() == 0 {
+	if plan.ResponseTimeout.IsNull() || plan.ResponseTimeout.IsUnknown() {
 		return
 	}
 	if isUpdate && plan.ResponseTimeout.ValueInt32() == state.ResponseTimeout.ValueInt32() {

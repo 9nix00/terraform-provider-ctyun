@@ -235,9 +235,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 							Required:    true,
 							Description: "节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；readonly=只读节点；ms=副本集；s=单机版；backup=备份机",
 						},
-						"inst_spec": schema.StringAttribute{
+						"instance_series": schema.StringAttribute{
 							Required:    true,
-							Description: "实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到）",
+							Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
 						},
 						"storage_type": schema.StringAttribute{
 							Required:    true,
@@ -445,7 +445,7 @@ func (c *CtyunMongodbInstance) CreateMongodbInstance(ctx context.Context, config
 	for _, nodeInfoItem := range nodeInfoList {
 		nodeInfo := mongodb.MongodbNodeInfoListRequest{
 			NodeType:            nodeInfoItem.NodeType.ValueString(),
-			InstSpec:            nodeInfoItem.InstSpec.ValueString(),
+			InstSpec:            business.MongodbInstanceSeriesDict[nodeInfoItem.InstanceSeries.ValueString()],
 			StorageType:         nodeInfoItem.StorageType.ValueString(),
 			StorageSpace:        nodeInfoItem.StorageSpace.ValueInt32(),
 			ProdPerformanceSpec: nodeInfoItem.ProdPerformanceSpec.ValueString(),
@@ -1346,7 +1346,7 @@ type CtyunMongodbInstanceConfig struct {
 
 type NodeInfoListModel struct {
 	NodeType             types.String `tfsdk:"node_type"`              // 实例类型：master 或 readNode
-	InstSpec             types.String `tfsdk:"inst_spec"`              // 实例规格（实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到））
+	InstanceSeries       types.String `tfsdk:"instance_series"`        // 实例规格（实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到））
 	StorageType          types.String `tfsdk:"storage_type"`           // 存储类型：SSD, SATA, SAS, SSD-genric, FAST-SSD
 	StorageSpace         types.Int32  `tfsdk:"storage_space"`          // 存储空间（单位：GB，范围100到32768）
 	ProdPerformanceSpec  types.String `tfsdk:"prod_performance_spec"`  // 规格（例：4C8G）

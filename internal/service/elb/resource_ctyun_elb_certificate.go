@@ -53,7 +53,7 @@ func (c *CtyunElbCertificate) Metadata(ctx context.Context, request resource.Met
 
 func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡-证书管理，openapi接口链接：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5685&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡-证书管理，接口链接：https://www.ctyun.cn/document/10026756/10155416",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -204,7 +204,7 @@ func (c *CtyunElbCertificate) Read(ctx context.Context, request resource.ReadReq
 	err = c.getAndMergeCertificate(ctx, &state)
 	if err != nil {
 		// 有待确定
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
