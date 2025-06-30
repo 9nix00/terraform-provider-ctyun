@@ -45,7 +45,7 @@ func (c *CtyunElbLoadBalancerResource) Metadata(_ context.Context, request resou
 
 func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**文档详情：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5643&data=88&isNormal=1&vid=82。elb产品建构顺序：创建elb->创建listener->",
+		MarkdownDescription: "**文档详情：https://www.ctyun.cn/document/10026756/10138703",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -309,7 +309,7 @@ func (c *CtyunElbLoadBalancerResource) Read(ctx context.Context, request resourc
 	// 查询远端
 	err = c.getAndMergeElb(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}

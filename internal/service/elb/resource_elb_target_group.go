@@ -53,7 +53,7 @@ func (c *CtyunElbTargetGroup) Metadata(ctx context.Context, request resource.Met
 
 func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--后端主机组创建/删除/更新，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5658&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡--后端主机组创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10155289",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -259,7 +259,7 @@ func (c *CtyunElbTargetGroup) Read(ctx context.Context, request resource.ReadReq
 	// 查询远端
 	err = c.getAndMergeTargetGroup(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -359,10 +359,10 @@ func (c *CtyunElbTargetGroup) createTargetGroup(ctx context.Context, plan *Ctyun
 		Algorithm:     plan.Algorithm.ValueString(),
 		SessionSticky: nil,
 	}
-	if plan.Protocol.ValueString() != "" {
+	if !plan.Protocol.IsNull() {
 		params.Protocol = plan.Protocol.ValueString()
 	}
-	if plan.HealthCheckID.ValueString() != "" {
+	if !plan.HealthCheckID.IsNull() {
 		params.HealthCheckID = plan.HealthCheckID.ValueString()
 	}
 	if !plan.ProxyProtocol.IsNull() {
@@ -390,33 +390,13 @@ func (c *CtyunElbTargetGroup) createTargetGroup(ctx context.Context, plan *Ctyun
 				return
 			}
 		}
-		if plan.CookieExpire.ValueInt64() <= 0 {
-			if plan.SessionStickyMode.ValueString() == business.TargetGroupSessionStickyModeINSERT {
-				//。INSERT模式必填cookie过期时间
-				err = fmt.Errorf("当会话保持模式为insert时，cookie过期时间必填！")
-				return
-			}
-		} else {
+		if !plan.CookieExpire.IsNull() && !plan.CookieExpire.IsUnknown() {
 			sessionSticky.CookieExpire = int32(plan.CookieExpire.ValueInt64())
 		}
-
-		if plan.RewriteCookieName.ValueString() == "" {
-			if plan.SessionStickyMode.ValueString() == business.TargetGroupSessionStickyModeREWRITE {
-				// REWRITE模式必填cookie重写名称
-				err = fmt.Errorf("当会话保持模式为rewrite时，cookie重写名称必填！")
-				return
-			}
-		} else {
+		if !plan.RewriteCookieName.IsNull() && !plan.RewriteCookieName.IsUnknown() {
 			sessionSticky.RewriteCookieName = plan.RewriteCookieName.ValueString()
 		}
-
-		if plan.SourceIpTimeout.ValueInt64() <= 0 {
-			if plan.SessionStickyMode.ValueString() == business.TargetGroupSessionStickyModeSourceIP {
-				//SOURCE_IP模式必填源IP会话保持超时时间
-				err = fmt.Errorf("当会话保持模式为SOURCE_IP时，源IP会话保持超时时间必填！")
-				return
-			}
-		} else {
+		if !plan.SourceIpTimeout.IsNull() && !plan.SourceIpTimeout.IsUnknown() {
 			sessionSticky.SourceIpTimeout = int32(plan.SourceIpTimeout.ValueInt64())
 		}
 	}
@@ -461,27 +441,20 @@ func (c *CtyunElbTargetGroup) updateTargetGroupInfo(ctx context.Context, state *
 		},
 	}
 
-	if plan.ProjectID.ValueString() != "" && !plan.ProjectID.Equal(state.ProjectID) {
+	if !state.ProjectID.IsNull() {
 		params.ProjectID = plan.ProjectID.ValueString()
 	}
-	if plan.Name.ValueString() != "" && !plan.Name.Equal(state.Name) {
+	if !plan.Name.Equal(state.Name) {
 		params.Name = plan.Name.ValueString()
 	}
-	if plan.HealthCheckID.ValueString() != "" && !plan.HealthCheckID.Equal(state.HealthCheckID) {
+	if !plan.HealthCheckID.IsNull() && !plan.HealthCheckID.Equal(state.HealthCheckID) {
 		params.HealthCheckID = plan.HealthCheckID.ValueString()
 	}
-	if plan.Algorithm.ValueString() != "" && !plan.Algorithm.Equal(state.Algorithm) {
+	if !plan.Algorithm.IsNull() && !plan.Algorithm.Equal(state.Algorithm) {
 		params.Algorithm = plan.Algorithm.ValueString()
 	}
-	if !plan.ProxyProtocol.IsNull() && plan.ProxyProtocol.ValueInt32() != state.ProxyProtocol.ValueInt32() {
-		err = fmt.Errorf("ProxyProtocol不支持更改")
-		return
-	}
-	if plan.Protocol.ValueString() != "" && plan.Protocol.ValueString() != state.Protocol.ValueString() {
-		err = fmt.Errorf("Protocol不支持更新")
-		return
-	}
-	if plan.SessionStickyMode.ValueString() != "" {
+
+	if !plan.SessionStickyMode.IsNull() {
 		sessionSticky := &ctelb.CtelbUpdateTargetGroupSessionStickyRequest{}
 		sessionSticky.SessionStickyMode = plan.SessionStickyMode.ValueString()
 		if !plan.CookieExpire.IsNull() {
@@ -494,20 +467,6 @@ func (c *CtyunElbTargetGroup) updateTargetGroupInfo(ctx context.Context, state *
 			sessionSticky.SourceIpTimeout = int32(plan.SourceIpTimeout.ValueInt64())
 		}
 		params.SessionSticky = sessionSticky
-	}
-
-	// 更新前，验证字段合法性
-	if params.SessionSticky.SessionStickyMode == business.TargetGroupSessionStickyModeINSERT && params.SessionSticky.CookieExpire == 0 {
-		err = fmt.Errorf("当会话保持模式为insert时，cookie过期时间必填！")
-		return
-	}
-	if params.SessionSticky.SessionStickyMode == business.TargetGroupSessionStickyModeREWRITE && params.SessionSticky.RewriteCookieName == "" {
-		err = fmt.Errorf("当会话保持模式为rewrite时，cookie重写名称必填！")
-		return
-	}
-	if params.SessionSticky.SessionStickyMode == business.TargetGroupSessionStickyModeSourceIP && params.SessionSticky.SourceIpTimeout == 0 {
-		err = fmt.Errorf("当会话保持模式为SOURCE_IP时，源IP会话保持超时时间必填！")
-		return
 	}
 
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbUpdateTargetGroupApi.Do(ctx, c.meta.SdkCredential, params)

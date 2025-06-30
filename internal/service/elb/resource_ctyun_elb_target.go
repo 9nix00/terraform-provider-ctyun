@@ -54,7 +54,7 @@ func (c *ctyunElbTarget) ImportState(ctx context.Context, request resource.Impor
 
 func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--后端主机新增/读取/编辑/删除，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5665&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡--后端主机新增/读取/编辑/删除，文档地址：https://www.ctyun.cn/document/10026756/10196689",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -213,7 +213,7 @@ func (c *ctyunElbTarget) Read(ctx context.Context, request resource.ReadRequest,
 	// 查询远端
 	err = c.getAndMergeElbTarget(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -297,22 +297,6 @@ func (c *ctyunElbTarget) CrateElbTarget(ctx context.Context, plan *CtyunElbTarge
 		err = errors.New("创建ELB后端主机时，regionID不能为空")
 		return
 	}
-	if plan.TargetGroupID.IsNull() {
-		err = errors.New("创建ELB后端主机时，TargetGroupID不能为空")
-		return
-	}
-	if plan.InstanceType.IsNull() {
-		err = errors.New("创建ELB后端主机时，InstanceType不能为空")
-		return
-	}
-	if plan.InstanceID.IsNull() {
-		err = errors.New("创建ELB后端主机时，InstanceID不能为空")
-		return
-	}
-	if plan.ProtocolPort.IsNull() {
-		err = errors.New("创建ELB后端主机时，ProtocolPort不能为空")
-		return
-	}
 
 	params := &ctelb.CtelbCreateTargetRequest{
 		ClientToken:   uuid.NewString(),
@@ -389,12 +373,12 @@ func (c *ctyunElbTarget) updateElbTarget(ctx context.Context, state *CtyunElbTar
 	params := &ctelb.CtelbUpdateTargetRequest{
 		RegionID: state.RegionID.ValueString(),
 		TargetID: state.ID.ValueString(),
-		Weight:   0,
+		Weight:   100,
 	}
 	if !plan.ProtocolPort.IsNull() {
 		params.ProtocolPort = plan.ProtocolPort.ValueInt32()
 	}
-	if plan.Weight.ValueInt32() != 0 {
+	if !plan.Weight.IsNull() {
 		params.Weight = plan.Weight.ValueInt32()
 	}
 

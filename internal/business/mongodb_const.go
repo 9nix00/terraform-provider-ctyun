@@ -253,3 +253,9 @@ var MongodbStorageType = []string{
 	MongodbStorageTypeSATA,
 	MongodbStorageTypeSSDGenric,
 }
+
+var MongodbInstanceSeriesDict = map[string]string{
+	"S": "1",
+	"C": "2",
+	"M": "3",
+}

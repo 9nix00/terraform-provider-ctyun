@@ -57,7 +57,7 @@ func (c *CtyunElbRule) Metadata(ctx context.Context, request resource.MetadataRe
 
 func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--转发规则，openapi文档地址：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5705&data=88&isNormal=1&vid=82",
+		MarkdownDescription: "弹性负载均衡--转发规则，文档地址：https://www.ctyun.cn/document/10026756/10032110",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -273,7 +273,7 @@ func (c *CtyunElbRule) Read(ctx context.Context, request resource.ReadRequest, r
 	err = c.getAndMergeRule(ctx, &state)
 
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
