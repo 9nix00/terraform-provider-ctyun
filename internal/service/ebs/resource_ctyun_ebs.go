@@ -70,7 +70,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"size": schema.Int64Attribute{
 				Required:    true,
-				Description: "磁盘大小，单位GB，取值范围[10, 32768]",
+				Description: "磁盘大小，单位GB，取值范围[10, 32768]，不支持缩容",
 				Validators: []validator.Int64{
 					int64validator.Between(10, 32768),
 				},

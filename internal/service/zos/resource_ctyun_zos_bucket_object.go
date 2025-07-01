@@ -95,7 +95,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"source": schema.StringAttribute{
 				Optional:    true,
-				Description: "文件路径，和content有且只能有其1",
+				Description: "文件路径，和content有且只能有一个",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -107,7 +107,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"content": schema.StringAttribute{
 				Optional:    true,
-				Description: "内容，和source有且只能有其1",
+				Description: "内容，和source有且只能有一个",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
