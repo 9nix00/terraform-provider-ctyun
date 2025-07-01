@@ -1,4 +1,5 @@
 # ctyun_elb_certificate (Resource)
+弹性负载均衡-证书管理，接口链接：https://www.ctyun.cn/document/10026756/10155416
 
 
 
@@ -36,15 +37,15 @@ resource "ctyun_elb_certificate" "%[1]s" {
 
 ### Optional
 
+- `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
 - `private_key` (String) 服务器证书私钥，type=Server服务器证书此字段必填
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 区域ID
 
 ### Read-Only
 
-- `az_name` (String) 可用区名称
 - `created_time` (String) 创建时间，为UTC格式
 - `id` (String) 证书ID
-- `project_id` (String) 项目ID
 - `status` (String) 状态: ACTIVE / INACTIVE
 - `updated_time` (String) 更新时间，为UTC格式

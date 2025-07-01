@@ -1,5 +1,5 @@
 # ctyun_elb_target (Resource)
-**新增/读取/编辑/删除 后端主机
+弹性负载均衡--后端主机新增/读取/编辑/删除，文档地址：https://www.ctyun.cn/document/10026756/10196689
 
 
 
@@ -85,25 +85,25 @@ resource "ctyun_elb_target" "elb_target_test" {
 
 ### Required
 
-- `instance_id` (String) 后端实例Id
-- `instance_type` (String) 实例类型。取值范围：VM、BM、ECI、IP
+- `instance_id` (String) 云主机或物理机，或弹性容器实例ID
+- `instance_type` (String) 实例类型。取值范围：VM-虚拟云主机、BM-物理机、ECI-弹性容器
 - `protocol_port` (Number) 协议端口。取值范围：1-65535
 - `target_group_id` (String) 后端服务组Id
 
 ### Optional
 
+- `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `description` (String) 描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},
-- `instance_ip` (String) 后端服务 ip
-- `region_id` (String) 资源池Id
-- `weight` (Number) 权重。取值范围：1-256，默认为100
+- `instance_ip` (String) 后端实例ip
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
+- `weight` (Number) 后端实例权重。取值范围：1-256，默认为100
 
 ### Read-Only
 
-- `az_name` (String) 可用区名称
 - `created_time` (String) 创建时间，为UTC格式
 - `health_check_status` (String) IPv4的健康检查状态: offline / online / unknown
 - `health_check_status_ipv6` (String) IPv6的健康检查状态: offline / online / unknown
-- `id` (String) 后端服务ID
-- `project_id` (String) 项目ID
+- `id` (String) 后端主机服务(elb_target)ID
 - `status` (String) 状态: DOWN / ACTIVE
 - `updated_time` (String) 更新时间，为UTC格式

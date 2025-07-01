@@ -38,7 +38,6 @@ data "ctyun_mysql_specs" "mysql_specs" {
 
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
-  prod_version          = "5.7"
   vpc_id                = local.real_vpc_id
   host_type             = "S7"
   subnet_id             = local.real_subnet_id
@@ -115,4 +114,4 @@ Required:
 
 - `availability_zone_count` (Number) 资源池可用区总数
 - `availability_zone_name` (String) 资源池可用区名称
-- `node_type` (String) 表示分布AZ的节点类型，master/slave/readNode
+- `node_type` (String) 表示分布AZ的节点类型，master/slave
