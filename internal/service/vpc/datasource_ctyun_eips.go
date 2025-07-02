@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctvpc"
 	"terraform-provider-ctyun/internal/utils"
@@ -59,7 +58,6 @@ type CtyunEipsConfig struct {
 	PageSize  types.Int32  `tfsdk:"page_size"`
 	Ids       types.String `tfsdk:"ids"`
 	Status    types.String `tfsdk:"status"`
-	IpType    types.String `tfsdk:"ip_type"`
 	EipType   types.String `tfsdk:"eip_type"`
 	Ip        types.String `tfsdk:"ip"`
 
@@ -100,16 +98,9 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
-				Description: "弹性ip状态，取值范围：active：有效，down：未绑定，error：出错，updating：更新中，banding_or_unbangding：绑定解绑中，deleting：删除中，deleted：已删除，expired：已过期",
+				Description: "弹性ip状态，支持ACTIVE（已绑定）/ DOWN（未绑定）/ FREEZING（已冻结）/ EXPIRED（已过期）",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.EipStatus...),
-				},
-			},
-			"ip_type": schema.StringAttribute{
-				Optional:    true,
-				Description: "ip类型ipv4/ipv6",
-				Validators: []validator.String{
-					stringvalidator.OneOf("ipv4", "ipv6"),
+					stringvalidator.OneOf("ACTIVE", "DOWN", "FREEZING", "EXPIRED"),
 				},
 			},
 			"eip_type": schema.StringAttribute{
@@ -227,7 +218,6 @@ func (c *ctyunEips) Read(ctx context.Context, request datasource.ReadRequest, re
 	params := &ctvpc.CtvpcNewEipListRequest{
 		RegionID:    regionId,
 		Status:      config.Status.ValueStringPointer(),
-		IpType:      config.IpType.ValueStringPointer(),
 		EipType:     config.EipType.ValueStringPointer(),
 		Ip:          config.Ip.ValueStringPointer(),
 		ClientToken: uuid.NewString(),

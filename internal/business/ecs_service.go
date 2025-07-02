@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"terraform-provider-ctyun/internal/common"
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"time"
 )
 
 type EcsService struct {
@@ -74,4 +75,31 @@ func (u EcsService) GetEcsStatus(ctx context.Context, id, regionId string) (stri
 		return "", err
 	}
 	return instance.InstanceStatus, nil
+}
+
+func (u EcsService) CheckEcsStatus(ctx context.Context, id, regionId string) error {
+	var executeSuccessFlag bool
+	var status string
+	var err error
+	retryer, _ := NewRetryer(time.Second*10, 10)
+	retryer.Start(
+		func(currentTime int) bool {
+			status, err = u.GetEcsStatus(ctx, id, regionId)
+			if err != nil {
+				return false
+			}
+			switch status {
+			case EcsStatusRunning, EcsStatusStopped, EcsStatusShelve:
+				executeSuccessFlag = true
+				return false
+			}
+			return true
+		})
+	if err != nil {
+		return err
+	}
+	if !executeSuccessFlag {
+		return fmt.Errorf("云主机当前状态异常：%s", status)
+	}
+	return nil
 }

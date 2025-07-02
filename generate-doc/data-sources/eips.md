@@ -42,12 +42,11 @@ output "ctyun_test" {
 - `eip_type` (String) eip类型normal/cn2
 - `ids` (String) 使用,连接
 - `ip` (String) 弹性IP的ip地址
-- `ip_type` (String) ip类型ipv4/ipv6
 - `page_no` (Number) 列表的页码，默认值为1,推荐使用该字段
 - `page_size` (Number) 每页数据量大小，取值1-50
 - `project_id` (String) 企业项目ID，默认为`0`
 - `region_id` (String) 资源池ID
-- `status` (String) 弹性ip状态，取值范围：active：有效，down：未绑定，error：出错，updating：更新中，banding_or_unbangding：绑定解绑中，deleting：删除中，deleted：已删除，expired：已过期
+- `status` (String) 弹性ip状态，支持ACTIVE（已绑定）/ DOWN（未绑定）/ FREEZING（已冻结）/ EXPIRED（已过期）
 
 ### Read-Only
 

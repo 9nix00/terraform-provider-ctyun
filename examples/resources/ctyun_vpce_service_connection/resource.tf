@@ -64,7 +64,7 @@ resource "ctyun_vpce_service" "vpce_service_test" {
   name  = "tf-vpce-server-tmp"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
-  auto_connection = true
+  auto_connection = false
   type = "interface"
   instance_id = ctyun_ecs.ecs_test.id
   instance_type = "vm"
@@ -83,3 +83,8 @@ resource "ctyun_vpce" "vpce_test" {
   whitelist_flag = false
 }
 
+resource "ctyun_vpce_service_connection" "test" {
+  endpoint_service_id = ctyun_vpce_service.vpce_service_test.id
+  endpoint_id = ctyun_vpce.vpce_test.id
+  status = "up"
+}

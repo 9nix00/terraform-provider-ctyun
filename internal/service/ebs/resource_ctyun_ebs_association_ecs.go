@@ -76,7 +76,7 @@ func (c *ctyunEbsAssociation) Create(ctx context.Context, request resource.Creat
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	err = c.ecsService.MustExist(ctx, plan.InstanceId.ValueString(), plan.RegionId.ValueString())
+	err = c.ecsService.CheckEcsStatus(ctx, plan.InstanceId.ValueString(), plan.RegionId.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -141,6 +141,11 @@ func (c *ctyunEbsAssociation) Delete(ctx context.Context, request resource.Delet
 		return
 	}
 
+	err := c.ecsService.CheckEcsStatus(ctx, state.InstanceId.ValueString(), state.RegionId.ValueString())
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
 	resp, err := c.meta.Apis.CtEbsApis.EbsDisassociateApi.Do(ctx, c.meta.Credential, &ctebs.EbsDisassociateRequest{
 		RegionId: state.RegionId.ValueString(),
 		DiskId:   state.EbsId.ValueString(),

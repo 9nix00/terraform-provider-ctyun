@@ -51,7 +51,7 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID，使用的ip地址",
+				Description: "ID，使用中转IP地址，和transit_ip相等",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

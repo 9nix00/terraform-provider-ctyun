@@ -220,16 +220,9 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeAssociation(ctx context.Co
 	}
 	if resp.ReturnObj.NeedMigrate != 0 {
 		err = fmt.Errorf("云主机 %s 需要迁移后才可加入云主机组 %s", instanceID, groupID)
-	}
-	status, err := business.NewEcsService(c.meta).GetEcsStatus(ctx, instanceID, regionID)
-	if err != nil {
 		return
 	}
-	if status != business.EcsStatusRunning && status != business.EbmStatusStopped {
-		err = fmt.Errorf("云主机 %s 必须处于running或stopped状态，当前状态 %s", instanceID, status)
-		return
-	}
-
+	err = business.NewEcsService(c.meta).CheckEcsStatus(ctx, instanceID, regionID)
 	return
 }
 
@@ -288,14 +281,7 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeDissociate(ctx context.Con
 		err = fmt.Errorf("云主机 %s 和云主机组 %s 未关联", instanceID, groupID)
 		return
 	}
-	status, err := business.NewEcsService(c.meta).GetEcsStatus(ctx, instanceID, regionID)
-	if err != nil {
-		return
-	}
-	if status != business.EcsStatusRunning && status != business.EbmStatusStopped {
-		err = fmt.Errorf("云主机 %s 必须处于running或stopped状态，当前状态 %s", instanceID, status)
-		return
-	}
+	err = business.NewEcsService(c.meta).CheckEcsStatus(ctx, instanceID, regionID)
 	return
 }
 

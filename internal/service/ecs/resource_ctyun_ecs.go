@@ -263,7 +263,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"is_destroy_instance": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否立即释放，默认为false。当包周期云主机退订之后有一定时间的保留期。可选择销毁该云主机，立即释放则没有保留期",
+				Description: "是否立即释放，默认为false。包周期云主机退订之后有一定时间的保留期，通过terraform destroy触发退订后，若此字段为true，会立即释放该云主机。",
 				Default:     booldefault.StaticBool(false),
 			},
 			"pay_voucher_price": schema.Float64Attribute{
@@ -439,8 +439,14 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 
+	// 先检查状态
+	err := c.ecsService.CheckEcsStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString())
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
 	// 先关机或者节省关机，因为销毁是默认用户意识到资料销毁的动作，所以直接关机是ok的
-	err := c.closeInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString())
+	err = c.closeInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -1271,7 +1277,7 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	if len(vs) != 1 {
 		return nil, errors.New("查询系统盘信息发生错误，查询到系统盘数量" + strconv.Itoa(len(vs)))
 	}
-	result := ecsVolumeResponse.Results[0]
+	result := vs[0]
 	diskType, err2 := business.EbsDiskTypeMap.ToOriginalScene(result.DiskDataType, business.EbsDiskTypeMapScene1)
 	if err2 != nil {
 		return nil, err2

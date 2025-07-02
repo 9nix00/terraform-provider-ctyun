@@ -69,9 +69,9 @@ func (c *ctyunBandwidth) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"bandwidth": schema.Int32Attribute{
 				Required:    true,
-				Description: "共享带宽的带宽峰值（Mbit/s），必须大于等于5",
+				Description: "共享带宽的带宽峰值（Mbit/s），取值范围5-1000",
 				Validators: []validator.Int32{
-					int32validator.AtLeast(5),
+					int32validator.Between(5, 1000),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
