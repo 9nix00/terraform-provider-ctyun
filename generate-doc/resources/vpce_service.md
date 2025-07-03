@@ -61,7 +61,7 @@ resource "ctyun_vpce_service" "test" {
 ### Required
 
 - `auto_connection` (Boolean) 是否自动连接，true表示自动链接，false表示非自动链接
-- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
+- `name` (String) 支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32
 - `subnet_id` (String) 服务后端子网id
 - `type` (String) 接口还是反向，interface:接口，reverse:反向
 - `vpc_id` (String) 虚拟私有云ID

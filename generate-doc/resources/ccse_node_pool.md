@@ -128,8 +128,11 @@ Required:
 
 Required:
 
-- `size` (Number) 数据盘大小，单位为G，支持范围10-20000
 - `type` (String) 数据盘类型，支持SATA、SAS、SSD
+
+Optional:
+
+- `size` (Number) 数据盘大小，单位为G，支持范围10-20000
 
 
 <a id="nestedatt--sys_disk"></a>

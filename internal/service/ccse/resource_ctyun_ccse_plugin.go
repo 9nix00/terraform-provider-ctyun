@@ -286,6 +286,18 @@ func (c *ctyunCcsePlugin) checkBeforeCreate(ctx context.Context, plan CtyunCcseP
 		err = fmt.Errorf("插件实例名称 %s 已经存在", plan.PluginName.ValueString())
 		return
 	}
+
+	list, err := c.getByChartName(ctx, plan)
+	if err != nil {
+		return
+	}
+	for _, p := range list {
+		if p.Status == "deployed" {
+			err = fmt.Errorf("插件 %s 不可重复安装", plan.ChartName.ValueString())
+			return
+		}
+	}
+
 	return
 }
 
@@ -308,7 +320,7 @@ func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePl
 				failedCnt++
 			}
 			if failedCnt > 1 {
-				err = fmt.Errorf("安装失败")
+				err = fmt.Errorf("安装失败，请登录控制台查看原因")
 				return false
 			}
 			if plugin.Status != "deployed" {
@@ -321,7 +333,7 @@ func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePl
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("插件安装超时")
+		err = fmt.Errorf("插件安装超时，请登录控制台查看原因")
 	}
 	return
 }
@@ -584,5 +596,23 @@ func (c *ctyunCcsePlugin) getByPluginName(ctx context.Context, plan CtyunCcsePlu
 		return
 	}
 	plugin = resp.ReturnObj.Records[0]
+	return
+}
+
+// getByPluginName通过插件名称查询
+func (c *ctyunCcsePlugin) getByChartName(ctx context.Context, plan CtyunCcsePluginConfig) (plugins []*ccse2.CcseListPluginInstancesReturnObjRecordsResponse, err error) {
+	params := &ccse2.CcseListPluginInstancesRequest{
+		ClusterId: plan.ClusterID.ValueString(),
+		RegionId:  plan.RegionID.ValueString(),
+		ChartName: plan.ChartName.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseListPluginInstancesApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	plugins = resp.ReturnObj.Records
 	return
 }

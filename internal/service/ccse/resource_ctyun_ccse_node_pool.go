@@ -320,7 +320,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 							},
 						},
 						"size": schema.Int32Attribute{
-							Required:    true,
+							Optional:    true,
 							Description: "数据盘大小，单位为G，支持范围10-20000",
 							Validators: []validator.Int32{
 								int32validator.Between(10, 20000),

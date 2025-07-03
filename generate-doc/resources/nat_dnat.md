@@ -53,7 +53,7 @@ resource "ctyun_nat_dnat" "dnat_test"{
   external_id = ctyun_eip.eip_test.id
   external_port = 80
   internal_ip = "127.0.0.1"
-  dnat_type = 2
+  dnat_type = "custom"
   internal_port = 12454
   protocol = "tcp"
 }
@@ -64,7 +64,7 @@ resource "ctyun_nat_dnat" "dnat_test"{
 
 ### Required
 
-- `dnat_type` (String) dnat规则类型，支持传递instance或custom。
+- `dnat_type` (String) dnat规则类型，支持传递instance或custom
 - `external_id` (String) 弹性IP的ID，形如eip-xxxxx
 - `external_port` (Number) 弹性IP公网端口，1 - 1024
 - `internal_port` (Number) 主机内网端口，1 - 65535

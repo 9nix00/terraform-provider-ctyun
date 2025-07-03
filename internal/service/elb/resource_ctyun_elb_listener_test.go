@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
@@ -12,10 +11,7 @@ import (
 )
 
 func TestAccCtyunElbListener(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -71,7 +67,13 @@ func TestAccCtyunElbListener(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, protocolTCP, 8081, defaultActionType, tfTargetGroupID, "", "", tfCPS, tfEstablishTimeout, "", ""),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "listener_cps", "1"),
+					resource.TestCheckResourceAttr(resourceName, "establish_timeout", "100"),
+				),
+			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, loadbalanceID, name, protocolTCP, protocolPort, defaultActionType, tfTargetGroupID, tfEnableNat64, "", tfCPS, tfEstablishTimeout, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(

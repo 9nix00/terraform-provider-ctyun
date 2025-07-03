@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
@@ -100,9 +101,10 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Description: "支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32",
 				Validators: []validator.String{
-					validator2.NetworkName(),
+					stringvalidator.UTF8LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
 				},
 			},
 			"instance_type": schema.StringAttribute{
@@ -115,6 +117,10 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
+					),
 				},
 			},
 			"instance_id": schema.StringAttribute{
@@ -125,6 +131,10 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
 					),
 				},
 			},
@@ -156,6 +166,10 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
+					),
+					validator2.ConflictsWithEqualSet(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
 					),
 				},
 				Description: "节点服务规则,当type为interface时必填",

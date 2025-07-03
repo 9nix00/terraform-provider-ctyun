@@ -43,4 +43,4 @@ output "ctyun_test" {
 
 ### Read-Only
 
-- `zones` (Set of String) 可用区编码，即az_name
+- `zones` (List of String) 可用区编码，即az_name

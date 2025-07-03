@@ -74,7 +74,7 @@ resource "ctyun_elb_listener" "elb_listener_test" {
 - `loadbalancer_id` (String) 负载均衡实例ID
 - `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `protocol` (String) 监听协议。取值范围：TCP、UDP、HTTP、HTTPS
-- `protocol_port` (Number) 负载均衡实例监听端口。取值：1-65535，protocol_port不支持更新
+- `protocol_port` (Number) 负载均衡实例监听端口。取值：1-65535，protocol_port。不支持更新
 
 ### Optional
 
@@ -92,11 +92,11 @@ resource "ctyun_elb_listener" "elb_listener_test" {
 - `listener_cps` (Number) cps 大小,仅支持协议为 TCP / UDP 的监听器。
 - `listener_qps` (Number) qps 大小,仅支持协议为 HTTP / HTTPS 的监听器
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `redirect_listener_id` (String) 重定向监听器ID，当type为redirect时，此字段必填
+- `redirect_listener_id` (String) 重定向监听器ID，当default_action_type为redirect时，此字段必填
 - `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
 - `response_timeout` (Number) 响应超时，单位秒，取值范围：1 - 300。不支持协议为 TCP / UDP 的监听器
 - `status` (String) 监听器状态: DOWN / ACTIVE，可以控制监听器开关。
-- `target_groups` (Attributes List) 后端服务组，最多只支持添加一个后端服务组 (see [below for nested schema](#nestedatt--target_groups))
+- `target_groups` (Attributes List) 后端服务组，最多只支持添加一个后端服务组。当default_action_type=forward时，target_groups不能为空 (see [below for nested schema](#nestedatt--target_groups))
 
 ### Read-Only
 

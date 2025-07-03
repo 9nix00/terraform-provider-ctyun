@@ -29,6 +29,6 @@ const (
 
 var CcseApiServerElbSpecs = []string{"standardI", "standardII", "enhancedI", "enhancedII", "higherI"}
 
-var CcseClusterVersions = []string{"1.23.3", "1.25.6", "1.27.8", "1.29.3"}
+var CcseClusterVersions = []string{"1.31.6", "1.27.8", "1.29.3"}
 
 var CcseDiskTypes = []string{"SATA", "SSD", "SAS"}

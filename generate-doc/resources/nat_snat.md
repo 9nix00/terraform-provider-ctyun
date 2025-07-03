@@ -68,7 +68,7 @@ resource "ctyun_nat_snat" "snat_test"{
 - `eips` (Attributes List) 绑定的 eip 信息 (see [below for nested schema](#nestedatt--eips))
 - `id` (String) ID，同snat_id
 - `snat_id` (String) Snat规则的id
-- `subnet_type` (Number) 子网类型：1-使用子网ID，0-使用自定义网段
+- `subnet_type` (Number) 子网类型：1-使用子网ID，2-使用自定义网段
 
 <a id="nestedatt--eips"></a>
 ### Nested Schema for `eips`

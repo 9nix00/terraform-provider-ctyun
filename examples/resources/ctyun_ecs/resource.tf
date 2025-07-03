@@ -56,7 +56,6 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 #   cycle_count         = 1
 #   auto_renew          = true
 #   subnet_id           = "subnet-f3ktwpsf07"
-#   security_group_ids  = [""],
 #   is_destroy_instance = false
 # }
 #

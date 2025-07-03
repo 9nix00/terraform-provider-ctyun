@@ -454,7 +454,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"cluster_version": schema.StringAttribute{
 						Required:    true,
-						Description: "集群版本，支持1.23.3 ，1.25.6 ，1.27.8，1.29.3，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10650447\">集群版本说明</a>",
+						Description: "集群版本，支持1.31.6，1.29.3，1.27.8，您可查看<a href=\"https://www.ctyun.cn/document/10083472/10650447\">集群版本说明</a>",
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.CcseClusterVersions...),
 						},

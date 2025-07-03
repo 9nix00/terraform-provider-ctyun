@@ -45,7 +45,7 @@ func (a *CcseListPluginInstancesApi) Do(ctx context.Context, credential core.Cre
 		ctReq.AddParam("chartName", req.ChartName)
 	}
 	if req.PluginName != "" {
-		ctReq.AddParam("pluginName", req.PluginName)
+		ctReq.AddParam("instanceName", req.PluginName)
 	}
 	if req.ListAll != nil {
 		ctReq.AddParam("listAll", strconv.FormatBool(*req.ListAll))

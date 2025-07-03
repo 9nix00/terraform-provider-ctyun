@@ -31,7 +31,7 @@ func (c *ctyunZones) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Computed:    true,
 				Description: "资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 			},
-			"zones": schema.SetAttribute{
+			"zones": schema.ListAttribute{
 				Computed:    true,
 				Description: "可用区编码，即az_name",
 				ElementType: types.StringType,
@@ -78,7 +78,7 @@ func (c *ctyunZones) Read(ctx context.Context, request datasource.ReadRequest, r
 	for _, az := range resp.ReturnObj.ZoneList {
 		azList = append(azList, az.Name)
 	}
-	config.Zones, _ = types.SetValueFrom(ctx, types.StringType, azList)
+	config.Zones, _ = types.ListValueFrom(ctx, types.StringType, azList)
 	// 保存到state
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
@@ -93,5 +93,5 @@ func (c *ctyunZones) Configure(_ context.Context, req datasource.ConfigureReques
 
 type CtyunZonesConfig struct {
 	RegionID types.String `tfsdk:"region_id"`
-	Zones    types.Set    `tfsdk:"zones"`
+	Zones    types.List   `tfsdk:"zones"`
 }

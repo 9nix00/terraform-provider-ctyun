@@ -14,14 +14,10 @@ terraform {
   }
 }
 
-provider "ctyun" {
-  env = "prod"
+
+data "ctyun_nats" "test" {
+  nat_gateway_id = "natgw-asdsmh8scy"
 }
-
- data "ctyun_nats" "test"{
-     region_id = "200000002530"
- }
-
  output "ctyun_nat_test"{
      value = data.ctyun_nats.test
  }
@@ -37,7 +33,6 @@ provider "ctyun" {
 - `page_number` (Number) 列表的页码，默认值为1
 - `page_size` (Number) 分页查询时每页的行数，最大值为50，默认值为10。
 - `region_id` (String) 资源池id，如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `vpc_id` (String) 虚拟私有云 id
 
 ### Read-Only
 

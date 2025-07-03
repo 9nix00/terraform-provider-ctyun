@@ -60,6 +60,7 @@ Read-Only:
 - `display_name` (String) 云主机显示名称
 - `expired_time` (String) 到期时间
 - `flavor` (Attributes) 云主机规格信息 (see [below for nested schema](#nestedatt--instances--flavor))
+- `id` (String) 云主机ID，值与instance_id相同
 - `image` (Attributes) 镜像信息 (see [below for nested schema](#nestedatt--instances--image))
 - `instance_description` (String) 云主机描述信息
 - `instance_id` (String) 云主机ID

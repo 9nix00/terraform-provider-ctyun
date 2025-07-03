@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 	"terraform-provider-ctyun/internal/business"
 	"terraform-provider-ctyun/internal/common"
@@ -110,7 +112,8 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				Required:    true,
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
 				Validators: []validator.String{
-					validator2.NetworkName(),
+					stringvalidator.UTF8LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
 				},
 			},
 			"status": schema.Int32Attribute{

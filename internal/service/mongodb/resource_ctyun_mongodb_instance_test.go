@@ -4,17 +4,13 @@ import (
 	"fmt"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"terraform-provider-ctyun/internal/service"
 	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
 func TestAccCtyunMongodbInstance(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -32,14 +28,15 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 	name := "tf-mongodb" + utils.GenerateRandomString()
 	password := "Kqjwyk123="
 	prodId := "Single34"
-	nodeInfoList := `{"node_type":"s","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","inst_spec":"1","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
+	nodeInfoList := `{"node_type":"s","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
 	updatedPort := "read_port=12345"
 	updateName := "tf-mongodb-new" + utils.GenerateRandomString()
 	updatedIsUpgradeBackUp := `is_upgrade_back_up=true`
 	updateNodeInfoList := `{"node_type":"master","instance_series":"S","storage_type":"SATA","storage_space":120,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
 	updateBackUpDiskUpgradeNodeInfoList := `{"node_type":"backup","instance_series":"S","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
 	updateSpecUpgradeNodeInfoList := `{"node_type":"master","instance_series":"S","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C8G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"s"}]}`
-	//updateProdIDUpgradeNodeInfoList := `{"node_type"="master","inst_spec"=1,"storage_type"="SATA","storage_space"=130,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":["availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"]}`
+	//updateProdId :=
+	//updateProdIDUpgradeNodeInfoList := `{"node_type"="master","inst_spec"=1,"storage_type"="SATA","storage_space"=130,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":["availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"ms"]}`
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -94,6 +91,16 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", "2C8G"),
 				),
 			},
+
+			// 升级节点
+			//{
+			//	Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateProdIDUpgradeNodeInfoList, updatedPort, ""),
+			//	Check: resource.ComposeAggregateTestCheckFunc(
+			//		resource.TestCheckResourceAttrSet(resourceName, "id"),
+			//		resource.TestCheckResourceAttr(resourceName, "name", name),
+			//		resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", "2C8G"),
+			//	),
+			//},
 			//// 升级节点
 			//{
 			//	Config: utils.LoadTestCase(resourceFile, rnd, cycleType, cycleCount, autoRenew, vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
