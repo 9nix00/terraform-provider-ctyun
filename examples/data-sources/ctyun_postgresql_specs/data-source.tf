@@ -10,5 +10,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_elb_target_groups" "test" {
+data "ctyun_postgresql_specs" "test" {
+  instance_series = "S"
 }

@@ -1,4 +1,5 @@
 resource "ctyun_postgresql_instance" "%[1]s" {
+  region_id = "200000003664"
   cycle_type              = "%[2]s"
   host_type              = "%[3]s"
   prod_id                =  "%[4]s"
@@ -18,5 +19,7 @@ resource "ctyun_postgresql_instance" "%[1]s" {
   os_type = "%[18]s"
   cpu_type = "%[19]s"
   %[20]s // cycle_count
+  %[21]s // backup_storage_type
 }
+
 

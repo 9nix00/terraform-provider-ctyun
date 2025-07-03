@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -87,12 +88,18 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerProtocols...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"protocol_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "负载均衡实例监听端口。取值：1-65535，protocol_port不支持更新",
+				Description: "负载均衡实例监听端口。取值：1-65535，protocol_port。不支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"certificate_id": schema.StringAttribute{
@@ -160,7 +167,17 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "重定向监听器ID，当type为redirect时，此字段必填",
+				Description: "重定向监听器ID，当default_action_type为redirect时，此字段必填",
+				Validators: []validator.String{
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeForward),
+					),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeRedirect),
+					),
+				},
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -268,7 +285,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"target_groups": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "后端服务组，最多只支持添加一个后端服务组",
+				Description: "后端服务组，最多只支持添加一个后端服务组。当default_action_type=forward时，target_groups不能为空",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"target_group_id": schema.StringAttribute{
@@ -285,6 +302,12 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 							},
 						},
 					},
+				},
+				Validators: []validator.List{
+					validator2.AlsoRequiresEqualList(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeForward),
+					),
 				},
 			},
 		},
@@ -565,6 +588,18 @@ func (c *CtyunElbListener) CreateElbListener(ctx context.Context, plan *CtyunElb
 	defaultAction.RedirectListenerID = plan.RedirectListenerID.ValueString()
 	defaultAction.ForwardConfig = &ctelb.CtelbCreateListenerDefaultActionForwardConfigRequest{}
 	var targetGroupList []TargetGroupModel
+	// 判断default_action_type为不同值的时候，各个参数的传参情况
+	if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeForward {
+		if plan.TargetGroups.IsNull() || plan.TargetGroups.IsUnknown() {
+			err = fmt.Errorf("当default_action_type=forward时，target_groups不能为空")
+			return err
+		}
+	} else if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeRedirect {
+		if plan.RedirectListenerID.IsNull() {
+			err = fmt.Errorf("当default_action_type=redirect时，redirect_listener_id不能为空")
+			return err
+		}
+	}
 	var targetGroups []*ctelb.CtelbCreateListenerDefaultActionForwardConfigTargetGroupsRequest
 	diags := plan.TargetGroups.ElementsAs(ctx, &targetGroupList, false)
 	if diags.HasError() {
@@ -609,7 +644,6 @@ func (c *CtyunElbListener) updateListenerInfo(ctx context.Context, state *CtyunE
 		RegionID:    state.RegionID.ValueString(),
 		ListenerID:  state.ID.ValueString(),
 	}
-
 	if !plan.Name.Equal(state.Name) {
 		params.Name = plan.Name.ValueString()
 	}
@@ -647,7 +681,7 @@ func (c *CtyunElbListener) updateListenerInfo(ctx context.Context, state *CtyunE
 			defaultAction.RedirectListenerID = plan.RedirectListenerID.ValueString()
 		} else if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeForward {
 			defaultAction.ForwardConfig = &ctelb.CtelbUpdateListenerDefaultActionForwardConfigRequest{}
-			if plan.TargetGroups.IsNull() {
+			if plan.TargetGroups.IsNull() || plan.TargetGroups.IsUnknown() {
 				err = fmt.Errorf("当DefaultActionType=forward时，targetGroups不能为空")
 				return
 			}

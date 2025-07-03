@@ -161,9 +161,12 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id",
+				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbProdIDs...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"host_ip": schema.StringAttribute{
@@ -220,7 +223,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"is_upgrade_back_up": schema.BoolAttribute{
 				Optional:    true,
-				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容",
+				Computed:    true,
+				Default:     booldefault.StaticBool(true),
+				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容。默认true(主备一起扩容)",
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -520,7 +525,11 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 			resp, err = c.ListLoop(ctx, listParams, listHeader, 60)
 			if err != nil {
 				return
+			} else if resp == nil {
+				err = errors.New("获取mongodb列表信息，返回Nil")
+				return
 			}
+
 			if len(resp.ReturnObj.List) != 1 {
 				err = errors.New("未查询该实例mysql，mysql name:" + config.Name.ValueString())
 				return
@@ -538,6 +547,9 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	listResp, err := c.RunningLoop(ctx, listParams, listHeader, 60)
 	if err != nil {
 		return err
+	} else if listResp == nil {
+		err = fmt.Errorf("列表查询返回为nil")
+		return
 	} else if listResp.StatusCode != 800 {
 		err = fmt.Errorf("API return error. Message: %s", *listResp.Message)
 		return
@@ -713,7 +725,11 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 		planNodeInfo := planNodeInfoList[0]
 		// 若plan.storageSpace不为0，触发扩容操作
 		// 构建磁盘扩容请求接口
-		if planNodeInfo.StorageSpace.ValueInt32() != 0 {
+		diskUpgradeFlag, err2 := c.isDiskUpgrade(ctx, planNodeInfo, state)
+		if err2 != nil {
+			return
+		}
+		if planNodeInfo.StorageSpace.ValueInt32() != 0 && diskUpgradeFlag {
 			// 确定实例处于running状态
 			_, err = c.PreCheckUpdateLoop(ctx, state, 60)
 			updateParams.DiskVolume = planNodeInfo.StorageSpace.ValueInt32Pointer()
@@ -753,7 +769,7 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 			}
 		}
 		// 类型升级（例：DDS三副本集扩容到7副本）
-		if plan.ProdID.ValueString() != "" && state.ProdID.ValueString() != plan.ProdID.ValueString() {
+		if !plan.ProdID.IsNull() && !plan.ProdID.IsUnknown() && state.ProdID.ValueString() != plan.ProdID.ValueString() {
 			prodId := business.MongodbProdIDDict[plan.ProdID.ValueString()]
 			updateParams.ProdId = &prodId
 			updateParams.NodeType = planNodeInfo.NodeType.ValueStringPointer()
@@ -809,6 +825,44 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 
 	}
 	return
+}
+
+func (c *CtyunMongodbInstance) isDiskUpgrade(ctx context.Context, nodeInfoList NodeInfoListModel, state *CtyunMongodbInstanceConfig) (flag bool, err error) {
+	flag = false
+	detailParams := &mongodb.MongodbQueryDetailRequest{
+		ProdInstId: state.ID.ValueString(),
+	}
+	detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		detailHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+	detailResp, err := c.meta.Apis.SdkMongodbApis.MongodbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeader)
+	if err != nil {
+		return
+	} else if detailResp.StatusCode != 800 {
+		err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
+		return
+	} else if detailResp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	if nodeInfoList.NodeType.ValueString() == "master" {
+		masterStorageSpace := detailResp.ReturnObj.DiskSize
+		if nodeInfoList.StorageSpace.ValueInt32() != masterStorageSpace {
+			flag = true
+			return
+		}
+	} else if nodeInfoList.NodeType.ValueString() == "backup" {
+		backupStorageSpace := detailResp.ReturnObj.Backup.Size[:len(detailResp.ReturnObj.Backup.Size)-1]
+		if fmt.Sprintf("%d", nodeInfoList.StorageSpace.ValueInt32()) != backupStorageSpace {
+			flag = true
+			return
+		}
+	}
+	return
+
 }
 
 // 查询详情，确认spec是否更改
@@ -1140,6 +1194,8 @@ func (c *CtyunMongodbInstance) UpgradeLoop(ctx context.Context, state *CtyunMong
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
+	tolerateCount := 30
+
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return err
@@ -1172,6 +1228,7 @@ func (c *CtyunMongodbInstance) UpgradeLoop(ctx context.Context, state *CtyunMong
 			if err2 != nil {
 				err = err2
 				return false
+
 			} else if listResp.StatusCode != 800 {
 				err = fmt.Errorf("API return error. Message: %s", *listResp.Message)
 				return false
@@ -1182,14 +1239,23 @@ func (c *CtyunMongodbInstance) UpgradeLoop(ctx context.Context, state *CtyunMong
 
 			detailResp, err2 := c.meta.Apis.SdkMongodbApis.MongodbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeader)
 			if err2 != nil {
-				err2 = err
-				return false
+				if tolerateCount <= 0 {
+					err2 = err
+					return false
+				}
+				tolerateCount--
 			} else if detailResp.StatusCode != 800 {
-				err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
-				return false
+				if tolerateCount <= 0 {
+					err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
+					return false
+				}
+				tolerateCount--
 			} else if detailResp.ReturnObj == nil {
-				err = common.InvalidReturnObjError
-				return false
+				if tolerateCount <= 0 {
+					err = common.InvalidReturnObjError
+					return false
+				}
+				tolerateCount--
 			}
 			// 验证配置
 			specFlag := true

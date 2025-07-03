@@ -9,6 +9,7 @@ terraform {
 provider "ctyun" {
   env = "prod"
 }
+data "ctyun_mysql_association_eips" "test" {
 
-data "ctyun_elb_target_groups" "test" {
 }
+

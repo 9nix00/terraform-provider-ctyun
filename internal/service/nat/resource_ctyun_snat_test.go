@@ -50,19 +50,21 @@ func TestAccCtyunSNat(t *testing.T) {
 				// 1. 创建nat,snat
 				// 1.1 resource create验证:
 				// subnetType = 0(自定义情况),sourceCIDR必传
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, initSourceCidr, snatIps),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, initSourceCidr, snatIps, "我是一条description"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "source_cidr", "192.168.0.0/24"),
 					resource.TestCheckResourceAttr(resourceName, "snat_ips.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "snat_id"),
+					resource.TestCheckResourceAttr(resourceName, "description", "我是一条description"),
 				),
 			},
 			{
 				// 1.2 resource update source_cidr验证
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps, "我是一条description plus"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "source_cidr", "192.168.128.0/24"),
 					resource.TestCheckResourceAttr(resourceName, "snat_ips.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "description", "我是一条description plus"),
 				),
 			},
 			{

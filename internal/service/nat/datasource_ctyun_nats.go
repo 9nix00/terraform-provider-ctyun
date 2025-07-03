@@ -48,10 +48,6 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 				Optional:    true,
 				Description: "要查询的NAT网关的ID",
 			},
-			"vpc_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "虚拟私有云 id",
-			},
 			"page_number": schema.Int32Attribute{
 				Optional:    true,
 				Description: "列表的页码，默认值为1",
@@ -90,6 +86,10 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Computed:    true,
 							Description: "nat网关描述",
 						},
+						"vpc_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "虚拟私有云 id",
+						},
 						"status": schema.Int32Attribute{
 							Computed:    true,
 							Description: "nat 网关状态: 0 表示创建中，2 表示运行中，3 表示冻结",
@@ -111,10 +111,6 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.NatStates...),
 							},
-						},
-						"vpc_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "虚拟私有云 id",
 						},
 						"vpc_name": schema.StringAttribute{
 							Computed:    true,
@@ -236,7 +232,6 @@ func (c *ctyunNats) ParseInt32IfEmpty(value types.Int32, defaultValue int32) int
 type CtyunNatsConfig struct {
 	RegionID     types.String     `tfsdk:"region_id"`      //区域id
 	NatGatewayID types.String     `tfsdk:"nat_gateway_id"` //要查询的NAT网关的ID。
-	VpcID        types.String     `tfsdk:"vpc_id"`         //虚拟私有云 id
 	PageNumber   types.Int32      `tfsdk:"page_number"`    //	列表的页码，默认值为1。
 	PageNo       types.Int32      `tfsdk:"page_no"`        //列表的页码，默认值为 1, 推荐使用该字段, pageNumber 后续会废弃
 	PageSize     types.Int32      `tfsdk:"page_size"`      //分页查询时每页的行数，最大值为50，默认值为10。

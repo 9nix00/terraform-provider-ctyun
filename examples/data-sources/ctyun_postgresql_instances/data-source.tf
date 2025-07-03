@@ -1,3 +1,4 @@
+
 terraform {
   required_providers {
     ctyun = {
@@ -9,6 +10,6 @@ terraform {
 provider "ctyun" {
   env = "prod"
 }
-
-data "ctyun_elb_target_groups" "test" {
+data "ctyun_postgresql_instances" "test" {
+  
 }

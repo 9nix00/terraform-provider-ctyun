@@ -187,7 +187,7 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 
 		snatItem := CtyunSNatsModel{
 			SNatID:       utils.SecStringValue(snat.SNatID),
-			Description:  types.StringValue("test"),
+			Description:  utils.SecStringValue(snat.Description),
 			SubNetCidr:   utils.SecStringValue(snat.SubnetCidr),
 			SubNetType:   types.Int32Value(snat.SubnetType),
 			CreationTime: utils.SecStringValue(snat.CreationTime),

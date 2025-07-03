@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -112,7 +110,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"sla_name": schema.StringAttribute{
 				Required:    true,
-				Description: "lb的规格名称,支持:elb.s2.small，elb.s3.small，elb.s4.small，elb.s5.small，elb.s2.large，elb.s3.large，elb.s4.large，elb.s5.large",
+				Description: "lb的规格名称,支持:elb.s2.small（标准型Ⅰ），elb.s3.small（增强型Ⅰ），elb.s4.small（高阶型Ⅰ），elb.s5.small（超强型Ⅰ），elb.s2.large（标准型Ⅱ），elb.s3.large（增强型Ⅱ），elb.s4.large（高阶型Ⅱ），elb.s5.large（超强型Ⅱ）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(append(business.ElbSlaNames, business.PgElbSlaNames...)...),
 				},
@@ -134,16 +132,6 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"delete_protection": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "删除保护。false（不开启）、true（开）。 默认：不开启",
-				Default:     booldefault.StaticBool(false),
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.UseStateForUnknown(),
-					boolplanmodifier.RequiresReplace(),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -531,7 +519,6 @@ func (c *CtyunElbLoadBalancerResource) getAndMergeElb(ctx context.Context, confi
 	config.PrivateIpAddress = types.StringValue(elbObj.PrivateIpAddress)
 	config.Ipv6Address = types.StringValue(elbObj.Ipv6Address)
 	config.SlaName = types.StringValue(elbObj.SlaName)
-	config.DeleteProtection = types.BoolValue(*elbObj.DeleteProtection)
 	config.AdminStatus = types.StringValue(elbObj.AdminStatus)
 	config.Status = types.StringValue(elbObj.Status)
 	config.ResourceType = types.StringValue(elbObj.ResourceType)
@@ -771,7 +758,6 @@ type CtyunElbLoadBalancerConfig struct {
 	SlaName          types.String `tfsdk:"sla_name"`           //lb的规格名称,支持elb.s1.small和elb.default，默认为elb.default
 	ResourceType     types.String `tfsdk:"resource_type"`      //资源类型。internal：内网负载均衡，external：公网负载均衡
 	PrivateIpAddress types.String `tfsdk:"private_ip_address"` //负载均衡的私有IP地址，不指定则自动分配
-	DeleteProtection types.Bool   `tfsdk:"delete_protection"`  //删除保护。false（不开启）、true（开）。 默认：不开启
 	ID               types.String `tfsdk:"id"`                 //负载均衡ID
 	AzName           types.String `tfsdk:"az_name"`            //可用区名称
 	PortID           types.String `tfsdk:"port_id"`            //负载均衡实例默认创建port ID

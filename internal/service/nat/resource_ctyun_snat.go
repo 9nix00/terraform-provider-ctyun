@@ -131,7 +131,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"subnet_type": schema.Int32Attribute{
 				Computed:    true,
-				Description: "子网类型：1-使用子网ID，0-使用自定义网段",
+				Description: "子网类型：1-使用子网ID，2-使用自定义网段",
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
@@ -189,6 +189,12 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 		return
 	}
 	plan.SNatID = loopResp.SNatID
+
+	// 添加description
+	err = c.updateDescription(ctx, plan)
+	if err != nil {
+		return
+	}
 
 	// 反查信息
 	err = c.getAndMergeSnat(ctx, &plan)
@@ -723,6 +729,43 @@ func (c *ctyunSnatResource) stringToList(listString string) (list []string) {
 	}
 	list = strings.Split(listString[startIdx:endIdx+1], ",")
 	return list
+}
+
+// 因为create 接口没有description参数，通过创建后，update接口为description赋值
+func (c *ctyunSnatResource) updateDescription(ctx context.Context, plan CtyunSnatConfig) (err error) {
+	if plan.Description.IsNull() || plan.Description.IsUnknown() {
+		return
+	}
+	if plan.SNatID.IsNull() || plan.SNatID.IsUnknown() {
+		err = errors.New("snat未创建成功，snat id缺失，导致无法添加description")
+		return
+	}
+	params := &ctvpc.CtvpcUpdateSnatEntryAttributeRequest{
+		RegionID:    plan.RegionID.ValueString(),
+		SNatID:      plan.SNatID.ValueString(),
+		ClientToken: uuid.NewString(),
+		Description: plan.Description.ValueStringPointer(),
+	}
+	if !plan.SourceSubnetID.IsNull() && !plan.SourceSubnetID.IsUnknown() {
+		params.SourceSubnetID = plan.SourceSubnetID.ValueStringPointer()
+	} else if !plan.SourceCIDR.IsNull() && !plan.SourceCIDR.IsUnknown() {
+		params.SourceCIDR = plan.SourceCIDR.ValueStringPointer()
+	} else {
+		err = errors.New("source_subnet_id 和source_cidr同时只能填写一个")
+		return err
+	}
+
+	resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateSnatEntryAttributeApi.Do(ctx, c.meta.SdkCredential, params)
+	if err2 != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+	// 轮询请求查看是否更新成功
+	err = c.updateLoop(ctx, &plan, params)
+
+	return
 }
 
 type CtyunSnatConfig struct {

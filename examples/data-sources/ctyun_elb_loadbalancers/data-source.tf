@@ -11,7 +11,6 @@ provider "ctyun" {
 }
 
 data "ctyun_elb_loadbalancers" "test" {
-  ids = ""
 }
 
  output "ctyun_elb_loadbalancers_test"{

@@ -17,7 +17,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	}
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
-
+	backupStorageType := `backup_storage_type="SATA"`
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 	cycleType := "month"
 	hostType := "S7"
@@ -55,7 +55,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 			// Create
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, period),
+					prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, period, backupStorageType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -67,7 +67,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 			// 升配至1主2备
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period),
+					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period, backupStorageType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -79,7 +79,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 			// destroy
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period),
+					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period, backupStorageType),
 				Destroy: true,
 			},
 		},
