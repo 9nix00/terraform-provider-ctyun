@@ -31,6 +31,9 @@ func (a *CcseListClustersApi) Do(ctx context.Context, credential core.Credential
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	ctReq.AddHeader("regionId", req.RegionId)
+	if req.ResPoolId != "" {
+		ctReq.AddParam("resPoolId", req.ResPoolId)
+	}
 	if req.ClusterName != "" {
 		ctReq.AddParam("clusterName", req.ClusterName)
 	}
@@ -53,7 +56,8 @@ func (a *CcseListClustersApi) Do(ctx context.Context, credential core.Credential
 }
 
 type CcseListClustersRequest struct {
-	RegionId string /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
+	ResPoolId string
+	RegionId  string /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
 	另外您通过<a href="https://www.ctyun.cn/document/10026730/10028695" target="_blank">地域和可用区</a>来了解资源池
 	获取：
 	<span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87&vid=81" target="_blank">资源池列表查询</a>

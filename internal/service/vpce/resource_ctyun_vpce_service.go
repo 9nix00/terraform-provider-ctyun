@@ -117,7 +117,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
-					validator2.AlsoRequiresEqualString(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeReverse),
 					),
@@ -132,7 +132,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
-					validator2.AlsoRequiresEqualString(
+					validator2.ConflictsWithEqualString(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeReverse),
 					),
@@ -167,7 +167,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
-					validator2.AlsoRequiresEqualSet(
+					validator2.ConflictsWithEqualSet(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeReverse),
 					),

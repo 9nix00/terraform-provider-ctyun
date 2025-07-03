@@ -188,6 +188,7 @@ func (c *ctyunCcseClusters) Read(ctx context.Context, request datasource.ReadReq
 	// 组装请求体
 	params := &ccse2.CcseListClustersRequest{
 		RegionId:    regionId,
+		ResPoolId:   regionId,
 		ClusterName: config.ClusterName.ValueString(),
 	}
 	pageNo := config.PageNo.ValueInt32()

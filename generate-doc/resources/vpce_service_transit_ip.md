@@ -67,4 +67,4 @@ resource "ctyun_vpce_service_transit_ip" "test" {
 
 ### Read-Only
 
-- `id` (String) ID，使用的ip地址
+- `id` (String) ID，使用中转IP地址，和transit_ip相等
