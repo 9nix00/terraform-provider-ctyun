@@ -262,7 +262,7 @@ Required:
 - `cluster_domain` (String) 集群本地域名
 - `cluster_name` (String) 集群名字
 - `cluster_series` (String) 集群系列，支持cce.standard（专有版），cce.managed（托管版），您可查看<a href="https://www.ctyun.cn/document/10083472/10892150">产品定义</a>
-- `cluster_version` (String) 集群版本，支持1.23.3 ，1.25.6 ，1.27.8，1.29.3，您可查看<a href="https://www.ctyun.cn/document/10083472/10650447">集群版本说明</a>
+- `cluster_version` (String) 集群版本，支持1.31.6，1.29.3，1.27.8，您可查看<a href="https://www.ctyun.cn/document/10083472/10650447">集群版本说明</a>
 - `container_runtime` (String) 容器运行时,可选containerd、docker，您可查看<a href="https://www.ctyun.cn/document/10083472/10902208">容器运行时说明</a>
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `deploy_type` (String) 部署模式，单可用区为single，多可用区为multi

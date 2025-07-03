@@ -15,7 +15,7 @@ mongodb provider
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `node_info_list` (Attributes List) DDS节点 (see [below for nested schema](#nestedatt--node_info_list))
 - `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
-- `prod_id` (String) 产品id
+- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
@@ -24,7 +24,7 @@ mongodb provider
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容
+- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容。默认true(主备一起扩容)
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `read_port` (Number) 读端口,创建阶段不可填写。若需要更新读取端口时可填，取值范围：1~65535
 - `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量

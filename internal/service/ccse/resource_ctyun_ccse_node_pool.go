@@ -72,7 +72,6 @@ type CtyunCcseNodePoolConfig struct {
 
 type CtyunCcseNodePoolAzInfo struct {
 	AzName types.String `tfsdk:"az_name"`
-	Size   types.Int32  `tfsdk:"size"`
 }
 
 type CtyunCcseNodePoolDisk struct {
@@ -303,13 +302,6 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 							Description: "可用区编码",
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
-							},
-						},
-						"size": schema.Int32Attribute{
-							Optional:    true,
-							Description: "该可用区下节点数量",
-							PlanModifiers: []planmodifier.Int32{
-								int32planmodifier.RequiresReplace(),
 							},
 						},
 					},
