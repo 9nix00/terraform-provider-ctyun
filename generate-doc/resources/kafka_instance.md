@@ -57,15 +57,15 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `enable_ipv6` (Boolean) 是否启用IPv6，默认为false
 - `engine_version` (String) 实例引擎版本，支持2.8和3.6，默认3.6
-- `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
-- `plain_port` (Number) 公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `retention_hours` (Number) 实例消息保留时长，单位小时。默认为72小时，可选1~10000小时
-- `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
-- `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。
 
 ### Read-Only
 
+- `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
+- `plain_port` (Number) 公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090
+- `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
+- `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。

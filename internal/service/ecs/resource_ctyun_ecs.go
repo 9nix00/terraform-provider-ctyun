@@ -477,14 +477,14 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 	}
 	// 销毁已退订的包周期云主机
 	if state.IsDestroyInstance.ValueBool() {
-		response.Diagnostics.AddWarning("释放已退订的包周期云主机", "已退订的包周期云主机具有保留期，确认释放后云主机直接销毁，请谨慎操作")
 		err2 := c.destroyInstance(ctx, state)
 		if err2 != nil {
 			response.Diagnostics.AddError(err2.Error(), err2.Error())
 			return
 		}
+		response.Diagnostics.AddWarning("释放已退订的包周期云主机", "因is_destroy_instance=true，包周期主机已释放")
 	} else {
-		response.Diagnostics.AddWarning("不释放已退订的包周期云主机", "已退订的包周期云主机具有保留期，确认不释放后云主机在保留期后才可释放,并且不可再次执行释放操作，请谨慎操作")
+		response.Diagnostics.AddWarning("不释放已退订的包周期云主机", "因is_destroy_instance=false，包周期主机已退订未释放，释放请到控制台操作")
 	}
 
 }

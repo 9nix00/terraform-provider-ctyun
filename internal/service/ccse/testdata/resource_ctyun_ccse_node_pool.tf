@@ -11,6 +11,7 @@ resource "ctyun_ccse_node_pool" "%[1]s" {
   max_pod_num              = 110
   item_def_name            = "%[11]s"
   cluster_id               = "%[12]s"
+  node_num  = %[13]d
   sys_disk = {
     type = "%[5]s"
     size = %[6]d

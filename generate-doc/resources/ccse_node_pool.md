@@ -100,11 +100,12 @@ resource "ctyun_ccse_node_pool" "example" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年
 - `data_disks` (Attributes List) 数据盘信息 (see [below for nested schema](#nestedatt--data_disks))
-- `key_pair_name` (String) 密钥对名称，与password冲突
+- `key_pair_name` (String) 密钥对名称，与password有且只能有一个
 - `max_pod_num` (Number) 最大pod数, 默认110
 - `mirror_id` (String) 镜像id，实例为ecs类型必填，可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
 - `mirror_name` (String) 镜像名称，实例为ebm类型必填，可查看<a href="https://www.ctyun.cn/document/10083472/11004475">节点规格和节点镜像</a>
-- `password` (String, Sensitive) 用户密码，与key_pair_name冲突，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
+- `node_num` (Number) 节点数，不填则默认为0，创建节点池后只能增加不能减少
+- `password` (String, Sensitive) 用户密码，与key_pair_name有且只能有一个，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `sys_disk` (Attributes) 系统盘信息 (see [below for nested schema](#nestedatt--sys_disk))
 - `use_affinity_group` (Boolean) 是否使用主机组，默认不使用

@@ -21,6 +21,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ccse_node_pools.tf"
 
 	initName := "init-pool"
+	initNodeNum := 0
 	initVisibilityPostHostScript := "YWJj"
 	initVisibilityHostScript := "MTIz"
 	initSysDiskType := "SATA"
@@ -31,6 +32,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	initExtra := ""
 
 	updatedName := "updated-pool"
+	updateNodeNum := 2
 	updatedVisibilityPostHostScript := "MTIz"
 	updatedVisibilityHostScript := "YWJj"
 	updatedSysDiskType := "SSD"
@@ -66,6 +68,7 @@ auto_renew = true
 					initExtra,
 					dependence.flavorName,
 					dependence.clusterID,
+					initNodeNum,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_pool_name", initName),
@@ -77,6 +80,7 @@ auto_renew = true
 					resource.TestCheckResourceAttr(resourceName, "data_disks.0.type", initDataDiskType),
 					resource.TestCheckResourceAttr(resourceName, "data_disks.0.size", strconv.Itoa(initDataDiskSize)),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", initCycleType),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(initNodeNum)),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -93,6 +97,7 @@ auto_renew = true
 					updatedExtra,
 					dependence.flavorName,
 					dependence.clusterID,
+					updateNodeNum,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "node_pool_name", updatedName),
@@ -105,6 +110,7 @@ auto_renew = true
 					resource.TestCheckResourceAttr(resourceName, "data_disks.0.size", strconv.Itoa(updatedDataDiskSize)),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", updatedCycleType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(updateNodeNum)),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -121,6 +127,7 @@ auto_renew = true
 					updatedExtra,
 					dependence.flavorName,
 					dependence.clusterID,
+					updateNodeNum,
 				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".node_pool_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
@@ -167,6 +174,7 @@ auto_renew = true
 					updatedExtra,
 					dependence.flavorName,
 					dependence.clusterID,
+					updateNodeNum,
 				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".node_pool_name"),
 				Destroy: true,
 			},
