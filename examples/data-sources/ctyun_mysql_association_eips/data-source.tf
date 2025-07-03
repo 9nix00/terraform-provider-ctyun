@@ -9,10 +9,7 @@ terraform {
 provider "ctyun" {
   env = "prod"
 }
+data "ctyun_mysql_association_eips" "test" {
 
-data "ctyun_elb_loadbalancers" "test" {
 }
 
- output "ctyun_elb_loadbalancers_test"{
-     value = data.ctyun_elb_loadbalancers.test
- }

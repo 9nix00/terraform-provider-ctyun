@@ -103,7 +103,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"dnat_type": schema.StringAttribute{
 				Required:    true,
-				Description: "dnat规则类型，支持传递instance或custom。",
+				Description: "dnat规则类型，支持传递instance或custom",
 				Validators: []validator.String{
 					stringvalidator.OneOf("instance", "custom"),
 				},

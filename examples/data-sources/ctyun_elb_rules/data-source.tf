@@ -1,3 +1,4 @@
+
 terraform {
   required_providers {
     ctyun = {
@@ -10,9 +11,5 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_elb_loadbalancers" "test" {
+data "ctyun_elb_rules" "test"{
 }
-
- output "ctyun_elb_loadbalancers_test"{
-     value = data.ctyun_elb_loadbalancers.test
- }

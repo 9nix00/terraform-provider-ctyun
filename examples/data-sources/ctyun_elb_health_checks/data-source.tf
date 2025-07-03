@@ -10,9 +10,5 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_elb_loadbalancers" "test" {
+data "ctyun_elb_health_checks" "examples" {
 }
-
- output "ctyun_elb_loadbalancers_test"{
-     value = data.ctyun_elb_loadbalancers.test
- }

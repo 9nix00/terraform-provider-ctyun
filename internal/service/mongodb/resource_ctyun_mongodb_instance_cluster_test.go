@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestAccCtyunMongodbInstance(t *testing.T) {
+func TestAccCtyunMongodbClusterInstance(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -27,14 +27,14 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb" + utils.GenerateRandomString()
 	password := "Kqjwyk123="
-	prodId := "Single34"
-	nodeInfoList := `{"node_type":"s","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}, {"node_type":"backup","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
+	prodId := "Replica3R34"
+	nodeInfoList := `{"node_type":"ms","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"master"}]}, {"node_type":"backup","instance_series":"S","storage_type":"SATA","storage_space":100,"prod_performance_spec":"2C4G","disks":1,"availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]}`
 	updatedPort := "read_port=12345"
 	updateName := "tf-mongodb-new" + utils.GenerateRandomString()
 	updatedIsUpgradeBackUp := `is_upgrade_back_up=true`
 	updateNodeInfoList := `{"node_type":"master","instance_series":"S","storage_type":"SATA","storage_space":120,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
 	updateBackUpDiskUpgradeNodeInfoList := `{"node_type":"backup","instance_series":"S","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C4G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]}`
-	updateSpecUpgradeNodeInfoList := `{"node_type":"master","instance_series":"S","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C8G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"s"}]}`
+	updateSpecUpgradeNodeInfoList := `{"node_type":"master","instance_series":"S","storage_type":"SATA","storage_space":130,"prod_performance_spec":"2C8G","availability_zone_info":[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"ms"}]}`
 	//updateProdId :=
 	//updateProdIDUpgradeNodeInfoList := `{"node_type"="master","inst_spec"=1,"storage_type"="SATA","storage_space"=130,"prod_performance_spec":"2C8G","disks":1,"availability_zone_info":["availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"ms"]}`
 	resource.Test(t, resource.TestCase{
@@ -91,20 +91,6 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", "2C8G"),
 				),
 			},
-
-			// 升级节点
-			//{
-			//	Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateProdIDUpgradeNodeInfoList, updatedPort, ""),
-			//	Check: resource.ComposeAggregateTestCheckFunc(
-			//		resource.TestCheckResourceAttrSet(resourceName, "id"),
-			//		resource.TestCheckResourceAttr(resourceName, "name", name),
-			//		resource.TestCheckResourceAttr(resourceName, "prod_performance_spec", "2C8G"),
-			//	),
-			//},
-			//// 升级节点
-			//{
-			//	Config: utils.LoadTestCase(resourceFile, rnd, cycleType, cycleCount, autoRenew, vpcID, hostType, subnetID, securityGroupID, name, password, purchase_count, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
-			//},
 			// datasource验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateSpecUpgradeNodeInfoList, updatedPort, "") +

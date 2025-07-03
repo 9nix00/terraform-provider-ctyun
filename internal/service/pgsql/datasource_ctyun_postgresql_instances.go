@@ -268,8 +268,8 @@ func (c *ctyunPgsqlInstances) Read(ctx context.Context, request datasource.ReadR
 }
 
 type CtyunPgsqlInstancesConfig struct {
-	RegionID       types.String                  `json:"region_id"`       // 区域id
-	ProjectID      types.String                  `json:"project_id"`      // 项目id
+	RegionID       types.String                  `tfsdk:"region_id"`      // 区域id
+	ProjectID      types.String                  `tfsdk:"project_id"`     // 项目id
 	PageNum        types.Int32                   `tfsdk:"page_num"`       // 当前页（必填）
 	PageSize       types.Int32                   `tfsdk:"page_size"`      // 页大小，范围1-500（必填）
 	ProdInstName   types.String                  `tfsdk:"prod_inst_name"` // 实例名称，支持模糊匹配（可选）

@@ -579,9 +579,6 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	if config.BackupStorageType.ValueString() != "" {
 		params.BackupStorageType = config.BackupStorageType.ValueStringPointer()
 	}
-	if config.BackupStorageType.ValueString() != "" {
-		params.BackupStorageType = config.BackupStorageType.ValueStringPointer()
-	}
 	if config.AppointVip.ValueString() != "" {
 		params.AppointVip = config.AppointVip.ValueStringPointer()
 	}
@@ -820,7 +817,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 
 	// 扩容云数据库实例
 	// 扩容磁盘
-	nodeType := business.NodeTypeDict[plan.ProdID.ValueString()]
+	nodeType := business.PgsqlNodeTypeDict[plan.ProdID.ValueString()]
 	upgradeParams := &pgsql.PgsqlUpgradeRequest{
 		InstId:   state.ID.ValueString(),
 		NodeType: &nodeType,

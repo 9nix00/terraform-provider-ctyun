@@ -148,7 +148,6 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringvalidator.LengthBetween(4, 64),
 				},
 			},
-			// todo 和研发确定rsa加密
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
@@ -488,6 +487,10 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 		ProdId:          business.MysqlProdIdDict[config.ProdID.ValueString()],
 		CpuType:         business.MysqlCpuTypeDict[config.CpuType.ValueString()],
 		OsType:          business.MysqlOSTypeDict[config.OsType.ValueString()],
+	}
+	if !config.Password.IsNull() && !config.Password.IsUnknown() {
+		password := business.Encode(config.Password.ValueString())
+		params.Password = password
 	}
 	if cycleType == business.OnDemandCycleType {
 		params.AutoRenewStatus = 0
