@@ -325,7 +325,7 @@ func (c *ctyunRabbitmqInstance) Delete(ctx context.Context, request resource.Del
 	if err != nil {
 		return
 	}
-	//response.State.RemoveResource(ctx)
+	response.Diagnostics.AddWarning("删除RabbitMq集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *ctyunRabbitmqInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {

@@ -471,7 +471,7 @@ func (c *ctyunRedisInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
-	response.Diagnostics.AddWarning("删除Redis实例", "实例退订后，无法马上删除安全组和子网")
+	response.Diagnostics.AddWarning("删除Redis集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *ctyunRedisInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {

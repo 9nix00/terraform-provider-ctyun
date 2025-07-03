@@ -193,7 +193,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"plain_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090",
 				Validators: []validator.Int32{
@@ -205,7 +204,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"sasl_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092",
 				Validators: []validator.Int32{
@@ -217,7 +215,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"ssl_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。",
 				Validators: []validator.Int32{
@@ -229,7 +226,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"http_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "HTTP接入点端口，范围在8000到9100之间，默认为8082",
 				Validators: []validator.Int32{
@@ -434,7 +430,7 @@ func (c *ctyunKafkaInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
-	//response.State.RemoveResource(ctx)
+	response.Diagnostics.AddWarning("删除Kakfa集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *ctyunKafkaInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
@@ -693,12 +689,12 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	plan.SubnetID = types.StringValue(instance.SubnetId)
 
 	plan.EnableIpv6 = types.BoolValue(map[int32]bool{1: true, 0: false}[instance.Ipv6Enable])
-	if len(instance.NodeList) > 0 {
-		plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
-		plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
-		plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
-		plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
-	}
+	//if len(instance.NodeList) > 0 {
+	//	plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
+	//	plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
+	//	plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
+	//	plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
+	//}
 
 	config, err := c.getInstanceConfig(ctx, *plan)
 	if err != nil {
