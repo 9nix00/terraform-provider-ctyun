@@ -161,7 +161,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：",
+				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbProdIDs...),
 				},
@@ -238,11 +238,17 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					Attributes: map[string]schema.Attribute{
 						"node_type": schema.StringAttribute{
 							Required:    true,
-							Description: "节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；readonly=只读节点；ms=副本集；s=单机版；backup=备份机",
+							Description: "节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；ms=副本集；s=单机版；backup=备份机",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.MongodbNodeType...),
+							},
 						},
 						"instance_series": schema.StringAttribute{
 							Required:    true,
 							Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.MysqlInstanceSeries...),
+							},
 						},
 						"storage_type": schema.StringAttribute{
 							Required:    true,
@@ -260,7 +266,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 						},
 						"prod_performance_spec": schema.StringAttribute{
 							Optional:    true,
-							Description: "规格: 4C8G 当nodeType为backup类型 可不传",
+							Description: "规格: 4C8G 当nodeType为backup类型，可不传",
 						},
 						"availability_zone_info": schema.ListNestedAttribute{
 							Required:    true,

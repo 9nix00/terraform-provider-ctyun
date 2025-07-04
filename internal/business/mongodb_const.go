@@ -45,6 +45,13 @@ const (
 	MongodbProdIDRead40 = 10013110 // 4.0只读版
 	MongodbProdIDRead34 = 10013119 // 3.4只读版
 
+	MongodbNodeTypeMongos = "mongos" // 集群节点
+	MongodbNodeTypeShard  = "shard"  // 分片节点
+	MongodbNodeTypeConfig = "config"
+	MongodbNodeTypeMs     = "ms"     // 副本集
+	MongodbNodeTypeS      = "s"      // 单机版
+	MongodbNodeBackup     = "backup" // 备份节点
+
 	MongodbStorageTypeSSD       = "SSD"        // 超高IO
 	MongodbStorageTypeSAS       = "SAS"        // 高IO
 	MongodbStorageTypeSATA      = "SATA"       // 普通IO
@@ -258,4 +265,13 @@ var MongodbInstanceSeriesDict = map[string]string{
 	"S": "1",
 	"C": "2",
 	"M": "3",
+}
+
+var MongodbNodeType = []string{
+	MongodbNodeTypeMongos,
+	MongodbNodeTypeShard,
+	MongodbNodeTypeConfig,
+	MongodbNodeTypeMs,
+	MongodbNodeTypeS,
+	MongodbNodeBackup,
 }
