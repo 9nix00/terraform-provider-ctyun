@@ -11,11 +11,11 @@ mongodb provider
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `host_type` (String) 主机类型 host type: S6 or S7
+- `host_type` (String) 主机类型 host type: S6 or S7等。可根据data.ctyun_mongodb_specs获取
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `node_info_list` (Attributes List) DDS节点 (see [below for nested schema](#nestedatt--node_info_list))
 - `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
-- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本
+- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
