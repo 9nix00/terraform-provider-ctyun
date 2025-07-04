@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -25,6 +26,7 @@ import (
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"time"
 )
 
 var (
@@ -67,6 +69,7 @@ type CtyunCcseNodePoolConfig struct {
 	SysDisk                  *CtyunCcseNodePoolDisk    `tfsdk:"sys_disk"`
 	DataDisks                []CtyunCcseNodePoolDisk   `tfsdk:"data_disks"`
 	MaxPodNum                types.Int32               `tfsdk:"max_pod_num"`
+	NodeNum                  types.Int32               `tfsdk:"node_num"`
 	AzInfos                  []CtyunCcseNodePoolAzInfo `tfsdk:"az_infos"`
 }
 
@@ -215,7 +218,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥对名称，与password冲突",
+				Description: "密钥对名称，与password有且只能有一个",
 				Default:     stringdefault.StaticString(""),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -229,7 +232,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 
 			"password": schema.StringAttribute{
 				Optional:    true,
-				Description: "用户密码，与key_pair_name冲突，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
+				Description: "用户密码，与key_pair_name有且只能有一个，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 30),
 					validator2.EcsPassword(),
@@ -285,6 +288,12 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 						},
 					},
 				},
+			},
+			"node_num": schema.Int32Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "节点数，不填则默认为0，创建节点池后只能增加不能减少",
+				Default:     int32default.StaticInt32(0),
 			},
 			"az_infos": schema.ListNestedAttribute{
 				Required: true,
@@ -356,7 +365,17 @@ func (c *ctyunCcseNodePool) Create(ctx context.Context, request resource.CreateR
 	if err != nil {
 		return
 	}
+
 	plan.ID = types.StringValue(id)
+
+	// 扩容
+	planB := plan
+	planB.NodeNum = types.Int32Value(0)
+	err = c.scaleUp(ctx, plan, planB)
+	if err != nil {
+		return
+	}
+
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
@@ -415,7 +434,11 @@ func (c *ctyunCcseNodePool) Update(ctx context.Context, request resource.UpdateR
 	if err != nil {
 		return
 	}
-
+	// 扩容
+	err = c.scaleUp(ctx, plan, state)
+	if err != nil {
+		return
+	}
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -529,7 +552,10 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 		params.ImageName = plan.MirrorName.ValueString()
 	}
 
-	if plan.Password.ValueString() != "" {
+	if plan.Password.ValueString() == "" && plan.KeyPairName.ValueString() == "" {
+		err = fmt.Errorf("password和key_pair_name两者不能都为空")
+		return
+	} else if plan.Password.ValueString() != "" {
 		params.LoginType = "password"
 		params.EcsPasswd = plan.Password.ValueString()
 	} else {
@@ -610,8 +636,120 @@ func (c *ctyunCcseNodePool) create(ctx context.Context, plan CtyunCcseNodePoolCo
 	return
 }
 
-// getAndMerge 从远端查询
-func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNodePoolConfig) (err error) {
+// 扩容
+func (c *ctyunCcseNodePool) scaleUp(ctx context.Context, plan, state CtyunCcseNodePoolConfig) (err error) {
+	if plan.NodeNum.Equal(state.NodeNum) {
+		return
+	}
+	if plan.NodeNum.ValueInt32() < state.NodeNum.ValueInt32() {
+		err = fmt.Errorf("不支持减少节点数")
+		return
+	}
+
+	params := &ccse2.CcseScaleUpNodePoolRequest{
+		ClusterId:  state.ClusterID.ValueString(),
+		NodePoolId: state.ID.ValueString(),
+		RegionId:   state.RegionID.ValueString(),
+		Num:        plan.NodeNum.ValueInt32() - state.NodeNum.ValueInt32(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseScaleUpNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	plan.ID = state.ID
+	return c.checkAfterScaleUp(ctx, plan)
+}
+
+// checkAfterScaleUp 扩容后检查
+func (c *ctyunCcseNodePool) checkAfterScaleUp(ctx context.Context, plan CtyunCcseNodePoolConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var pool *ccse2.CcseGetNodePoolReturnObjResponse
+			pool, err = c.getNodePoolByID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if pool.NormalNodeNum < plan.NodeNum.ValueInt32() {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("扩容时间过长")
+		return
+	}
+	return
+}
+
+// 缩容
+func (c *ctyunCcseNodePool) scaleDown(ctx context.Context, state CtyunCcseNodePoolConfig) (err error) {
+	pool, err := c.getNodePoolByID(ctx, state)
+	if err != nil {
+		return
+	}
+	var nodes []string
+	for _, node := range pool.Nodes {
+		nodes = append(nodes, node.NodeName)
+	}
+
+	if len(nodes) == 0 {
+		return
+	}
+
+	params := &ccse2.CcseScaleDownNodePoolRequest{
+		ClusterId:  state.ClusterID.ValueString(),
+		NodePoolId: state.ID.ValueString(),
+		RegionId:   state.RegionID.ValueString(),
+		NodeNames:  nodes,
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseScaleDownNodePoolApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return c.checkAfterScaleDown(ctx, state)
+}
+
+// checkAfterScaleUp 扩容后检查
+func (c *ctyunCcseNodePool) checkAfterScaleDown(ctx context.Context, plan CtyunCcseNodePoolConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var pool *ccse2.CcseGetNodePoolReturnObjResponse
+			pool, err = c.getNodePoolByID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if pool.NodeTotalNum > 0 {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("扩容时间过长")
+		return
+	}
+	return
+}
+
+// getNodePoolByID 根据ID查询节点池
+func (c *ctyunCcseNodePool) getNodePoolByID(ctx context.Context, plan CtyunCcseNodePoolConfig) (pool *ccse2.CcseGetNodePoolReturnObjResponse, err error) {
 	params := &ccse2.CcseGetNodePoolRequest{
 		ClusterId:  plan.ClusterID.ValueString(),
 		RegionId:   plan.RegionID.ValueString(),
@@ -627,10 +765,19 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 		err = common.InvalidReturnObjError
 		return
 	}
-	pool := resp.ReturnObj
+	pool = resp.ReturnObj
+	return
+}
+
+// getAndMerge 从远端查询
+func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNodePoolConfig) (err error) {
+	pool, err := c.getNodePoolByID(ctx, *plan)
+	if err != nil {
+		return
+	}
 	plan.NodePoolName = types.StringValue(pool.NodePoolName)
 	plan.MirrorType = types.Int32Value(pool.ImageType)
-
+	plan.NodeNum = types.Int32Value(pool.NormalNodeNum)
 	listParams := &ccse2.CcseListNodePoolsRequest{
 		ClusterId:    plan.ClusterID.ValueString(),
 		RegionId:     plan.RegionID.ValueString(),
@@ -642,8 +789,8 @@ func (c *ctyunCcseNodePool) getAndMerge(ctx context.Context, plan *CtyunCcseNode
 	listResp, err := c.meta.Apis.SdkCcseApis.CcseListNodePoolsApi.Do(ctx, c.meta.SdkCredential, listParams)
 	if err != nil {
 		return
-	} else if resp.ReturnObj == nil {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+	} else if listResp.ReturnObj == nil {
+		err = fmt.Errorf("API return error. Message: %s", listResp.Message)
 		return
 	}
 	// 解析返回值
@@ -740,6 +887,10 @@ func (c *ctyunCcseNodePool) update(ctx context.Context, plan, state CtyunCcseNod
 
 // delete 删除
 func (c *ctyunCcseNodePool) delete(ctx context.Context, plan CtyunCcseNodePoolConfig) (err error) {
+	err = c.scaleDown(ctx, plan)
+	if err != nil {
+		return
+	}
 	params := &ccse2.CcseDeleteNodePoolRequest{
 		ClusterId:  plan.ClusterID.ValueString(),
 		RegionId:   plan.RegionID.ValueString(),

@@ -169,6 +169,10 @@ auto_renew = false
 					"security_group_id",
 					"master_order_id",
 					"zone_list",
+					"plain_port",
+					"http_port",
+					"ssl_port",
+					"sasl_port",
 				},
 			},
 			{

@@ -14,7 +14,7 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cycle_type  = "on_demand"
     container_runtime = "containerd"
     timezone    = "Asia/Shanghai"
-    cluster_version = "1.23.3"
+    cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
   }

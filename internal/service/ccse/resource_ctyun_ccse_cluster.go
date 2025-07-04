@@ -849,8 +849,7 @@ func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRe
 	if err != nil {
 		return
 	}
-	response.Diagnostics.AddWarning("删除CCSE集群", "集群退订后，会有终端节点遗留在子网内，需要等待终端节点实例销毁后才可删除子网")
-	//response.State.RemoveResource(ctx)
+	response.Diagnostics.AddWarning("删除CCSE集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称],[clusterID],[regionID]

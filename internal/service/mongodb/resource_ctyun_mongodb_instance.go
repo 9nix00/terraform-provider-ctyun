@@ -419,6 +419,7 @@ func (c *CtyunMongodbInstance) Delete(ctx context.Context, request resource.Dele
 	if err != nil {
 		return
 	}
+	response.Diagnostics.AddWarning("删除MongoDB集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *CtyunMongodbInstance) CreateMongodbInstance(ctx context.Context, config *CtyunMongodbInstanceConfig) (err error) {

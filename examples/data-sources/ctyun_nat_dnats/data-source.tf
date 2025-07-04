@@ -10,7 +10,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-
-data "ctyun_mongodb_instances" "test" {
-  
+data "ctyun_nat_dnats" "test" {
+  nat_gateway_id = "natgw-asdsmh8scy"
 }
