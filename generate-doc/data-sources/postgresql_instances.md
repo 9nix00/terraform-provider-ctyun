@@ -55,7 +55,7 @@ Read-Only:
 - `prod_running_status` (Number) 运行状态: 0(运行中),1(重启中),2(备份中),3(恢复中),1001(已停止),1006(复失败),1007(VIP不可用),1008(GATEWAY不可用),1009(主库不可用),1010(备库不可用),1021(实例维护中),2000(开通中),2002(已退订),2005(扩容中),2011(冻结)
 - `prod_type` (Number) 部署方式: 0(单机部署),1(主备部署)
 - `read_port` (Number) 读连接端口号
-- `readonly_instance_ids` (List of String) 关联的只读实例ID列表
+- `readonly_instance_ids` (String) 关联的只读实例ID列表
 - `tool_type` (Number) 备份工具类型: 1(pg_baseback), 2(pgbackrest), 3(s3)
 - `vip` (String) 虚拟IP地址
 - `write_port` (Number) 写连接端口号
