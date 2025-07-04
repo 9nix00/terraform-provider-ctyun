@@ -30,11 +30,11 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 
 	eipId := dependence.eipID
 	eipAddress := dependence.eipAddress
-	instId := "316b0d42faa24cd3803c99cc77aa58d6"
+	instId := dependence.PgsqlID
 
-	prodType := "1"
-	prodCode := "POSTGRESQL"
-	instanceType := "1"
+	//prodType := "1"
+	//prodCode := "POSTGRESQL"
+	instanceType := "S"
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -68,7 +68,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 			},
 			// spec datasource验证
 			{
-				Config: utils.LoadTestCase(specsDatasourceFile, dnd, prodType, prodCode, instanceType),
+				Config: utils.LoadTestCase(specsDatasourceFile, dnd, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(specsDatasourceName, "specs.#", "20"),
 				),
