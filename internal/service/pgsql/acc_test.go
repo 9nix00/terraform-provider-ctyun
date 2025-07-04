@@ -16,6 +16,7 @@ type Dependence struct {
 	securityGroupID2 string
 	eipID            string
 	eipAddress       string
+	PgsqlID          string
 }
 
 var dependence Dependence
@@ -36,10 +37,11 @@ func TestMain(m *testing.M) {
 		subnetID:         outputs["subnet_id"].Value,
 		securityGroupID:  outputs["security_group_id1"].Value,
 		securityGroupID2: outputs["security_group_id2"].Value,
-		eipID:            "",
-		//eipID:            outputs["eip_id"].Value,
-		eipAddress: "",
-		//eipAddress:       outputs["eip_address"].Value,
+		//eipID:            "",
+		eipID: outputs["eip_id"].Value,
+		//eipAddress: "",
+		eipAddress: outputs["eip_address"].Value,
+		PgsqlID:    outputs["pgsql_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")
