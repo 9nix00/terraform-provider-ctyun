@@ -31,18 +31,18 @@ data "ctyun_mysql_specs" "mysql_specs" {
 
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
-  vpc_id                = local.real_vpc_id
+  vpc_id                = ctyun_vpc.vpc_test.id
   host_type             = "S7"
-  subnet_id             = local.real_subnet_id
-  security_group_id     = local.real_security_group_id
-  name                  = local.mysql_name
+  subnet_id             = ctyun_subnet.subnet_test.id
+  security_group_id     = ctyun_security_group.security_group_test.id
+  name                  = "mysql_examples"
   prod_id               = "Single57"
   instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 100
   prod_performance_spec = "2C4G"
   availability_zone_info = [
-    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
+    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
   ]
   cpu_type = "Intel"
   os_type  = "ctyunos"

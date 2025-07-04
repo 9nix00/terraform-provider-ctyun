@@ -146,6 +146,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"appoint_vip": schema.StringAttribute{
 				Optional:    true,
@@ -526,18 +529,6 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 }
 
 func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, config *CtyunPostgresqlInstanceConfig) (err error) {
-	if config.VpcID.ValueString() == "" {
-		err = errors.New("vpcID is required")
-		return
-	}
-	if config.SubnetId.ValueString() == "" {
-		err = errors.New("subnetID is required")
-		return
-	}
-	if config.SecurityGroupId.ValueString() == "" {
-		err = errors.New("securityGroupID is required")
-		return
-	}
 	cycleType := config.CycleType.ValueString()
 	isMgr := fmt.Sprintf("%t", config.IsMGR.ValueBool())
 
@@ -577,9 +568,11 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		params.ProjectId = config.ProjectID.ValueStringPointer()
 		header.ProjectId = config.ProjectID.ValueStringPointer()
 	}
+	// 处理backupStorage
 	if config.BackupStorageType.ValueString() != "" {
 		params.BackupStorageType = config.BackupStorageType.ValueStringPointer()
 	}
+
 	if config.AppointVip.ValueString() != "" {
 		params.AppointVip = config.AppointVip.ValueStringPointer()
 	}
@@ -601,10 +594,7 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	mysqlNodeInfo.ProdPerformanceSpec = config.ProdPerformanceSpec.ValueString()
 	mysqlNodeInfo.Disks = 1
 	mysqlNodeInfo.NodeType = business.PgsqlNodeTypeDict[config.ProdID.ValueString()]
-	if config.BackupStorageType.ValueString() != "" {
-		storageType := business.PgsqlStorageTypeBackUp
-		mysqlNodeInfo.BackupStorageType = &storageType
-	}
+
 	if config.BackupStorageSpace.ValueInt32() != 0 {
 		backupStorageSpace := fmt.Sprintf("%d", config.BackupStorageSpace.ValueInt32())
 		mysqlNodeInfo.BackupStorageSpace = &backupStorageSpace
@@ -793,20 +783,38 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		if err != nil {
 			return
 		}
+
+		deleteSgParams := &pgsql.PgsqlDeleteSecurityGroupRequest{
+			SecurityGroupId: state.SecurityGroupId.ValueString(),
+			InstanceId:      state.SecurityGroupId.ValueString(),
+		}
+		deleteSgHeader := &pgsql.PgsqlDeleteSecurityGroupRequestHeader{}
 		updateSecurityGroupParams := &pgsql.PgsqlUpdateSecurityGroupRequest{
 			SecurityGroupId:    state.SecurityGroupId.ValueString(),
 			InstanceId:         state.ID.ValueString(),
 			NewSecurityGroupId: plan.SecurityGroupId.ValueString(),
 		}
 		updatedSecurityGroupHeaders := &pgsql.PgsqlUpdateSecurityGroupRequestHeader{}
-		if state.ProjectID.ValueString() != "" {
+		if !state.ProjectID.IsNull() {
 			updatedSecurityGroupHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+			deleteSgHeader.ProjectID = state.ProjectID.ValueStringPointer()
 		}
+
+		// 先替换
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlUpdateSecurityGroupApi.Do(ctx, c.meta.Credential, updateSecurityGroupParams, updatedSecurityGroupHeaders)
 		if err2 != nil {
 			return err2
 		} else if resp.StatusCode != 200 {
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
+			return
+		}
+		// 再解绑原securityGroup
+		// 先解绑原来的安全组
+		deleteResp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDeleteSecurityGroupApi.Do(ctx, c.meta.Credential, deleteSgParams, deleteSgHeader)
+		if err2 != nil {
+			return err
+		} else if deleteResp.StatusCode != 200 {
+			err = fmt.Errorf("API return error. Message: %s", deleteResp.Message)
 			return
 		}
 	}
@@ -918,24 +926,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 	}
 	// 启动实例
 	if plan.RunningControl.ValueString() == "start" {
-		startParams := &pgsql.PgsqlStartRequest{
-			ProdInstId: state.ID.ValueString(),
-		}
-		startHeaders := &pgsql.PgsqlStartRequestHeader{
-			RegionID: state.RegionID.ValueString(),
-		}
-		if state.ProjectID.ValueString() != "" {
-			startHeaders.ProjectID = state.ProjectID.ValueString()
-		}
-		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlStartApi.Do(ctx, c.meta.Credential, startParams, startHeaders)
-		if err2 != nil {
-			return err2
-		} else if resp.StatusCode != 800 {
-			err = fmt.Errorf("API return error. Message: %s", resp.Message)
-			return
-		}
-		// 轮询确认是否启动完成
-		err = c.RunningStatusLoop(ctx, state, business.PgsqlProdRunningStatusStarted, business.PgsqlProdOrderStatusRunning, 60)
+		err = c.startInstance(ctx, state, plan)
 		if err != nil {
 			return
 		}
@@ -964,7 +955,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
 			return
 		}
-		// todo 待pgsql研发确定
+
 		err = c.RunningStatusLoop(ctx, state, business.PgsqlProdRunningStatusStopped, business.MysqlOrderStatusStarted)
 		if err != nil {
 			return
@@ -1007,6 +998,7 @@ func (c *CtyunPostgresqlInstance) ListLoop(ctx context.Context, config *CtyunPos
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
+	dealyCount := 2
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -1029,7 +1021,16 @@ func (c *CtyunPostgresqlInstance) ListLoop(ctx context.Context, config *CtyunPos
 			} else if resp.ReturnObj.List[0].ProdInstId == "" {
 				return true
 			} else {
+				if resp.ReturnObj.List[0].ProdOrderStatus != business.PgsqlProdOrderStatusRunning || resp.ReturnObj.List[0].ProdRunningStatus != business.PgsqlProdRunningStatusStarted {
+					return true
+				}
+				// 确保与页面保持一致
+				if dealyCount > 0 {
+					dealyCount--
+					return true
+				}
 				config.ID = types.StringValue(resp.ReturnObj.List[0].ProdInstId)
+
 				return false
 			}
 		},
@@ -1041,6 +1042,7 @@ func (c *CtyunPostgresqlInstance) ListLoop(ctx context.Context, config *CtyunPos
 }
 
 func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, runningStatus int32, orderStatus int32, loopCount ...int) (err error) {
+
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -1089,6 +1091,14 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 			}
 			detailRunningStatus := resp.ReturnObj.ProdRunningStatus
 			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
+			// 判断是否被停用，如果被停用需要恢复使用
+			if detailRunningStatus == business.PgsqlProdRunningStatusStopped && runningStatus != business.PgsqlProdRunningStatusStopped {
+				err = c.startInstance(ctx, state, nil)
+				if err != nil {
+					return false
+				}
+				return true
+			}
 			if detailRunningStatus == runningStatus && detailOrderStatus == orderStatus {
 				if syncCount <= 0 {
 					return false
@@ -1342,6 +1352,31 @@ func (c *CtyunPostgresqlInstance) countSame(plan *CtyunPostgresqlInstanceConfig,
 		count += 1
 	}
 	return count
+}
+
+func (c *CtyunPostgresqlInstance) startInstance(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig) (err error) {
+	startParams := &pgsql.PgsqlStartRequest{
+		ProdInstId: state.ID.ValueString(),
+	}
+	startHeaders := &pgsql.PgsqlStartRequestHeader{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		startHeaders.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlStartApi.Do(ctx, c.meta.Credential, startParams, startHeaders)
+	if err2 != nil {
+		return err2
+	} else if resp.StatusCode != 800 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	// 轮询确认是否启动完成
+	err = c.RunningStatusLoop(ctx, state, business.PgsqlProdRunningStatusStarted, business.PgsqlProdOrderStatusRunning, 60)
+	if err != nil {
+		return
+	}
+	return
 }
 
 type CtyunPostgresqlInstanceConfig struct {

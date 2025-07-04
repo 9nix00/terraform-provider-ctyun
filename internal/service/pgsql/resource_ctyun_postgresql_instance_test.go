@@ -64,7 +64,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// create 验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, name, password, caseCensitive,
-					instanceSeries, prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, "", backupStorageType),
+					instanceSeries, prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, `backup_storage_space=100`, "", osType, cpuType, "", backupStorageType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
