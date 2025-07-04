@@ -134,6 +134,7 @@ provider "ctyun" {
 - CTYUN_ENV=选用环境，如果此值不在环境变量中配置，则读取provider中的env
 - 优先级：`resource/datasource中的配置`高于`provider配置`高于`环境变量`。
 - 在并发创建相同类型的资源时，名称需要加以区分，建议使用如下写法：
+
 ```
 resource "ctyun_ecs" "ecs_test" {
   count = 130
@@ -141,6 +142,7 @@ resource "ctyun_ecs" "ecs_test" {
   ...
 }
 ```
+
 - PaaS产品实例在terraform destroy时可以删除，但相关联的底层资源不能马上释放，所以删除子网和安全组时会报错。涉及CCSE、Redis、Kafka、RabbitMq、Mysql、PostgreSql、MogoDB。预计完善时间8月底。
 
 ## 说明
