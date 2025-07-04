@@ -207,7 +207,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Required:    true,
-				Description: "可用区信息",
+				Description: "可用区信息,需要根据prod_id而定。创建阶段,需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}]",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
@@ -216,7 +216,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
-							Description: "资源池可用区总数",
+							Description: "该AZ内存在的实例节点数量",
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
@@ -949,6 +949,13 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 			}
 			runningStatus := resp.ReturnObj.ProdRunningStatus
 			orderStatus := resp.ReturnObj.ProdOrderStatus
+			// 若变配前，发现数据库已冻结，将其恢复
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = c.startMysqlInstance(ctx, state, nil)
+				if err != nil {
+					return false
+				}
+			}
 			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
 				return false
 			}
@@ -1167,26 +1174,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 
 	// 启动实例
 	if state.ProdOrderStatus.ValueInt32() == business.MysqlOrderStatusPause && plan.RunningControl.ValueString() == "unfreeze" {
-		startParams := &mysql.TeledbStartRequest{
-			OuterProdInstId: state.InstID.ValueString(),
-		}
-		startHeaders := &mysql.TeledbStartRequestHeader{
-			InstID:   state.InstID.ValueString(),
-			RegionID: state.RegionID.ValueString(),
-		}
-		if state.ProjectID.ValueString() != "" {
-			startHeaders.ProjectID = state.ProjectID.ValueString()
-		}
-		resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbStartApi.Do(ctx, c.meta.Credential, startParams, startHeaders)
-		if err2 != nil {
-			err = err2
-			return
-		} else if resp.StatusCode != 0 {
-			err = fmt.Errorf("API return error. Message: %s", resp.Message)
-			return
-		}
-		// 轮询验证，是否已启动
-		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 60)
+		err = c.startMysqlInstance(ctx, state, plan)
 		if err != nil {
 			return
 		}
@@ -1256,6 +1244,33 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 		}
 	}
 	state.RunningControl = plan.RunningControl
+	return
+}
+
+func (c *CtyunMysqlInstance) startMysqlInstance(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig) (err error) {
+	startParams := &mysql.TeledbStartRequest{
+		OuterProdInstId: state.InstID.ValueString(),
+	}
+	startHeaders := &mysql.TeledbStartRequestHeader{
+		InstID:   state.InstID.ValueString(),
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		startHeaders.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbStartApi.Do(ctx, c.meta.Credential, startParams, startHeaders)
+	if err2 != nil {
+		err = err2
+		return
+	} else if resp.StatusCode != 0 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	// 轮询验证，是否已启动
+	err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 60)
+	if err != nil {
+		return
+	}
 	return
 }
 

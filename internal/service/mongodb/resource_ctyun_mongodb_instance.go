@@ -122,7 +122,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"host_type": schema.StringAttribute{
 				Required:    true,
-				Description: "主机类型 host type: S6 or S7",
+				Description: "主机类型 host type: S6 or S7等。可根据data.ctyun_mongodb_specs获取",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -161,7 +161,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本",
+				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbProdIDs...),
 				},

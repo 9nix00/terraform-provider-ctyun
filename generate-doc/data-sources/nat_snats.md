@@ -36,7 +36,7 @@ Read-Only:
 - `snat_id` (String) snat id
 - `subnet_cidr` (String) 要查询的NAT网关所属VPC子网的cidr
 - `subnet_id` (String) 子网 ID
-- `subnet_type` (Number) 子网类型：1-有vpcID的子网，0-自定义
+- `subnet_type` (Number) 子网类型：1-有vpcID的子网，2-自定义
 
 <a id="nestedatt--snats--eips"></a>
 ### Nested Schema for `snats.eips`

@@ -153,9 +153,8 @@ func (c *ctyunPgsqlInstances) Schema(ctx context.Context, request datasource.Sch
 							Computed:    true,
 							Description: "写连接端口号",
 						},
-						"readonly_instance_ids": schema.ListAttribute{
+						"readonly_instance_ids": schema.StringAttribute{
 							Computed:    true,
-							ElementType: types.StringType,
 							Description: "关联的只读实例ID列表",
 						},
 						"instance_type": schema.StringAttribute{
@@ -204,31 +203,34 @@ func (c *ctyunPgsqlInstances) Read(ctx context.Context, request datasource.ReadR
 		config.PageSize = types.Int32Value(20)
 		params.PageSize = 20
 	}
-	if config.ProdInstID.ValueString() != "" {
+	if !config.ProdInstID.IsNull() && !config.ProdInstID.IsUnknown() {
 		params.ProdInstId = config.ProdInstID.ValueStringPointer()
 	}
-	if config.LabelName.ValueString() != "" {
+	if !config.LabelName.IsNull() && !config.LabelName.IsUnknown() {
 		params.LabelName = config.LabelName.ValueStringPointer()
 	}
-	if config.LabelValue.ValueString() != "" {
+	if !config.LabelValue.IsNull() && !config.LabelValue.IsUnknown() {
 		params.LabelValue = config.LabelValue.ValueStringPointer()
 	}
-	if config.ProdInstName.ValueString() != "" {
+	if !config.ProdInstName.IsNull() && !config.ProdInstName.IsUnknown() {
 		params.ProdInstName = config.ProdInstName.ValueStringPointer()
 	}
-	if config.InstanceType.ValueString() != "" {
+	if config.InstanceType.IsNull() && !config.InstanceType.IsUnknown() {
 		params.InstanceType = config.InstanceType.ValueStringPointer()
 	}
 	headers := &pgsql.PgsqlListRequestHeader{
 		RegionID: regionId,
 	}
-	if config.ProjectID.ValueString() != "" {
+	if config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
 		headers.ProjectID = config.ProjectID.ValueStringPointer()
 	}
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlListApi.Do(ctx, c.meta.Credential, params, headers)
 	if err != nil {
 		return
-	} else if resp.StatusCode != 0 {
+	} else if resp == nil {
+		err = fmt.Errorf("查询反馈空指针，请稍后尝试！")
+		return
+	} else if resp.StatusCode != 800 {
 		err = fmt.Errorf("API return error. Message: %s ", *resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
