@@ -19,11 +19,11 @@ output "device_type" {
 }
 
 output "system_raid" {
-  value  = length(data.ctyun_ebm_device_raids.system_raid.raids) > 0 ? data.ctyun_ebm_device_raids.system_raid.raids[0].uuid : ""
+  value  = local.system_raid_id
 }
 
 output "data_raid" {
-  value  = length(data.ctyun_ebm_device_raids.data_raid.raids) > 0 ? data.ctyun_ebm_device_raids.data_raid.raids[0].uuid : ""
+  value  = local.data_raid_id
 }
 
 output "image_uuid" {

@@ -10,11 +10,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_nats" "test" {
+data "ctyun_nat_snats" "test"{
   nat_gateway_id = "natgw-asdsmh8scy"
 }
-
-output "ctyun_nat_test"{
-  value = data.ctyun_nats.test
-}
-

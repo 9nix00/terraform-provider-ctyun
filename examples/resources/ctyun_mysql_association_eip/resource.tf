@@ -62,7 +62,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 }
 
 resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-nat"
+  name                = "tf-eip-for-mysql"
   bandwidth           = 1
   cycle_type          = "on_demand"
   demand_billing_type = "upflowc"
@@ -71,6 +71,6 @@ resource "ctyun_eip" "eip_test" {
 resource "ctyun_mysql_association_eip" "association_eip" {
   eip_id = ctyun_eip.eip_test.id
   eip = ctyun_eip.eip_test.address
-  inst_id = "%[4]s"
+  inst_id = ctyun_mysql_instance.mysql_test.id
 }
 

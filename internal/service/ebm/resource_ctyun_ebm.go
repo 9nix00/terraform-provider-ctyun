@@ -821,6 +821,7 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 	if *deviceTypeConfig.CloudBoot && len(diskList) == 0 {
 		return fmt.Errorf("该套餐 %s 需要从云硬盘启动，必须关联云硬盘", plan.DeviceType.ValueString())
 	}
+
 	var extSys bool
 	for _, disk := range diskList {
 		if disk.DiskType == business.EbmSystemDiskType {
@@ -842,6 +843,12 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 	}
 	if deviceTypeConfig.DataVolumeAmount > 0 && plan.DataVolumeRaidUUID.ValueString() == "" {
 		return fmt.Errorf("该套餐 %s 必须传递本地数据盘ID", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.SystemVolumeAmount == 0 && plan.SystemVolumeRaidUUID.ValueString() != "" {
+		return fmt.Errorf("该套餐 %s 不能传递本地系统盘ID", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.DataVolumeAmount == 0 && plan.DataVolumeRaidUUID.ValueString() != "" {
+		return fmt.Errorf("该套餐 %s 不能传递本地数据盘ID", plan.DeviceType.ValueString())
 	}
 
 	// 检查库存

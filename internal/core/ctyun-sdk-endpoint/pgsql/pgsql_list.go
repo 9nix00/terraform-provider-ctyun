@@ -107,11 +107,9 @@ func (this *PgsqlListApi) Do(ctx context.Context, credential ctyunsdk.Credential
 	}
 	if req.ProdInstId != nil {
 		builder.AddParam("prodInstId", *req.ProdInstId)
-		return
 	}
 	if req.InstanceType != nil {
 		builder.AddParam("instanceType", *req.InstanceType)
-		return
 	}
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {
