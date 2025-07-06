@@ -151,7 +151,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。",
+				Description: "实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。RSA加密存储",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 26),
 				},
@@ -161,7 +161,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）",
+				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，prod_id（节点）和prod_performance_spec（规格）不可同时变配。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlProdIds...),
 				},
@@ -335,7 +335,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "实例Id",
+				Description: "实例Id，同inst_id",
 			},
 		},
 	}
