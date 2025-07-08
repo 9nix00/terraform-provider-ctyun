@@ -41,7 +41,6 @@ resource "ctyun_ccse_plugin" "example1" {
 - `chart_name` (String) 插件名称
 - `chart_version` (String) 插件版本号，可通过ctyun_ccse_plugin_market查询
 - `cluster_id` (String) 集群ID
-- `plugin_name` (String) 插件实例名称，传给k8s作为helm release的名称
 
 ### Optional
 
