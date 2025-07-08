@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
-	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 type PgsqlListApi struct {

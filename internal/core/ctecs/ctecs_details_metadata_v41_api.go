@@ -3,8 +3,8 @@ package ctecs
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
-	"terraform-provider-ctyun/internal/core/core"
 )
 
 // CtecsDetailsMetadataV41Api

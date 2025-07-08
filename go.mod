@@ -1,4 +1,4 @@
-module terraform-provider-ctyun
+module github.com/ctyun-it/terraform-provider-ctyun
 
 go 1.23.0
 

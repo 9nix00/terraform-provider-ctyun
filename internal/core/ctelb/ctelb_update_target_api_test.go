@@ -2,7 +2,7 @@ package ctelb
 
 import (
 	"context"
-	"terraform-provider-ctyun/internal/core/core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"testing"
 )
 

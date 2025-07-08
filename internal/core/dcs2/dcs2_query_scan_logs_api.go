@@ -2,9 +2,9 @@ package dcs2
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
 	"strconv"
-	"terraform-provider-ctyun/internal/core/core"
 )
 
 // Dcs2QueryScanLogsApi
