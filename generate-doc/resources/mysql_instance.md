@@ -151,7 +151,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `instance_series` (String) 实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `os_type` (String) 系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler
-- `prod_id` (String) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，ProdID和prod_performance_spec不能同时与原配置不一致。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）
+- `prod_id` (String) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，prod_id（节点）和prod_performance_spec（规格）不可同时变配。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）
 - `prod_performance_spec` (String) 规格(例: 4C8G),可根据data.ctyun_mysql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时与原配置不一致
 - `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)
@@ -164,7 +164,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `backup_storage_space` (Number) 备份节点存储空间(单位:G，范围100,32768)，不支持主备磁盘空间同时升配。若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `password` (String, Sensitive) 实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。
+- `password` (String, Sensitive) 实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。RSA加密存储
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池Id
 - `running_control` (String) 控制是否暂停，启用和重启实例，取值范围：freeze, unfreeze, restart
@@ -175,7 +175,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `audit_log_status` (Number) 日志审计开关
 - `eip` (String) 弹性ip
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding
-- `id` (String) 实例Id
+- `id` (String) 实例Id，同inst_id
 - `inst_id` (String) 实例Id
 - `inst_release_protection_status` (Number) 实例释放保护开关 1:on,0:off
 - `master_order_id` (String) 订单id

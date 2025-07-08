@@ -18,7 +18,6 @@ import (
 	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -44,7 +43,6 @@ type CtyunCcsePluginConfig struct {
 	ID           types.String `tfsdk:"id"`
 	ClusterID    types.String `tfsdk:"cluster_id"`
 	RegionID     types.String `tfsdk:"region_id"`
-	PluginName   types.String `tfsdk:"plugin_name"`
 	ChartName    types.String `tfsdk:"chart_name"`
 	ChartVersion types.String `tfsdk:"chart_version"`
 	ValuesYaml   types.String `tfsdk:"values_yaml"`
@@ -72,13 +70,6 @@ func (c *ctyunCcsePlugin) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"cluster_id": schema.StringAttribute{
 				Required:    true,
 				Description: "集群ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"plugin_name": schema.StringAttribute{
-				Required:    true,
-				Description: "插件实例名称，传给k8s作为helm release的名称",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -259,7 +250,6 @@ func (c *ctyunCcsePlugin) ImportState(ctx context.Context, request resource.Impo
 	}
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.ClusterID = types.StringValue(clusterID)
-	cfg.PluginName = types.StringValue(pluginName)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {
@@ -270,32 +260,16 @@ func (c *ctyunCcsePlugin) ImportState(ctx context.Context, request resource.Impo
 
 // checkBeforeCreate 创建前检查
 func (c *ctyunCcsePlugin) checkBeforeCreate(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
-	params := &ccse2.CcseHasPluginInstanceExistedRequest{
-		ClusterId:  plan.ClusterID.ValueString(),
-		PluginName: plan.PluginName.ValueString(),
-		RegionId:   plan.RegionID.ValueString(),
-	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseHasPluginInstanceExistedApi.Do(ctx, c.meta.SdkCredential, params)
+	p, err := c.getByChartName(ctx, plan)
 	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	}
-	if utils.SecBool(resp.ReturnObj) {
-		err = fmt.Errorf("插件实例名称 %s 已经存在", plan.PluginName.ValueString())
-		return
-	}
-
-	list, err := c.getByChartName(ctx, plan)
-	if err != nil {
-		return
-	}
-	for _, p := range list {
-		if p.Status == "deployed" {
-			err = fmt.Errorf("插件 %s 不可重复安装", plan.ChartName.ValueString())
-			return
+		if errors.Is(err, common.InvalidReturnObjResultsError) {
+			err = nil
 		}
+		return
+	}
+	if p.Status == "deployed" {
+		err = fmt.Errorf("插件 %s 不可重复安装", plan.ChartName.ValueString())
+		return
 	}
 
 	return
@@ -309,7 +283,7 @@ func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePl
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
-			plugin, err = c.getByPluginName(ctx, plan)
+			plugin, err = c.getByChartName(ctx, plan)
 			if err != nil {
 				if errors.Is(err, common.InvalidReturnObjResultsError) {
 					return true
@@ -345,7 +319,6 @@ func (c *ctyunCcsePlugin) create(ctx context.Context, plan CtyunCcsePluginConfig
 		RegionId:     plan.RegionID.ValueString(),
 		ChartName:    plan.ChartName.ValueString(),
 		ChartVersion: plan.ChartVersion.ValueString(),
-		InstanceName: plan.PluginName.ValueString(),
 		Values:       plan.ValuesYaml.ValueString(),
 		ValuesJson:   plan.ValuesJson.ValueString(),
 	}
@@ -366,11 +339,10 @@ func (c *ctyunCcsePlugin) create(ctx context.Context, plan CtyunCcsePluginConfig
 
 // getAndMerge 从远端查询
 func (c *ctyunCcsePlugin) getAndMerge(ctx context.Context, plan *CtyunCcsePluginConfig) (err error) {
-	plugin, err := c.getByPluginName(ctx, *plan)
+	plugin, err := c.getByChartName(ctx, *plan)
 	if err != nil {
 		return
 	}
-	plan.PluginName = types.StringValue(plugin.Name)
 	plan.Namespace = types.StringValue(plugin.Namespace)
 	plan.ChartName = types.StringValue(plugin.ChartName)
 	plan.ChartVersion = types.StringValue(plugin.ChartVersion)
@@ -386,11 +358,6 @@ func (c *ctyunCcsePlugin) update(ctx context.Context, plan, state *CtyunCcsePlug
 	if err != nil {
 		return
 	}
-	//err = c.updateValues(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
-
 	return
 }
 
@@ -404,7 +371,6 @@ func (c *ctyunCcsePlugin) updateChartVersion(ctx context.Context, plan, state Ct
 		RegionId:     plan.RegionID.ValueString(),
 		ChartName:    plan.ChartName.ValueString(),
 		ChartVersion: plan.ChartVersion.ValueString(),
-		InstanceName: plan.PluginName.ValueString(),
 		Values:       state.ValuesYaml.ValueString(),
 		ValuesJson:   state.ValuesJson.ValueString(),
 	}
@@ -431,7 +397,7 @@ func (c *ctyunCcsePlugin) checkAfterChartVersion(ctx context.Context, plan Ctyun
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
-			plugin, err = c.getByPluginName(ctx, plan)
+			plugin, err = c.getByChartName(ctx, plan)
 			if err != nil {
 				return false
 			}
@@ -459,84 +425,13 @@ func (c *ctyunCcsePlugin) checkAfterChartVersion(ctx context.Context, plan Ctyun
 	return
 }
 
-// updateValues 更新Values ，目前因接口问题还不支持
-func (c *ctyunCcsePlugin) updateValues(ctx context.Context, plan, state *CtyunCcsePluginConfig) (err error) {
-	if plan.ValuesYaml.Equal(state.ValuesYaml) && plan.ValuesJson.Equal(state.ValuesJson) {
-		return
-	}
-	params := &ccse2.CcseRedeployPluginInstanceRequest{
-		ClusterId:    state.ClusterID.ValueString(),
-		RegionId:     state.RegionID.ValueString(),
-		InstanceName: state.PluginName.ValueString(),
-		Namespace:    state.Namespace.ValueString(),
-		ChartName:    plan.ChartName.ValueString(),
-		ChartVersion: plan.ChartVersion.ValueString(),
-		Values:       plan.ValuesYaml.ValueString(),
-		ValuesJson:   plan.ValuesJson.ValueString(),
-		PluginName:   state.PluginName.ValueString(),
-	}
-
-	resp, err := c.meta.Apis.SdkCcseApis.CcseRedeployPluginInstanceApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-
-	err = c.checkAfterUpdateValues(ctx, *plan)
-	if err != nil {
-		return
-	}
-	plan.ValuesYaml = state.ValuesYaml
-	plan.ValuesJson = state.ValuesJson
-	return
-}
-
-// checkAfterUpdateValues 修改Values后检查
-func (c *ctyunCcsePlugin) checkAfterUpdateValues(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
-	var executeSuccessFlag bool
-	var failedCnt int
-	retryer, _ := business.NewRetryer(time.Second*10, 30)
-	retryer.Start(
-		func(currentTime int) bool {
-			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
-			plugin, err = c.getByPluginName(ctx, plan)
-			if err != nil {
-				return false
-			}
-			if plugin.Status == "failed" {
-				failedCnt++
-			}
-			if failedCnt > 1 {
-				err = fmt.Errorf("修改values失败")
-				return false
-			}
-			if plugin.Status != "deployed" {
-				return true
-			}
-			executeSuccessFlag = true
-			return false
-		})
-	if err != nil {
-		return
-	}
-	if !executeSuccessFlag {
-		err = fmt.Errorf("插件配置修改超时")
-	}
-	return
-}
-
 // delete 删除
 func (c *ctyunCcsePlugin) delete(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
 	params := &ccse2.CcseDeletePluginInstanceRequest{
-		ClusterId:  plan.ClusterID.ValueString(),
-		RegionId:   plan.RegionID.ValueString(),
-		PluginName: plan.PluginName.ValueString(),
-		Namespace:  plan.Namespace.ValueString(),
+		ClusterId:    plan.ClusterID.ValueString(),
+		RegionId:     plan.RegionID.ValueString(),
+		InstanceName: plan.ChartName.ValueString(),
+		Namespace:    plan.Namespace.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkCcseApis.CcseDeletePluginInstanceApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -555,7 +450,7 @@ func (c *ctyunCcsePlugin) checkAfterDelete(ctx context.Context, plan CtyunCcsePl
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
-			plugin, err = c.getByPluginName(ctx, plan)
+			plugin, err = c.getByChartName(ctx, plan)
 			if err != nil {
 				if errors.Is(err, common.InvalidReturnObjResultsError) {
 					err = nil
@@ -578,12 +473,12 @@ func (c *ctyunCcsePlugin) checkAfterDelete(ctx context.Context, plan CtyunCcsePl
 	return
 }
 
-// getByPluginName通过实例名称查询
-func (c *ctyunCcsePlugin) getByPluginName(ctx context.Context, plan CtyunCcsePluginConfig) (plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse, err error) {
+// getByChartName通过插件名称查询
+func (c *ctyunCcsePlugin) getByChartName(ctx context.Context, plan CtyunCcsePluginConfig) (plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse, err error) {
 	params := &ccse2.CcseListPluginInstancesRequest{
-		ClusterId:  plan.ClusterID.ValueString(),
-		RegionId:   plan.RegionID.ValueString(),
-		PluginName: plan.PluginName.ValueString(),
+		ClusterId: plan.ClusterID.ValueString(),
+		RegionId:  plan.RegionID.ValueString(),
+		ChartName: plan.ChartName.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkCcseApis.CcseListPluginInstancesApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -596,23 +491,5 @@ func (c *ctyunCcsePlugin) getByPluginName(ctx context.Context, plan CtyunCcsePlu
 		return
 	}
 	plugin = resp.ReturnObj.Records[0]
-	return
-}
-
-// getByPluginName通过插件名称查询
-func (c *ctyunCcsePlugin) getByChartName(ctx context.Context, plan CtyunCcsePluginConfig) (plugins []*ccse2.CcseListPluginInstancesReturnObjRecordsResponse, err error) {
-	params := &ccse2.CcseListPluginInstancesRequest{
-		ClusterId: plan.ClusterID.ValueString(),
-		RegionId:  plan.RegionID.ValueString(),
-		ChartName: plan.ChartName.ValueString(),
-	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseListPluginInstancesApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	}
-	plugins = resp.ReturnObj.Records
 	return
 }
