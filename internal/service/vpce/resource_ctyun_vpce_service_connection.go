@@ -3,6 +3,12 @@ package vpce
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -11,12 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -56,7 +56,7 @@ func (c *ctyunVpceServiceConnection) Schema(_ context.Context, _ resource.Schema
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -64,21 +64,21 @@ func (c *ctyunVpceServiceConnection) Schema(_ context.Context, _ resource.Schema
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点服务id",
+				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"endpoint_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点id",
+				Description: "终端节点ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"status": schema.StringAttribute{
 				Required:    true,
-				Description: "连接状态",
+				Description: "连接状态，up表示申请连接，down表示断开连接",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.VpceServiceConnectionUp, business.VpceServiceConnectionDown),
 				},

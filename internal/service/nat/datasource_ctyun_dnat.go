@@ -3,16 +3,16 @@ package nat
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -34,7 +34,7 @@ func (c *ctyunDNatDatasource) Metadata(_ context.Context, request datasource.Met
 
 func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**详细说明请见文档：https://work.ctyun.cn/git/vnet/openapi-docs/src/branch/master/network/ctvpc/%E6%9F%A5%E8%AF%A2dnat%E5%88%97%E8%A1%A8.md",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166345`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -111,7 +111,7 @@ func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "虚拟机展示名称",
 						},
-						"virtual_machine_id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "虚拟机id",
 						},
@@ -261,6 +261,6 @@ type CtyunDNatModel struct {
 	Protocol                  types.String `tfsdk:"protocol"`                     //TCP:转发TCP协议的报文 UDP：转发UDP协议的报文
 	State                     types.String `tfsdk:"state"`                        //运行状态: ACTIVE / FREEZING / CREATING
 	VirtualMachineDisplayName types.String `tfsdk:"virtual_machine_display_name"` //虚拟机展示名称
-	VirtualMachineId          types.String `tfsdk:"virtual_machine_id"`           //虚拟机id
+	VirtualMachineId          types.String `tfsdk:"instance_id"`                  //虚拟机id
 	VirtualMachineName        types.String `tfsdk:"virtual_machine_name"`         //虚拟机名称
 }

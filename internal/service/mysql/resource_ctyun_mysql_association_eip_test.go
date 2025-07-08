@@ -2,11 +2,11 @@ package mysql_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"os"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -30,12 +30,11 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 	eipAddress := dependence.eipAddress
 	//eipAddress := "150.223.193.123"
 	instId := dependence.mysqlID
+	//instId := dependence.subnetID
 
-	prodType := "1"
-	prodCode := "MYSQL"
-	instanceType := "1"
+	instance_series := "S"
 
-	specDatasourceName := "data.ctyun_mysql_specss." + dnd
+	specDatasourceName := "data.ctyun_mysql_specs." + dnd
 	specDatasourceFile := "datasource_ctyun_mysql_specs.tf"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -58,15 +57,17 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 			},
 			//datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "0"),
+					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
 					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
 					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(specDatasourceFile, dnd, prodType, prodCode, instanceType),
+				Config: utils.LoadTestCase(specDatasourceFile, dnd, instance_series),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
 				),

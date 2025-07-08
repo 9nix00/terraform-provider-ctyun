@@ -2,11 +2,11 @@ package common
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 )
 
 type ctyunRegions struct {
@@ -23,6 +23,7 @@ func (c *ctyunRegions) Metadata(_ context.Context, req datasource.MetadataReques
 
 func (c *ctyunRegions) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: `**资源池列表**`,
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Optional:    true,

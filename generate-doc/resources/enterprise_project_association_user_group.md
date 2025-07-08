@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_enterprise_project_association_user_group" "enterprise_project_association_user_group_test" {
   enterprise_project_id = "38f35a0eeaa549be8b456b8d1c251d11"
   user_group_id         = "6edf8a6a9b09442295206feef0d39132"
@@ -29,7 +33,7 @@ resource "ctyun_enterprise_project_association_user_group" "enterprise_project_a
 
 ### Required
 
-- `enterprise_project_id` (String) 企业项目id
+- `enterprise_project_id` (String) 企业项目ID
 - `user_group_id` (String) 用户组id
 
 ### Optional

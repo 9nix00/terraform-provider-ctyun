@@ -58,13 +58,13 @@ resource "ctyun_vpc_route_table_rule" "rule_test"{
 - `destination` (String) 无类别域间路由，例如：192.168.0.1/32
 - `ip_version` (Number) 4标识ipv4,6标识ipv6
 - `next_hop_id` (String) 下一跳设备id
-- `next_hop_type` (String) 下一跳设备类型
+- `next_hop_type` (String) 下一跳设备类型，支持vpcpeering、havip、bm、vm、natgw、igw、igw6、dc、ticc、vpngw、enic
 - `route_table_id` (String) 路由表id
 
 ### Optional
 
 - `description` (String) 规则描述
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

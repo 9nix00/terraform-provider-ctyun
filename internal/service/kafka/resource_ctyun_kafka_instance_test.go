@@ -2,10 +2,10 @@ package kafka_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"os"
 	"strconv"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -169,6 +169,10 @@ auto_renew = false
 					"security_group_id",
 					"master_order_id",
 					"zone_list",
+					"plain_port",
+					"http_port",
+					"ssl_port",
+					"sasl_port",
 				},
 			},
 			{

@@ -3,6 +3,13 @@ package vpc
 import (
 	"context"
 	"errors"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -16,13 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	defaults2 "terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 )
 
 func NewCtyunSecurityGroupRule() resource.Resource {
@@ -147,7 +147,7 @@ func (c *ctyunSecurityGroupRule) Schema(_ context.Context, _ resource.SchemaRequ
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

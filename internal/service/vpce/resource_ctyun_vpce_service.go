@@ -3,6 +3,13 @@ package vpce
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -14,14 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -75,7 +76,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -83,7 +84,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -100,7 +101,11 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Description: "支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
+				},
 			},
 			"instance_type": schema.StringAttribute{
 				Optional:    true,
@@ -112,16 +117,24 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
+					),
 				},
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例id,当type为interface时，必填",
+				Description: "服务后端实例ID,当type为interface时，必填",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
 					),
 				},
 			},
@@ -140,7 +153,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "白名单邮箱",
+				Description: "白名单邮箱，最多支持10个",
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(validator2.Email()),
 					setvalidator.SizeAtMost(10),
@@ -154,8 +167,12 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						path.MatchRoot("type"),
 						types.StringValue(business.VpceServiceTypeInterface),
 					),
+					validator2.ConflictsWithEqualSet(
+						path.MatchRoot("type"),
+						types.StringValue(business.VpceServiceTypeReverse),
+					),
 				},
-				Description: "节点服务规则,当type为interface时，必填",
+				Description: "节点服务规则,当type为interface时必填",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"protocol": schema.StringAttribute{
@@ -750,11 +767,15 @@ func (c *ctyunVpceService) updateBackend(ctx context.Context, plan, state CtyunV
 	}
 
 	endpointServiceID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
+	p := plan.InstanceType.ValueString()
+	if p == "lb" {
+		p = "elb"
+	}
 	params := &ctvpc.CtvpcVpceUpdateBackendRequest{
 		RegionID:          regionID,
 		EndpointServiceID: endpointServiceID,
 		InstanceID:        plan.InstanceID.ValueString(),
-		InstanceType:      plan.InstanceType.ValueString(),
+		InstanceType:      p,
 	}
 
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcVpceUpdateBackendApi.Do(ctx, c.meta.SdkCredential, params)

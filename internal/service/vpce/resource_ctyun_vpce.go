@@ -4,8 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,14 +21,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -71,7 +73,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -79,21 +81,21 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
-				Description: "终端节点服务id",
+				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的子网ID",
+				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -101,7 +103,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"subnet_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "子网ip",
+				Description: "子网IP",
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
@@ -109,6 +111,10 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
+				},
 			},
 			"status": schema.Int32Attribute{
 				Computed:    true,
@@ -122,7 +128,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				ElementType: types.StringType,
 				Computed:    true,
 				Optional:    true,
-				Description: "白名单列表, 最多同时支持20个地址，最少输入一个",
+				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("whitelist_flag"),
@@ -300,7 +306,7 @@ func (c *ctyunVpce) loopCreate(ctx context.Context, plan CtyunVpceConfig) (maste
 		return
 	}
 	if !executeSuccessFlag {
-		err = errors.New("创建时未获取到终端节点id")
+		err = errors.New("创建时未获取到终端节点ID")
 	}
 	return
 }

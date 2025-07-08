@@ -3,18 +3,22 @@ package vpc
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	"terraform-provider-ctyun/internal/utils"
+	"regexp"
+	"strings"
 )
 
 var (
@@ -50,16 +54,16 @@ func (c *ctyunVpcRouteTable) Schema(_ context.Context, _ resource.SchemaRequest,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID",
+				Description: "ID，值与路由表ID相同",
 			},
 			"route_table_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "路由表id",
+				Description: "路由表ID",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -68,7 +72,7 @@ func (c *ctyunVpcRouteTable) Schema(_ context.Context, _ resource.SchemaRequest,
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -76,7 +80,7 @@ func (c *ctyunVpcRouteTable) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -84,6 +88,10 @@ func (c *ctyunVpcRouteTable) Schema(_ context.Context, _ resource.SchemaRequest,
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
+				},
 			},
 		},
 	}
@@ -136,6 +144,10 @@ func (c *ctyunVpcRouteTable) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "不存在") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 

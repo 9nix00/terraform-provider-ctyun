@@ -3,12 +3,12 @@ package ecs
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctecs"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -88,6 +88,7 @@ type CtyunEcsInstancesModel struct {
 	ProjectID           types.String                    `tfsdk:"project_id"`
 	AttachedVolumes     []string                        `tfsdk:"attached_volumes"`
 	InstanceID          types.String                    `tfsdk:"instance_id"`
+	ID                  types.String                    `tfsdk:"id"`
 	DisplayName         types.String                    `tfsdk:"display_name"`
 	InstanceName        types.String                    `tfsdk:"instance_name"`
 	OsType              types.Int32                     `tfsdk:"os_type"`
@@ -217,7 +218,10 @@ func (c *ctyunEcsInstances) Schema(_ context.Context, _ datasource.SchemaRequest
 								},
 							},
 						},
-
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "云主机ID，值与instance_id相同",
+						},
 						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机ID",
@@ -458,6 +462,7 @@ func (c *ctyunEcsInstances) Read(ctx context.Context, request datasource.ReadReq
 			ProjectID:           types.StringValue(ecs.ProjectID),
 			AttachedVolumes:     ecs.AttachedVolume,
 			InstanceID:          types.StringValue(ecs.InstanceID),
+			ID:                  types.StringValue(ecs.InstanceID),
 			DisplayName:         types.StringValue(ecs.DisplayName),
 			InstanceName:        types.StringValue(ecs.InstanceName),
 			OsType:              types.Int32Value(ecs.OsType),

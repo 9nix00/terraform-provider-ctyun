@@ -3,14 +3,13 @@ package ccse
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 )
 
 var (
@@ -79,7 +78,7 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Description: "每页数据量大小",
+				Description: "每页数据量大小，1-50",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},
@@ -91,11 +90,11 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
 							Computed:    true,
-							Description: "集群id",
+							Description: "集群ID",
 						},
 						"vpc_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "vpc id",
+							Description: "虚拟私有云ID",
 						},
 						"subnet_id": schema.StringAttribute{
 							Computed:    true,
@@ -111,22 +110,19 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 						},
 						"start_port": schema.Int32Attribute{
 							Computed:    true,
-							Description: "节点服务开始端口，可选范围30000-65535",
+							Description: "节点服务开始端口，范围30000-65535",
 						},
 						"end_port": schema.Int32Attribute{
 							Computed:    true,
-							Description: "节点服务终止端口，可选范围30000-65535",
+							Description: "节点服务终止端口，范围30000-65535",
 						},
 						"pod_cidr": schema.StringAttribute{
 							Computed:    true,
-							Description: "pod网络cidr，使用cubecni作为网络插件时，podCidr传值为vpc cidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。",
+							Description: "pod网络cidr",
 						},
 						"container_runtime": schema.StringAttribute{
 							Computed:    true,
 							Description: "容器运行时,可选containerd、docker",
-							Validators: []validator.String{
-								stringvalidator.OneOf("containerd", "docker"),
-							},
 						},
 						"timezone": schema.StringAttribute{
 							Computed:    true,
@@ -135,9 +131,6 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 						"cluster_version": schema.StringAttribute{
 							Computed:    true,
 							Description: "集群版本，支持1.23.3 ，1.25.6 ，1.27.8，1.29.3",
-							Validators: []validator.String{
-								stringvalidator.OneOf("1.23.3", "1.25.6", "1.27.8", "1.29.3"),
-							},
 						},
 						"deploy_mode": schema.StringAttribute{
 							Computed:    true,
@@ -153,11 +146,11 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 						},
 						"cluster_status": schema.StringAttribute{
 							Computed:    true,
-							Description: "集群状态",
+							Description: "集群状态：creating：创建中。abnormal：异常。normal：正常。create_fail：创建失败。adjust：规模调整中。updating：升级中。suspend：暂停。deleting：删除中。deleted：已删除。delete_fail：删除失败。resetting：节点重置中。resettled：节点已重置。reset_fail：节点重置失败。upgrading：集群升级中。upgrade_fail：集群升级失败。",
 						},
 						"biz_state": schema.Int32Attribute{
 							Computed:    true,
-							Description: "订单状态",
+							Description: "业务状态，1：运行中，2：已停止，3：已注销，4：已退订，5：扩容中，6：开通中，7：已取消，9：重启中，10：节点重置中，11：升级中，13：缩容中，14：已过期(冻结、过期)，15：节点升规格中，17：创建失败，18：退订中，19：控制面升配中，20：休眠中，21：唤醒中，22：转订购模式中",
 						},
 						"master_node_num": schema.Int32Attribute{
 							Computed:    true,
@@ -195,6 +188,7 @@ func (c *ctyunCcseClusters) Read(ctx context.Context, request datasource.ReadReq
 	// 组装请求体
 	params := &ccse2.CcseListClustersRequest{
 		RegionId:    regionId,
+		ResPoolId:   regionId,
 		ClusterName: config.ClusterName.ValueString(),
 	}
 	pageNo := config.PageNo.ValueInt32()

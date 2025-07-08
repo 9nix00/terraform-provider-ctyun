@@ -16,7 +16,7 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.4.4"
   ]
   enable_ipv6 = true
-  type = data.ctyun_ebm_device_types.test.device_types[0].smart_nic_exist ? "common":"ebm"
+  type = "common"
 }
 
 resource "ctyun_security_group" "security_group_test" {
@@ -25,29 +25,77 @@ resource "ctyun_security_group" "security_group_test" {
   description = "terraform测试使用"
 }
 
-data "ctyun_ebm_device_types" "test" {
+resource "ctyun_security_group" "security_group_test2" {
+  vpc_id = ctyun_vpc.vpc_test.id
+  name        = "tf-sg-for-ebm2"
+  description = "terraform测试使用"
+}
+
+locals {
+  device_type1 = "physical.s5.2xlarge4"      // az1、有本地盘、弹性、不支持云硬盘
+  device_type2 = "physical.s5.2xlarge1"      // az2、无本地盘、弹性、支持云硬盘
+  az2 = "cn-huadong1-jsnj2A-public-ctcloud"
 }
 
 data "ctyun_ebm_device_raids" "system_raid" {
-  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  device_type = local.device_type1
   volume_type = "system"
 }
 
 data "ctyun_ebm_device_raids" "data_raid" {
-  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  device_type = local.device_type1
   volume_type = "data"
 }
 
 data "ctyun_ebm_device_images" "test" {
-  device_type = data.ctyun_ebm_device_types.test.device_types[0].device_type
+  device_type = local.device_type1
+  os_type = "linux"
+  image_type = "standard"
+}
+
+locals {
+  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
+  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : ""
+
+  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
+  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : ""
+}
+
+
+data "ctyun_ebm_device_images" "dependence" {
+  device_type = local.device_type2
+  az_name = local.az2
   os_type = "linux"
   image_type = "standard"
 }
 
 resource "ctyun_ebs" "ebs_test" {
+  az_name   = local.az2
   name       = "tf-ebs-for-ebm"
   mode       = "vbd"
   type       = "sata"
   size       = 60
   cycle_type = "on_demand"
+}
+
+resource "ctyun_ebm" "ebm_test" {
+  az_name   = local.az2
+  instance_name = "tf-ebm-for-ebm"
+  hostname = "tf-ebm-for-ebm"
+  password = "P@2s2sxcv"
+  ext_ip = "not_use"
+  cycle_type = "on_demand"
+  device_type = local.device_type2
+  image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
+  security_group_ids = [ctyun_security_group.security_group_test.id]
+  vpc_id = ctyun_vpc.vpc_test.id
+  disk_list =  [{
+    disk_type = "system"
+    size = "100"
+    type = "sata"
+  }]
+  network_card_list = [{
+    master = true,
+    subnet_id = ctyun_subnet.subnet_test.id
+  }]
 }

@@ -4,23 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ctelb "terraform-provider-ctyun/internal/core/ctelb"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -51,12 +55,12 @@ func (c *CtyunElbListener) Metadata(ctx context.Context, request resource.Metada
 
 func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10140276",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -65,6 +69,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"loadbalancer_id": schema.StringAttribute{
 				Required:    true,
 				Description: "负载均衡实例ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -81,33 +88,58 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerProtocols...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"protocol_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "负载均衡实例监听端口。取值：1-65535，protocol_port不支持更新",
+				Description: "负载均衡实例监听端口。取值：1-65535，protocol_port。不支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"certificate_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "证书ID。当protocol为HTTPS时,此参数必选",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTPS),
+					),
+				},
 			},
 			"ca_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启双向认证。false（不开启）、true（开启）",
+				Description: "是否开启双向认证。true（开启），false（不开启）",
 			},
 			"client_certificate_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "双向认证的证书ID",
+				Description: "双向认证的证书ID，当ca_enabled=ture，必填。",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("ca_enabled"),
+						types.BoolValue(true),
+					),
+				},
 			},
 			"access_control_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "访问控制ID",
+				Description: "访问控制ID,如果access_control_type=white或者black，此项必填",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("access_control_type"),
+						types.StringValue(business.ListenerAccessControlTypeWhite),
+						types.StringValue(business.ListenerAccessControlTypeBlack),
+					),
+				},
 			},
 			"access_control_type": schema.StringAttribute{
 				Optional:    true,
@@ -135,20 +167,41 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "重定向监听器ID，当type为redirect时，此字段必填",
+				Description: "重定向监听器ID，当default_action_type为redirect时，此字段必填",
+				Validators: []validator.String{
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeForward),
+					),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeRedirect),
+					),
+				},
 			},
 			"az_name": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
+				// az时候有必要设定默认值
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
+				Optional:    true,
 				Computed:    true,
-				Description: "项目ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "监听器状态: DOWN / ACTIVE",
+				Description: "监听器状态: DOWN / ACTIVE，可以控制监听器开关。",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleStatus...),
 				},
@@ -164,45 +217,75 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"enable_nat_64": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启 nat64",
+				Description: "是否开启 nat64，elb需要支持ipv6能力",
 			},
 			"listener_qps": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "qps 大小",
+				Description: "qps 大小,仅支持协议为 HTTP / HTTPS 的监听器",
+				Validators: []validator.Int32{
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
+				},
 			},
 			"establish_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "建立连接超时时间，单位秒，取值范围： 1 - 1800",
+				Description: "建立连接超时时间，单位秒，取值范围： 1 - 1800。不支持协议为 UDP / HTTP / HTTPS 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1800),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTP),
+						types.StringValue(business.ListenerProtocolHTTPS),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"idle_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300",
+				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300,不支持协议为 TCP / UDP 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"response_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "响应超时，单位秒，取值范围：1 - 300",
+				Description: "响应超时，单位秒，取值范围：1 - 300。不支持协议为 TCP / UDP 的监听器",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolTCP),
+						types.StringValue(business.ListenerProtocolUDP),
+					),
 				},
 			},
 			"listener_cps": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "cps 大小,仅支持协议为 TCP / UDP 的监听器。",
+				Validators: []validator.Int32{
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTP),
+						types.StringValue(business.ListenerProtocolHTTPS),
+					),
+				},
 			},
 			"target_groups": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "后端服务组，最多只支持添加一个后端服务组",
+				Description: "后端服务组，最多只支持添加一个后端服务组。当default_action_type=forward时，target_groups不能为空",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"target_group_id": schema.StringAttribute{
@@ -212,12 +295,19 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 						"weight": schema.Int32Attribute{
 							Optional:    true,
 							Computed:    true,
+							Default:     int32default.StaticInt32(100),
 							Description: "后端主机权重，取值范围：1-256。默认为100",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
 							},
 						},
 					},
+				},
+				Validators: []validator.List{
+					validator2.AlsoRequiresEqualList(
+						path.MatchRoot("default_action_type"),
+						types.StringValue(business.ListenerDefaultActionTypeForward),
+					),
 				},
 			},
 		},
@@ -247,6 +337,37 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
+
+	err = c.setNat64(ctx, &plan, &plan)
+	if err != nil {
+		return
+	}
+	//设置QPS,仅支持协议为 HTTP / HTTPS 的监听器
+	err = c.setQPS(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	// 设置CPS，仅支持协议为 TCP / UDP 的监听器。
+	err = c.setCPS(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置establish_timeout,不支持协议为 UDP / HTTP / HTTPS 的监听器
+	err = c.setEstablishTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置idle_timeout,不支持协议为 TCP / UDP 的监听器
+	err = c.setIdleTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+	//设置response_timeout,不支持协议为 TCP / UDP 的监听器
+	err = c.setResponseTimeout(ctx, &plan, &plan, false)
+	if err != nil {
+		return
+	}
+
 	// 创建后反查创建后的nat信息
 	err = c.getAndMergeListener(ctx, &plan)
 	if err != nil {
@@ -275,7 +396,7 @@ func (c *CtyunElbListener) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMergeListener(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
+		if strings.Contains(err.Error(), "not found") || strings.Contains(err.Error(), "不存在") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -330,27 +451,27 @@ func (c *CtyunElbListener) Update(ctx context.Context, request resource.UpdateRe
 		return
 	}
 	//设置QPS,仅支持协议为 HTTP / HTTPS 的监听器
-	err = c.setQPS(ctx, &state, &plan)
+	err = c.setQPS(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	// 设置CPS，仅支持协议为 TCP / UDP 的监听器。
-	err = c.setCPS(ctx, &state, &plan)
+	err = c.setCPS(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置establish_timeout,不支持协议为 UDP / HTTP / HTTPS 的监听器
-	err = c.setEstablishTimeout(ctx, &state, &plan)
+	err = c.setEstablishTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置idle_timeout,不支持协议为 TCP / UDP 的监听器
-	err = c.setIdleTimeout(ctx, &state, &plan)
+	err = c.setIdleTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
 	//设置response_timeout,不支持协议为 TCP / UDP 的监听器
-	err = c.setResponseTimeout(ctx, &state, &plan)
+	err = c.setResponseTimeout(ctx, &state, &plan, true)
 	if err != nil {
 		return
 	}
@@ -436,25 +557,25 @@ func (c *CtyunElbListener) CreateElbListener(ctx context.Context, plan *CtyunElb
 		Protocol:       plan.Protocol.ValueString(),
 		ProtocolPort:   plan.ProtocolPort.ValueInt32(),
 	}
-	if !plan.Description.IsNull() {
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
 		params.Description = plan.Description.ValueString()
 	}
-	if !plan.CertificateID.IsNull() {
+	if !plan.CertificateID.IsNull() && !plan.CertificateID.IsUnknown() {
 		params.CertificateID = plan.CertificateID.ValueString()
 	}
-	if !plan.CaEnabled.IsNull() {
+	if !plan.CaEnabled.IsNull() && !plan.CaEnabled.IsUnknown() {
 		params.CaEnabled = plan.CaEnabled.ValueBoolPointer()
 	}
-	if !plan.ClientCertificateID.IsNull() {
+	if !plan.ClientCertificateID.IsNull() && !plan.ClientCertificateID.IsUnknown() {
 		params.ClientCertificateID = plan.ClientCertificateID.ValueString()
 	}
-	if !plan.AccessControlID.IsNull() {
+	if !plan.AccessControlID.IsNull() && !plan.AccessControlID.IsUnknown() {
 		params.AccessControlID = plan.AccessControlID.ValueString()
 	}
-	if !plan.AccessControlType.IsNull() {
+	if !plan.AccessControlType.IsNull() && !plan.AccessControlType.IsUnknown() {
 		params.AccessControlType = plan.AccessControlType.ValueString()
 	}
-	if !plan.ForwardedForEnabled.IsNull() {
+	if !plan.ForwardedForEnabled.IsNull() && !plan.ForwardedForEnabled.IsUnknown() {
 		params.ForwardedForEnabled = plan.ForwardedForEnabled.ValueBoolPointer()
 	}
 
@@ -467,6 +588,18 @@ func (c *CtyunElbListener) CreateElbListener(ctx context.Context, plan *CtyunElb
 	defaultAction.RedirectListenerID = plan.RedirectListenerID.ValueString()
 	defaultAction.ForwardConfig = &ctelb.CtelbCreateListenerDefaultActionForwardConfigRequest{}
 	var targetGroupList []TargetGroupModel
+	// 判断default_action_type为不同值的时候，各个参数的传参情况
+	if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeForward {
+		if plan.TargetGroups.IsNull() || plan.TargetGroups.IsUnknown() {
+			err = fmt.Errorf("当default_action_type=forward时，target_groups不能为空")
+			return err
+		}
+	} else if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeRedirect {
+		if plan.RedirectListenerID.IsNull() {
+			err = fmt.Errorf("当default_action_type=redirect时，redirect_listener_id不能为空")
+			return err
+		}
+	}
 	var targetGroups []*ctelb.CtelbCreateListenerDefaultActionForwardConfigTargetGroupsRequest
 	diags := plan.TargetGroups.ElementsAs(ctx, &targetGroupList, false)
 	if diags.HasError() {
@@ -511,7 +644,6 @@ func (c *CtyunElbListener) updateListenerInfo(ctx context.Context, state *CtyunE
 		RegionID:    state.RegionID.ValueString(),
 		ListenerID:  state.ID.ValueString(),
 	}
-
 	if !plan.Name.Equal(state.Name) {
 		params.Name = plan.Name.ValueString()
 	}
@@ -549,7 +681,7 @@ func (c *CtyunElbListener) updateListenerInfo(ctx context.Context, state *CtyunE
 			defaultAction.RedirectListenerID = plan.RedirectListenerID.ValueString()
 		} else if plan.DefaultActionType.ValueString() == business.ListenerDefaultActionTypeForward {
 			defaultAction.ForwardConfig = &ctelb.CtelbUpdateListenerDefaultActionForwardConfigRequest{}
-			if plan.TargetGroups.IsNull() {
+			if plan.TargetGroups.IsNull() || plan.TargetGroups.IsUnknown() {
 				err = fmt.Errorf("当DefaultActionType=forward时，targetGroups不能为空")
 				return
 			}
@@ -608,8 +740,6 @@ func (c *CtyunElbListener) getAndMergeListener(ctx context.Context, plan *CtyunE
 
 	// 解析返回listener详情
 	respObj := resp.ReturnObj[0]
-	plan.AzName = types.StringValue(respObj.AzName)
-	plan.ProjectID = types.StringValue(respObj.ProjectID)
 	plan.Description = types.StringValue(respObj.Description)
 	plan.Status = types.StringValue(respObj.Status)
 	plan.CreatedTime = types.StringValue(respObj.CreatedTime)
@@ -704,6 +834,9 @@ func (c *CtyunElbListener) stopListener(ctx context.Context, state *CtyunElbList
 func (c *CtyunElbListener) setNat64(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
 	// 验证负载均衡是否开启ipv6
 	if !c.enableElbIpv6(ctx, state) {
+		if plan.EnableNat64.ValueBool() {
+			err = errors.New("elb未开启ipv6，不支持nat64")
+		}
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerNat64Request{
@@ -717,23 +850,20 @@ func (c *CtyunElbListener) setNat64(ctx context.Context, state *CtyunElbListener
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
 	return
 }
 
-func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 仅支持协议为 HTTP / HTTPS 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolUDP || state.Protocol.ValueString() == business.ListenerProtocolTCP {
 		return
 	}
-	if plan.ListenerQps.ValueInt32() == 0 {
+	if plan.ListenerQps.IsNull() || plan.ListenerQps.IsUnknown() {
 		return
 	}
 	// 如何plan qps 和state qps相同，直接返回
-	if plan.ListenerQps.ValueInt32() == state.ListenerQps.ValueInt32() {
+	if isUpdate && plan.ListenerQps.ValueInt32() == state.ListenerQps.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerQpsRequest{
@@ -751,16 +881,16 @@ func (c *CtyunElbListener) setQPS(ctx context.Context, state *CtyunElbListenerCo
 	return
 }
 
-func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 仅支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() != business.ListenerProtocolUDP && state.Protocol.ValueString() != business.ListenerProtocolTCP {
 		return
 	}
-	if plan.ListenerCps.ValueInt32() == 0 {
+	if plan.ListenerCps.IsNull() || plan.ListenerCps.IsUnknown() {
 		return
 	}
 	// 如果plan cps与state cps相同，直接返回
-	if plan.ListenerCps.ValueInt32() == state.ListenerCps.ValueInt32() {
+	if isUpdate && plan.ListenerCps.ValueInt32() == state.ListenerCps.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerCpsRequest{
@@ -778,16 +908,16 @@ func (c *CtyunElbListener) setCPS(ctx context.Context, state *CtyunElbListenerCo
 	return
 }
 
-func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	//不支持协议为 UDP / HTTP / HTTPS 的监听器
 	if state.Protocol.ValueString() != business.ListenerProtocolTCP {
 		return
 	}
 
-	if plan.EstablishTimeout.ValueInt32() == 0 {
+	if plan.EstablishTimeout.IsNull() || plan.EstablishTimeout.IsUnknown() {
 		return
 	}
-	if plan.EstablishTimeout.ValueInt32() == state.EstablishTimeout.ValueInt32() {
+	if isUpdate && plan.EstablishTimeout.ValueInt32() == state.EstablishTimeout.ValueInt32() {
 		return
 	}
 	params := &ctelb.CtelbUpdateListenerEstabTimeoutRequest{
@@ -805,15 +935,15 @@ func (c *CtyunElbListener) setEstablishTimeout(ctx context.Context, state *Ctyun
 	return
 }
 
-func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 不支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
 	}
-	if plan.IdleTimeout.ValueInt32() == 0 {
+	if plan.IdleTimeout.IsNull() || plan.IdleTimeout.IsUnknown() {
 		return
 	}
-	if plan.IdleTimeout.ValueInt32() == state.IdleTimeout.ValueInt32() {
+	if isUpdate && plan.IdleTimeout.ValueInt32() == state.IdleTimeout.ValueInt32() {
 		return
 	}
 
@@ -833,15 +963,15 @@ func (c *CtyunElbListener) setIdleTimeout(ctx context.Context, state *CtyunElbLi
 	return
 }
 
-func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig) (err error) {
+func (c *CtyunElbListener) setResponseTimeout(ctx context.Context, state *CtyunElbListenerConfig, plan *CtyunElbListenerConfig, isUpdate bool) (err error) {
 	// 不支持协议为 TCP / UDP 的监听器
 	if state.Protocol.ValueString() == business.ListenerProtocolTCP || state.Protocol.ValueString() == business.ListenerProtocolUDP {
 		return
 	}
-	if plan.ResponseTimeout.ValueInt32() == 0 {
+	if plan.ResponseTimeout.IsNull() || plan.ResponseTimeout.IsUnknown() {
 		return
 	}
-	if plan.ResponseTimeout.ValueInt32() == state.ResponseTimeout.ValueInt32() {
+	if isUpdate && plan.ResponseTimeout.ValueInt32() == state.ResponseTimeout.ValueInt32() {
 		return
 	}
 

@@ -6,9 +6,8 @@ terraform {
   }
 }
 
-resource "ctyun_eip_association" "eip_association_test1" {
-  eip_id      = "eip-p9qvl63yt6"
-  instance_id = "0b9897c8-ff01-42b4-c4c2-6a427d8b2e9a"
+provider "ctyun" {
+  env = "prod"
 }
 
 resource "ctyun_eip_association" "eip_association_test2" {

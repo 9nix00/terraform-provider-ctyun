@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 )
 
 var (
@@ -60,7 +60,6 @@ func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.Sch
 					int32validator.AtLeast(1),
 				},
 			},
-
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
@@ -380,10 +379,10 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 	header := &mysql.TeledbGetListHeaders{
 		RegionID: regionId,
 	}
-
 	if config.ProjectID.ValueString() != "" {
 		header.ProjectID = config.ProjectID.ValueStringPointer()
 	}
+
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbGetListApi.Do(ctx, c.meta.Credential, params, header)
 	if err != nil {
 		return

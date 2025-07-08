@@ -1,7 +1,7 @@
 package business
 
 import (
-	"terraform-provider-ctyun/internal/utils"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 )
 
 const (

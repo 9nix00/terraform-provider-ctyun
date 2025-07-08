@@ -1,5 +1,5 @@
 # ctyun_kafka_instances (Data Source)
-**详细说明请见文档：**
+**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**
 
 
 
@@ -12,6 +12,10 @@ terraform {
       source = "ctyun-it/ctyun"
     }
   }
+}
+
+provider "ctyun" {
+  env = "prod"
 }
 
 data "ctyun_kafka_instances" "tbidgqvfbs" {
@@ -27,7 +31,7 @@ data "ctyun_kafka_instances" "tbidgqvfbs" {
 - `instance_id` (String) 实例ID
 - `instance_name` (String) 实例名称
 - `page_no` (Number) 列表的页码
-- `page_size` (Number) 每页数据量大小
+- `page_size` (Number) 每页数据量大小，支持范围1-50
 - `project_id` (String) 企业项目ID
 - `region_id` (String) 资源池ID
 

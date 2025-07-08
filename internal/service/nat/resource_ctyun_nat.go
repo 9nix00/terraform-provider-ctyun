@@ -4,23 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	types "github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -44,61 +45,75 @@ func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**详细说明请见文档：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=5778&data=94&isNormal=1&vid=88",
+		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "ID，值与nat_gateway_id相同",
+			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+			},
 			"vpc_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "需要创建 NAT 网关的 VPC 的 ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"spec": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "规格 1~4, 1表示小型, 2表示中型, 3表示大型, 4表示超大型",
+				Description: "规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 4),
 				},
-				// 当规格升级/降配的时候，这个nat删除旧资源并创建新资源
-				//PlanModifiers: []planmodifier.Int32{
-				//	int32planmodifier.RequiresReplace(),
-				//},
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					// todo 不能以 http: / https: 开头
-					//validator2
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
+				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
 			},
 			"cycle_type": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "订购类型：month（包月） / year（包年）/ on_demand（按需）",
+				Required:    true,
+				Description: "订购周期类型，取值范围：year：按年，month：按月，on_demand：按需。当此值为month或year时，cycle_count为必填",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypes...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年",
+				Description: "订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -126,23 +141,6 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Optional:    true,
 				Description: "代金券金额，支持到小数点后两位",
 			},
-			"project_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "企业项目，不传默认为 0",
-			},
-			"master_resource_status": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.NatStatus...),
-				},
-			},
-			"master_order_no": schema.StringAttribute{
-				Computed:    true,
-				Description: "订单编号, 可以为 null",
-			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "订单id",
@@ -151,24 +149,19 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Computed:    true,
 				Description: "网关id",
 			},
-			"master_resource_id": schema.StringAttribute{
-				Computed: true,
-			},
 			"vpc_name": schema.StringAttribute{
 				Computed:    true,
-				Description: "NAT所属的专有网络名字",
+				Description: "NAT所属的vpc专有网络名字",
 			},
 			"vpc_cidr": schema.StringAttribute{
 				Computed:    true,
 				Description: "当前网关所属的vpc cidr",
 			},
 			"creation_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关的创建时间",
 			},
 			"expired_time": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "NAT网关实例的过期时间",
 			},
@@ -235,15 +228,6 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 	if !loopResponse.NatGatewayId.IsNull() {
 		plan.NatGatewayID = loopResponse.NatGatewayId
 	}
-	if !loopResponse.MasterOrderNO.IsNull() {
-		plan.MasterOrderNO = loopResponse.MasterOrderNO
-	}
-	if !loopResponse.MasterResourceID.IsNull() {
-		plan.MasterResourceID = loopResponse.MasterResourceID
-	}
-	if !loopResponse.MasterResourceStatus.IsNull() {
-		plan.MasterResourceStatus = loopResponse.MasterResourceStatus
-	}
 
 	plan.ProjectID = utils.SecStringValue(createParams.ProjectID)
 
@@ -252,7 +236,7 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 		return
 	}
 	// 创建后反查创建后的nat信息
-	err = c.getAndMergeNat(ctx, &plan, nil)
+	err = c.getAndMergeNat(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -281,9 +265,9 @@ func (c *ctyunNat) Read(ctx context.Context, request resource.ReadRequest, respo
 		return
 	}
 	// 查询远端
-	err = c.getAndMergeNat(ctx, &state, nil)
+	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "is not found") {
+		if strings.Contains(err.Error(), "not found") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -325,7 +309,7 @@ func (c *ctyunNat) Update(ctx context.Context, request resource.UpdateRequest, r
 	}
 
 	// 更新远端后，查询远端并同步一下本地信息
-	err = c.getAndMergeNat(ctx, &state, &plan)
+	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
 		return
 	}
@@ -395,15 +379,6 @@ func (c *ctyunNat) ImportState(ctx context.Context, request resource.ImportState
 
 // 在创建nat实例之前，进行检查
 func (c *ctyunNat) checkBeforeCreateNat(ctx context.Context, plan CtyunNatConfig) error {
-	cycleCount := plan.CycleCount.ValueInt64()
-	cycleType := plan.CycleType.ValueString()
-	if cycleType != business.OrderCycleTypeOnDemand && cycleCount <= 0 {
-		return fmt.Errorf("当订购周期不为按需时，创建包周期NAT时，周期不得低于0")
-	}
-	if cycleType == business.OrderCycleTypeMonth && cycleCount > 11 || cycleType == business.OrderCycleTypeYear && cycleCount > 3 {
-		return fmt.Errorf("创建包周期NAT时，以月为单位，支持1-11个月订购或续订；以年为单位，支持1-3年订购或续订")
-	}
-	//
 	return nil
 }
 
@@ -459,7 +434,8 @@ func (c *ctyunNat) createNat(ctx context.Context, plan *CtyunNatConfig) (returnO
 	return
 }
 
-func (c *ctyunNat) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig, plan *CtyunNatConfig) (err error) {
+func (c *ctyunNat) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig) (err error) {
+	cfg.ID = cfg.NatGatewayID
 	//查看nat详情： ctvpc_show_nat_gateway_api.go
 	params := &ctvpc.CtvpcShowNatGatewayRequest{
 		RegionID:     cfg.RegionID.ValueString(),
@@ -486,7 +462,6 @@ func (c *ctyunNat) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig, plan
 		return
 	}
 	cfg.Spec = types.Int32Value(spec)
-	cfg.ProjectID = utils.SecStringValue(natObj.ProjectID)
 	cfg.Name = utils.SecStringValue(natObj.Name)
 	cfg.NatGatewayID = utils.SecStringValue(natObj.NatGatewayID)
 	cfg.Description = utils.SecStringValue(natObj.Description)
@@ -494,14 +469,6 @@ func (c *ctyunNat) getAndMergeNat(ctx context.Context, cfg *CtyunNatConfig, plan
 	cfg.VpcCidr = utils.SecStringValue(natObj.VpcCidr)
 	cfg.CreationTime = utils.SecStringValue(natObj.CreationTime)
 	cfg.ExpiredTime = utils.SecStringValue(natObj.ExpiredTime)
-	if plan != nil {
-		if !plan.CycleCount.IsUnknown() && !plan.CycleCount.IsNull() {
-			cfg.CycleCount = plan.CycleCount
-		}
-	}
-	if cfg.CycleCount.IsNull() || cfg.CycleCount.IsUnknown() {
-		cfg.CycleCount = types.Int64Value(1)
-	}
 
 	return nil
 }
@@ -531,9 +498,11 @@ func (c *ctyunNat) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 	return true
 }
 func (c *ctyunNat) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
-	if state.Spec == plan.Spec {
-		_ = fmt.Sprintf("需要修改的规格与原规格一致，无需修改")
-		return nil
+	if plan.Spec.Equal(state.Spec) {
+		if !state.PayVoucherPrice.Equal(plan.PayVoucherPrice) {
+			err = fmt.Errorf("当没有触发变配时，代金券金额修改无效")
+		}
+		return
 	}
 	// 调用变配nat接口，规格(可传值：1-SMALL,2-MEDIUM,3-LARGE,4-XLARGE)
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcModifyNatSpecApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcModifyNatSpecRequest{
@@ -563,32 +532,29 @@ func (c *ctyunNat) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan
 }
 
 func (c *ctyunNat) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
-
-	if !c.checkNatInfoIsSame(state, plan) {
-		params := &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
-			RegionID:     plan.RegionID.ValueString(),
-			NatGatewayID: state.NatGatewayID.ValueString(),
-			Name:         plan.Name.ValueStringPointer(),
-			Description:  plan.Description.ValueStringPointer(),
-			ClientToken:  uuid.NewString(),
-		}
-		resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateNatGatewayAttributeApi.Do(ctx, c.meta.SdkCredential, params)
-		if err2 != nil {
-			err = err2
-			return
-		} else if resp.StatusCode == common.ErrorStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-			return
-		}
-		// 轮询详情接口，确认是否修改
-		err = c.updateLoop(ctx, state, params, 30)
-		if err != nil {
-			return err
-		}
-	} else {
+	if plan.Name.Equal(state.Name) && plan.Description.Equal(state.Description) {
 		return
 	}
-
+	params := &ctvpc.CtvpcUpdateNatGatewayAttributeRequest{
+		RegionID:     plan.RegionID.ValueString(),
+		NatGatewayID: state.NatGatewayID.ValueString(),
+		Name:         plan.Name.ValueStringPointer(),
+		Description:  plan.Description.ValueStringPointer(),
+		ClientToken:  uuid.NewString(),
+	}
+	resp, err2 := c.meta.Apis.SdkCtVpcApis.CtvpcUpdateNatGatewayAttributeApi.Do(ctx, c.meta.SdkCredential, params)
+	if err2 != nil {
+		err = err2
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+	// 轮询详情接口，确认是否修改
+	err = c.updateLoop(ctx, state, params, 30)
+	if err != nil {
+		return err
+	}
 	return
 }
 
@@ -650,6 +616,9 @@ func (c *ctyunNat) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGa
 			} else if resp.StatusCode == common.ErrorStatusCode {
 				err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 				return false
+			} else if *resp.Description == "订单已取消或撤单" {
+				err = fmt.Errorf("订单已取消或撤单, 请检查参数或避免并发创建")
+				return false
 			}
 
 			status := *resp.ReturnObj.MasterResourceStatus
@@ -690,23 +659,6 @@ func (c *ctyunNat) OrderLoop(ctx context.Context, params *ctvpc.CtvpcCreateNatGa
 	return
 }
 
-// checkNatInfoIsSame 判断需要修改的nat信息中regionID,name和description是否与原来一直，若都一一致，则不修改
-func (c *ctyunNat) checkNatInfoIsSame(state CtyunNatConfig, plan CtyunNatConfig) bool {
-
-	if !plan.RegionID.Equal(state.RegionID) {
-		return false
-	}
-
-	if !plan.Name.Equal(state.Name) {
-		return false
-	}
-	if !plan.Description.Equal(state.Description) {
-		return false
-	}
-
-	return true
-}
-
 func (c *ctyunNat) parseNatSpec(spec string) (specInt int32) {
 	switch spec {
 	case "small":
@@ -724,25 +676,23 @@ func (c *ctyunNat) parseNatSpec(spec string) (specInt int32) {
 }
 
 type CtyunNatConfig struct {
-	RegionID             types.String `tfsdk:"region_id"`              //区域id
-	VpcID                types.String `tfsdk:"vpc_id"`                 //需要创建 NAT 网关的 VPC 的 ID
-	Spec                 types.Int32  `tfsdk:"spec"`                   //规格 1~4, 1表示小型, 2表示中型, 3表示大型, 4表示超大型
-	Name                 types.String `tfsdk:"name"`                   //支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
-	Description          types.String `tfsdk:"description"`            //支持拉丁字母、中文、数p字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
-	CycleType            types.String `tfsdk:"cycle_type"`             //订购类型：month（包月） / year（包年）/ on_demand（按需）
-	CycleCount           types.Int64  `tfsdk:"cycle_count"`            //订购时长, 当 cycleType = month, 支持续订 1 - 11 个月; 当 cycleType = year, 支持续订 1 - 3 年
-	AzName               types.String `tfsdk:"az_name"`                //可用区名称
-	PayVoucherPrice      types.String `tfsdk:"pay_voucher_price"`      //代金券金额，支持到小数点后两位
-	ProjectID            types.String `tfsdk:"project_id"`             //企业项目，不传默认为 0
-	MasterOrderID        types.String `tfsdk:"master_order_id"`        //订单id
-	MasterOrderNO        types.String `tfsdk:"master_order_no"`        //订单编号, 可以为 null。
-	MasterResourceStatus types.String `tfsdk:"master_resource_status"` //资源状态: started（启用） / renewed（续订） / refunded（退订） / destroyed（销毁） / failed（失败） / starting（正在启用） / changed（变配）/ expired（过期）/ unknown（未知）
-	MasterResourceID     types.String `tfsdk:"master_resource_id"`     //
-	NatGatewayID         types.String `tfsdk:"nat_gateway_id"`         //ctvpc 网关 ID，当 masterResourceStatus 不为 started，该字段为空字符串
-	VpcName              types.String `tfsdk:"vpc_name"`               //NAT所属的专有网络名字
-	VpcCidr              types.String `tfsdk:"vpc_cidr"`               //当前网关所属的vpc cidr
-	CreationTime         types.String `tfsdk:"creation_time"`          //NAT网关的创建时间
-	ExpiredTime          types.String `tfsdk:"expired_time"`           //NAT网关实例的过期时间
+	ID              types.String `tfsdk:"id"`
+	RegionID        types.String `tfsdk:"region_id"`         //区域id
+	VpcID           types.String `tfsdk:"vpc_id"`            //需要创建 NAT 网关的 VPC 的 ID
+	Spec            types.Int32  `tfsdk:"spec"`              //规格 1~4, 1表示小型, 2表示中型, 3表示大型, 4表示超大型
+	Name            types.String `tfsdk:"name"`              //支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+	Description     types.String `tfsdk:"description"`       //支持拉丁字母、中文、数p字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}
+	CycleType       types.String `tfsdk:"cycle_type"`        //订购类型：month（包月） / year（包年）/ on_demand（按需）
+	CycleCount      types.Int64  `tfsdk:"cycle_count"`       //订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
+	AzName          types.String `tfsdk:"az_name"`           //可用区名称
+	PayVoucherPrice types.String `tfsdk:"pay_voucher_price"` //代金券金额，支持到小数点后两位
+	ProjectID       types.String `tfsdk:"project_id"`        //企业项目，不传默认为 0
+	MasterOrderID   types.String `tfsdk:"master_order_id"`   //订单id
+	NatGatewayID    types.String `tfsdk:"nat_gateway_id"`    //网关 ID
+	VpcName         types.String `tfsdk:"vpc_name"`          //NAT所属的专有网络名字
+	VpcCidr         types.String `tfsdk:"vpc_cidr"`          //当前网关所属的vpc cidr
+	CreationTime    types.String `tfsdk:"creation_time"`     //NAT网关的创建时间
+	ExpiredTime     types.String `tfsdk:"expired_time"`      //NAT网关实例的过期时间
 }
 type LoopOrderResponse struct {
 	NatGatewayId         types.String

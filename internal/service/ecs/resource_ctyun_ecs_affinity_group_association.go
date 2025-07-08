@@ -3,17 +3,17 @@ package ecs
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"time"
 )
 
@@ -53,7 +53,7 @@ func (c *ctyunEcsAffinityGroupAssociation) Schema(_ context.Context, _ resource.
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -220,16 +220,9 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeAssociation(ctx context.Co
 	}
 	if resp.ReturnObj.NeedMigrate != 0 {
 		err = fmt.Errorf("云主机 %s 需要迁移后才可加入云主机组 %s", instanceID, groupID)
-	}
-	status, err := business.NewEcsService(c.meta).GetEcsStatus(ctx, instanceID, regionID)
-	if err != nil {
 		return
 	}
-	if status != business.EcsStatusRunning && status != business.EbmStatusStopped {
-		err = fmt.Errorf("云主机 %s 必须处于running或stopped状态，当前状态 %s", instanceID, status)
-		return
-	}
-
+	err = business.NewEcsService(c.meta).CheckEcsStatus(ctx, instanceID, regionID)
 	return
 }
 
@@ -288,14 +281,7 @@ func (c *ctyunEcsAffinityGroupAssociation) checkBeforeDissociate(ctx context.Con
 		err = fmt.Errorf("云主机 %s 和云主机组 %s 未关联", instanceID, groupID)
 		return
 	}
-	status, err := business.NewEcsService(c.meta).GetEcsStatus(ctx, instanceID, regionID)
-	if err != nil {
-		return
-	}
-	if status != business.EcsStatusRunning && status != business.EbmStatusStopped {
-		err = fmt.Errorf("云主机 %s 必须处于running或stopped状态，当前状态 %s", instanceID, status)
-		return
-	}
+	err = business.NewEcsService(c.meta).CheckEcsStatus(ctx, instanceID, regionID)
 	return
 }
 

@@ -2,11 +2,11 @@ package elb_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strconv"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -85,7 +85,8 @@ func TestAccCtyunElbHealthCheck(t *testing.T) {
 			},
 			// 1.3 验证datasource
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, protocol, "", "", "", "", "", "", "") +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("ids=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					//resource.TestCheckResourceAttr(datasourceName, "health_checks.#", "1"),
 					//resource.TestCheckResourceAttr(datasourceName, "health_checks.0.name", updatedName),

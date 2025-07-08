@@ -3,6 +3,13 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -20,13 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -79,7 +79,7 @@ type CtyunKafkaInstanceConfig struct {
 
 func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -92,7 +92,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -101,7 +101,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -121,16 +121,16 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Computed:    true,
 				Description: "实例引擎版本，支持2.8和3.6，默认3.6",
 				Validators: []validator.String{
-					stringvalidator.OneOf("2.8", "3.6"),
+					stringvalidator.OneOf(business.KafkaVersion28, business.KafkaVersion36),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: stringdefault.StaticString("3.6"),
+				Default: stringdefault.StaticString(business.KafkaVersion36),
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型",
+				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>",
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
@@ -142,14 +142,14 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"zone_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "实例所在可用区信息",
+				Description: "实例所在可用区信息，只能传一个或三个可用区，可通过ctyun_regions查看",
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
 			},
 			"disk_type": schema.StringAttribute{
 				Required:    true,
-				Description: "磁盘类型",
+				Description: "磁盘类型，建议使用ctyun_kafka_specs查看，通常支持SAS、SSD、FAST-SSD",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -163,7 +163,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "关联的vpcID",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -193,7 +193,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"plain_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090",
 				Validators: []validator.Int32{
@@ -205,7 +204,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"sasl_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092",
 				Validators: []validator.Int32{
@@ -217,7 +215,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"ssl_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。",
 				Validators: []validator.Int32{
@@ -229,7 +226,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 			},
 			"http_port": schema.Int32Attribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "HTTP接入点端口，范围在8000到9100之间，默认为8082",
 				Validators: []validator.Int32{
@@ -243,7 +239,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"retention_hours": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例消息保留时长，默认为72小时，可选1~10000小时",
+				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10000),
 				},
@@ -262,7 +258,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month时才生效，当cycleType=month，支持传递1、2、3、4、5、6、12、24、36",
+				Description: "订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("cycle_type"),
@@ -281,7 +277,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订",
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写",
 				Default:     booldefault.StaticBool(false),
 				Validators: []validator.Bool{
 					validator2.ConflictsWithEqualBool(
@@ -296,7 +292,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"auto_renew_cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "自动续订时长，支持自动续订范围：1-6月",
+				Description: "自动续订时长，当且仅当auto_renew为true时填写。支持自动续订范围：1-6月",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("auto_renew"),
@@ -370,6 +366,10 @@ func (c *ctyunKafkaInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "退订状态") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 
@@ -430,7 +430,7 @@ func (c *ctyunKafkaInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
-	//response.State.RemoveResource(ctx)
+	response.Diagnostics.AddWarning("删除Kakfa集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *ctyunKafkaInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
@@ -672,6 +672,10 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	if err != nil {
 		return
 	}
+	switch instance.Status {
+	case business.KafkaStatusExpired, business.KafkaStatusDeregister, business.KafkaStatusUnsubscribed:
+		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
+	}
 	plan.InstanceName = types.StringValue(instance.InstanceName)
 	if len(instance.Version) >= 3 {
 		plan.EngineVersion = types.StringValue(instance.Version[:3])
@@ -685,12 +689,12 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	plan.SubnetID = types.StringValue(instance.SubnetId)
 
 	plan.EnableIpv6 = types.BoolValue(map[int32]bool{1: true, 0: false}[instance.Ipv6Enable])
-	if len(instance.NodeList) > 0 {
-		plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
-		plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
-		plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
-		plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
-	}
+	//if len(instance.NodeList) > 0 {
+	//	plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
+	//	plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
+	//	plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
+	//	plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
+	//}
 
 	config, err := c.getInstanceConfig(ctx, *plan)
 	if err != nil {
@@ -726,7 +730,7 @@ func (c *ctyunKafkaInstance) checkBeforeUpdate(ctx context.Context, plan, state 
 	if err != nil {
 		return
 	}
-	if instance.Status != 1 {
+	if instance.Status != business.KafkaStatusRunning {
 		return fmt.Errorf("请在实例处于运行中状态时再进行更新操作")
 	}
 
@@ -828,7 +832,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if err != nil {
 				return false
 			}
-			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != 1 {
+			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -914,7 +918,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if err != nil {
 				return false
 			}
-			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != 1 {
+			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -1022,7 +1026,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if err != nil {
 				return false
 			}
-			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != 1 {
+			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			time.Sleep(30 * time.Second)
@@ -1113,7 +1117,7 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != business.KafkaStatusRunning {
 				return true
 			}
 			executeSuccessFlag = true
@@ -1158,7 +1162,7 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
+			if instance == nil || instance.Status != business.KafkaStatusRunning || instance.ProdInstId == "" {
 				return true
 			}
 			// 等待订单完成
@@ -1187,7 +1191,7 @@ func (c *ctyunKafkaInstance) checkAfterDelete(ctx context.Context, plan CtyunKaf
 			if err != nil {
 				return false
 			}
-			if instance != nil && instance.Status != 5 {
+			if instance != nil && instance.Status != business.KafkaStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true

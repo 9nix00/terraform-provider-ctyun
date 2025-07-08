@@ -14,6 +14,9 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
 resource "ctyun_ebs_association_ecs" "ebs_association_ecs_test" {
   ebs_id      = "86517323-d3f5-48cb-b278-a124e98fbc3d"
   instance_id = "0b9897c8-ff01-42b4-c4c2-6a427d8b2e9a"
@@ -30,4 +33,4 @@ resource "ctyun_ebs_association_ecs" "ebs_association_ecs_test" {
 
 ### Optional
 
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

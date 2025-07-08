@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_ebs" "ebs_test" {
   name       = "ebs-test"
   mode       = "vbd"
@@ -31,15 +35,15 @@ resource "ctyun_ebs" "ebs_test" {
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `mode` (String) 磁盘模式，vbd，iscsi，fcsan
 - `name` (String) 磁盘命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾
-- `size` (Number) 磁盘大小，单位GB，取值范围[10, 32768]
+- `size` (Number) 磁盘大小，单位GB，取值范围[10, 32768]，不支持缩容
 - `type` (String) 磁盘类型，sata：普通IO，sas：高IO，ssd：超高IO，ssd-genric：通用型SSD，fast-ssd：极速型SSD
 
 ### Optional
 
 - `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

@@ -2,8 +2,8 @@ package ccse_test
 
 import (
 	"fmt"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"testing"
 	"time"
 

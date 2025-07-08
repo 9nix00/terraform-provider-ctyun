@@ -5,6 +5,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -17,11 +22,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -73,7 +73,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -95,7 +95,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"source": schema.StringAttribute{
 				Optional:    true,
-				Description: "文件路径",
+				Description: "文件路径，和content有且只能有一个",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -107,7 +107,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			},
 			"content": schema.StringAttribute{
 				Optional:    true,
-				Description: "内容",
+				Description: "内容，和source有且只能有一个",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -163,14 +163,13 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			"storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认STANDARD，",
+				Description: "存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认使用桶的storage_type",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ZosStorageTypeStandard, business.ZosStorageTypeStandardIA, business.ZosStorageTypeGlacier),
 				},
-				Default: stringdefault.StaticString(business.ZosStorageTypeStandard),
 			},
 			"tags": schema.MapAttribute{
 				ElementType: types.StringType,
@@ -246,7 +245,7 @@ func (c *ctyunZosBucketObject) Read(ctx context.Context, request resource.ReadRe
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "NoSuchKey") {
+		if strings.Contains(err.Error(), "NoSuchKey") || strings.Contains(err.Error(), "NotFound") {
 			response.State.RemoveResource(ctx)
 			err = nil
 		}
@@ -418,11 +417,11 @@ func (c *ctyunZosBucketObject) create(ctx context.Context, plan CtyunZosBucketOb
 
 // getAndMerge 从远端查询
 func (c *ctyunZosBucketObject) getAndMerge(ctx context.Context, plan *CtyunZosBucketObjectConfig) (err error) {
-	input := &s3.GetObjectInput{
+	input := &s3.HeadObjectInput{
 		Bucket: plan.Bucket.ValueStringPointer(),
 		Key:    plan.Key.ValueStringPointer(),
 	}
-	output, err := plan.client.GetObject(input)
+	output, err := plan.client.HeadObject(input)
 	if err != nil {
 		return
 	}

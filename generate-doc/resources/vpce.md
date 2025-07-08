@@ -14,7 +14,6 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
@@ -39,9 +38,25 @@ resource "ctyun_subnet" "subnet_test" {
   enable_ipv6 = true
 }
 
+resource "ctyun_vpce_service" "test" {
+  name  = "tf-vpce-server-sss"
+  vpc_id = ctyun_vpc.vpc_test.id
+  subnet_id = ctyun_subnet.subnet_test.id
+  auto_connection = true
+  type = "interface"
+  instance_id = "d40b78e2-23de-4fa6-baf0-e500750f985b"
+  instance_type = "vm"
+  rules = [{
+    protocol = "TCP"
+    endpoint_port = 2
+    server_port = 2
+  },
+  ]
+}
+
 resource "ctyun_vpce" "test" {
   name  = "tf-vpce-123"
-  endpoint_service_id = "endpser-64at6dgmw0"
+  endpoint_service_id = ctyun_vpce_service.test.id
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   whitelist_flag = true
@@ -54,17 +69,17 @@ resource "ctyun_vpce" "test" {
 
 ### Required
 
-- `endpoint_service_id` (String) 终端节点服务id
+- `endpoint_service_id` (String) 终端节点服务ID
 - `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
-- `subnet_id` (String) 关联的子网ID
-- `vpc_id` (String) 关联的vpcID
+- `subnet_id` (String) 子网ID
+- `vpc_id` (String) 虚拟私有云ID
 - `whitelist_flag` (Boolean) 是否开启白名单
 
 ### Optional
 
-- `region_id` (String) 资源池ID
-- `subnet_ip` (String) 子网ip
-- `whitelist_cidr` (Set of String) 白名单列表, 最多同时支持20个地址，最少输入一个
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `subnet_ip` (String) 子网IP
+- `whitelist_cidr` (Set of String) 白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个
 
 ### Read-Only
 

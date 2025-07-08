@@ -14,7 +14,6 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
 }
@@ -31,7 +30,7 @@ data "ctyun_ccse_clusters" "test" {
 
 - `cluster_name` (String) 集群名称
 - `page_no` (Number) 列表的页码
-- `page_size` (Number) 每页数据量大小
+- `page_size` (Number) 每页数据量大小，1-50
 - `region_id` (String) 资源池ID
 
 ### Read-Only
@@ -43,21 +42,21 @@ data "ctyun_ccse_clusters" "test" {
 
 Read-Only:
 
-- `biz_state` (Number) 订单状态
+- `biz_state` (Number) 业务状态，1：运行中，2：已停止，3：已注销，4：已退订，5：扩容中，6：开通中，7：已取消，9：重启中，10：节点重置中，11：升级中，13：缩容中，14：已过期(冻结、过期)，15：节点升规格中，17：创建失败，18：退订中，19：控制面升配中，20：休眠中，21：唤醒中，22：转订购模式中
 - `cluster_name` (String) 集群名字
 - `cluster_series` (String) 集群系列，cce.standard，cce.managed，您可查看<a href="https://www.ctyun.cn/document/10083472/10892150">产品定义</a>选择
-- `cluster_status` (String) 集群状态
+- `cluster_status` (String) 集群状态：creating：创建中。abnormal：异常。normal：正常。create_fail：创建失败。adjust：规模调整中。updating：升级中。suspend：暂停。deleting：删除中。deleted：已删除。delete_fail：删除失败。resetting：节点重置中。resettled：节点已重置。reset_fail：节点重置失败。upgrading：集群升级中。upgrade_fail：集群升级失败。
 - `cluster_version` (String) 集群版本，支持1.23.3 ，1.25.6 ，1.27.8，1.29.3
 - `container_runtime` (String) 容器运行时,可选containerd、docker
 - `deploy_mode` (String) 部署模式，单可用区为single，多可用区为multi
-- `end_port` (Number) 节点服务终止端口，可选范围30000-65535
-- `id` (String) 集群id
+- `end_port` (Number) 节点服务终止端口，范围30000-65535
+- `id` (String) 集群ID
 - `kube_proxy` (String) kubeProxy类型：iptables或ipvs。您可查看<a href="https://www.ctyun.cn/document/10083472/10915725">iptables与IPVS如何选择</a>
 - `master_node_num` (Number) 主节点数量
 - `network_plugin` (String) 网络插件
-- `pod_cidr` (String) pod网络cidr，使用cubecni作为网络插件时，podCidr传值为vpc cidr。使用calico作为网络插件时，podCidr与vpcCidr和serviceCidr不能重叠。
+- `pod_cidr` (String) pod网络cidr
 - `slave_node_num` (Number) 备用节点数量
-- `start_port` (Number) 节点服务开始端口，可选范围30000-65535
+- `start_port` (Number) 节点服务开始端口，范围30000-65535
 - `subnet_id` (String) 子网ID
 - `timezone` (String) 时区，例如Asia/Shanghai (UTC+08:00)
-- `vpc_id` (String) vpc id
+- `vpc_id` (String) 虚拟私有云ID

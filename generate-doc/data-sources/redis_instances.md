@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 data "ctyun_redis_instances" "test"{
 
 }
@@ -26,7 +30,7 @@ data "ctyun_redis_instances" "test"{
 
 - `instance_name` (String) 实例名称
 - `page_no` (Number) 列表的页码
-- `page_size` (Number) 每页数据量大小
+- `page_size` (Number) 每页数据量大小，支持范围1-50
 - `project_id` (String) 企业项目ID
 - `region_id` (String) 资源池ID
 

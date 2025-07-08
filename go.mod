@@ -1,4 +1,4 @@
-module terraform-provider-ctyun
+module github.com/ctyun-it/terraform-provider-ctyun
 
 go 1.23.0
 
@@ -6,7 +6,7 @@ toolchain go1.23.6
 
 require (
 	github.com/aws/aws-sdk-go v1.38.63
-	github.com/jmespath/go-jmespath v0.4.0
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
 
 replace github.com/aws/aws-sdk-go v1.38.63 => ./internal/core/zos-sdk/aws-sdk-go-1.38.63
@@ -21,6 +21,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.26.0
 	github.com/hashicorp/terraform-plugin-log v0.9.0
 	github.com/hashicorp/terraform-plugin-testing v1.11.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (

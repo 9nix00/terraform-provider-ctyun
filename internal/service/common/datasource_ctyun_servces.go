@@ -2,14 +2,14 @@ package common
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 )
 
 func NewCtyunServices() datasource.DataSource {
@@ -26,6 +26,7 @@ func (c *ctyunServices) Metadata(_ context.Context, req datasource.MetadataReque
 
 func (c *ctyunServices) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		MarkdownDescription: `**服务和产品**`,
 		Attributes: map[string]schema.Attribute{
 			"type": schema.StringAttribute{
 				Optional:    true,

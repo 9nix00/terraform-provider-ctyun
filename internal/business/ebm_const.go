@@ -1,6 +1,6 @@
 package business
 
-import "terraform-provider-ctyun/internal/utils"
+import "github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 
 const (
 	EbmExtIpNotUse     = "not_use"
@@ -21,7 +21,7 @@ const (
 	EbmStatusResettingHostname = "resetting_hostname"
 
 	EbmSystemDiskType = "system"
-	EbmDataDiskType   = "system"
+	EbmDataDiskType   = "data"
 )
 
 const (
@@ -48,3 +48,10 @@ var EbmExtIpMap = utils.Must(
 		},
 	},
 )
+
+var EbmDiskTypes = []string{
+	EbsDiskTypeSata,
+	EbsDiskTypeSas,
+	EbsDiskTypeSsd,
+	EbsDiskTypeSsdGenric,
+}

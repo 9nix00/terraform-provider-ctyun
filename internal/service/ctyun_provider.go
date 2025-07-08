@@ -4,6 +4,49 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
+	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	mongodb2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	pgsql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
+	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebm"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/elb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/iam"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/image"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/mongodb"
+	mysql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/nat"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpce"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/zos"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -19,42 +62,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"terraform-provider-ctyun/internal/common"
-	ccse2 "terraform-provider-ctyun/internal/core/ccse"
-	"terraform-provider-ctyun/internal/core/core"
-	"terraform-provider-ctyun/internal/core/ctebm"
-	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
-	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
-	ctelb "terraform-provider-ctyun/internal/core/ctelb"
-	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
-	"terraform-provider-ctyun/internal/core/ctzos"
-	"terraform-provider-ctyun/internal/core/dcs2"
-	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
-	sdk_extend "terraform-provider-ctyun/internal/extend/sdk"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/service/ccse"
-	common2 "terraform-provider-ctyun/internal/service/common"
-	"terraform-provider-ctyun/internal/service/ebm"
-	"terraform-provider-ctyun/internal/service/ebs"
-	"terraform-provider-ctyun/internal/service/ecs"
-	"terraform-provider-ctyun/internal/service/elb"
-	"terraform-provider-ctyun/internal/service/iam"
-	"terraform-provider-ctyun/internal/service/image"
-	"terraform-provider-ctyun/internal/service/kafka"
-	mysql2 "terraform-provider-ctyun/internal/service/mysql"
-	"terraform-provider-ctyun/internal/service/nat"
-	"terraform-provider-ctyun/internal/service/redis"
-	"terraform-provider-ctyun/internal/service/vpc"
-	"terraform-provider-ctyun/internal/service/vpce"
-	"terraform-provider-ctyun/internal/service/zos"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 func NewCtyunProvider(version string) func() provider.Provider {
@@ -78,27 +85,30 @@ func (c *CtyunProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 	resp.Schema.Attributes = map[string]schema.Attribute{
 		"ak": schema.StringAttribute{
 			Optional:    true,
-			Description: "身份信息ak",
+			Description: "身份信息AK",
 		},
 		"sk": schema.StringAttribute{
 			Optional:    true,
-			Description: "身份信息sk",
+			Description: "身份信息SK",
 		},
 		"env": schema.StringAttribute{
 			Optional:    true,
 			Description: "环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod",
+			Validators: []validator.String{
+				stringvalidator.OneOf(ctyunsdk.EnvironmentDev, ctyunsdk.EnvironmentTest, ctyunsdk.EnvironmentProd),
+			},
 		},
 		"region_id": schema.StringAttribute{
 			Optional:    true,
-			Description: "资源区域id",
+			Description: "资源池ID",
 		},
 		"az_name": schema.StringAttribute{
 			Optional:    true,
-			Description: "可用区id，如果是3.0资源池，则此值无需填写；如果是4.0资源池，则填写选用的az_name",
+			Description: "可用区英文，填写选用资源池的az_name",
 		},
 		"project_id": schema.StringAttribute{
 			Optional:    true,
-			Description: "企业项目id，不填则使用用户默认的企业项目",
+			Description: "企业项目ID，不填则使用用户默认的企业项目",
 		},
 		"console_url": schema.StringAttribute{
 			Optional:    true,
@@ -305,6 +315,10 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis: mysql.NewApis(client),
 			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
+			SdkAmqpApis:    amqp.NewApis(client),
+			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
+			SdkCtPgsqlApis: pgsql2.NewApis(client),
+			SdkMongodbApis: mongodb2.NewApis(client),
 		},
 		*credential,
 		*SdkCredential,
@@ -363,6 +377,11 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlSpecs(),
 		kafka.NewCtyunKafkaInstances(),
 		kafka.NewCtyunKafkaSpecs(),
+		rabbitmq.NewCtyunRabbitmqInstances(),
+		ccse.NewCtyunCcsePluginMarket(),
+		pgsql.NewCtyunPgsqlInstances(),
+		pgsql.NewCtyunPgsqlSpecs(),
+		common2.NewCtyunZones(),
 	)
 }
 
@@ -422,6 +441,11 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlInstance(),
 		mysql2.NewCtyunMysqlAssociationEip(),
 		kafka.NewCtyunKafkaInstance(),
+		ccse.NewCtyunCcsePlugin(),
+		pgsql.NewCtyunPostgresqlInstance(),
+		rabbitmq.NewCtyunRabbitmqInstance(),
+		pgsql.NewCtyunMysqlAssociationEip(),
+		mongodb.NewCtyunMongodbInstance(),
 	)
 }
 

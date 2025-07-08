@@ -3,6 +3,13 @@ package zos
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -15,13 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctzos"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
+	"time"
 )
 
 var (
@@ -65,7 +66,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -74,7 +75,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -106,7 +107,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"cmk_uuid": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥管理服务中创建的密钥ID，使用此参数时，isEncrypted必须为true。当isEncrypted为true但未指定此参数时，会自动创建密钥",
+				Description: "密钥管理服务中创建的密钥ID，使用此参数时，is_encrypted必须为true。当is_encrypted为true但未指定此参数时，会自动创建密钥",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -120,7 +121,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"is_encrypted": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "加密状态",
+				Description: "加密状态，默认false",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
@@ -175,6 +176,8 @@ func (c *ctyunZosBucket) Create(ctx context.Context, request resource.CreateRequ
 	if err != nil {
 		return
 	}
+	c.getAndMerge(ctx, &plan)
+	time.Sleep(30 * time.Second)
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {

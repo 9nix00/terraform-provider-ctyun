@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = "vpc-d7zxz8j05c"
   name        = "subnet-test"
@@ -24,10 +28,7 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = false
-#  type        = "common"
-  region_id   = "200000002527"
-  project_id  = "4f5ef15300724760af59b37cf6409f45"
+  enable_ipv6 = true
 }
 ```
 
@@ -45,9 +46,9 @@ resource "ctyun_subnet" "subnet_test" {
 
 - `description` (String) 描述，长度最大为128
 - `enable_ipv6` (Boolean) 是否开启IPv6网段，false：不开启，true: 开启，默认为不开启false，注意：在子网内开启IPv6网段时，必须保证所在vpc也启用了开启IPv6网段
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
-- `type` (String) 子网类型，common：普通子网，ebm：裸金属子网，默认为普通子网common
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `type` (String) 子网类型，common：普通子网，cbm：裸金属子网，默认为普通子网common
 
 ### Read-Only
 

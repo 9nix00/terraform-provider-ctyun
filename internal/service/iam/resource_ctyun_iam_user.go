@@ -2,6 +2,10 @@ package iam
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -9,10 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
 )
 
 func NewCtyunIamUser() resource.Resource {
@@ -29,6 +29,7 @@ func (c *ctyunIamUser) Metadata(_ context.Context, request resource.MetadataRequ
 
 func (c *ctyunIamUser) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10345725/10355289**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

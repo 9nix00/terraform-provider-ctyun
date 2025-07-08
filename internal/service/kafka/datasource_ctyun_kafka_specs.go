@@ -3,12 +3,12 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -79,7 +79,7 @@ type CtyunKafkaSpecsConfig struct {
 func (c *ctyunKafkaSpecs) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030704**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Computed:    true,

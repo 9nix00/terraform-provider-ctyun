@@ -2,11 +2,11 @@ package elb_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strconv"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -59,7 +59,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 	updatedTfProxyProtocol := fmt.Sprintf(`proxy_protocol=%d`, updatedProxyProtocol)
 	updatedTfProtocol := fmt.Sprintf(`protocol="%s"`, updatedProtocol)
 
-	closedTfSessionStickyMode := fmt.Sprintf(`session_sticky_mode="%s"`, "CLOSE")
+	//closedTfSessionStickyMode := fmt.Sprintf(`session_sticky_mode="%s"`, "CLOSE")
 	// 代码合并需要整改
 	vpcId := dependence.vpcID
 
@@ -96,7 +96,8 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 1.3 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, vpcId, updatedAlgorithm, "", "", "", "", "", "", "") +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`ids=%s.id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "target_groups.0.name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "target_groups.0.vpc_id", vpcId),
@@ -180,7 +181,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 3.3 updated， algorithm=lc, sessionStickyMode=CLOSE， proxyProtocol=0, protocol=http
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", closedTfSessionStickyMode, "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
+				Config: utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", "", "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcId),
@@ -193,7 +194,7 @@ func TestAccCtyunElbTargetGroup(t *testing.T) {
 			},
 			// 3.4 Destroy
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", closedTfSessionStickyMode, "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
+				Config:  utils.LoadTestCase(resourceFile, rnd, name, vpcId, updatedAlgorithm, "", "", "", "", "", updatedTfProxyProtocol, updatedTfProtocol),
 				Destroy: true,
 			},
 		},

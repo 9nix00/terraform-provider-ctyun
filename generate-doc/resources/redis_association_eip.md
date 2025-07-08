@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_eip" "eip_test2" {
  name                = "eip-test2"
  bandwidth           = 10
@@ -37,7 +41,7 @@ resource "ctyun_redis_association_eip" "test" {
 
 ### Optional
 
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

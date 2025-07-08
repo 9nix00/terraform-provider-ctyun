@@ -3,16 +3,15 @@ package ccse
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ccse2 "terraform-provider-ctyun/internal/core/ccse"
 )
 
 var (
@@ -33,21 +32,20 @@ func (c *ctyunCcseNodePools) Metadata(_ context.Context, request datasource.Meta
 }
 
 type CtyunCcseNodePoolsModel struct {
-	ID                       types.String `tfsdk:"id"`
-	NodePoolName             types.String `tfsdk:"node_pool_name"`
-	CycleCount               types.Int64  `tfsdk:"cycle_count"`
-	CycleType                types.String `tfsdk:"cycle_type"`
-	AutoRenew                types.Bool   `tfsdk:"auto_renew"`
-	VisibilityPostHostScript types.String `tfsdk:"visibility_post_host_script"`
-	VisibilityHostScript     types.String `tfsdk:"visibility_host_script"`
-	InstanceType             types.String `tfsdk:"instance_type"`
-	MirrorID                 types.String `tfsdk:"mirror_id"`
-	MirrorName               types.String `tfsdk:"mirror_name"`
-	ItemDefName              types.String `tfsdk:"item_def_name"`
-
-	SysDisk   CtyunCcseNodePoolDisk   `tfsdk:"sys_disk"`
-	DataDisks []CtyunCcseNodePoolDisk `tfsdk:"data_disks"`
-	MaxPodNum types.Int32             `tfsdk:"max_pod_num"`
+	ID                       types.String            `tfsdk:"id"`
+	NodePoolName             types.String            `tfsdk:"node_pool_name"`
+	CycleCount               types.Int64             `tfsdk:"cycle_count"`
+	CycleType                types.String            `tfsdk:"cycle_type"`
+	AutoRenew                types.Bool              `tfsdk:"auto_renew"`
+	VisibilityPostHostScript types.String            `tfsdk:"visibility_post_host_script"`
+	VisibilityHostScript     types.String            `tfsdk:"visibility_host_script"`
+	InstanceType             types.String            `tfsdk:"instance_type"`
+	MirrorID                 types.String            `tfsdk:"mirror_id"`
+	MirrorName               types.String            `tfsdk:"mirror_name"`
+	ItemDefName              types.String            `tfsdk:"item_def_name"`
+	SysDisk                  CtyunCcseNodePoolDisk   `tfsdk:"sys_disk"`
+	DataDisks                []CtyunCcseNodePoolDisk `tfsdk:"data_disks"`
+	MaxPodNum                types.Int32             `tfsdk:"max_pod_num"`
 }
 
 type CtyunCcseNodePoolsConfig struct {
@@ -102,15 +100,15 @@ func (c *ctyunCcseNodePools) Schema(_ context.Context, _ datasource.SchemaReques
 						},
 						"cycle_type": schema.StringAttribute{
 							Computed:    true,
-							Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填",
+							Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需",
 						},
 						"cycle_count": schema.Int64Attribute{
 							Computed:    true,
-							Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+							Description: "订购时长",
 						},
 						"auto_renew": schema.BoolAttribute{
 							Computed:    true,
-							Description: "是否自动续订，默认非自动续订。",
+							Description: "是否自动续订",
 						},
 						"visibility_post_host_script": schema.StringAttribute{
 							Computed:    true,
@@ -122,10 +120,7 @@ func (c *ctyunCcseNodePools) Schema(_ context.Context, _ datasource.SchemaReques
 						},
 						"instance_type": schema.StringAttribute{
 							Computed:    true,
-							Description: "实例类型， ecs 或 ebm",
-							Validators: []validator.String{
-								stringvalidator.OneOf("ecs", "ebm"),
-							},
+							Description: "实例类型，支持ecs（云主机）、ebm（裸金属）",
 						},
 						"mirror_id": schema.StringAttribute{
 							Computed:    true,

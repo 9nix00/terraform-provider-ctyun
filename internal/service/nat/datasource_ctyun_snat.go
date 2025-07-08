@@ -3,14 +3,14 @@ package nat
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -40,7 +40,7 @@ func (c *ctyunSNats) Metadata(_ context.Context, request datasource.MetadataRequ
 
 func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://work.ctyun.cn/git/vnet/openapi-docs/src/branch/master/network/ctvpc/%E8%8E%B7%E5%8F%96SNAT%E5%88%97%E8%A1%A8.md`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166268`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -48,7 +48,7 @@ func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 				Description: "资源池id，如果不填这默认使用provider ctyun总region_id 或者环境变量",
 			},
 			"nat_gateway_id": schema.StringAttribute{
-				Optional:    true,
+				Required:    true,
 				Description: "AT网关ID，选填",
 			},
 			"snat_id": schema.StringAttribute{
@@ -84,7 +84,7 @@ func (c *ctyunSNats) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,
-							Description: "描述信息",
+							Description: "描述",
 						},
 						"subnet_cidr": schema.StringAttribute{
 							Computed:    true,
@@ -149,7 +149,7 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 		return
 	}
 	natGatewayId := config.NatGateWayID.ValueString()
-	snatId := config.SubNetID.ValueString()
+	snatId := config.SNatID.ValueString()
 	subnetId := config.SubNetID.ValueString()
 	// 分页信息先预留
 	pageNumber := c.ParseIntIfEmpty(config.PageNumber, types.Int64Value(1))
@@ -187,8 +187,8 @@ func (c *ctyunSNats) Read(ctx context.Context, request datasource.ReadRequest, r
 
 		snatItem := CtyunSNatsModel{
 			SNatID:       utils.SecStringValue(snat.SNatID),
-			Description:  types.StringValue("test"),
-			SubNetCidr:   utils.SecStringValue(snat.SubnetID),
+			Description:  utils.SecStringValue(snat.Description),
+			SubNetCidr:   utils.SecStringValue(snat.SubnetCidr),
 			SubNetType:   types.Int32Value(snat.SubnetType),
 			CreationTime: utils.SecStringValue(snat.CreationTime),
 			SubnetID:     utils.SecStringValue(snat.SubnetID),

@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_ecs" "jdxutuzpfr" {
   instance_name      = "tf-test-ecs"
   display_name       = "tf-test-init-ecs"
@@ -22,22 +26,15 @@ resource "ctyun_ecs" "jdxutuzpfr" {
   system_disk_type   = "sata"
   system_disk_size   = 60
   vpc_id             = "vpc-0ein2p8bs8"
-
   subnet_id          = "subnet-0oiyrpu8nk"
-
   key_pair_name      = "tf-keypair-for-ecs"
-
   cycle_type         = "on_demand"
-
 }
-#
-#
-# provider "ctyun" {
-#   region_id  = "bb9fdb42056f11eda1610242ac110002"
-#   project_id = "17a308cdf06a4a7ebfb27070a7b07e18"
-#   az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+
+# variable "password" {
+#   type      = string
+#   sensitive = true
 # }
-#
 # data "ctyun_images" "image_test1" {
 #   name       = "Ubuntu 22.04"
 #   visibility = "public"
@@ -62,12 +59,11 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 #   system_disk_type    = "sata"
 #   system_disk_size    = 40
 #   vpc_id              = "vpc-r7kv00qbz5"
-#   password            = "P@ssW0rd_1"
+#   password            = var.password
 #   cycle_type          = "month"
 #   cycle_count         = 1
 #   auto_renew          = true
 #   subnet_id           = "subnet-f3ktwpsf07"
-#   security_group_ids  = [""],
 #   is_destroy_instance = false
 # }
 #
@@ -101,7 +97,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 #   system_disk_type   = "sata"
 #   system_disk_size   = 50
 #   vpc_id             = "vpc-d7zxz8j05c"
-#   password           = "P@ssW0rd_1"
+#   password           = var.password
 #   cycle_type         = "on_demand"
 #   subnet_id          = "subnet-5jtwyd0m15"
 #   security_group_ids = [
@@ -120,29 +116,29 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
-- `display_name` (String) 云主机显示名称，长度为2-63字符
-- `flavor_id` (String) 规格id，请用ctyun_ecs_flavors查询具体id
+- `display_name` (String) 实例名称，长度为2-63字符
+- `flavor_id` (String) 规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机
 - `image_id` (String) 镜像id
-- `instance_name` (String) 云主机名称，不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字
+- `instance_name` (String) 主机名称（hostname），不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字
 - `subnet_id` (String) 主网卡的子网id
-- `system_disk_size` (Number) 系统盘大小，单位为G，取值范围：[40, 32768]
+- `system_disk_size` (Number) 系统盘大小，单位为G，取值范围：[40, 32768]，只支持扩容，需要先关机
 - `system_disk_type` (String) 系统盘类型，sata：普通IO，sas：高IO，ssd：超高IO，ssd-genric：通用型SSD，fast-ssd：极速型SSD
 - `vpc_id` (String) 虚拟私有云id，在多可用区类型资源池下，vpcID通常为“vpc-”开头，非多可用区类型资源池vpcID为uuid格式
 
 ### Optional
 
-- `auto_renew` (Boolean) 是否自动续订，true：自动续订，false：不自动续订；注意：此参数在包周期情况下才有效；当为包周期时此值默认为true
+- `auto_renew` (Boolean) 是否自动续订，此参数在包周期情况下才有效，当为包周期时此值默认为true
 - `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年
-- `is_destroy_instance` (Boolean) 是否立即释放，false：不释放，true：释放。当包周期云主机退订之后有一定时间的保留期。可选择销毁该云主机，立即释放则没有保留期
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年
+- `is_destroy_instance` (Boolean) 是否立即释放，默认为false。包周期云主机退订之后有一定时间的保留期，通过terraform destroy触发退订后，若此字段为true，会立即释放该云主机。
 - `key_pair_name` (String) 密钥对名称
 - `password` (String, Sensitive) 用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头
 - `pay_voucher_price` (Number) 代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `security_group_ids` (Set of String) 安全组id列表，在多可用区类型资源池下，安全组ID通常以“sg-”开头，非多可用区类型资源池安全组ID为uuid格式；默认使用默认安全组，无默认安全组情况下请填写该参数
-- `status` (String) 云主机状态，取值范围：backingup: 备份中，creating: 创建中，expired: 已到期，freezing: 冻结中，rebuild: 重装，restarting: 重启中，running: 运行中，starting: 开机中，stopped: 已关机，stopping: 关机中，error: 错误，snapshotting: 快照创建中，unsubscribed: 包周期已退订，unsubscribing: 包周期退订中，shelve：节省关机，shelving：节省关机中
-- `user_data` (String) 用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符
+- `status` (String) 云主机状态，初始状态为running，取值范围：backingup: 备份中，creating: 创建中，expired: 已到期，freezing: 冻结中，rebuild: 重装，restarting: 重启中，running: 运行中，starting: 开机中，stopped: 已关机，stopping: 关机中，error: 错误，snapshotting: 快照创建中，unsubscribed: 包周期已退订，unsubscribing: 包周期退订中，shelve：节省关机，shelving：节省关机中
+- `user_data` (String) 用户自定义数据，需要以Base64方式编码，Base64编码后的长度限制为1-16384字符
 
 ### Read-Only
 
@@ -150,5 +146,5 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 - `expire_time` (String) 到期时间
 - `fixed_ip` (String) 加入子网后的ip地址
 - `id` (String) id
-- `master_order_id` (String) 订购的受理单id
+- `master_order_id` (String) 订购的受理单ID
 - `system_disk_id` (String) 系统盘的id

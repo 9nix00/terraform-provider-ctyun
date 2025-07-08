@@ -6,12 +6,9 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  env = "prod"
 }
-
 
 resource "ctyun_ecs_affinity_group" "test" {
   affinity_group_name = "tf-test-group"

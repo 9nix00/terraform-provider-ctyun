@@ -1,24 +1,28 @@
 package common
 
 import (
+	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
+	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"sync"
-	ccse2 "terraform-provider-ctyun/internal/core/ccse"
-	"terraform-provider-ctyun/internal/core/core"
-	"terraform-provider-ctyun/internal/core/ctebm"
-	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
-	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
-	sdkCtelb "terraform-provider-ctyun/internal/core/ctelb"
-	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
-	"terraform-provider-ctyun/internal/core/ctzos"
-	"terraform-provider-ctyun/internal/core/dcs2"
-	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 )
 
 var once sync.Once
@@ -72,5 +76,9 @@ type Apis struct {
 	SdkDcs2Apis    *dcs2.Apis
 	SdkCtElbApis   *sdkCtelb.Apis
 	SdkCtMysqlApis *mysql.Apis
+	SdkCtPgsqlApis *pgsql.Apis
 	SdkKafkaApis   *ctgkafka.Apis
+	SdkMongodbApis *mongodb.Apis
+	SdkAmqpApis    *amqp.Apis
+	SdkCrsApis     *crs.Apis
 }

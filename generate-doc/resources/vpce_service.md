@@ -38,58 +38,13 @@ resource "ctyun_subnet" "subnet_test" {
   enable_ipv6 = true
 }
 
-data "ctyun_images" "image_test1" {
-  name       = "CtyunOS 23"
-  visibility = "public"
-  page_no = 1
-  page_size = 10
-}
-
-data "ctyun_ecs_flavors" "ecs_flavor_test1" {
-  cpu    = 2
-  ram    = 4
-  arch   = "x86"
-  series = "S"
-  type   = "CPU_S7"
-}
-
-
-resource "ctyun_ecs" "ecs_test1" {
-  instance_name       = "tf1-ecs-test"
-  display_name        = "tf1-ecs-test"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
-  image_id            = data.ctyun_images.image_test1.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
-  cycle_type          = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
-  is_destroy_instance = false
-}
-
-
-resource "ctyun_ecs" "ecs_test2" {
-  instance_name       = "tf2-ecs-test"
-  display_name        = "tf2-ecs-test"
-  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test1.flavors[0].id
-  image_id            = data.ctyun_images.image_test1.images[0].id
-  system_disk_type    = "sata"
-  system_disk_size    = 40
-  vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
-  cycle_type          = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
-  is_destroy_instance = false
-}
-
 resource "ctyun_vpce_service" "test" {
   name  = "tf-vpce-server-sss"
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
   auto_connection = true
   type = "interface"
-  instance_id = ctyun_ecs.ecs_test2.id
+  instance_id = "d40b78e2-23de-4fa6-baf0-e500750f985b"
   instance_type = "vm"
   rules = [{
     protocol = "TCP"
@@ -106,18 +61,18 @@ resource "ctyun_vpce_service" "test" {
 ### Required
 
 - `auto_connection` (Boolean) 是否自动连接，true表示自动链接，false表示非自动链接
-- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
+- `name` (String) 支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32
 - `subnet_id` (String) 服务后端子网id
 - `type` (String) 接口还是反向，interface:接口，reverse:反向
-- `vpc_id` (String) 关联的vpcID
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
 
-- `instance_id` (String) 服务后端实例id,当type为interface时，必填
+- `instance_id` (String) 服务后端实例ID,当type为interface时，必填
 - `instance_type` (String) 服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时，必填
-- `region_id` (String) 资源池ID
-- `rules` (Attributes Set) 节点服务规则,当type为interface时，必填 (see [below for nested schema](#nestedatt--rules))
-- `whitelist_email` (Set of String) 白名单邮箱
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `rules` (Attributes Set) 节点服务规则,当type为interface时必填 (see [below for nested schema](#nestedatt--rules))
+- `whitelist_email` (Set of String) 白名单邮箱，最多支持10个
 
 ### Read-Only
 

@@ -3,12 +3,12 @@ package ebs
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	ctebs2 "terraform-provider-ctyun/internal/core/ctebs"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 var (
@@ -65,6 +65,8 @@ type CtyunEbsVolumesConfig struct {
 	AzName    types.String           `tfsdk:"az_name"`
 	ProjectID types.String           `tfsdk:"project_id"`
 	PageNo    types.Int32            `tfsdk:"page_no"`
+	DiskID    types.String           `tfsdk:"disk_id"`
+	DiskName  types.String           `tfsdk:"disk_name"`
 	PageSize  types.Int32            `tfsdk:"page_size"`
 	Volumes   []CtyunEbsVolumesModel `tfsdk:"volumes"`
 }
@@ -82,6 +84,14 @@ func (c *ctyunEbsVolumes) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME",
+			},
+			"disk_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "磁盘id",
+			},
+			"disk_name": schema.StringAttribute{
+				Optional:    true,
+				Description: "磁盘名称",
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
@@ -236,9 +246,148 @@ func (c *ctyunEbsVolumes) Read(ctx context.Context, request datasource.ReadReque
 		return
 	}
 	projectID := c.meta.GetExtraIfEmpty(config.ProjectID.ValueString(), common.ExtraProjectId)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectID)
+
+	if config.DiskID.ValueString() != "" {
+		err = c.getByID(ctx, &config)
+	} else if config.DiskName.ValueString() != "" {
+		err = c.getByName(ctx, &config)
+	} else {
+		err = c.getByPage(ctx, &config)
+	}
+	// 保存到state
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+}
+
+func (c *ctyunEbsVolumes) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+
+func (c *ctyunEbsVolumes) getByID(ctx context.Context, config *CtyunEbsVolumesConfig) (err error) {
+	// 组装请求体
+	params := &ctebs2.EbsQueryEbsByIDRequest{
+		RegionID: config.RegionID.ValueStringPointer(),
+		DiskID:   config.DiskID.ValueString(),
+	}
+
+	// 调用API
+	resp, err := c.meta.Apis.SdkCtEbsApis.EbsQueryEbsByIDApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	// 解析返回值
+	volumes := []CtyunEbsVolumesModel{}
+	disk := resp.ReturnObj
+	item := CtyunEbsVolumesModel{
+		ID:              utils.SecStringValue(disk.DiskID),
+		Name:            utils.SecStringValue(disk.DiskName),
+		Size:            types.Int32Value(disk.DiskSize),
+		Type:            utils.SecStringValue(disk.DiskType),
+		Mode:            utils.SecStringValue(disk.DiskMode),
+		Status:          utils.SecStringValue(disk.DiskStatus),
+		CreateTime:      types.Int64Value(disk.CreateTime),
+		UpdateTime:      types.Int64Value(disk.UpdateTime),
+		ExpireTime:      types.Int64Value(disk.ExpireTime),
+		IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
+		IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
+		InstanceName:    utils.SecStringValue(disk.InstanceName),
+		InstanceID:      utils.SecStringValue(disk.InstanceID),
+		InstanceStatus:  utils.SecStringValue(disk.InstanceStatus),
+		MultiAttach:     utils.SecBoolValue(disk.MultiAttach),
+		ProjectID:       utils.SecStringValue(disk.ProjectID),
+		IsEncrypt:       utils.SecBoolValue(disk.IsEncrypt),
+		KmsUUID:         utils.SecStringValue(disk.KmsUUID),
+		RegionID:        utils.SecStringValue(disk.RegionID),
+		AzName:          utils.SecStringValue(disk.AzName),
+		DiskFreeze:      utils.SecBoolValue(disk.DiskFreeze),
+		ProvisionedIops: types.Int32Value(disk.ProvisionedIops),
+		Attachments:     []CtyunEbsVolumesAttachments{},
+	}
+	for _, a := range disk.Attachments {
+		item.Attachments = append(item.Attachments, CtyunEbsVolumesAttachments{
+			InstanceID:   utils.SecStringValue(a.InstanceID),
+			AttachmentID: utils.SecStringValue(a.AttachmentID),
+			Device:       utils.SecStringValue(a.Device),
+		})
+	}
+	volumes = append(volumes, item)
+	config.Volumes = volumes
+	return
+}
+
+func (c *ctyunEbsVolumes) getByName(ctx context.Context, config *CtyunEbsVolumesConfig) (err error) {
+	// 组装请求体
+	params := &ctebs2.EbsQueryEbsByNameRequest{
+		RegionID: config.RegionID.ValueString(),
+		DiskName: config.DiskName.ValueString(),
+	}
+
+	// 调用API
+	resp, err := c.meta.Apis.SdkCtEbsApis.EbsQueryEbsByNameApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	// 解析返回值
+	volumes := []CtyunEbsVolumesModel{}
+	disk := resp.ReturnObj
+	item := CtyunEbsVolumesModel{
+		ID:              utils.SecStringValue(disk.DiskID),
+		Name:            utils.SecStringValue(disk.DiskName),
+		Size:            types.Int32Value(disk.DiskSize),
+		Type:            utils.SecStringValue(disk.DiskType),
+		Mode:            utils.SecStringValue(disk.DiskMode),
+		Status:          utils.SecStringValue(disk.DiskStatus),
+		CreateTime:      types.Int64Value(disk.CreateTime),
+		UpdateTime:      types.Int64Value(disk.UpdateTime),
+		ExpireTime:      types.Int64Value(disk.ExpireTime),
+		IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
+		IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
+		InstanceName:    utils.SecStringValue(disk.InstanceName),
+		InstanceID:      utils.SecStringValue(disk.InstanceID),
+		InstanceStatus:  utils.SecStringValue(disk.InstanceStatus),
+		MultiAttach:     utils.SecBoolValue(disk.MultiAttach),
+		ProjectID:       utils.SecStringValue(disk.ProjectID),
+		IsEncrypt:       utils.SecBoolValue(disk.IsEncrypt),
+		KmsUUID:         utils.SecStringValue(disk.KmsUUID),
+		RegionID:        utils.SecStringValue(disk.RegionID),
+		AzName:          utils.SecStringValue(disk.AzName),
+		DiskFreeze:      utils.SecBoolValue(disk.DiskFreeze),
+		ProvisionedIops: types.Int32Value(disk.ProvisionedIops),
+		Attachments:     []CtyunEbsVolumesAttachments{},
+	}
+	for _, a := range disk.Attachments {
+		item.Attachments = append(item.Attachments, CtyunEbsVolumesAttachments{
+			InstanceID:   utils.SecStringValue(a.InstanceID),
+			AttachmentID: utils.SecStringValue(a.AttachmentID),
+			Device:       utils.SecStringValue(a.Device),
+		})
+	}
+	volumes = append(volumes, item)
+	config.Volumes = volumes
+	return
+}
+
+func (c *ctyunEbsVolumes) getByPage(ctx context.Context, config *CtyunEbsVolumesConfig) (err error) {
 	// 组装请求体
 	params := &ctebs2.EbsQueryEbsListRequest{
-		RegionID: regionId,
+		RegionID: config.RegionID.ValueString(),
 	}
 	pageNo := config.PageNo.ValueInt32()
 	pageSize := config.PageSize.ValueInt32()
@@ -248,8 +397,8 @@ func (c *ctyunEbsVolumes) Read(ctx context.Context, request datasource.ReadReque
 	if pageSize > 0 {
 		params.PageSize = pageSize
 	}
-	if projectID != "" {
-		params.ProjectID = &projectID
+	if config.ProjectID.ValueString() != "" {
+		params.ProjectID = config.ProjectID.ValueStringPointer()
 	}
 
 	// 调用API
@@ -304,14 +453,5 @@ func (c *ctyunEbsVolumes) Read(ctx context.Context, request datasource.ReadReque
 		volumes = append(volumes, item)
 	}
 	config.Volumes = volumes
-	// 保存到state
-	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
-}
-
-func (c *ctyunEbsVolumes) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
-	if request.ProviderData == nil {
-		return
-	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
+	return
 }

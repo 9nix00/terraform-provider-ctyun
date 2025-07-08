@@ -14,13 +14,15 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
-  name        = "vpc-test-mc1"
+  name        = "vpca-ccs"
   cidr        = "10.0.0.0/8"
   description = "terraform测试使用"
   enable_ipv6 = true
-  project_id  = "4f5ef15300724760af59b37cf6409f45"
-  region_id   = "200000002527"
 }
 ```
 
@@ -36,8 +38,8 @@ resource "ctyun_vpc" "vpc_test" {
 
 - `description` (String) 描述，长度最大为128
 - `enable_ipv6` (Boolean) 是否开启IPv6网段。false：不开启，true: 开启，默认为不开启false
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

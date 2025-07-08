@@ -3,6 +3,9 @@ package iam
 import (
 	"context"
 	"errors"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -13,9 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"sync"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 )
 
 func NewCtyunEnterpriseProjectAssociationUserGroup() resource.Resource {
@@ -39,7 +39,7 @@ func (c *ctyunEnterpriseProjectAssociationUserGroup) Schema(_ context.Context, _
 		Attributes: map[string]schema.Attribute{
 			"enterprise_project_id": schema.StringAttribute{
 				Required:    true,
-				Description: "企业项目id",
+				Description: "企业项目ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

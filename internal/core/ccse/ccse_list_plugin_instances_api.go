@@ -2,9 +2,9 @@ package ccse
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
 	"strconv"
-	"terraform-provider-ctyun/internal/core/core"
 )
 
 // CcseListPluginInstancesApi
@@ -44,8 +44,8 @@ func (a *CcseListPluginInstancesApi) Do(ctx context.Context, credential core.Cre
 	if req.ChartName != "" {
 		ctReq.AddParam("chartName", req.ChartName)
 	}
-	if req.PluginName != "" {
-		ctReq.AddParam("pluginName", req.PluginName)
+	if req.InstanceName != "" {
+		ctReq.AddParam("instanceName", req.InstanceName)
 	}
 	if req.ListAll != nil {
 		ctReq.AddParam("listAll", strconv.FormatBool(*req.ListAll))
@@ -63,17 +63,17 @@ func (a *CcseListPluginInstancesApi) Do(ctx context.Context, credential core.Cre
 }
 
 type CcseListPluginInstancesRequest struct {
-	ClusterId string /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
-	RegionId  string /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
+	ClusterId string `json:"clusterId,omitempty"` /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
+	RegionId  string `json:"regionId,omitempty"`  /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
 	另外您通过<a href="https://www.ctyun.cn/document/10026730/10028695" target="_blank">地域和可用区</a>来了解资源池
 	获取：
 	<span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87&vid=81" target="_blank">资源池列表查询</a>  */
-	PageNow    int32  /*  当前页码  */
-	PageSize   int32  /*  每页条数  */
-	Namespace  string /*  命名空间名称  */
-	ChartName  string /*  chart名称  */
-	PluginName string /*  插件名称  */
-	ListAll    *bool  /*  是否列举全部  */
+	PageNow      int32  `json:"pageNow,omitempty"`      /*  当前页码  */
+	PageSize     int32  `json:"pageSize,omitempty"`     /*  每页条数  */
+	Namespace    string `json:"namespace,omitempty"`    /*  命名空间名称  */
+	ChartName    string `json:"chartName,omitempty"`    /*  chart名称  */
+	InstanceName string `json:"instanceName,omitempty"` /*  插件名称  */
+	ListAll      *bool  `json:"listAll"`                /*  是否列举全部  */
 }
 
 type CcseListPluginInstancesResponse struct {
@@ -93,21 +93,21 @@ type CcseListPluginInstancesReturnObjResponse struct {
 }
 
 type CcseListPluginInstancesReturnObjRecordsResponse struct {
-	Name           string `json:"name,omitempty"`           /*  实例名称。  */
-	Revision       string `json:"revision,omitempty"`       /*  版本  */
-	Namespace      string `json:"namespace,omitempty"`      /*  命名空间  */
-	Updated        string `json:"updated,omitempty"`        /*  更新时间  */
-	Status         string `json:"status,omitempty"`         /*  状态  */
-	Chart          string `json:"chart,omitempty"`          /*  Chart名称和版本  */
-	AppVersion     string `json:"appVersion,omitempty"`     /*  版本  */
-	ClusterId      string `json:"clusterId,omitempty"`      /*  集群ID  */
-	RepositoryId   int64  `json:"repositoryId,omitempty"`   /*  仓库ID  */
-	ChartName      string `json:"chartName,omitempty"`      /*  Chart名称  */
-	ChartVersion   string `json:"chartVersion,omitempty"`   /*  Chart版本  */
-	ChartUrl       string `json:"chartUrl,omitempty"`       /*  Chart地址  */
-	Icon           string `json:"icon,omitempty"`           /*  icon地址  */
-	Description    string `json:"description,omitempty"`    /*  描述  */
-	NextVersion    string `json:"nextVersion,omitempty"`    /*  下一版本  */
-	TemplateName   string `json:"templateName,omitempty"`   /*  模板类型  */
-	KubeConfigPath string `json:"kubeConfigPath,omitempty"` /*  kubeConfig路径  */
+	Name           string      `json:"name,omitempty"`           /*  实例名称。  */
+	Revision       string      `json:"revision,omitempty"`       /*  版本  */
+	Namespace      string      `json:"namespace,omitempty"`      /*  命名空间  */
+	Updated        string      `json:"updated,omitempty"`        /*  更新时间  */
+	Status         string      `json:"status,omitempty"`         /*  状态。取值范围：uninstalled未安装、deployed已部署、failed失败、pending-upgrade待升级、pending-rollback待回滚、uninstalling已卸载、uninstalled已卸载完成、pending-install安装中  */
+	Chart          string      `json:"chart,omitempty"`          /*  Chart名称和版本  */
+	AppVersion     string      `json:"appVersion,omitempty"`     /*  版本  */
+	ClusterId      string      `json:"clusterId,omitempty"`      /*  集群ID  */
+	RepositoryId   interface{} `json:"repositoryId,omitempty"`   /*  仓库ID  */
+	ChartName      string      `json:"chartName,omitempty"`      /*  Chart名称  */
+	ChartVersion   string      `json:"chartVersion,omitempty"`   /*  Chart版本  */
+	ChartUrl       string      `json:"chartUrl,omitempty"`       /*  Chart地址  */
+	Icon           string      `json:"icon,omitempty"`           /*  icon地址  */
+	Description    string      `json:"description,omitempty"`    /*  描述  */
+	NextVersion    string      `json:"nextVersion,omitempty"`    /*  下一版本  */
+	TemplateName   string      `json:"templateName,omitempty"`   /*  模板类型  */
+	KubeConfigPath string      `json:"kubeConfigPath,omitempty"` /*  kubeConfig路径  */
 }

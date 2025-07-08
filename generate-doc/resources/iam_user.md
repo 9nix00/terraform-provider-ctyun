@@ -1,4 +1,5 @@
 # ctyun_iam_user (Resource)
+**详细说明请见文档：https://www.ctyun.cn/document/10345725/10355289**
 
 
 
@@ -13,11 +14,20 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
+}
+
 resource "ctyun_iam_user" "iam_user_test" {
   email          = "k2mn05@qq.com"
   phone          = "17306692771"
   name           = "Mddi3"
-  password       = "P@ssW0rd_!"
+  password       = var.password
   description    = "测试创建账号111"
   user_group_ids = [
     "6edf8a6a9b09442295206feef0d39132"

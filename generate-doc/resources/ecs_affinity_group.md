@@ -14,12 +14,9 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
-  region_id  = "bb9fdb42056f11eda1610242ac110002"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  env = "prod"
 }
-
 
 resource "ctyun_ecs_affinity_group" "test" {
   affinity_group_name = "tf-test-group"
@@ -37,7 +34,7 @@ resource "ctyun_ecs_affinity_group" "test" {
 
 ### Optional
 
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

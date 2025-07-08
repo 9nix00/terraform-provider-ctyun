@@ -2,10 +2,10 @@ package nat_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -22,7 +22,7 @@ func TestAccCtyunSNat(t *testing.T) {
 	datasourceFile := "datasource_ctyun_snat.tf"
 
 	initSourceCidr := `source_cidr="192.168.0.0/24"`
-	updatedSourceCidr := `source_cidr="192.168.128.0/25"`
+	updatedSourceCidr := fmt.Sprintf(`source_cidr="%s"`, "192.168.128.0/24")
 	sourceSubnetId := dependence.subnetID1
 	updatedSubnetId := dependence.subnetID2
 	tfSourceSubnetID := fmt.Sprintf(`source_subnet_id="%s"`, sourceSubnetId)
@@ -50,26 +50,31 @@ func TestAccCtyunSNat(t *testing.T) {
 				// 1. 创建nat,snat
 				// 1.1 resource create验证:
 				// subnetType = 0(自定义情况),sourceCIDR必传
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, initSourceCidr, snatIps),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, initSourceCidr, snatIps, "我是一条description"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "source_cidr", "192.168.0.0/24"),
 					resource.TestCheckResourceAttr(resourceName, "snat_ips.#", "1"),
 					resource.TestCheckResourceAttrSet(resourceName, "snat_id"),
+					resource.TestCheckResourceAttr(resourceName, "description", "我是一条description"),
 				),
 			},
 			{
 				// 1.2 resource update source_cidr验证
-				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps, "我是一条description plus"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "source_cidr", "192.168.128.0/25"),
+					resource.TestCheckResourceAttr(resourceName, "source_cidr", "192.168.128.0/24"),
 					resource.TestCheckResourceAttr(resourceName, "snat_ips.#", "2"),
+					resource.TestCheckResourceAttr(resourceName, "description", "我是一条description plus"),
 				),
 			},
 			{
 				// 1.3. datasource验证
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSourceCidr, updatedSnatIps) +
+					utils.LoadTestCase(datasourceFile, dnd, natGatewayID, fmt.Sprintf(`snat_id=%s.snat_id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "snats.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "snats.0.nat_gateway_id", natGatewayID),
+					resource.TestCheckResourceAttr(datasourceName, "snats.0.subnet_cidr", "192.168.128.0/24"),
 					//resource.TestCheckResourceAttr(datasourceName, "snats.0.subnet_id", updatedSubnetId),
 				),
 			},

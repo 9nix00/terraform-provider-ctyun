@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 # 创建带宽大小为1Mbps的弹性ip，付费模式为包周期1个月
 resource "ctyun_eip" "eip_test1" {
   name        = "eip-test1"
@@ -52,10 +56,10 @@ resource "ctyun_eip" "eip_test1" {
 
 ### Optional
 
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-3年
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-3年
 - `demand_billing_type` (String) 按需计费类型，当cycle_type为on_demand时生效，bandwidth：按带宽，upflowc：按流量
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

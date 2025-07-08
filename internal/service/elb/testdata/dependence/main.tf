@@ -16,7 +16,6 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
 }
 
 
@@ -26,10 +25,9 @@ resource "ctyun_elb_loadbalancer" "test" {
   sla_name      = "elb.s2.small"
   resource_type = "internal"
   vpc_id        = ctyun_vpc.vpc_test.id
-  cycle_type    = "month"
-  cycle_count   = 1
+  cycle_type    = "on_demand"
 }
-
+#
 resource "ctyun_elb_loadbalancer" "listener_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-listener"
@@ -87,7 +85,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
   type   = "CPU_C7"
 }
 
-
+#
 resource "ctyun_ecs" "ecs_test" {
   instance_name       = "tf-ecs-for-elb"
   display_name        = "tf-ecs-for-elb"

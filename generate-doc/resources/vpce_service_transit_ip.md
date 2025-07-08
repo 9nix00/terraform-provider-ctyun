@@ -57,14 +57,14 @@ resource "ctyun_vpce_service_transit_ip" "test" {
 
 ### Required
 
-- `endpoint_service_id` (String) 终端节点服务id
+- `endpoint_service_id` (String) 终端节点服务ID
 - `subnet_id` (String) 子网ID
 
 ### Optional
 
-- `region_id` (String) 资源池ID
-- `transit_ip` (String) 中转地址
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `transit_ip` (String) 中转IP地址
 
 ### Read-Only
 
-- `id` (String) ID，使用的ip地址
+- `id` (String) ID，使用中转IP地址，和transit_ip相等

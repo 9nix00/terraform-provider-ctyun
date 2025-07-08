@@ -14,6 +14,9 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_image" "image_test" {
   name         = "image-test2"
@@ -45,8 +48,8 @@ resource "ctyun_image" "image_test" {
 - `boot_mode` (String) 启动方式，bios：BIOS启动方式、uefi：UEFI启动方式，注意：若镜像系统架构为aarch64，则对启动方式的指定不生效。此参数无默认值，不指定则表示使用镜像系统架构的默认启动方式（x86_64架构的默认启动方式为BIOS）
 - `description` (String) 镜像描述信息。注意：长度为1~128个字符。
 - `disk_size` (Number) 磁盘容量，单位为GB，取值范围：最小5（默认值），最大1024。注意：磁盘容量不能小于镜像文件的大小；若小于镜像文件的大小，则实际的磁盘容量将使用镜像文件的大小
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `type` (String) 镜像种类，system：系统盘镜像，data：数据盘镜像，默认为系统盘镜像system
 
 ### Read-Only

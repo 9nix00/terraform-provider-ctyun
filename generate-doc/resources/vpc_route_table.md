@@ -14,10 +14,8 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
   env = "prod"
-  region_id = "200000001852"
 }
 
 resource "ctyun_vpc" "vpc_test" {
@@ -39,14 +37,14 @@ resource "ctyun_vpc_route_table" "route" {
 ### Required
 
 - `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
-- `vpc_id` (String) 关联的vpcID
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
 
-- `project_id` (String) 企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池ID
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 
-- `id` (String) ID
-- `route_table_id` (String) 路由表id
+- `id` (String) ID，值与路由表ID相同
+- `route_table_id` (String) 路由表ID

@@ -1,5 +1,5 @@
 data "ctyun_vpcs" "vpc_test" {
-
+       page_size = 50
 }
 
 locals {
@@ -8,7 +8,7 @@ locals {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  for_each = local.data_vpc_id == "" ? toset(["create"]) : toset([])
+  count    = local.data_vpc_id == "" ? 1 : 0
   name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
@@ -16,7 +16,7 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 locals {
-  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test["create"].id, "") : local.data_vpc_id
+  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test[0].id, "") : local.data_vpc_id
 }
 
 data "ctyun_subnets" "subnet_test" {
@@ -29,7 +29,7 @@ locals {
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  for_each = local.data_subnet_id == "" ? toset(["create"]) : toset([])
+  count    = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-subnet-for-paas"
   cidr        = "192.168.0.0/16"
@@ -41,7 +41,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 locals {
-  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test["create"].id, "") : local.data_subnet_id
+  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
@@ -66,22 +66,15 @@ resource "ctyun_ccse_cluster" "test" {
     start_port = 30000
     end_port   = 65535
     elb_prod_code = "standardI"
-    pod_cidr    = "192.168.0.0/16"
     pod_subnet_id_list = [local.real_subnet_id]
     cycle_type  = "on_demand"
     container_runtime = "containerd"
     timezone    = "Asia/Shanghai"
-    cluster_version = "1.23.3"
+    cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "ipvs"
     cluster_series = "cce.managed"
     series_type = "managedbase"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
 
@@ -99,7 +92,7 @@ resource "ctyun_ccse_cluster" "test" {
     ]
 
     sys_disk = {
-      type = "SATA"
+      type = "SSD"
       size = 80
     }
 
@@ -110,6 +103,32 @@ resource "ctyun_ccse_cluster" "test" {
       }
     ]
   }
+}
+
+
+locals {
+  chart_name = "node-problem-detector"
+}
+
+data "ctyun_ccse_plugin_market" "test" {
+  chart_name = local.chart_name
+}
+
+locals {
+  chart_version1 =try(data.ctyun_ccse_plugin_market.test.versions[2].chart_version, "")
+  chart_version2 =try(data.ctyun_ccse_plugin_market.test.versions[1].chart_version, "")
+}
+
+data "ctyun_ccse_plugin_market" "test1" {
+  chart_name = local.chart_name
+  chart_version = local.chart_version1
+  values_type = "YAML"
+}
+
+data "ctyun_ccse_plugin_market" "test2" {
+  chart_name = local.chart_name
+  chart_version = local.chart_version2
+  values_type = "JSON"
 }
 
 locals {

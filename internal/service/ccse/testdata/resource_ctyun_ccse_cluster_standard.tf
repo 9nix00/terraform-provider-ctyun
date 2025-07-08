@@ -5,8 +5,8 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     vpc_id     = "%[4]s"
     subnet_id  = "%[5]s"
     cluster_domain = "www.ctyun.com"
-    network_plugin = "cubecni"
-    pod_cidr    = "192.168.0.0/16"
+    network_plugin = "calico"
+    pod_cidr = "172.26.0.0/16"
     pod_subnet_id_list = ["%[5]s"]
     start_port = 30000
     end_port   = 65535
@@ -14,15 +14,9 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cycle_type  = "on_demand"
     container_runtime = "containerd"
     timezone    = "Asia/Shanghai"
-    cluster_version = "1.23.3"
+    cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
-    az_infos = [
-      {
-        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
-        size    = 1
-      }
-    ]
   }
 
   master_host = {
@@ -37,6 +31,13 @@ resource "ctyun_ccse_cluster" "%[1]s" {
       {
         type = "SSD"
         size = 200
+      }
+    ]
+
+    az_infos = [
+      {
+        az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+        size    = 1
       }
     ]
   }

@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 type Apis struct {

@@ -7,7 +7,7 @@ func SecBool(b *bool) bool {
 	if b == nil {
 		return false
 	}
-	return true
+	return *b
 }
 
 // SecBoolValue  *bool转types.Bool

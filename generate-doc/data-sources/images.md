@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+provider "ctyun" {
+  env = "prod"
+}
+
 data "ctyun_images" "ctyun_images_test" {
   name       = "Ubuntu 22.04"
   visibility = "public"

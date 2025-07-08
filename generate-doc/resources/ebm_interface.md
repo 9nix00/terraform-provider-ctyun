@@ -14,11 +14,8 @@ terraform {
   }
 }
 
-
 provider "ctyun" {
-  env                  = "prod"
-  region_id            = "200000001852"
-  az_name              = "cn-huabei2-tj-3a-public-ctcloud"
+  env = "prod"
 }
 
 resource "ctyun_ebm_interface" "test" {
@@ -34,7 +31,7 @@ resource "ctyun_ebm_interface" "test" {
 
 ### Required
 
-- `instance_id` (String) 实例UUID
+- `instance_id` (String) 物理机UUID
 - `ipv4` (String) IPV4地址
 - `security_group_ids` (Set of String) 安全组ID
 - `subnet_id` (String) 子网ID
@@ -42,7 +39,7 @@ resource "ctyun_ebm_interface" "test" {
 ### Optional
 
 - `az_name` (String) 可用区名称
-- `region_id` (String) 资源池ID
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

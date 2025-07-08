@@ -3,6 +3,13 @@ package ecs
 import (
 	"context"
 	"errors"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
+	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -12,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -19,13 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"strconv"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
-	defaults2 "terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -57,15 +58,21 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机名称，不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字",
+				Description: "主机名称（hostname），不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"display_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机显示名称，长度为2-63字符",
+				Description: "实例名称，长度为2-63字符",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 63),
+				},
 			},
 			"flavor_id": schema.StringAttribute{
 				Required:    true,
-				Description: "规格id，请用ctyun_ecs_flavors查询具体id",
+				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机",
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
@@ -86,7 +93,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"system_disk_size": schema.Int64Attribute{
 				Required:    true,
-				Description: "系统盘大小，单位为G，取值范围：[40, 32768]",
+				Description: "系统盘大小，单位为G，取值范围：[40, 32768]，只支持扩容，需要先关机",
 				Validators: []validator.Int64{
 					int64validator.Between(40, 32768),
 				},
@@ -152,7 +159,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycleType=month，支持续订1-11个月；当cycleType=year，支持续订1-5年",
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -169,7 +176,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订，true：自动续订，false：不自动续订；注意：此参数在包周期情况下才有效；当为包周期时此值默认为true",
+				Description: "是否自动续订，此参数在包周期情况下才有效，当为包周期时此值默认为true",
 				PlanModifiers: []planmodifier.Bool{
 					boolplanmodifier.RequiresReplace(),
 				},
@@ -188,7 +195,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "云主机状态，取值范围：backingup: 备份中，creating: 创建中，expired: 已到期，freezing: 冻结中，rebuild: 重装，restarting: 重启中，running: 运行中，starting: 开机中，stopped: 已关机，stopping: 关机中，error: 错误，snapshotting: 快照创建中，unsubscribed: 包周期已退订，unsubscribing: 包周期退订中，shelve：节省关机，shelving：节省关机中",
+				Description: "云主机状态，初始状态为running，取值范围：backingup: 备份中，creating: 创建中，expired: 已到期，freezing: 冻结中，rebuild: 重装，restarting: 重启中，running: 运行中，starting: 开机中，stopped: 已关机，stopping: 关机中，error: 错误，snapshotting: 快照创建中，unsubscribed: 包周期已退订，unsubscribing: 包周期退订中，shelve：节省关机，shelving：节省关机中",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						business.EcsStatusRunning,
@@ -210,20 +217,23 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"user_data": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "用户自定义数据,需要以Base64方式编码,Base64编码后的长度限制为1-16384字符",
+				Description: "用户自定义数据，需要以Base64方式编码，Base64编码后的长度限制为1-16384字符",
 				Default:     stringdefault.StaticString(""),
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 16384),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "订购的受理单id",
+				Description: "订购的受理单ID",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -232,7 +242,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -253,7 +263,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"is_destroy_instance": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否立即释放，false：不释放，true：释放。当包周期云主机退订之后有一定时间的保留期。可选择销毁该云主机，立即释放则没有保留期",
+				Description: "是否立即释放，默认为false。包周期云主机退订之后有一定时间的保留期，通过terraform destroy触发退订后，若此字段为true，会立即释放该云主机。",
 				Default:     booldefault.StaticBool(false),
 			},
 			"pay_voucher_price": schema.Float64Attribute{
@@ -261,6 +271,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用",
 				Default:     float64default.StaticFloat64(0.00),
+				PlanModifiers: []planmodifier.Float64{
+					float64planmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
@@ -287,11 +300,10 @@ func (c *ctyunEcs) Create(ctx context.Context, request resource.CreateRequest, r
 
 	// 实际创建
 	err = c.createInstance(ctx, &plan)
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	if err != nil {
 		return
 	}
-
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机、节省关机
 	status := plan.Status.ValueString()
 	if status != "" && status != business.EcsStatusRunning {
@@ -413,6 +425,7 @@ func (c *ctyunEcs) Update(ctx context.Context, request resource.UpdateRequest, r
 		response.Diagnostics.AddError(err2.Error(), err2.Error())
 		return
 	}
+	instance.IsDestroyInstance = plan.IsDestroyInstance
 	instance.Password = plan.Password
 	instance.CycleType = plan.CycleType
 	instance.CycleCount = plan.CycleCount
@@ -426,8 +439,14 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 
+	// 先检查状态
+	err := c.ecsService.CheckEcsStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString())
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
 	// 先关机或者节省关机，因为销毁是默认用户意识到资料销毁的动作，所以直接关机是ok的
-	err := c.closeInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString())
+	err = c.closeInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString())
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -458,14 +477,14 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 	}
 	// 销毁已退订的包周期云主机
 	if state.IsDestroyInstance.ValueBool() {
-		response.Diagnostics.AddWarning("释放已退订的包周期云主机", "已退订的包周期云主机具有保留期，确认释放后云主机直接销毁，请谨慎操作")
-		err := c.destroyInstance(ctx, state)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+		err2 := c.destroyInstance(ctx, state)
+		if err2 != nil {
+			response.Diagnostics.AddError(err2.Error(), err2.Error())
 			return
 		}
+		response.Diagnostics.AddWarning("释放已退订的包周期云主机", "因is_destroy_instance=true，包周期主机已释放")
 	} else {
-		response.Diagnostics.AddWarning("不释放已退订的包周期云主机", "已退订的包周期云主机具有保留期，确认不释放后云主机在保留期后才可释放,并且不可再次执行释放操作，请谨慎操作")
+		response.Diagnostics.AddWarning("不释放已退订的包周期云主机", "因is_destroy_instance=false，包周期主机已退订未释放，释放请到控制台操作")
 	}
 
 }
@@ -1258,7 +1277,7 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	if len(vs) != 1 {
 		return nil, errors.New("查询系统盘信息发生错误，查询到系统盘数量" + strconv.Itoa(len(vs)))
 	}
-	result := ecsVolumeResponse.Results[0]
+	result := vs[0]
 	diskType, err2 := business.EbsDiskTypeMap.ToOriginalScene(result.DiskDataType, business.EbsDiskTypeMapScene1)
 	if err2 != nil {
 		return nil, err2

@@ -2,11 +2,11 @@ package elb_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strconv"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -67,7 +67,8 @@ func TestAccCtyunElbTarget(t *testing.T) {
 			},
 			// 1.3 datasource验证
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd),
+				Config: utils.LoadTestCase(resourceFile, rnd, targetGroupID, instanceType, instanceId, updatedProtocolPort, updatedTfWeight) +
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`ids=%s.id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "elb_targets.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_targets.0.instance_type", instanceType),

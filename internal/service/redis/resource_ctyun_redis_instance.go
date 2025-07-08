@@ -3,6 +3,13 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -19,13 +26,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/dcs2"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -79,7 +79,7 @@ type CtyunRedisInstanceConfig struct {
 
 func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10029727**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -92,7 +92,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池ID",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -101,7 +101,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目id，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -111,7 +111,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Required:    true,
 				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf("month", "on_demand"),
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -119,7 +119,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month时才生效，当cycleType=month，支持传递1、2、3、4、5、6、12、24、36",
+				Description: "订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("cycle_type"),
@@ -129,7 +129,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 						path.MatchRoot("cycle_type"),
 						types.StringValue(business.OrderCycleTypeOnDemand),
 					),
-					int32validator.OneOf(1, 2, 3, 5, 6, 7, 12, 24, 36),
+					int32validator.OneOf(1, 2, 3, 4, 5, 6, 12, 24, 36),
 				},
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
@@ -138,7 +138,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "主可用区",
+				Description: "主可用区，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -154,49 +154,55 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"version": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "版本类型，SeriesInfo中的version值",
+				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.OneOf("BASIC", "PLUS"),
+					stringvalidator.OneOf(business.RedisVersionBasic, business.RedisVersionPlus),
 				},
 			},
 			"edition": schema.StringAttribute{
 				Required:    true,
-				Description: "实例类型，SeriesInfo中的seriesCode值",
+				Description: "实例类型，SeriesInfo中的seriesCode值，可参考<a href=\"https://www.ctyun.cn/document/10029420/11030280\">产品规格说明</a>",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"engine_version": schema.StringAttribute{
 				Required:    true,
-				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当 version 取值为 BASIC时，版本号取值：5.0 6.0 7.0，当 version 取值为 PLUS，版本号取值：6.0，7.0  ",
+				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.RedisEngineVersion...),
+				},
 			},
 			"data_disk_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "磁盘类型",
+				Description: "磁盘类型，支持SAS和SSD，默认SAS",
 				Validators: []validator.String{
-					stringvalidator.OneOf("SATA", "SAS", "SSD"),
+					stringvalidator.OneOf(business.RedisDiskTypeSas, business.RedisDiskTypeSsd),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: stringdefault.StaticString("SAS"),
+				Default: stringdefault.StaticString(business.RedisDiskTypeSas),
 			},
 			"host_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "主机类型，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型",
+				Description: "主机类型，默认S，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: stringdefault.StaticString("S"),
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.RedisHostType...),
+				},
+				Default: stringdefault.StaticString(business.RedisHostTypeS),
 			},
 			"shard_mem_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "分片规格，当 version 取值为 BASIC，取值：1、2、4、8、16、32、64，当 version 取值为 PLUS时，取值：8、16、32、64",
+				Description: "分片规格，当version取值为BASIC，取值：1、2、4、8、16、32、64，当version取值为PLUS时，取值：8、16、32、64",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
 				},
@@ -207,7 +213,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"shard_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "分片数量，当 edition 取值为 DirectClusterSingle时: 3~256。当 edition 取值为 DirectCluster时: 3~256。当 edition 取值为 ClusterOriginalProxy时: 3~64。当 edition 取其他值时无需填写",
+				Description: "分片数量，当edition取值为DirectClusterSingle时: 3~256。当 edition 取值为 DirectCluster时: 3~256。当 edition 取值为 ClusterOriginalProxy时: 3~64。当 edition 取其他值时无需填写",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
@@ -215,22 +221,22 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("edition"),
-						types.StringValue("DirectClusterSingle"),
-						types.StringValue("DirectCluster"),
-						types.StringValue("ClusterOriginalProxy"),
+						types.StringValue(business.RedisEditionDirectClusterSingle),
+						types.StringValue(business.RedisEditionDirectCluster),
+						types.StringValue(business.RedisEditionClusterOriginalProxy),
 					),
 					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("edition"),
-						types.StringValue("StandardSingle"),
-						types.StringValue("StandardDual"),
-						types.StringValue("OriginalMultipleReadLvs"),
+						types.StringValue(business.RedisEditionStandardSingle),
+						types.StringValue(business.RedisEditionStandardDual),
+						types.StringValue(business.RedisEditionOriginalMultipleReadLvs),
 					),
 				},
 			},
 			"copies_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "副本数量，当 edition 取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写",
+				Description: "副本数量，当 edition取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
@@ -238,22 +244,22 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("edition"),
-						types.StringValue("OriginalMultipleReadLvs"),
-						types.StringValue("StandardDual"),
-						types.StringValue("DirectCluster"),
-						types.StringValue("ClusterOriginalProxy"),
+						types.StringValue(business.RedisEditionOriginalMultipleReadLvs),
+						types.StringValue(business.RedisEditionStandardDual),
+						types.StringValue(business.RedisEditionDirectCluster),
+						types.StringValue(business.RedisEditionClusterOriginalProxy),
 					),
 					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("edition"),
-						types.StringValue("StandardSingle"),
-						types.StringValue("DirectClusterSingle"),
+						types.StringValue(business.RedisEditionStandardSingle),
+						types.StringValue(business.RedisEditionDirectClusterSingle),
 					),
 					int32validator.Between(2, 6),
 				},
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称",
+				Description: "实例名称，大小写字母开头。只能包含大小写字母、数字及分隔符(-)。大小写字母或数字结尾。长度4~40个字符。实例名称不可重复。",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -264,28 +270,28 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "虚拟私有云id。",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "子网id",
+				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "安全组id",
+				Description: "安全组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"password": schema.StringAttribute{
 				Required:    true,
-				Description: "密码",
+				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。",
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 26),
@@ -295,7 +301,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订",
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写",
 				Default:     booldefault.StaticBool(false),
 				Validators: []validator.Bool{
 					validator2.ConflictsWithEqualBool(
@@ -309,7 +315,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"auto_renew_cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "自动续订时长",
+				Description: "自动续订时长，单位月，支持1, 2, 3, 5, 6, 7, 12, 24, 36",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("auto_renew"),
@@ -328,13 +334,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"maintenance_time": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例维护时间窗口，格式如：00:00-02:00，总时长必须为2小时",
+				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00",
 				Default:     stringdefault.StaticString("00:00-02:00"),
 			},
 			"protection_status": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "退订保护开关",
+				Description: "退订保护开关，默认为不保护",
 				Default:     booldefault.StaticBool(false),
 			},
 		},
@@ -465,7 +471,7 @@ func (c *ctyunRedisInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
-	response.Diagnostics.AddWarning("删除Redis实例", "实例退订后，无法马上删除安全组和子网")
+	response.Diagnostics.AddWarning("删除Redis集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
 func (c *ctyunRedisInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
@@ -532,7 +538,7 @@ func (c *ctyunRedisInstance) checkSpecParams(ctx context.Context, plan CtyunRedi
 	shardCount := plan.ShardCount.ValueInt32()
 
 	switch plan.Edition.ValueString() {
-	case "DirectClusterSingle", "DirectCluster":
+	case business.RedisEditionDirectClusterSingle, business.RedisEditionDirectCluster:
 		if shardCount < 3 || shardCount > 256 {
 			return fmt.Errorf("edition为DirectClusterSingle或DirectCluster，shard_count需要在3-256")
 		}

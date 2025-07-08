@@ -7,31 +7,23 @@ output "subnet_id" {
 }
 
 output "security_group_id" {
-  value = data.ctyun_ebm_device_types.test.device_types[0].smart_nic_exist ? format("[\"%s\"]",ctyun_security_group.security_group_test.id)  : "[]"
+  value = ctyun_security_group.security_group_test.id
+}
+
+output "security_group_id2" {
+  value = ctyun_security_group.security_group_test2.id
 }
 
 output "device_type" {
-  value = data.ctyun_ebm_device_types.test.device_types[0].device_type
-}
-
-output "smart_nic_exist" {
-  value = data.ctyun_ebm_device_types.test.device_types[0].smart_nic_exist ? "true" : "false"
-}
-
-output "support_cloud" {
-  value = data.ctyun_ebm_device_types.test.device_types[0].support_cloud ? "true" : "false"
-}
-
-output "cloud_boot" {
-  value = data.ctyun_ebm_device_types.test.device_types[0].cloud_boot ? "true" : "false"
+  value = local.device_type1
 }
 
 output "system_raid" {
-  value  = length(data.ctyun_ebm_device_raids.system_raid.raids) > 0 ? data.ctyun_ebm_device_raids.system_raid.raids[0].uuid : ""
+  value  = local.system_raid_id
 }
 
 output "data_raid" {
-  value  = length(data.ctyun_ebm_device_raids.data_raid.raids) > 0 ? data.ctyun_ebm_device_raids.data_raid.raids[0].uuid : ""
+  value  = local.data_raid_id
 }
 
 output "image_uuid" {
@@ -40,4 +32,12 @@ output "image_uuid" {
 
 output "ebs_id" {
   value = ctyun_ebs.ebs_test.id
+}
+
+output "ebm_id" {
+  value = ctyun_ebm.ebm_test.id
+}
+
+output "az2" {
+  value = local.az2
 }
