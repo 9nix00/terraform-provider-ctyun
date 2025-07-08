@@ -31,7 +31,13 @@ func (a *CcseDeployPluginInstanceApi) Do(ctx context.Context, credential core.Cr
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	ctReq.AddHeader("regionId", req.RegionId)
-	_, err := ctReq.WriteJson(req, a.template.ContentType)
+	_, err := ctReq.WriteJson(struct {
+		*CcseDeployPluginInstanceRequest
+		RegionId  interface{} `json:"regionId,omitempty"`
+		ClusterId interface{} `json:"clusterId,omitempty"`
+	}{
+		req, nil, nil,
+	}, a.template.ContentType)
 	if err != nil {
 		return nil, err
 	}
@@ -48,16 +54,15 @@ func (a *CcseDeployPluginInstanceApi) Do(ctx context.Context, credential core.Cr
 }
 
 type CcseDeployPluginInstanceRequest struct {
-	ClusterId string /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
-	RegionId  string /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
-	另外您通过<a href="https://www.ctyun.cn/document/10026730/10028695" target="_blank">地域和可用区</a>来了解资源池
+	ClusterId string `json:"clusterId,omitempty"` /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
+	RegionId  string `json:"regionId,omitempty"`  /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
+	另外您通过<a href="https://www.ctyun.cn/document/10026730/10028695" target="_blank">地域和可用区</a>来了解资源池
 	获取：
-	<span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87&vid=81" target="_blank">资源池列表查询</a>  */
+	<span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87&vid=81" target="_blank">资源池列表查询</a>  */
 	ChartName    string `json:"chartName,omitempty"`    /*  插件名称  */
-	ChartVersion string `json:"chartVersion,omitempty"` /*  插件版本号，可在“获取插件列表”接口中获取可用版本  */
-	InstanceName string `json:"instanceName,omitempty"` /*  实例名称  */
-	Values       string `json:"values,omitempty"`       /*  插件配置参数(YAML格式)，与valuesJson二选一  */
-	ValuesJson   string `json:"valuesJson,omitempty"`   /*  插件配置参数(JSON格式)，与values二选一  */
+	ChartVersion string `json:"chartVersion,omitempty"` /*  插件版本号，可通过容器镜像服务的接口<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=17879&data=127&isNormal=1&vid=120">查询插件市场列表</a>和<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=18067&data=127&isNormal=1&vid=120">查询版本列表</a>获取可用版本。  */
+	Values       string `json:"values,omitempty"`       /*  插件配置参数(YAML格式)，与valuesJson二选一。可通过容器镜像服务的接口<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=18132&data=127&isNormal=1&vid=120">查询版本values</a>获取values的模板。  */
+	ValuesJson   string `json:"valuesJson,omitempty"`   /*  插件配置参数(JSON格式)，与values二选一。可通过容器镜像服务的接口<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=18132&data=127&isNormal=1&vid=120">查询版本values</a>获取values的模板。  */
 }
 
 type CcseDeployPluginInstanceResponse struct {

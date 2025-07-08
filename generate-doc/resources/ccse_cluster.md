@@ -251,7 +251,9 @@ resource "ctyun_ccse_cluster" "example" {
 
 ### Read-Only
 
+- `external_kube_config` (String) 外网连接信息
 - `id` (String) ID
+- `internal_kube_config` (String) 内网连接信息
 - `master_order_id` (String) 主订单号
 
 <a id="nestedatt--base_info"></a>
