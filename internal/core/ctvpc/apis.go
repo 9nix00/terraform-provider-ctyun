@@ -1,7 +1,7 @@
 package ctvpc
 
 import (
-	"terraform-provider-ctyun/internal/core/core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 )
 
 const EndpointName = "ctvpc"

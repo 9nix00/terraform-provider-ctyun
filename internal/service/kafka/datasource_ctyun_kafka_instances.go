@@ -3,15 +3,15 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
-	"terraform-provider-ctyun/internal/utils"
 
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	ctgkafka "terraform-provider-ctyun/internal/core/kafka"
 )
 
 var (

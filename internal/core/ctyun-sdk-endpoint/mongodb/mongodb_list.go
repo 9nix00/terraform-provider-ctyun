@@ -3,8 +3,8 @@ package mongodb
 import (
 	"context"
 	"errors"
+	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
-	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 // MongodbGetListApi 查询mongodb实例列表
