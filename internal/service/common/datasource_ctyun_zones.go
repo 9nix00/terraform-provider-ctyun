@@ -3,11 +3,11 @@ package common
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"terraform-provider-ctyun/internal/common"
-	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
 )
 
 type ctyunZones struct {

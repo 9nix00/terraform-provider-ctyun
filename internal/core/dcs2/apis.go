@@ -1,7 +1,7 @@
 package dcs2
 
 import (
-	"terraform-provider-ctyun/internal/core/core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 )
 
 const EndpointName = "dcs2"

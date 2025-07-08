@@ -2,8 +2,8 @@ package mongodb
 
 import (
 	"context"
+	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
-	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 // 开通购买自研云数据库实例

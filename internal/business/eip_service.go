@@ -3,10 +3,10 @@ package business
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	"github.com/google/uuid"
-	"terraform-provider-ctyun/internal/common"
-	ctvpc2 "terraform-provider-ctyun/internal/core/ctvpc"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 )
 
 type EipService struct {

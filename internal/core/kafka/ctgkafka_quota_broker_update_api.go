@@ -2,8 +2,8 @@ package ctgkafka
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
-	"terraform-provider-ctyun/internal/core/core"
 )
 
 // CtgkafkaQuotaBrokerUpdateApi

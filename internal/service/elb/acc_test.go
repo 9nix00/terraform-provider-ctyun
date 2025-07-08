@@ -2,8 +2,8 @@ package elb_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"os"
-	"terraform-provider-ctyun/internal/extend/terraform"
 	"testing"
 )
 

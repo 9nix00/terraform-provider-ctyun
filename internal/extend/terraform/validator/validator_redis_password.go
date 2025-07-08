@@ -2,10 +2,10 @@ package validator
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"slices"
 	"strings"
-	"terraform-provider-ctyun/internal/utils"
 )
 
 type validatorRedisPassword struct {

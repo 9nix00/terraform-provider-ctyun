@@ -2,9 +2,9 @@ package ctebs
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
 	"strconv"
-	"terraform-provider-ctyun/internal/core/core"
 )
 
 // EbsQueryEbsListApi

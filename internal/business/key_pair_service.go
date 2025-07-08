@@ -3,9 +3,9 @@ package business
 import (
 	"context"
 	"errors"
-	"terraform-provider-ctyun/internal/common"
-	ctecs2 "terraform-provider-ctyun/internal/core/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 )
 
 type KeyPairService struct {

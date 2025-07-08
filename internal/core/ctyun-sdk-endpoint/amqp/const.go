@@ -1,6 +1,6 @@
 package amqp
 
-import ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+import ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 const (
 	EndpointName = "amqp"

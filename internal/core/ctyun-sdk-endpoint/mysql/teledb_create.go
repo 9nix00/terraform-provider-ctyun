@@ -2,8 +2,8 @@ package mysql
 
 import (
 	"context"
+	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
-	ctyunsdk "terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 // 关系数据库MySQL版实例开通

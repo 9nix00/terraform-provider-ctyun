@@ -2,11 +2,11 @@ package mysql_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"os"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -24,7 +24,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	name := "terraform-provider-ctyun" + utils.GenerateRandomString()
+	name := "github.com/ctyun-it/terraform-provider-ctyun" + utils.GenerateRandomString()
 	password := "kqjwyk123."
 	//period := 1
 	//autoRenewStatus := 0
