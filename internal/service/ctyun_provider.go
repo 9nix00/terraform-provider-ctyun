@@ -86,10 +86,12 @@ func (c *CtyunProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 		"ak": schema.StringAttribute{
 			Optional:    true,
 			Description: "身份信息AK",
+			Sensitive:   true,
 		},
 		"sk": schema.StringAttribute{
 			Optional:    true,
 			Description: "身份信息SK",
+			Sensitive:   true,
 		},
 		"env": schema.StringAttribute{
 			Optional:    true,

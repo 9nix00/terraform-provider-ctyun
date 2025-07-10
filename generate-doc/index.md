@@ -139,7 +139,35 @@ resource "ctyun_ecs" "ecs_test" {
 }
 ```
 
+
 - PaaS产品实例在terraform destroy时可以删除，但相关联的底层资源不能马上释放，所以删除子网和安全组时会报错。涉及CCSE、Redis、Kafka、RabbitMq、Mysql、PostgreSql、MogoDB。预计完善时间8月底。
+- 如果您想要将state文件保存到对象存储，可参考https://developer.hashicorp.com/terraform/language/v1.11.x/backend/s3，示例如下，endpoints中的s3是控制台页面上桶的终端节点：
+
+```
+terraform {
+  backend "s3" {
+    bucket         = "state"
+    key            = "bc6a-ce8f8fb792db"
+    region         = "jiangsu-10"
+    skip_region_validation      = true
+    skip_metadata_api_check     = true
+    skip_credentials_validation = true
+    skip_requesting_account_id  = true
+    skip_s3_checksum            = true
+    use_path_style = true
+    endpoints = {
+      s3 = "https://jiangsu-10.zos.ctyun.cn:443"
+    }
+  }
+
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+      version = "1.1.0"
+    }
+  }
+}
+```
 
 ## 说明
 - **目前terraform-provider-ctyun仅支持多可用区资源池**，建议您的测试使用**华东1可用区1**进行测试，`region_id=bb9fdb42056f11eda1610242ac110002,az_name=cn-huadong1-jsnj1A-public-ctcloud`

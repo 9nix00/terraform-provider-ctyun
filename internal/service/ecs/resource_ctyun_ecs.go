@@ -667,9 +667,11 @@ func (c *ctyunEcs) changePayType(ctx context.Context, state CtyunEcsConfig, plan
 	if !c.checkInstanceStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString(), business.EcsStatusStopped, business.EcsStatusRunning) {
 		return errors.New("变更云主机付费模式，保证云主机状态处于运行中或关机状态")
 	}
-
 	cycleType := plan.CycleType.ValueString()
 	if cycleType == business.OrderCycleTypeMonth || cycleType == business.OrderCycleTypeYear {
+		if state.CycleType.ValueString() == business.OrderCycleTypeMonth || state.CycleType.ValueString() == business.OrderCycleTypeYear {
+			return errors.New("不支持修改包周期云主机的计费周期")
+		}
 		// 按需转包
 		err := c.onDemandToCycle(ctx, state.Id.ValueString(), state.RegionId.ValueString(), plan.CycleType.ValueString(), int(plan.CycleCount.ValueInt64()))
 		if err != nil {
