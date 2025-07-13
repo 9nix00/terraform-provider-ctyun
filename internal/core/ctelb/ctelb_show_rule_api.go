@@ -105,5 +105,4 @@ type CtelbShowRuleReturnObjActionForwardConfigResponse struct {
 type CtelbCreateRuleActionForwardConfigTargetGroupsResponse struct {
 	TargetGroupID string `json:"targetGroupID,omitempty"` /*  后端服务组ID  */
 	Weight        int32  `json:"weight,omitempty"`        /*  权重，取值范围：1-256。默认为100  */
-
 }

@@ -16,7 +16,6 @@ func TestAccCtyunCcsePlugin(t *testing.T) {
 	resourceName := "ctyun_ccse_plugin." + rnd
 	resourceFile := "resource_ctyun_ccse_plugin.tf"
 
-	pluginName := "tf-ccse-plugin"
 	valuesYaml := fmt.Sprintf("values_yaml = %s", dependence.chartValuesYaml)
 	valuesJson := fmt.Sprintf("values_json = %s", dependence.chartValuesJson)
 	resource.Test(t, resource.TestCase{
@@ -31,14 +30,12 @@ func TestAccCtyunCcsePlugin(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd,
-					pluginName,
 					dependence.clusterID,
 					dependence.chartName,
 					dependence.chartVersion1,
 					valuesYaml,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "plugin_name", pluginName),
 					resource.TestCheckResourceAttr(resourceName, "cluster_id", dependence.clusterID),
 					resource.TestCheckResourceAttr(resourceName, "chart_name", dependence.chartName),
 					resource.TestCheckResourceAttr(resourceName, "chart_version", dependence.chartVersion1),
@@ -46,14 +43,12 @@ func TestAccCtyunCcsePlugin(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd,
-					pluginName,
 					dependence.clusterID,
 					dependence.chartName,
 					dependence.chartVersion2,
 					valuesYaml,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "plugin_name", pluginName),
 					resource.TestCheckResourceAttr(resourceName, "cluster_id", dependence.clusterID),
 					resource.TestCheckResourceAttr(resourceName, "chart_name", dependence.chartName),
 					resource.TestCheckResourceAttr(resourceName, "chart_version", dependence.chartVersion2),
@@ -61,14 +56,12 @@ func TestAccCtyunCcsePlugin(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd,
-					pluginName,
 					dependence.clusterID,
 					dependence.chartName,
 					dependence.chartVersion2,
 					valuesJson,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "plugin_name", pluginName),
 					resource.TestCheckResourceAttr(resourceName, "cluster_id", dependence.clusterID),
 					resource.TestCheckResourceAttr(resourceName, "chart_name", dependence.chartName),
 					resource.TestCheckResourceAttr(resourceName, "chart_version", dependence.chartVersion2),
@@ -85,7 +78,6 @@ func TestAccCtyunCcsePlugin(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd,
-					pluginName,
 					dependence.clusterID,
 					dependence.chartName,
 					dependence.chartVersion2,
