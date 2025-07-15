@@ -282,14 +282,14 @@ resource "ctyun_vpc" "vpc_test" {
 
 ### Optional
 
-- `ak` (String) 身份信息AK
+- `ak` (String, Sensitive) 身份信息AK
 - `az_name` (String) 可用区英文，填写选用资源池的az_name
 - `console_url` (String) 请求分发地址，仅供测试使用，需配合inspect_url_keywords一起使用
 - `env` (String) 环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod
 - `inspect_url_keywords` (Set of String) 请求拦截的地址，仅供测试使用，如果填入*则表示拦截所有请求，需配合console_url一起使用
 - `project_id` (String) 企业项目ID，不填则使用用户默认的企业项目
 - `region_id` (String) 资源池ID
-- `sk` (String) 身份信息SK
+- `sk` (String, Sensitive) 身份信息SK
 
 ## 开发调试指南（开发者阅读）
 
