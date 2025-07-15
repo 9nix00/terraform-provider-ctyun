@@ -123,12 +123,18 @@ data "ctyun_ccse_plugin_market" "test1" {
   chart_name = local.chart_name
   chart_version = local.chart_version1
   values_type = "YAML"
+  depends_on = [
+    ctyun_ccse_cluster.test
+  ]
 }
 
 data "ctyun_ccse_plugin_market" "test2" {
   chart_name = local.chart_name
   chart_version = local.chart_version2
   values_type = "JSON"
+  depends_on = [
+    ctyun_ccse_cluster.test
+  ]
 }
 
 locals {
