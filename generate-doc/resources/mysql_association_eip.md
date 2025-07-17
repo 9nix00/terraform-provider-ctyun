@@ -76,7 +76,6 @@ resource "ctyun_eip" "eip_test" {
 
 resource "ctyun_mysql_association_eip" "association_eip" {
   eip_id = ctyun_eip.eip_test.id
-  eip = ctyun_eip.eip_test.address
   inst_id = ctyun_mysql_instance.mysql_test.id
 }
 ```
@@ -98,3 +97,4 @@ resource "ctyun_mysql_association_eip" "association_eip" {
 ### Read-Only
 
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding
+- `status` (String) eip绑定状态，与eip_status一致

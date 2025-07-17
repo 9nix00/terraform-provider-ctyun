@@ -79,7 +79,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `auto_renew_cycle_count` (Number) 自动续订时长，单位月，支持1, 2, 3, 5, 6, 7, 12, 24, 36
 - `az_name` (String) 主可用区，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
-- `copies_count` (Number) 副本数量，当 edition取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写
+- `copies_count` (Number) 副本数量，当edition取值为OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填（取值范围2-6），当edition取其他值时不填。
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `data_disk_type` (String) 磁盘类型，支持SAS和SSD，默认SAS
 - `host_type` (String) 主机类型，默认S，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型
@@ -88,8 +88,8 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `protection_status` (Boolean) 退订保护开关，默认为不保护
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `secondary_az_name` (String) 备可用区
-- `shard_count` (Number) 分片数量，当edition取值为DirectClusterSingle时: 3~256。当 edition 取值为 DirectCluster时: 3~256。当 edition 取值为 ClusterOriginalProxy时: 3~64。当 edition 取其他值时无需填写
-- `version` (String) 版本类型，SeriesInfo中的version值，支持BASIC和PLUS
+- `shard_count` (Number) 分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。
+- `version` (String) 版本类型，SeriesInfo中的version值，支持BASIC和PLUS，默认BASIC
 
 ### Read-Only
 
