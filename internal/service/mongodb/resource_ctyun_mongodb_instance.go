@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -21,12 +27,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -1985,6 +1985,7 @@ type CtyunMongodbInstanceConfig struct {
 	CycleCount              types.Int32  `tfsdk:"cycle_count"`               // 购买时长：单位月（范围：1-36）
 	AutoRenew               types.Bool   `tfsdk:"auto_renew"`                // 自动续订状态（0-不自动续订，1-自动续订）
 	ProdID                  types.String `tfsdk:"prod_id"`                   // 产品id
+	NodeInfoList            types.List   `tfsdk:"node_info_list"`            //
 	ProjectID               types.String `tfsdk:"project_id"`                // 项目ID
 	MasterOrderID           types.String `tfsdk:"master_order_id"`           // 订单ID
 	ID                      types.String `tfsdk:"id"`                        // 实例ID

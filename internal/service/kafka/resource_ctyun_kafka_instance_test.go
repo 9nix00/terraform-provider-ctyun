@@ -2,10 +2,10 @@ package kafka_test
 
 import (
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"os"
 	"strconv"
-	"terraform-provider-ctyun/internal/service"
-	"terraform-provider-ctyun/internal/utils"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"

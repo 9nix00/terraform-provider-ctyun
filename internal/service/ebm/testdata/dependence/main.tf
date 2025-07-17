@@ -53,6 +53,15 @@ data "ctyun_ebm_device_images" "test" {
   image_type = "standard"
 }
 
+locals {
+  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
+  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : ""
+
+  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
+  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : ""
+}
+
+
 data "ctyun_ebm_device_images" "dependence" {
   device_type = local.device_type2
   az_name = local.az2
@@ -69,24 +78,25 @@ resource "ctyun_ebs" "ebs_test" {
   cycle_type = "on_demand"
 }
 
+resource "ctyun_eip" "eip_test" {
+  name                = "tf-eip-for-ebm"
+  bandwidth           = 1
+  cycle_type          = "on_demand"
+  demand_billing_type = "upflowc"
+}
+
 resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = "P@2s2sxcv"
-  ext_ip = "not_use"
+  eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
   security_group_ids = [ctyun_security_group.security_group_test.id]
   vpc_id = ctyun_vpc.vpc_test.id
-  disk_list =  [{
-    disk_type = "system"
-    size = "100"
-    type = "sata"
-  }]
-  network_card_list = [{
-    master = true,
-    subnet_id = ctyun_subnet.subnet_test.id
-  }]
+  system_disk_size = 100
+  system_disk_type = "sata"
+  subnet_id = ctyun_subnet.subnet_test.id
 }

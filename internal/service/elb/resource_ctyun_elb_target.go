@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -16,10 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ctelb "terraform-provider-ctyun/internal/core/ctelb"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 )
 
 var (

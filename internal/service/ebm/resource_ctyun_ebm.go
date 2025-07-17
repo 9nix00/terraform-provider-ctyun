@@ -4,19 +4,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listdefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -24,16 +25,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/core/ctebm"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 var (
@@ -65,16 +61,15 @@ type CtyunEbmConfig struct {
 	ImageUUID            types.String `tfsdk:"image_uuid"`
 	Password             types.String `tfsdk:"password"`
 	ProjectID            types.String `tfsdk:"project_id"`
+	SystemDiskType       types.String `tfsdk:"system_disk_type"`
+	SystemDiskSize       types.Int32  `tfsdk:"system_disk_size"`
+	SystemDiskID         types.String `tfsdk:"system_disk_id"`
 	SystemVolumeRaidUUID types.String `tfsdk:"system_volume_raid_uuid"`
 	DataVolumeRaidUUID   types.String `tfsdk:"data_volume_raid_uuid"`
 	VpcID                types.String `tfsdk:"vpc_id"`
-	ExtIP                types.String `tfsdk:"ext_ip"`
-	IpType               types.String `tfsdk:"ip_type"`
-	BandWidth            types.Int32  `tfsdk:"band_width"`
-	PublicIP             types.String `tfsdk:"public_ip"`
+	EipID                types.String `tfsdk:"eip_id"`
+	EipAddress           types.String `tfsdk:"eip_address"`
 	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
-	DiskList             types.List   `tfsdk:"disk_list"`
-	NetworkCardList      types.List   `tfsdk:"network_card_list"`
 	UserData             types.String `tfsdk:"user_data"`
 	KeyPairName          types.String `tfsdk:"key_pair_name"`
 	AutoRenew            types.Bool   `tfsdk:"auto_renew"`
@@ -82,22 +77,10 @@ type CtyunEbmConfig struct {
 	CycleType            types.String `tfsdk:"cycle_type"`
 	MasterOrderID        types.String `tfsdk:"master_order_id"`
 	Status               types.String `tfsdk:"status"`
-}
-
-type CtyunEbmDiskList struct {
-	DiskType types.String `tfsdk:"disk_type"`
-	Title    types.String `tfsdk:"title"`
-	Type     types.String `tfsdk:"type"`
-	Size     types.Int64  `tfsdk:"size"`
-}
-
-type CtyunEbmNetworkCardList struct {
-	FixedIP     types.String `tfsdk:"fixed_ip"`
-	Master      types.Bool   `tfsdk:"master"`
-	Ipv6        types.String `tfsdk:"ipv6"`
-	SubnetID    types.String `tfsdk:"subnet_id"`
-	PortID      types.String `tfsdk:"port_id"`
-	InterfaceID types.String `tfsdk:"interface_id"`
+	FixedIP              types.String `tfsdk:"fixed_ip"`
+	SubnetID             types.String `tfsdk:"subnet_id"`
+	PortID               types.String `tfsdk:"port_id"`
+	InterfaceID          types.String `tfsdk:"interface_id"`
 }
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -184,16 +167,17 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"system_volume_raid_uuid": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "本地系统盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("system_disk_type")),
+				},
 			},
 			"data_volume_raid_uuid": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
@@ -207,170 +191,73 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"ext_ip": schema.StringAttribute{
-				Required:    true,
-				Description: "是否使用弹性公网IP，取值范围:[自动分配:auto_assign,不使用:not_use,使用已有:use_exist]",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.EbmExtIp...),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"ip_type": schema.StringAttribute{
+			"eip_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "弹性IP版本，取值范围:[ipv4=v4地址,ipv6=v6地址]，默认值:ipv4",
-				Default:     stringdefault.StaticString("ipv4"),
+				Description: "弹性公网IP的ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"band_width": schema.Int32Attribute{
-				Optional:    true,
+			"eip_address": schema.StringAttribute{
 				Computed:    true,
-				Description: "带宽，取值范围:[1~2000]，默认值:100",
-				Default:     int32default.StaticInt32(0),
-				Validators: []validator.Int32{
-					validator2.AlsoRequiresEqualInt32(
-						path.MatchRoot("ext_ip"),
-						types.StringValue(business.EbmExtIpAutoAssign),
-					),
-					validator2.ConflictsWithEqualInt32(
-						path.MatchRoot("ext_ip"),
-						types.StringValue(business.EbmExtIpNotUse),
-						types.StringValue(business.EbmExtIpUseExist),
-					),
-					int32validator.Between(1, 2000),
-				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
-				},
-			},
-			"public_ip": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "弹性公网IP的ID",
-				Validators: []validator.String{
-					validator2.AlsoRequiresEqualString(
-						path.MatchRoot("ext_ip"),
-						types.StringValue(business.EbmExtIpUseExist),
-					),
-					validator2.ConflictsWithEqualString(
-						path.MatchRoot("ext_ip"),
-						types.StringValue(business.EbmExtIpNotUse),
-						types.StringValue(business.EbmExtIpAutoAssign),
-					),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Description: "弹性公网IP的地址",
 			},
 			"security_group_ids": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "安全组ID，套餐smartNicExist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID",
+				Description: "主网卡安全组ID，套餐smart_nic_exist为true可支持安全组。创建弹性裸金属必须传入安全组ID，标准裸金属不支持传入安全组ID",
 				ElementType: types.StringType,
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
 			},
-			"disk_list": schema.ListNestedAttribute{
+			"system_disk_type": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "云盘信息列表，套餐中supportCloud为true表示支持云盘",
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.UseStateForUnknown(),
-					listplanmodifier.RequiresReplace(),
+				Description: "系统盘类型，sata：普通IO，sas：高IO，ssd：超高IO",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.EbmDiskTypes...),
+					stringvalidator.ConflictsWith(path.MatchRoot("system_volume_raid_uuid")),
+					stringvalidator.AlsoRequires(path.MatchRoot("system_disk_size")),
 				},
-				Default: listdefault.StaticValue(types.ListValueMust(
-					utils.StructToTFObjectTypes(CtyunEbmDiskList{}),
-					[]attr.Value{},
-				)),
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"disk_type": schema.StringAttribute{
-							Required:    true,
-							Description: "磁盘类型system或data，套餐中cloudBoot为true表示支持云盘系统盘",
-							Validators: []validator.String{
-								stringvalidator.OneOf(business.EbmSystemDiskType, business.EbmDataDiskType),
-							},
-						},
-						"title": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "磁盘名称，长度2~64，不支持中文",
-						},
-						"type": schema.StringAttribute{
-							Required:    true,
-							Description: "磁盘分类，取值范围:[SAS=SAS盘,SATA=SATA盘,SSD-genric=SSD-genric盘,SSD=SSD盘]",
-							Validators: []validator.String{
-								stringvalidator.OneOf(business.EbmDiskTypes...),
-							},
-						},
-						"size": schema.Int64Attribute{
-							Required:    true,
-							Description: "磁盘容量，单位G",
-						},
-					},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"network_card_list": schema.ListNestedAttribute{
+			"system_disk_size": schema.Int32Attribute{
+				Optional:    true,
+				Description: "系统盘大小，单位为G，取值范围：[100, 2048]，当前不支持公网",
+				Validators: []validator.Int32{
+					int32validator.Between(100, 2048),
+					int32validator.ConflictsWith(path.MatchRoot("system_volume_raid_uuid")),
+					int32validator.AlsoRequires(path.MatchRoot("system_disk_type")),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"system_disk_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "系统盘的id",
+			},
+			"subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "网卡",
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
+				Description: "主网卡的子网id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"port_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "PORT UUID",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
-						},
-						"interface_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "网卡UUID",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-							},
-						},
-						"fixed_ip": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "内网IPv4地址",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-								stringplanmodifier.RequiresReplace(),
-							},
-						},
-						"master": schema.BoolAttribute{
-							Required:    true,
-							Description: "是否主节点",
-							PlanModifiers: []planmodifier.Bool{
-								boolplanmodifier.RequiresReplace(),
-							},
-						},
-						"ipv6": schema.StringAttribute{
-							Optional:    true,
-							Computed:    true,
-							Description: "内网IPv6地址",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.UseStateForUnknown(),
-								stringplanmodifier.RequiresReplace(),
-							},
-						},
-						"subnet_id": schema.StringAttribute{
-							Required:    true,
-							Description: "子网id",
-							PlanModifiers: []planmodifier.String{
-								stringplanmodifier.RequiresReplace(),
-							},
-						},
-					},
-				},
+			},
+			"fixed_ip": schema.StringAttribute{
+				Computed:    true,
+				Description: "加入子网后的ip地址",
+			},
+			"port_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主网卡PORT UUID",
+			},
+			"interface_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "主网卡UUID",
 			},
 			"user_data": schema.StringAttribute{
 				Optional:    true,
@@ -532,7 +419,7 @@ func (c *ctyunEbm) Read(ctx context.Context, request resource.ReadRequest, respo
 		if strings.Contains(err.Error(), "instance is not found") {
 			// 查下主网卡是否存在
 			var exist bool
-			portID := c.getMasterPortID(ctx, state)
+			portID := state.PortID.ValueString()
 			exist, err = business.NewPortService(c.meta).Exist(ctx, portID, state.RegionID.ValueString())
 			if err != nil {
 				return
@@ -572,10 +459,6 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 		return
 	}
 
-	if !plan.NetworkCardList.Equal(state.NetworkCardList) {
-		err = fmt.Errorf("请使用其他能力修改网卡")
-		return
-	}
 	// 处理开关机
 	err = c.handleInstance(ctx, state, state.Status.ValueString(), plan.Status.ValueString())
 	if err != nil {
@@ -595,7 +478,6 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	if err != nil {
 		return
 	}
-	state.CycleCount = plan.CycleCount
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -669,19 +551,13 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	regionID := plan.RegionID.ValueString()
 	projectID := plan.ProjectID.ValueString()
 	azName := plan.AzName.ValueString()
-	publicIP := plan.PublicIP.ValueString()
 	password := plan.Password.ValueString()
 	systemVolumeRaidUUID := plan.SystemVolumeRaidUUID.ValueString()
 	dataVolumeRaidUUID := plan.DataVolumeRaidUUID.ValueString()
-	ipType := plan.IpType.ValueString()
 	userData := plan.UserData.ValueString()
 	keyName := plan.KeyPairName.ValueString()
-	bandwidth := plan.BandWidth.ValueInt32()
 	securityGroupIDs, _ := c.buildSecGroupList(ctx, plan)
 	securityGroupStr := strings.Join(securityGroupIDs, ",")
-	diskList, _ := c.buildDiskList(ctx, plan)
-	networkCardList, _ := c.buildNetworkCardList(ctx, plan)
-	extIp, _ := business.EbmExtIpMap.FromOriginalScene(plan.ExtIP.ValueString(), business.EbmExtIpMapScene1)
 	params := &ctebm.EbmCreateInstanceV4plusRequest{
 		RegionID:        regionID,
 		AzName:          azName,
@@ -690,16 +566,21 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		Hostname:        plan.Hostname.ValueString(),
 		ImageUUID:       plan.ImageUUID.ValueString(),
 		VpcID:           plan.VpcID.ValueString(),
-		ExtIP:           extIp.(string),
 		ProjectID:       &projectID,
-		IpType:          &ipType,
-		DiskList:        diskList,
-		NetworkCardList: networkCardList,
 		AutoRenewStatus: map[bool]int32{false: 0, true: 1}[plan.AutoRenew.ValueBool()],
 		ClientToken:     uuid.NewString(),
 		OrderCount:      1,
 		SecurityGroupID: &securityGroupStr,
+		NetworkCardList: []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{{Master: true, SubnetID: plan.SubnetID.ValueString()}},
 	}
+
+	if plan.EipID.ValueString() != "" {
+		params.PublicIP = plan.EipID.ValueStringPointer()
+		params.ExtIP = business.EbmExtIpUseExist
+	} else {
+		params.ExtIP = business.EbmExtIpNotUse
+	}
+
 	if password != "" {
 		params.Password = &password
 	} else if keyName != "" {
@@ -716,13 +597,14 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	if dataVolumeRaidUUID != "" {
 		params.DataVolumeRaidUUID = &dataVolumeRaidUUID
 	}
-
-	if bandwidth > 0 {
-		params.BandWidth = bandwidth
-	}
-
-	if publicIP != "" {
-		params.PublicIP = &publicIP
+	if !plan.SystemDiskType.IsNull() {
+		params.DiskList = []*ctebm.EbmCreateInstanceV4plusDiskListRequest{
+			{
+				DiskType: "system",
+				Size:     plan.SystemDiskSize.ValueInt32(),
+				RawType:  strings.ToUpper(plan.SystemDiskType.ValueString()),
+			},
+		}
 	}
 
 	switch plan.CycleType.ValueString() {
@@ -769,23 +651,13 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 		return err
 	}
 
-	networkCardList, err := c.buildNetworkCardList(ctx, plan)
-	if err != nil {
-		return err
-	}
-	diskList, err := c.buildDiskList(ctx, plan)
-	if err != nil {
-		return err
-	}
-	for _, card := range networkCardList {
-		if subnet, ok := subnets[card.SubnetID]; !ok {
-			return fmt.Errorf("子网 %s 不属于 %s", card.SubnetID, vpc)
-		} else if *deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeCommonInt {
-			return fmt.Errorf("该套餐 %s 为弹性裸金属, 必须使用普通子网", plan.DeviceType.ValueString())
-		} else if !*deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeEbmInt {
-			return fmt.Errorf("该套餐 %s 为标准裸金属, 必须使用裸金属子网", plan.DeviceType.ValueString())
-		}
-
+	subnetID := plan.SubnetID.ValueString()
+	if subnet, ok := subnets[subnetID]; !ok {
+		return fmt.Errorf("子网 %s 不属于 %s", subnetID, vpc)
+	} else if *deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeCommonInt {
+		return fmt.Errorf("该套餐 %s 为弹性裸金属, 必须使用普通子网", plan.DeviceType.ValueString())
+	} else if !*deviceTypeConfig.SmartNicExist && subnet.Type != business.SubnetTypeEbmInt {
+		return fmt.Errorf("该套餐 %s 为标准裸金属, 必须使用裸金属子网", plan.DeviceType.ValueString())
 	}
 	// 弹性裸金属必须有安全组id，标准裸金属一定不能有安全组id
 	secGroup, err := c.buildSecGroupList(ctx, plan)
@@ -807,41 +679,28 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 	}
 
 	// 校验eip
-	if plan.PublicIP.ValueString() != "" {
-		err = business.NewEipService(c.meta).MustExist(ctx, plan.PublicIP.ValueString(), plan.RegionID.ValueString())
+	if plan.EipID.ValueString() != "" {
+		err = business.NewEipService(c.meta).MustExist(ctx, plan.EipID.ValueString(), plan.RegionID.ValueString())
 		if err != nil {
 			return err
 		}
 	}
 
 	// 高级版必须关联云硬盘
-	if !*deviceTypeConfig.SupportCloud && len(diskList) > 0 {
-		return fmt.Errorf("该套餐 %s 不支持关联云硬盘", plan.DeviceType.ValueString())
-	}
-	if *deviceTypeConfig.CloudBoot && len(diskList) == 0 {
+	if *deviceTypeConfig.CloudBoot && plan.SystemDiskType.IsNull() {
 		return fmt.Errorf("该套餐 %s 需要从云硬盘启动，必须关联云硬盘", plan.DeviceType.ValueString())
-	}
-	var extSys bool
-	for _, disk := range diskList {
-		if disk.DiskType == business.EbmSystemDiskType {
-			extSys = true
-			if disk.Size < 100 || disk.Size > 2048 {
-				return fmt.Errorf("云盘系统盘容量取值范围：[100, 2048]，单位GB")
-			}
-		} else if disk.DiskType == business.EbmDataDiskType {
-			if disk.Size < 10 || disk.Size > 32768 {
-				return fmt.Errorf("云盘数据盘容量取值范围：[10, 32768]，单位GB")
-			}
-		}
-	}
-	if !extSys && *deviceTypeConfig.CloudBoot {
-		return fmt.Errorf("该套餐 %s 需要从云硬盘启动，必须设置云盘系统盘", plan.DeviceType.ValueString())
 	}
 	if deviceTypeConfig.SystemVolumeAmount > 0 && plan.SystemVolumeRaidUUID.ValueString() == "" {
 		return fmt.Errorf("该套餐 %s 必须传递本地系统盘ID", plan.DeviceType.ValueString())
 	}
 	if deviceTypeConfig.DataVolumeAmount > 0 && plan.DataVolumeRaidUUID.ValueString() == "" {
 		return fmt.Errorf("该套餐 %s 必须传递本地数据盘ID", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.SystemVolumeAmount == 0 && plan.SystemVolumeRaidUUID.ValueString() != "" {
+		return fmt.Errorf("该套餐 %s 不能传递本地系统盘ID", plan.DeviceType.ValueString())
+	}
+	if deviceTypeConfig.DataVolumeAmount == 0 && plan.DataVolumeRaidUUID.ValueString() != "" {
+		return fmt.Errorf("该套餐 %s 不能传递本地数据盘ID", plan.DeviceType.ValueString())
 	}
 
 	// 检查库存
@@ -937,63 +796,6 @@ func (c *ctyunEbm) buildSecGroupList(ctx context.Context, plan CtyunEbmConfig) (
 	if diags.HasError() {
 		err = fmt.Errorf("invalid security group ids")
 		return
-	}
-	return
-}
-
-// buildDiskList 构建创建物理机时的云硬盘列表结构
-func (c *ctyunEbm) buildDiskList(ctx context.Context, plan CtyunEbmConfig) (diskListReq []*ctebm.EbmCreateInstanceV4plusDiskListRequest, err error) {
-	if plan.DiskList.IsNull() {
-		return
-	}
-	var diskList []CtyunEbmDiskList
-	diags := plan.DiskList.ElementsAs(ctx, &diskList, false)
-	if diags.HasError() {
-		err = fmt.Errorf("invalid disk list")
-		return
-	}
-	for _, disk := range diskList {
-		title := disk.Title.ValueString()
-		item := &ctebm.EbmCreateInstanceV4plusDiskListRequest{
-			DiskType: disk.DiskType.ValueString(),
-			Size:     int32(disk.Size.ValueInt64()),
-			RawType:  strings.ToUpper(disk.Type.ValueString()),
-		}
-		if title != "" {
-			item.Title = &title
-		}
-		diskListReq = append(diskListReq, item)
-	}
-	return
-}
-
-// buildNetworkCardList 构建创建物理机时的网卡结构
-func (c *ctyunEbm) buildNetworkCardList(ctx context.Context, plan CtyunEbmConfig) (
-	networkCardListReq []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest,
-	err error) {
-	var networkCardList []CtyunEbmNetworkCardList
-	if plan.NetworkCardList.IsNull() {
-		return
-	}
-	diags := plan.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
-	if diags.HasError() {
-		err = fmt.Errorf("invalid network card list")
-		return
-	}
-	for _, card := range networkCardList {
-		fixedIP := card.FixedIP.ValueString()
-		ipv6 := card.FixedIP.ValueString()
-		params := &ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{
-			Master:   card.Master.ValueBool(),
-			SubnetID: card.SubnetID.ValueString(),
-		}
-		if fixedIP != "" {
-			params.FixedIP = &fixedIP
-		}
-		if ipv6 != "" {
-			params.Ipv6 = &ipv6
-		}
-		networkCardListReq = append(networkCardListReq, params)
 	}
 	return
 }
@@ -1124,16 +926,21 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.InstanceName = utils.SecStringValue(instance.DisplayName)
 	cfg.Hostname = utils.SecStringValue(instance.InstanceName)
 	cfg.ImageUUID = utils.SecStringValue(instance.ImageID)
-	cfg.SystemVolumeRaidUUID = utils.SecStringValue(instance.SystemVolumeRaidID)
-	cfg.DataVolumeRaidUUID = utils.SecStringValue(instance.DataVolumeRaidID)
 	cfg.VpcID = utils.SecStringValue(instance.VpcID)
 	cfg.Status = utils.SecLowerStringValue(instance.EbmState)
 
-	cfg.PublicIP = utils.SecStringValue(instance.PublicIP)
-	cardList := []CtyunEbmNetworkCardList{}
-	diskList := []CtyunEbmDiskList{}
-	cardObj := utils.StructToTFObjectTypes(CtyunEbmNetworkCardList{})
-	diskObj := utils.StructToTFObjectTypes(CtyunEbmDiskList{})
+	eipAddress := utils.SecString(instance.PublicIP)
+	cfg.EipAddress = types.StringValue(eipAddress)
+	if eipAddress != "" {
+		eip, err := business.NewEipService(c.meta).GetEipByAddress(ctx, eipAddress, cfg.RegionID.ValueString())
+		if err != nil {
+			return err
+		}
+		cfg.EipID = utils.SecStringValue(eip.ID)
+	} else {
+		cfg.EipID = types.StringValue("")
+	}
+
 	for _, card := range instance.Interfaces {
 		master := utils.SecBoolValue(card.Master)
 		if master.ValueBool() && len(card.SecurityGroups) > 0 {
@@ -1143,36 +950,27 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 			}
 			cfg.SecurityGroupIDs, _ = types.SetValueFrom(ctx, types.StringType, secGroups)
 		}
-		item := CtyunEbmNetworkCardList{
-			FixedIP:     utils.SecStringValue(card.Ipv4),
-			Master:      master,
-			Ipv6:        utils.SecStringValue(card.Ipv6),
-			SubnetID:    utils.SecStringValue(card.SubnetUUID),
-			PortID:      utils.SecStringValue(card.PortUUID),
-			InterfaceID: utils.SecStringValue(card.InterfaceUUID),
+		if master.ValueBool() {
+			cfg.InterfaceID = utils.SecStringValue(card.InterfaceUUID)
+			cfg.PortID = utils.SecStringValue(card.PortUUID)
+			cfg.FixedIP = utils.SecStringValue(card.Ipv4)
+			cfg.SubnetID = utils.SecStringValue(card.SubnetUUID)
 		}
-		cardList = append(cardList, item)
 	}
-	cfg.NetworkCardList, _ = types.ListValueFrom(ctx, cardObj, cardList)
 
+	cfg.SystemDiskID = types.StringValue("")
 	for _, diskId := range instance.AttachedVolumes {
 		diskInfo, err := business.NewEbsService(c.meta).GetEbsInfo(ctx, *diskId, cfg.RegionID.ValueString())
 		if err != nil {
 			return err
 		}
-		item := CtyunEbmDiskList{
-			Type:  types.StringValue(strings.ToLower(diskInfo.DiskType)),
-			Title: types.StringValue(diskInfo.DiskName),
-			Size:  types.Int64Value(diskInfo.DiskSize),
-		}
 		if diskInfo.IsSystemVolume {
-			item.DiskType = types.StringValue(business.EbmSystemDiskType)
-		} else {
-			item.DiskType = types.StringValue(business.EbmDataDiskType)
+			cfg.SystemDiskType = types.StringValue(strings.ToLower(diskInfo.DiskType))
+			cfg.SystemDiskSize = types.Int32Value(int32(diskInfo.DiskSize))
+			cfg.SystemDiskID = types.StringValue(diskInfo.DiskID)
 		}
-		diskList = append(diskList, item)
 	}
-	cfg.DiskList, _ = types.ListValueFrom(ctx, diskObj, diskList)
+
 	cfg.ID = cfg.InstanceID
 
 	return nil
@@ -1435,7 +1233,7 @@ func (c *ctyunEbm) delete(ctx context.Context, state CtyunEbmConfig) (err error)
 
 // checkAfterDelete 删除后检查
 func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (err error) {
-	portID := c.getMasterPortID(ctx, state)
+	portID := state.PortID.ValueString()
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	var exist bool
 	retryer.Start(
@@ -1454,24 +1252,6 @@ func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (
 	}
 	if exist {
 		err = fmt.Errorf("裸金属 %s 的主网卡 %s 残留", state.InstanceID.ValueString(), portID)
-	}
-	return
-}
-
-// getMasterPortID 获取主网卡id
-func (c *ctyunEbm) getMasterPortID(ctx context.Context, state CtyunEbmConfig) (portID string) {
-	if state.NetworkCardList.IsNull() {
-		return
-	}
-	var networkCardList []CtyunEbmNetworkCardList
-	diags := state.NetworkCardList.ElementsAs(ctx, &networkCardList, false)
-	if diags.HasError() { // 无需处理
-		return
-	}
-	for _, card := range networkCardList {
-		if card.Master.ValueBool() {
-			portID = card.PortID.ValueString()
-		}
 	}
 	return
 }

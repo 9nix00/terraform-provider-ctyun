@@ -3,6 +3,13 @@ package ecs
 import (
 	"context"
 	"errors"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
+	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,13 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"strconv"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
-	defaults2 "terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -667,9 +667,11 @@ func (c *ctyunEcs) changePayType(ctx context.Context, state CtyunEcsConfig, plan
 	if !c.checkInstanceStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString(), business.EcsStatusStopped, business.EcsStatusRunning) {
 		return errors.New("变更云主机付费模式，保证云主机状态处于运行中或关机状态")
 	}
-
 	cycleType := plan.CycleType.ValueString()
 	if cycleType == business.OrderCycleTypeMonth || cycleType == business.OrderCycleTypeYear {
+		if state.CycleType.ValueString() == business.OrderCycleTypeMonth || state.CycleType.ValueString() == business.OrderCycleTypeYear {
+			return errors.New("不支持修改包周期云主机的计费周期")
+		}
 		// 按需转包
 		err := c.onDemandToCycle(ctx, state.Id.ValueString(), state.RegionId.ValueString(), plan.CycleType.ValueString(), int(plan.CycleCount.ValueInt64()))
 		if err != nil {

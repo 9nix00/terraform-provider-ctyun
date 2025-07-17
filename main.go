@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"log"
-	"terraform-provider-ctyun/internal/service"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )

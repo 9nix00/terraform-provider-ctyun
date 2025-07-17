@@ -115,7 +115,7 @@ resource "ctyun_mongodb_instance" "mongodb_test" {
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `node_info_list` (Attributes List) DDS节点 (see [below for nested schema](#nestedatt--node_info_list))
 - `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
-- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：
+- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
@@ -148,13 +148,13 @@ Required:
 
 - `availability_zone_info` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--node_info_list--availability_zone_info))
 - `instance_series` (String) 实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)
-- `node_type` (String) 节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；readonly=只读节点；ms=副本集；s=单机版；backup=备份机
+- `node_type` (String) 节点类型 ：mongos=mongos节点；shard=分片节点；config=config节点；ms=副本集；s=单机版；backup=备份机
 - `storage_space` (Number) 存储空间(单位:G) 单机版和副本集必传：范围100-32768 、集群版shard和bckup节点必传：单个shard:范围100-2024，backup为单个shard的容量乘以shard的个数（注意：每一个shard对应3个availabilityZoneCount，参考下面字段的描述或者请求样例）
 - `storage_type` (String) 存储类型: SSD=超高IO, SAS=高IO, SATA=普通IO，SSD-genric=通用型SSD
 
 Optional:
 
-- `prod_performance_spec` (String) 规格: 4C8G 当nodeType为backup类型 可不传
+- `prod_performance_spec` (String) 规格: 4C8G 当nodeType为backup类型，可不传
 
 <a id="nestedatt--node_info_list--availability_zone_info"></a>
 ### Nested Schema for `node_info_list.availability_zone_info`

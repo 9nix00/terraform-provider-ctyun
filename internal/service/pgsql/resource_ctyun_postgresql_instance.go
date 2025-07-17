@@ -645,6 +645,10 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		err = common.InvalidReturnObjError
 		return
 	}
+	//else if resp.ReturnObj == nil {
+	//	err = common.InvalidReturnObjError
+	//	return
+	//}
 	// 保存orderId
 	//if resp.ReturnObj.NewOrderId == nil {
 	//	err = errors.New("订单id为空，创建有误！")

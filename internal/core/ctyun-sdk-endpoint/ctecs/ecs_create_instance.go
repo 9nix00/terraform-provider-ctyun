@@ -2,8 +2,8 @@ package ctecs
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 // EcsCreateInstanceApi 创建一台按量付费或包年包月的云主机

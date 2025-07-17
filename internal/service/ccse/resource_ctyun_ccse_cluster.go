@@ -3,6 +3,14 @@ package ccse
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -19,14 +27,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	ccse2 "terraform-provider-ctyun/internal/core/ccse"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
-	terraform_extend "terraform-provider-ctyun/internal/extend/terraform"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
-	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -53,12 +53,14 @@ func (c *ctyunCcseCluster) Metadata(_ context.Context, request resource.Metadata
 }
 
 type CtyunCcseClusterConfig struct {
-	ID            types.String             `tfsdk:"id"`
-	MasterOrderID types.String             `tfsdk:"master_order_id"`
-	RegionID      types.String             `tfsdk:"region_id"`
-	BaseInfo      CtyunCcseClusterBaseInfo `tfsdk:"base_info"`
-	SlaveHost     CtyunCcseClusterSlave    `tfsdk:"slave_host"`
-	MasterHost    *CtyunCcseClusterMaster  `tfsdk:"master_host"`
+	ID                 types.String             `tfsdk:"id"`
+	MasterOrderID      types.String             `tfsdk:"master_order_id"`
+	RegionID           types.String             `tfsdk:"region_id"`
+	BaseInfo           CtyunCcseClusterBaseInfo `tfsdk:"base_info"`
+	SlaveHost          CtyunCcseClusterSlave    `tfsdk:"slave_host"`
+	MasterHost         *CtyunCcseClusterMaster  `tfsdk:"master_host"`
+	InternalKubeConfig types.String             `tfsdk:"internal_kube_config"`
+	ExternalKubeConfig types.String             `tfsdk:"external_kube_config"`
 
 	totalNodeNum int32
 }
@@ -137,6 +139,14 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "主订单号",
+			},
+			"internal_kube_config": schema.StringAttribute{
+				Computed:    true,
+				Description: "内网连接信息",
+			},
+			"external_kube_config": schema.StringAttribute{
+				Computed:    true,
+				Description: "外网连接信息",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -1157,6 +1167,17 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	}
 	plan.BaseInfo.StartPort = types.Int32Value(instance.StartPort)
 	plan.BaseInfo.EndPort = types.Int32Value(instance.EndPort)
+
+	internalKubeConfig, err := c.getKubeConfig(ctx, *plan, false)
+	if err != nil {
+		return
+	}
+	externalKubeConfig, err := c.getKubeConfig(ctx, *plan, true)
+	if err != nil {
+		return
+	}
+	plan.InternalKubeConfig = types.StringValue(internalKubeConfig)
+	plan.ExternalKubeConfig = types.StringValue(externalKubeConfig)
 	return
 }
 
@@ -1308,5 +1329,25 @@ func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseC
 	if !executeSuccessFlag {
 		err = fmt.Errorf("删除时间过长")
 	}
+	return
+}
+
+func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClusterConfig, isPublic bool) (config string, err error) {
+	params := &ccse2.CcseGetClusterKubeConfigRequest{
+		RegionId:  plan.RegionID.ValueString(),
+		ClusterId: plan.ID.ValueString(),
+		IsPublic:  isPublic,
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseGetClusterKubeConfigApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	config = resp.ReturnObj.KubeConfig
 	return
 }
