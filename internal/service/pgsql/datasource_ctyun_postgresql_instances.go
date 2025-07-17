@@ -106,7 +106,7 @@ func (c *ctyunPgsqlInstances) Schema(ctx context.Context, request datasource.Sch
 							Computed:    true,
 							Description: "实例唯一ID",
 						},
-						"prod_inst_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例名称",
 						},
@@ -245,7 +245,7 @@ func (c *ctyunPgsqlInstances) Read(ctx context.Context, request datasource.ReadR
 		pgsqlInstance.CreateTime = types.StringValue(instance.CreateTime)
 		pgsqlInstance.ProdDbEngine = types.StringValue(instance.ProdDbEngine)
 		pgsqlInstance.ProdInstId = types.StringValue(instance.ProdInstId)
-		pgsqlInstance.ProdInstName = types.StringValue(instance.ProdInstName)
+		pgsqlInstance.Name = types.StringValue(instance.ProdInstName)
 		pgsqlInstance.ProdRunningStatus = types.Int32Value(instance.ProdRunningStatus)
 		pgsqlInstance.Alive = types.Int32Value(instance.Alive)
 		pgsqlInstance.ProdOrderStatus = types.Int32Value(instance.ProdOrderStatus)
@@ -286,7 +286,7 @@ type CtyunPgsqlInstanceInfoModel struct {
 	CreateTime          types.String `tfsdk:"create_time"`           // 创建时间
 	ProdDbEngine        types.String `tfsdk:"prod_db_engine"`        // 数据库实例引擎
 	ProdInstId          types.String `tfsdk:"prod_inst_id"`          // 实例ID
-	ProdInstName        types.String `tfsdk:"prod_inst_name"`        // 实例名称
+	Name                types.String `tfsdk:"name"`                  // 实例名称
 	ProdRunningStatus   types.Int32  `tfsdk:"prod_running_status"`   // 运行状态代码
 	Alive               types.Int32  `tfsdk:"alive"`                 // 实例存活状态
 	ProdOrderStatus     types.Int32  `tfsdk:"prod_order_status"`     // 订单状态代码

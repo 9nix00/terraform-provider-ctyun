@@ -110,8 +110,16 @@ type PgsqlCreateRequestHeader struct {
 	ProjectId *string `json:"projectId,omitempty"`
 }
 
+type PgsqlCreateResponseReturnObjData struct {
+	NewOrderId   *string `json:"newOrderId"` //订单id
+	ErrorMessage *string `json:"errorMessage"`
+	Submitted    bool    `json:"submitted"`
+	NewOrderNo   string  `json:"newOrderNo"`
+	TotalPrice   float32 `json:"totalPrice"`
+}
+
 type PgsqlCreateResponseReturnObj struct {
-	NewOrderId *string `json:"newOrderId"` //订单id
+	Data PgsqlCreateResponseReturnObjData `json:"data"`
 }
 
 type PgsqlCreateResponse struct {

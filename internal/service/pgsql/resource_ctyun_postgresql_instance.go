@@ -23,6 +23,7 @@ import (
 	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "terraform-provider-ctyun/internal/extend/terraform/validator"
+	"terraform-provider-ctyun/internal/utils"
 	"time"
 )
 
@@ -386,6 +387,10 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringvalidator.OneOf("stop", "start", "restart"),
 				},
 			},
+			"master_order_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "订单id",
+			},
 		},
 	}
 }
@@ -636,17 +641,16 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	} else if resp.StatusCode != 200 {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
 	}
-	//else if resp.ReturnObj == nil {
-	//	err = common.InvalidReturnObjError
-	//	return
-	//}
 	// 保存orderId
 	//if resp.ReturnObj.NewOrderId == nil {
 	//	err = errors.New("订单id为空，创建有误！")
 	//	return
 	//}
-	//config.NewOrderID = utils.SecStringValue(resp.ReturnObj.NewOrderId)
+	config.MasterOrderID = utils.SecStringValue(resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -1419,7 +1423,7 @@ type CtyunPostgresqlInstanceConfig struct {
 	WritePort            types.String `tfsdk:"write_port"`             // 写端口
 	ToolType             types.Int32  `tfsdk:"tool_type"`              // 备份工具类型，1：pg_baseback，2：pgbackrest，3：s3
 	RunningControl       types.String `tfsdk:"running_control"`        //
-	//NewOrderID            types.String `tfsdk:"new_order_id"`             // 订单id
+	MasterOrderID        types.String `tfsdk:"master_order_id"`        // 订单id
 }
 
 type AvailabilityZoneModel struct {

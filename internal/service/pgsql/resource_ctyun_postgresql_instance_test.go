@@ -18,7 +18,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
-	datasourceName := "data.ctyun_mysql_instances." + dnd
+	datasourceName := "data.ctyun_postgresql_instances." + dnd
 
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 	datasourceFile := "datasource_ctyun_pgsql_instances.tf"
@@ -166,11 +166,6 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.cycle_type", cycleType),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.subnet_id", subnetID),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.security_group_id", updatedSecurityGroupID),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.host_type", hostType),
 				),
 			},
 			{

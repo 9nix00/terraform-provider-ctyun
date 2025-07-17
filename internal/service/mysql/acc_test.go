@@ -37,8 +37,10 @@ func TestMain(m *testing.M) {
 		subnetID:        outputs["subnet_id"].Value,
 		securityGroupID: outputs["security_group_id"].Value,
 		eipID:           outputs["eip_id"].Value,
-		eipAddress:      outputs["eip_address"].Value,
-		mysqlID:         outputs["mysql_id"].Value,
+		//eipID: "",
+		eipAddress: outputs["eip_address"].Value,
+		//eipAddress: "",
+		mysqlID: outputs["mysql_id"].Value,
 		//mysqlID: "",
 		azName: outputs["az_name"].Value,
 	}

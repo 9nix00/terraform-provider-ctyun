@@ -16,6 +16,7 @@ type Apis struct {
 	MongodbUpdateInstanceNameApi  *MongodbUpdateInstanceNameApi
 	MongodbUpdatePortApi          *MongodbUpdatePortApi
 	MongodbBoundEipListApi        *MongodbBoundEipListApi
+	TeledbGetAvailabilityZone     *TeledbGetAvailabilityZone
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -39,5 +40,6 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		MongodbUpdateInstanceNameApi:  NewMongodbUpdateInstanceNameApi(client),
 		MongodbUpdatePortApi:          NewMongodbUpdatePortApi(client),
 		MongodbBoundEipListApi:        NewMongodbBoundEipListApi(client),
+		TeledbGetAvailabilityZone:     NewTeledbGetAvailabilityZone(client),
 	}
 }

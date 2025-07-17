@@ -30,7 +30,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "terraform-provider-ctyun" + utils.GenerateRandomString()
-	password := "kqjwyk111"
+	password := "kqjwyk111*"
 	cycleCount := "cycle_count=1"
 	autoRenewStatus := `auto_renew=false`
 	prodID := "Single57"
