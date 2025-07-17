@@ -73,7 +73,6 @@ locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
-
 resource "ctyun_eip" "eip_test" {
   name                = "tf-eip-for-mysql"
   bandwidth           = 1
@@ -81,10 +80,13 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
+data "ctyun_zones" "test" {
+
+}
+
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-   # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  az_name   = data.ctyun_zones.test.zones[0]
 }
 
 data "ctyun_mysql_specs" "mysql_specs"{

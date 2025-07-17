@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -145,7 +146,8 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Required:    true,
 				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(4, 64),
+					stringvalidator.UTF8LengthBetween(4, 64),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
 				},
 			},
 			"password": schema.StringAttribute{

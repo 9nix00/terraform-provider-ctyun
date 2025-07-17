@@ -18,13 +18,12 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_instance." + rnd
-
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
 	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	name := "github.com/ctyun-it/terraform-provider-ctyun" + utils.GenerateRandomString()
+	name := "tf-mysql" + utils.GenerateRandomString()
 	password := "kqjwyk123."
 	//period := 1
 	//autoRenewStatus := 0

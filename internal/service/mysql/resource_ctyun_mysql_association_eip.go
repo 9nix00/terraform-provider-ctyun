@@ -4,16 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"terraform-provider-ctyun/internal/business"
-	"terraform-provider-ctyun/internal/common"
-	"terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
-	"terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"time"
 )
 
@@ -24,7 +24,8 @@ var (
 )
 
 type CtyunMysqlAssociationEip struct {
-	meta *common.CtyunMetadata
+	meta       *common.CtyunMetadata
+	eipService *business.EipService
 }
 
 func (c *CtyunMysqlAssociationEip) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -41,10 +42,6 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 			"eip_id": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性id",
-			},
-			"eip": schema.StringAttribute{
-				Required:    true,
-				Description: "弹性ip",
 			},
 			"inst_id": schema.StringAttribute{
 				Required:    true,
@@ -158,9 +155,14 @@ func (c *CtyunMysqlAssociationEip) Delete(ctx context.Context, request resource.
 	if response.Diagnostics.HasError() {
 		return
 	}
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+
 	unbindParams := &mysql.TeledbUnbindEipRequest{
 		EipID:  state.EipID.ValueString(),
-		Eip:    state.Eip.ValueString(),
+		Eip:    *eip.EipAddress,
 		InstID: state.InstID.ValueString(),
 	}
 	unbindHeader := &mysql.TeledbUnbindEipRequestHeader{}
@@ -192,12 +194,11 @@ func (c *CtyunMysqlAssociationEip) Configure(ctx context.Context, request resour
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.eipService = business.NewEipService(c.meta)
 }
 
 func (c *CtyunMysqlAssociationEip) MysqlBindEip(ctx context.Context, config *CtyunAssociationEipConfig) (err error) {
-
 	// 绑定前，确定实例状态为running
-
 	err = c.StartedLoop(ctx, config, 60)
 	if err != nil {
 		return err
@@ -205,7 +206,7 @@ func (c *CtyunMysqlAssociationEip) MysqlBindEip(ctx context.Context, config *Cty
 
 	params := &mysql.TeledbBindEipRequest{
 		EipID:  config.EipID.ValueString(),
-		Eip:    config.Eip.ValueString(),
+		Eip:    config.eipAddress,
 		InstID: config.InstID.ValueString(),
 	}
 	header := &mysql.TeledbBindEipRequestHeader{}
@@ -267,7 +268,6 @@ func (c *CtyunMysqlAssociationEip) getAndMergeBindEip(ctx context.Context, confi
 		return
 	}
 	eipInfo := resp.ReturnObj.Data[0]
-	config.Eip = types.StringValue(eipInfo.Eip)
 	config.EipStatus = types.Int32Value(eipInfo.BindStatus)
 	config.Status = types.StringValue(eipInfo.Status)
 	return
@@ -387,47 +387,24 @@ func (c *CtyunMysqlAssociationEip) StartedLoop(ctx context.Context, state *Ctyun
 }
 
 func (c *CtyunMysqlAssociationEip) preCheckEipUnbound(ctx context.Context, state *CtyunAssociationEipConfig) (err error) {
-	params := &mysql.TeledbBoundEipListRequest{
-		RegionID: state.RegionID.ValueString(),
-		EipID:    state.EipID.ValueStringPointer(),
-	}
-
-	headers := &mysql.TeledbBoundEipListRequestHeader{}
-	if state.ProjectID.ValueString() != "" {
-		headers.ProjectID = state.ProjectID.ValueStringPointer()
-	}
-	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbBoundEipListApi.Do(ctx, c.meta.Credential, params, headers)
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
 	if err != nil {
 		return
-	} else if resp.StatusCode != 200 {
-		err = fmt.Errorf("API return error. Message: %s ", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-	// 解析返回的绑定eip列表
-	returnObj := resp.ReturnObj.Data
-	if len(returnObj) > 1 {
-		err = errors.New("根据eip id 查询到多个eip详情，返回有误！")
-		return
-	} else if len(returnObj) < 1 {
-		err = errors.New("eip 有误，未查询到该eip绑定信息")
-		return
+	if *eip.Status != "DOWN" {
+		return errors.New("eip 已经被绑定，无法再次绑定")
 	}
-	if returnObj[0].Status == business.MysqlBindEipStatusDOWN && returnObj[0].BindStatus == business.EipStatusUnbind {
-		return
-	}
-	return errors.New("eip 已经被绑定，无法再次绑定")
-
+	state.eipAddress = *eip.EipAddress
+	return
 }
 
 type CtyunAssociationEipConfig struct {
 	EipID     types.String `tfsdk:"eip_id"`     //弹性id
-	Eip       types.String `tfsdk:"eip"`        //弹性ip
 	InstID    types.String `tfsdk:"inst_id"`    //实例id
 	ProjectID types.String `tfsdk:"project_id"` //项目id
 	RegionID  types.String `tfsdk:"region_id"`  //区域Id
 	EipStatus types.Int32  `tfsdk:"eip_status"` //弹性ip状态 0->unbind，1->bind,2->binding
-	Status    types.String `tfsdk:"status"`     // 弹性ip可读状态
+	Status    types.String `tfsdk:"status"`     //弹性ip可读状态
+
+	eipAddress string
 }
