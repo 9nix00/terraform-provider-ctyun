@@ -154,19 +154,23 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"version": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS",
+				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS，默认BASIC",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.RedisVersionBasic, business.RedisVersionPlus),
 				},
+				Default: stringdefault.StaticString(business.RedisVersionBasic),
 			},
 			"edition": schema.StringAttribute{
 				Required:    true,
 				Description: "实例类型，SeriesInfo中的seriesCode值，可参考<a href=\"https://www.ctyun.cn/document/10029420/11030280\">产品规格说明</a>",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.RedisEdition...),
 				},
 			},
 			"engine_version": schema.StringAttribute{
@@ -213,7 +217,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"shard_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "分片数量，当edition取值为DirectClusterSingle时: 3~256。当 edition 取值为 DirectCluster时: 3~256。当 edition 取值为 ClusterOriginalProxy时: 3~64。当 edition 取其他值时无需填写",
+				Description: "分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
@@ -236,7 +240,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"copies_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "副本数量，当 edition取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写",
+				Description: "副本数量，当edition取值为OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填（取值范围2-6），当edition取其他值时不填。",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
