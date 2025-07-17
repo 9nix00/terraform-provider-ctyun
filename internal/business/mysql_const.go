@@ -204,6 +204,17 @@ var MysqlProdIdDict = map[string]int64{
 	"Master2Slave80": ProdIDM2S80,  // 一主两备 master-2-slave 8.0版本
 }
 
+var MysqlNodeNumDict = map[string]int32{
+	"Single57":       1,  // 单实例 single5.7版本
+	"Single80":       1,  // 单实例 single8.0版本
+	"ReadOnly57":     -1, // 单实例 single 只读5.7版本
+	"ReadOnly80":     -1, // 单实例 single 只读8.0版本
+	"MasterSlave57":  2,  // 一主一备 master-slave 5.7版本
+	"MasterSlave80":  2,  // 一主一备 master-slave 8.0版本
+	"Master2Slave57": 3,  // 一主两备 master-2-slave 5.7版本
+	"Master2Slave80": 3,  // 一主两备 master-2-slave 8.0版本
+}
+
 var MysqlProdIdRevDict = map[int64]string{
 	ProdIDSI57:   "Single57",       // 单实例 single5.7版本
 	ProdIDSI80:   "Single80",       // 单实例 single8.0版本

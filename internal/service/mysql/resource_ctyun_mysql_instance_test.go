@@ -2,11 +2,11 @@ package mysql_test
 
 import (
 	"fmt"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"os"
+	"terraform-provider-ctyun/internal/service"
+	"terraform-provider-ctyun/internal/utils"
 	"testing"
 )
 
@@ -29,8 +29,8 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	name := "github.com/ctyun-it/terraform-provider-ctyun" + utils.GenerateRandomString()
-	password := "kqjwyk.111"
+	name := "terraform-provider-ctyun" + utils.GenerateRandomString()
+	password := "kqjwyk111*"
 	cycleCount := "cycle_count=1"
 	autoRenewStatus := `auto_renew=false`
 	prodID := "Single57"
@@ -45,7 +45,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	cpuType := "Intel"
 	osType := "ctyunos"
 
-	updatedName := "github.com/ctyun-it/terraform-provider-ctyun-new-" + utils.GenerateRandomString()
+	updatedName := "terraform-provider-ctyun-new-" + utils.GenerateRandomString()
 	updatedWritePort := `write_port=13306`
 
 	// 磁盘、规格升配

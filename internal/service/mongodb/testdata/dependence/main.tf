@@ -71,3 +71,5 @@ resource "ctyun_security_group" "security_group_test" {
 locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
+
+
