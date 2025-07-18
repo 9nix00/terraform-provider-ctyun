@@ -96,9 +96,7 @@ data "ctyun_mysql_specs" "mysql_specs"{
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = local.real_vpc_id
-  instance_series         = "S"
-  host_type             = "C7"
-  prod_performance_spec = "2C4G"
+  flavor_name         = "c7.large.2"
   prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
   security_group_id     = local.real_security_group_id
@@ -108,8 +106,6 @@ resource "ctyun_mysql_instance" "mysql_test" {
   availability_zone_info = [
     { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 
 locals {

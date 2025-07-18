@@ -40,61 +40,42 @@ data "ctyun_mysql_specs" "mysql_specs" {
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
+  flavor_name           = "c7.2xlarge.4"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.security_group_test.id
   name                  = "mysql_examples"
   prod_id               = "Single57"
-  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 100
-  prod_performance_spec = "2C4G"
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 
 // mysql创建1主1备
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
+  flavor_name           = "c7.2xlarge.4"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.security_group_test.id
   name                  = "mysql_examples"
   prod_id               = "MasterSlave80"
-  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 100
-  prod_performance_spec = "2C4G"
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" },
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "slave" }
-  ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 // 升配磁盘空间
 
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
+  flavor_name           = "c7.2xlarge.4"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.security_group_test.id
   name                  = "mysql_examples"
   prod_id               = "Single57"
-  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 120
-  prod_performance_spec = "2C4G"
   availability_zone_info = [
     { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 
 // 升配规格
@@ -102,40 +83,32 @@ resource "ctyun_mysql_instance" "mysql_test" {
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
+  flavor_name           = "c7.2xlarge.4"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.security_group_test.id
   name                  = "mysql_examples"
   prod_id               = "Single57"
-  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 120
-  prod_performance_spec = "2C8G"
   availability_zone_info = [
     { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 
 // 升配节点 (如单节点->一主两备)
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
+  flavor_name           = "c7.2xlarge.4"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.security_group_test.id
   name                  = "mysql_examples"
   prod_id               = "Master2Slave57"
-  instance_series       = "S"
   storage_type          = "SATA"
   storage_space         = 120
-  prod_performance_spec = "2C8G"
   availability_zone_info = [
     { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 2, "node_type" : "slave" } // 当升配时，availability_zone_info仅需要填写增量的节点信息
   ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 ```
 
@@ -144,14 +117,10 @@ resource "ctyun_mysql_instance" "mysql_test" {
 
 ### Required
 
-- `cpu_type` (String) cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `host_type` (String) 主机类型host_type: S6 or S7等。可根据data.ctyun_mysql_specs获取
-- `instance_series` (String) 实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)
+- `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_instances查询支持的规格
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
-- `os_type` (String) 系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler
-- `prod_id` (String) 产品id。在扩容过程中，不支持规格和实例扩容同时进行，prod_id（节点）和prod_performance_spec（规格）不可同时变配。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）
-- `prod_performance_spec` (String) 规格(例: 4C8G),可根据data.ctyun_mysql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时更新
+- `prod_id` (String) 产品id，取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。
 - `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD

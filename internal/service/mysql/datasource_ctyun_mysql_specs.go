@@ -50,7 +50,7 @@ func (c *CtyunMysqlSpecs) Schema(ctx context.Context, request datasource.SchemaR
 			},
 			"instance_series": schema.StringAttribute{
 				Required:    true,
-				Description: "实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)",
+				Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
