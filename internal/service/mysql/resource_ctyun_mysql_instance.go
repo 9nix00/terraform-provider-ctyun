@@ -402,7 +402,7 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 	if err != nil {
 		return
 	}
-	plan.FlavorName = state.FlavorName
+	state.FlavorName = plan.FlavorName
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeMysqlInstance(ctx, &state)
 	if err != nil {
