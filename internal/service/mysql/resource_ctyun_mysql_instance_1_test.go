@@ -20,7 +20,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	resourceName := "ctyun_mysql_instance." + rnd
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
-	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql" + utils.GenerateRandomString()
@@ -28,14 +27,10 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	//period := 1
 	//autoRenewStatus := 0
 
-	instanceSeries := "S"
 	storageType := "SATA"
 	storageSpace := 100
-	prodPerformanceSpec := "2C4G"
+	flavorName := "c7.xlarge.2"
 	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"slave"}]`, dependence.azName)
-
-	cpuType := "Intel"
-	osType := "centos"
 	// 单节点
 	ProdId := "Single57"
 	// 单机到一主一备
@@ -44,7 +39,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	updatedDoubleProId := "Master2Slave57"
 	cycleBillMode := "on_demand"
 	NodeOneAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"}]`, dependence.azName)
-
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -59,7 +53,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			// 创建1主1备-》1主2备已经完成
 			// 单节点-》1主2备,验证通过
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", ProdId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, NodeOneAvailabilityZoneInfo, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, ProdId, "", storageType, storageSpace, NodeOneAvailabilityZoneInfo, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single57"),
@@ -67,7 +61,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 升级1主2备
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, updatedDoubleProId, "", storageType, storageSpace, updatedDiskAvailabilityZoneInfo, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
@@ -75,7 +69,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 关机验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="freeze"`, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, updatedDoubleProId, "", storageType, storageSpace, updatedDiskAvailabilityZoneInfo, `running_control="freeze"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -84,7 +78,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 开机验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="unfreeze"`, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, updatedDoubleProId, "", storageType, storageSpace, updatedDiskAvailabilityZoneInfo, `running_control="unfreeze"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -93,7 +87,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 重启验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, `running_control="restart"`, ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, updatedDoubleProId, "", storageType, storageSpace, updatedDiskAvailabilityZoneInfo, `running_control="restart"`, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_running_status", fmt.Sprintf("%d", 0)),
@@ -102,7 +96,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 			},
 			// 销毁
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, hostType, subnetID, securityGroupID, name, password, "", "", updatedDoubleProId, cpuType, osType, "", instanceSeries, storageType, storageSpace, prodPerformanceSpec, updatedDiskAvailabilityZoneInfo, "", ""),
+				Config:  utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, updatedDoubleProId, "", storageType, storageSpace, updatedDiskAvailabilityZoneInfo, "", ""),
 				Destroy: true,
 			},
 		},

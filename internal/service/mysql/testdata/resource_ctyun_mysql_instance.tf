@@ -7,7 +7,7 @@ resource "ctyun_mysql_instance" "%[1]s" {
   password = "%[7]s"
   %[8]s // cycle_count
   %[9]s // auto_renew
-  flavor_name = "%10"
+  flavor_name = "%[10]s"
   prod_id = "%[11]s"
   %[12]s  //write_port
   storage_type = "%[13]s"

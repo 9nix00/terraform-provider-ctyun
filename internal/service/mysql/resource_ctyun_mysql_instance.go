@@ -1107,18 +1107,17 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 
 	// 扩容云数据库实例
 	// 若plan.ProdPerformanceSpec不为空,且state和plan的ProdPerformanceSpec不一致，触发规格扩容
-	if plan.FlavorName.Equal(state.FlavorName) {
+	if !plan.FlavorName.Equal(state.FlavorName) {
+		if !plan.ProdID.Equal(state.ProdID) {
+			err = errors.New("实例节点和规格(prod_id, flavor_name)不可同时变更")
+			return
+		}
 		upgradeParams.ProdPerformanceSpec = &plan.prodPerformanceSpec
 	}
 	// 若plan.prodId不为空,且state和plan的prodId不一致，触发实例类型扩容
 	if !plan.ProdID.IsNull() && state.ProdID.ValueString() != plan.ProdID.ValueString() {
 		prodId := business.MysqlProdIdDict[plan.ProdID.ValueString()]
 		upgradeParams.ProdId = &prodId
-	}
-	// 节点升配和规格升配不可同时
-	if upgradeParams.ProdPerformanceSpec != nil && upgradeParams.ProdId != nil {
-		err = errors.New("实例节点和规格(prod_id, prod_performance_spec)不可同时升配")
-		return
 	}
 
 	// 若实例扩容或更新ProdID---从单节点升级至，一主一备、一主两备。需要补充AZ信息
