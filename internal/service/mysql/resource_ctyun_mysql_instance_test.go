@@ -39,7 +39,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	storageSpace := 100
 	availabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"}]`, dependence.azName)
 	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName)
-	updatedName := "terraform-provider-ctyun-new-" + utils.GenerateRandomString()
+	updatedName := "tf-mysql-new-" + utils.GenerateRandomString()
 	updatedWritePort := `write_port=13306`
 
 	// 磁盘、规格升配
