@@ -1167,7 +1167,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 			err = err2
 			return
 		} else if resp.StatusCode != 200 {
-			err = errors.New("扩容失败！")
+			err = fmt.Errorf("API return error. Message: %s Error: %s", resp.Message, resp.Error)
 			return
 		}
 		// 扩容后，轮循请求实例详情，确认已经完成升配
@@ -1574,7 +1574,7 @@ func (c *CtyunMysqlInstance) upgradeMysqlStorage(ctx context.Context, state *Cty
 		err = err2
 		return
 	} else if resp.StatusCode != 200 {
-		err = errors.New("扩容失败！")
+		err = fmt.Errorf("update storage failed, API return error. Message: %s Error: %s", resp.Message, resp.Error)
 		return
 	}
 	// 扩容后，轮循请求实例详情，确认已经完成升配
