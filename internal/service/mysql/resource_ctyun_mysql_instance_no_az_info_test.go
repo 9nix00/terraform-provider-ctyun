@@ -8,7 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"os"
 	"testing"
-	"time"
 )
 
 func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
@@ -77,10 +76,6 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
-					func(state *terraform.State) error {
-						time.Sleep(30 * time.Second)
-						return nil
-					},
 				),
 			},
 			{

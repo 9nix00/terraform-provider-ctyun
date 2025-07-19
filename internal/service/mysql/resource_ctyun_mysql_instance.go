@@ -1159,6 +1159,9 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
 		// 更新之前需要确定主机状态必须为started
 		err = c.StartedLoop(ctx, state)
+		if err != nil {
+			return
+		}
 		resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbUpgradeApi.Do(ctx, c.meta.Credential, upgradeParams, upgradeHeader)
 		if err2 != nil {
 			err = err2
@@ -1563,6 +1566,9 @@ func (c *CtyunMysqlInstance) UpgradeStorageLoop(ctx context.Context, state *Ctyu
 
 func (c *CtyunMysqlInstance) upgradeMysqlStorage(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig, upgradeParams *mysql.TeledbUpgradeRequest, upgradeHeader *mysql.TeledbUpgradeRequestHeader) (err error) {
 	err = c.StartedLoop(ctx, state)
+	if err != nil {
+		return
+	}
 	resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbUpgradeApi.Do(ctx, c.meta.Credential, upgradeParams, upgradeHeader)
 	if err2 != nil {
 		err = err2
