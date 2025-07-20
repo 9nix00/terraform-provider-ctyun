@@ -73,7 +73,6 @@ locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
-
 resource "ctyun_eip" "eip_test" {
   name                = "tf-eip-for-mysql"
   bandwidth           = 1
@@ -81,10 +80,13 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
+data "ctyun_zones" "test" {
+
+}
+
 locals {
   mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-  # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  az_name   = data.ctyun_zones.test.zones[0]
 }
 
 data "ctyun_mysql_specs" "mysql_specs"{
@@ -94,9 +96,7 @@ data "ctyun_mysql_specs" "mysql_specs"{
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = local.real_vpc_id
-  instance_series         = "S"
-  host_type             = "C7"
-  prod_performance_spec = "2C4G"
+  flavor_name         = "c7.large.2"
   prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
   security_group_id     = local.real_security_group_id
@@ -106,8 +106,6 @@ resource "ctyun_mysql_instance" "mysql_test" {
   availability_zone_info = [
     { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
   ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
 }
 
 locals {

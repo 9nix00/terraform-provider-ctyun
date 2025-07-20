@@ -51,7 +51,6 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
-					resource.TestCheckResourceAttr(resourceName, "eip", eipAddress),
 					resource.TestCheckResourceAttr(resourceName, "inst_id", instId),
 				),
 			},

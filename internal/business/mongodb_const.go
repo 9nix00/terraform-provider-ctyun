@@ -1,8 +1,7 @@
 package business
 
 const (
-	MongodbOrderStatusStarted = 0
-
+	MongodbOrderStatusStarted       = 0
 	MongodbRunningStatusStarted     = 0  // 已启动
 	MongodbRunningStatusRestarting  = 1  // 重启中
 	MongodbRunningStatusBackup      = 2  // 备份操作中
@@ -56,6 +55,11 @@ const (
 	MongodbStorageTypeSAS       = "SAS"        // 高IO
 	MongodbStorageTypeSATA      = "SATA"       // 普通IO
 	MongodbStorageTypeSSDGenric = "SSD-Genric" // 通用型SSD
+
+	MongodbProdTypeSingle   = "single"
+	MongodbProdTypeReplica  = "replica"
+	MongodbProdTypeCluster  = "cluster"
+	MongodbProdTypeReadOnly = "read_only"
 )
 
 var MongodbRunningStatus = []int32{
@@ -132,6 +136,35 @@ var MongodbProdIDDict = map[string]int64{
 	"Single60":    MongodbProdIDS60,
 	"ReadOnly40":  MongodbProdIDRead40,
 	"ReadOnly34":  MongodbProdIDRead34,
+}
+var MongodbProdTypeDict = map[string]string{
+	"Single34":    MongodbProdTypeSingle,
+	"Single40":    MongodbProdTypeSingle,
+	"Replica3R34": MongodbProdTypeReplica,
+	"Replica3R40": MongodbProdTypeReplica,
+	"Replica5R34": MongodbProdTypeReplica,
+	"Replica5R40": MongodbProdTypeReplica,
+	"Replica7R34": MongodbProdTypeReplica,
+	"Replica7R40": MongodbProdTypeReplica,
+	"Cluster34":   MongodbProdTypeCluster,
+	"Cluster40":   MongodbProdTypeCluster,
+	"Single42":    MongodbProdTypeSingle,
+	"Replica3R42": MongodbProdTypeReplica,
+	"Replica5R42": MongodbProdTypeReplica,
+	"Replica7R42": MongodbProdTypeReplica,
+	"Cluster42":   MongodbProdTypeCluster,
+	"Single50":    MongodbProdTypeSingle,
+	"Replica3R50": MongodbProdTypeReplica,
+	"Replica5R50": MongodbProdTypeReplica,
+	"Replica7R50": MongodbProdTypeReplica,
+	"Cluster50":   MongodbProdTypeCluster,
+	"Cluster60":   MongodbProdTypeCluster,
+	"Replica3R60": MongodbProdTypeReplica,
+	"Replica5R60": MongodbProdTypeReplica,
+	"Replica7R60": MongodbProdTypeReplica,
+	"Single60":    MongodbProdTypeSingle,
+	"ReadOnly40":  MongodbProdTypeReadOnly,
+	"ReadOnly34":  MongodbProdTypeReadOnly,
 }
 
 var MongodbProdIDRevDict = map[int64]string{
@@ -274,4 +307,32 @@ var MongodbNodeType = []string{
 	MongodbNodeTypeMs,
 	MongodbNodeTypeS,
 	MongodbNodeBackup,
+}
+
+var MongodbStatusDescDict = map[int32]string{
+	MongodbRunningStatusStarted:     "已启动",
+	MongodbRunningStatusRestarting:  "重启中",
+	MongodbRunningStatusBackup:      "备份操作中",
+	MongodbRunningStatusRecovery:    "操作恢复中",
+	MongodbRunningStatusTransferSSl: "转换ssl",
+	MongodbRunningStatusException:   "异常",
+	MongodbRunningStatusModify:      "修改参数组中",
+	MongodbRunningStatusFrozen:      "已冻结",
+	MongodbRunningStatusLogout:      "已注销",
+	MongodbRunningStatusProcessing:  "施工中",
+	MongodbRunningStatusFailed:      "施工失败",
+	MongodbRunningStatusUpgrading:   "扩容中",
+	MongodbRunningStatusSwitch:      "主备切换中",
+}
+
+var MongodbReplicaNodeDistMap = map[int32]int32{
+	3: 111,
+	5: 122,
+	7: 223,
+}
+
+var MongodbClusterNodeBaseNumMap = map[string]int32{
+	"mongos": 1,
+	"shard":  3,
+	"config": 1,
 }

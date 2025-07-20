@@ -384,6 +384,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		pgsql.NewCtyunPgsqlInstances(),
 		pgsql.NewCtyunPgsqlSpecs(),
 		common2.NewCtyunZones(),
+		mysql2.NewCtyunMysqlWhiteLists(),
+		mongodb.NewCtyunMongodbInstances(),
 	)
 }
 
@@ -448,6 +450,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
+		mysql2.NewCtyunMysqlWhiteList(),
 	)
 }
 

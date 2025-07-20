@@ -48,9 +48,9 @@ Read-Only:
 - `alive` (Number) 实例存活状态: 0(存活), -1(异常)
 - `create_time` (String) 实例创建时间
 - `instance_type` (String) 实例类型: primary(主实例), readonly(只读实例)
+- `name` (String) 实例名称
 - `prod_db_engine` (String) 数据库引擎类型
 - `prod_inst_id` (String) 实例唯一ID
-- `prod_inst_name` (String) 实例名称
 - `prod_order_status` (Number) 订单状态: 0(正常),1(冻结),2(删除),3(操作中),4(失败),2005(扩容中)
 - `prod_running_status` (Number) 运行状态: 0(运行中),1(重启中),2(备份中),3(恢复中),1001(已停止),1006(复失败),1007(VIP不可用),1008(GATEWAY不可用),1009(主库不可用),1010(备库不可用),1021(实例维护中),2000(开通中),2002(已退订),2005(扩容中),2011(冻结)
 - `prod_type` (Number) 部署方式: 0(单机部署),1(主备部署)

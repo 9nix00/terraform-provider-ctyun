@@ -19,6 +19,11 @@ type Apis struct {
 	TeledbUnbindEipApi          *TeledbUnbindEipApi
 	TeledbBoundEipListApi       *TeledbBoundEipListApi
 	TeledbMysqlSpecsApi         *TeledbMysqlSpecsApi
+	TeledbCreateAccessWhiteList *TeledbCreateAccessWhiteList
+	TeledbUpdateAccessWhiteList *TeledbUpdateAccessWhiteList
+	TeledbDeleteAccessWhiteList *TeledbDeleteAccessWhiteList
+	TeledbGetAccessWhiteList    *TeledbGetAccessWhiteList
+	TeledbGetAvailabilityZone   *TeledbGetAvailabilityZone
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -45,5 +50,10 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		TeledbUnbindEipApi:          NewTeledbUnbindEipApi(client),
 		TeledbBoundEipListApi:       NewTeledbBoundEipListApi(client),
 		TeledbMysqlSpecsApi:         NewTeledbMysqlSpecsApi(client),
+		TeledbCreateAccessWhiteList: NewTeledbCreateAccessWhiteList(client),
+		TeledbDeleteAccessWhiteList: NewTeledbDeleteAccessWhiteList(client),
+		TeledbGetAccessWhiteList:    NewTeledbGetAccessWhiteList(client),
+		TeledbUpdateAccessWhiteList: NewTeledbUpdateAccessWhiteList(client),
+		TeledbGetAvailabilityZone:   NewTeledbGetAvailabilityZone(client),
 	}
 }

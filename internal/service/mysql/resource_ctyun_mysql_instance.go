@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -33,7 +34,9 @@ var (
 )
 
 type CtyunMysqlInstance struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	ecsService   *business.EcsService
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -47,6 +50,8 @@ func (c *CtyunMysqlInstance) Configure(ctx context.Context, request resource.Con
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.ecsService = business.NewEcsService(c.meta)
+	c.mysqlService = business.NewMysqlService(c.meta)
 }
 
 func NewCtyunMysqlInstance() resource.Resource {
@@ -61,6 +66,10 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 	response.Schema = schema.Schema{
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
+			"flavor_name": schema.StringAttribute{
+				Required:    true,
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_instances查询支持的规格",
+			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
 				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
@@ -107,7 +116,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池Id",
+				Description: "资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -116,13 +125,6 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云Id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"host_type": schema.StringAttribute{ //host_type
-				Required:    true,
-				Description: "主机类型host_type: S6 or S7等。可根据data.ctyun_mysql_specs获取",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -145,7 +147,8 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Required:    true,
 				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(4, 64),
+					stringvalidator.UTF8LengthBetween(4, 64),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
 				},
 			},
 			"password": schema.StringAttribute{
@@ -161,19 +164,9 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id。在扩容过程中，不支持规格和实例扩容同时进行，prod_id（节点）和prod_performance_spec（规格）不可同时变配。prod_id取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）",
+				Description: "产品id，取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlProdIds...),
-				},
-			},
-			"instance_series": schema.StringAttribute{
-				Required:    true,
-				Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.MysqlInstanceSeries...),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"storage_type": schema.StringAttribute{
@@ -201,12 +194,8 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					int32validator.Between(100, 32768),
 				},
 			},
-			"prod_performance_spec": schema.StringAttribute{
-				Required:    true,
-				Description: "规格(例: 4C8G),可根据data.ctyun_mysql_specs获取。不支持规格和实例扩容同时进行：ProdID和prod_performance_spec不能同时与原配置不一致",
-			},
 			"availability_zone_info": schema.ListNestedAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "可用区信息,需要根据prod_id而定。创建阶段,需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}]",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -223,26 +212,6 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 							Description: "表示分布AZ的节点类型，master/slave",
 						},
 					},
-				},
-			},
-			"cpu_type": schema.StringAttribute{
-				Required:    true,
-				Description: "cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.MysqlCpuType...),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"os_type": schema.StringAttribute{
-				Required:    true,
-				Description: "系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.MysqlOSType...),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"master_order_id": schema.StringAttribute{
@@ -353,6 +322,12 @@ func (c *CtyunMysqlInstance) Create(ctx context.Context, request resource.Create
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	// 创建前检查
+	err = c.checkSpec(ctx, &plan)
+	if err != nil {
+		return
+	}
 	// 开始创建
 	err = c.CreateMysqlInstance(ctx, &plan)
 	if err != nil {
@@ -419,10 +394,16 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 	if response.Diagnostics.HasError() {
 		return
 	}
+	err = c.checkSpec(ctx, &plan)
+	if err != nil {
+		return
+	}
 	err = c.updateMysqlInstance(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
+	state.FlavorName = plan.FlavorName
+	time.Sleep(30 * time.Second)
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeMysqlInstance(ctx, &state)
 	if err != nil {
@@ -479,15 +460,15 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 		RegionId:        config.RegionID.ValueString(),
 		ProdVersion:     business.MysqlProdVersionDict[config.ProdID.ValueString()],
 		VpcId:           config.VpcID.ValueString(),
-		HostType:        config.HostType.ValueString(),
+		HostType:        config.hostType,
 		SubnetId:        config.SubnetID.ValueString(),
 		SecurityGroupId: config.SecurityGroupID.ValueString(),
 		Name:            config.Name.ValueString(),
 		Period:          config.CycleCount.ValueInt32(),
 		Count:           1,
 		ProdId:          business.MysqlProdIdDict[config.ProdID.ValueString()],
-		CpuType:         business.MysqlCpuTypeDict[config.CpuType.ValueString()],
-		OsType:          business.MysqlOSTypeDict[config.OsType.ValueString()],
+		CpuType:         business.MysqlCpuTypeDict[config.cpuType],
+		OsType:          business.MysqlOSTypeDict[config.osType],
 	}
 	if !config.Password.IsNull() && !config.Password.IsUnknown() {
 		password := business.Encode(config.Password.ValueString())
@@ -508,25 +489,19 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 
 	mysqlNodeInfo := mysql.MysqlNodeInfoListRequest{}
 	mysqlNodeInfo.NodeType = business.NodeTypeDict[config.ProdID.ValueString()]
-	mysqlNodeInfo.InstSpec = business.MysqlInstanceSeriesDict[config.InstanceSeries.ValueString()]
+	mysqlNodeInfo.InstSpec = business.MysqlInstanceSeriesDict[config.instanceSeries]
 	mysqlNodeInfo.StorageType = config.StorageType.ValueString()
 	mysqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
-	mysqlNodeInfo.ProdPerformanceSpec = config.ProdPerformanceSpec.ValueString()
+	mysqlNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
 	mysqlNodeInfo.Disks = 1
 	// 处理availabilityZoneInfo可用区信息
+
 	var availabilityZoneInfos []mysql.AvailabilityZoneInfoRequest
-	var availabilityZoneInfoList []AvailabilityZoneModel
-	diag := config.AvailabilityZoneInfo.ElementsAs(ctx, &availabilityZoneInfoList, true)
-	if diag.HasError() {
+	err = c.generateAzInfos(ctx, config, &availabilityZoneInfos)
+	if err != nil {
 		return
 	}
-	for _, availabilityZoneInfoItem := range availabilityZoneInfoList {
-		availabilityZoneInfo := mysql.AvailabilityZoneInfoRequest{}
-		availabilityZoneInfo.AvailabilityZoneName = availabilityZoneInfoItem.AvailabilityZoneName.ValueString()
-		availabilityZoneInfo.AvailabilityZoneCount = availabilityZoneInfoItem.AvailabilityZoneCount.ValueInt32()
-		availabilityZoneInfo.NodeType = availabilityZoneInfoItem.NodeType.ValueString()
-		availabilityZoneInfos = append(availabilityZoneInfos, availabilityZoneInfo)
-	}
+
 	mysqlNodeInfo.AvailabilityZoneInfo = availabilityZoneInfos
 	MysqlNodeInfos = append(MysqlNodeInfos, mysqlNodeInfo)
 	params.MysqlNodeInfoList = MysqlNodeInfos
@@ -608,7 +583,7 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 		InstID:   config.InstID.ValueString(),
 		RegionID: config.RegionID.ValueString(),
 	}
-	if config.ProjectID.ValueString() != "" {
+	if !config.ProjectID.IsNull() {
 		detailHeaders.ProjectID = config.ProjectID.ValueStringPointer()
 	}
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
@@ -650,7 +625,6 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 
 	config.StorageSpace = types.Int32Value(returnOjb.DiskSize)
 	config.BackupStorageSpace = types.Int32Value(returnOjb.BackupDiskSize)
-	config.ProdPerformanceSpec = types.StringValue(returnOjb.MachineSpec)
 	return
 }
 
@@ -780,7 +754,7 @@ func (c *CtyunMysqlInstance) UpgradeLoop(ctx context.Context, state *CtyunMysqlI
 			runningStatus := resp.ReturnObj.ProdRunningStatus
 			orderStatus := resp.ReturnObj.ProdOrderStatus
 			// 若符合预期，跳出循环，扩容成功
-			if resp.ReturnObj.ProdId == business.MysqlProdIdDict[plan.ProdID.ValueString()] && resp.ReturnObj.DiskSize == plan.StorageSpace.ValueInt32() && resp.ReturnObj.MachineSpec == plan.ProdPerformanceSpec.ValueString() {
+			if resp.ReturnObj.ProdId == business.MysqlProdIdDict[plan.ProdID.ValueString()] && resp.ReturnObj.DiskSize == plan.StorageSpace.ValueInt32() && resp.ReturnObj.MachineSpec == plan.prodPerformanceSpec {
 				//若备份磁盘空间不为空，且预期的分配磁盘空间与远端磁盘备份空间不相同，则继续轮询
 				if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() != resp.ReturnObj.BackupDiskSize {
 					return true
@@ -924,6 +898,7 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 	if err != nil {
 		return
 	}
+	var cnt int
 	result := retryer.Start(
 		func(currentTime int) bool {
 			// 获取实例详情
@@ -958,7 +933,11 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 				}
 			}
 			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
-				return false
+				// 有三次是start，才认为状态正常
+				cnt++
+				if cnt > 3 {
+					return false
+				}
 			}
 			if orderStatus == business.MysqlOrderStatusPause {
 				err = errors.New("订单处于暂停状态，不可进行变更操作")
@@ -1101,65 +1080,100 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 		InstId:   state.InstID.ValueString(),
 		NodeType: &nodeType,
 	}
-
-	// 若StorageSpace不为空，触发主节点扩容存储空间
-	if plan.StorageSpace.ValueInt32() != 0 && state.StorageSpace.ValueInt32() != plan.StorageSpace.ValueInt32() {
-		upgradeParams.DiskVolume = plan.StorageSpace.ValueInt32Pointer()
-	}
-	// 若BackupStorageSpace不为空，触发备节点扩容存储空间
-	if plan.BackupStorageSpace.ValueInt32() != 0 && state.BackupStorageSpace.ValueInt32() != plan.BackupStorageSpace.ValueInt32() {
-		upgradeParams.DiskVolume = plan.BackupStorageSpace.ValueInt32Pointer()
-		nodeType = business.PgsqlStorageTypeBackUp
-		upgradeParams.NodeType = &nodeType
-	}
 	upgradeHeader := &mysql.TeledbUpgradeRequestHeader{}
 	if plan.ProjectID.ValueString() != "" {
 		upgradeHeader.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
+	// 若BackupStorageSpace不为空，触发备节点扩容存储空间
+	if plan.BackupStorageSpace.ValueInt32() != 0 && state.BackupStorageSpace.ValueInt32() != plan.BackupStorageSpace.ValueInt32() {
+		upgradeParams.DiskVolume = plan.BackupStorageSpace.ValueInt32Pointer()
+		backupNodeType := business.PgsqlStorageTypeBackUp
+		upgradeParams.NodeType = &backupNodeType
+
+		err = c.upgradeMysqlStorage(ctx, state, plan, upgradeParams, upgradeHeader)
+		if err != nil {
+			return
+		}
+		upgradeParams.DiskVolume = nil
+		upgradeParams.NodeType = &nodeType
+	}
+
+	// 若StorageSpace不为空，触发主节点扩容存储空间
+	if plan.StorageSpace.ValueInt32() != 0 && state.StorageSpace.ValueInt32() != plan.StorageSpace.ValueInt32() {
+		upgradeParams.DiskVolume = plan.StorageSpace.ValueInt32Pointer()
+
+		err = c.upgradeMysqlStorage(ctx, state, plan, upgradeParams, upgradeHeader)
+		if err != nil {
+			return
+		}
+		upgradeParams.DiskVolume = nil
+		upgradeParams.NodeType = &nodeType
+	}
+
 	// 扩容云数据库实例
 	// 若plan.ProdPerformanceSpec不为空,且state和plan的ProdPerformanceSpec不一致，触发规格扩容
-	if plan.ProdPerformanceSpec.ValueString() != "" && state.ProdPerformanceSpec.ValueString() != plan.ProdPerformanceSpec.ValueString() {
-		upgradeParams.ProdPerformanceSpec = plan.ProdPerformanceSpec.ValueStringPointer()
+	if !plan.FlavorName.Equal(state.FlavorName) {
+		if !plan.ProdID.Equal(state.ProdID) {
+			err = errors.New("实例节点和规格(prod_id, flavor_name)不可同时变更")
+			return
+		}
+		upgradeParams.ProdPerformanceSpec = &plan.prodPerformanceSpec
 	}
 	// 若plan.prodId不为空,且state和plan的prodId不一致，触发实例类型扩容
-	if plan.ProdID.ValueString() != "" && state.ProdID.ValueString() != plan.ProdID.ValueString() {
+	if !plan.ProdID.IsNull() && state.ProdID.ValueString() != plan.ProdID.ValueString() {
 		prodId := business.MysqlProdIdDict[plan.ProdID.ValueString()]
 		upgradeParams.ProdId = &prodId
 	}
+
 	// 若实例扩容或更新ProdID---从单节点升级至，一主一备、一主两备。需要补充AZ信息
 	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
-		var azInfoList []AvailabilityZoneModel
 		var upgradeAzList []mysql.AvailabilityZoneInfo
-
-		diag := plan.AvailabilityZoneInfo.ElementsAs(ctx, &azInfoList, true)
-		if diag.HasError() {
-			return
-		}
-
-		for _, azInfoItem := range azInfoList {
-			azInfo := mysql.AvailabilityZoneInfo{
-				AvailabilityZoneName:  azInfoItem.AvailabilityZoneName.ValueString(),
-				AvailabilityZoneCount: azInfoItem.AvailabilityZoneCount.ValueInt32(),
+		// 若AZ info 不为空，直接填写用户的输入
+		if !plan.AvailabilityZoneInfo.IsNull() && !plan.AvailabilityZoneInfo.IsUnknown() {
+			if !state.AvailabilityZoneInfo.IsNull() && state.AvailabilityZoneInfo.IsUnknown() && !plan.AvailabilityZoneInfo.Equal(state.AvailabilityZoneInfo) {
+				err = errors.New("未变配实例规格或者实例节点时，az info不可修改！")
+				return err
 			}
-			upgradeAzList = append(upgradeAzList, azInfo)
+			var azInfoList []AvailabilityZoneModel
+
+			diag := plan.AvailabilityZoneInfo.ElementsAs(ctx, &azInfoList, true)
+			if diag.HasError() {
+				return
+			}
+
+			for _, azInfoItem := range azInfoList {
+				azInfo := mysql.AvailabilityZoneInfo{
+					AvailabilityZoneName:  azInfoItem.AvailabilityZoneName.ValueString(),
+					AvailabilityZoneCount: azInfoItem.AvailabilityZoneCount.ValueInt32(),
+				}
+				upgradeAzList = append(upgradeAzList, azInfo)
+			}
+		} else {
+			// 若az info 为空，直接生成
+			err = c.getUpgradeAzInfo(ctx, state, plan, upgradeParams, &upgradeAzList)
+			if err != nil {
+				return
+			} else if len(upgradeAzList) <= 0 {
+				err = errors.New("mysql生成 az列表失败，可能存在问题：mysql实例暂不支持降配操作， 或查询资源池az信息失败等情况，可联系研发人员确定")
+				return
+			}
 		}
 		upgradeParams.AzList = upgradeAzList
-	} else if !plan.AvailabilityZoneInfo.Equal(state.AvailabilityZoneInfo) {
-		err = errors.New("未变配实例规格或者实例节点时，az info不可修改！")
-		return err
 	}
-
 	// 若ProdPerformanceSpec, DiskVolume或者ProdId不为空时候，触发变配
-	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.DiskVolume != nil || upgradeParams.ProdId != nil {
+	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
 		// 更新之前需要确定主机状态必须为started
 		err = c.StartedLoop(ctx, state)
+		if err != nil {
+			return
+		}
 		resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbUpgradeApi.Do(ctx, c.meta.Credential, upgradeParams, upgradeHeader)
 		if err2 != nil {
 			err = err2
 			return
 		} else if resp.StatusCode != 200 {
-			err = errors.New("扩容失败！")
+			err = fmt.Errorf("API return error. Message: %s Error: %s", resp.Message, resp.Error)
 			return
 		}
 		// 扩容后，轮循请求实例详情，确认已经完成升配
@@ -1275,11 +1289,352 @@ func (c *CtyunMysqlInstance) startMysqlInstance(ctx context.Context, state *Ctyu
 	return
 }
 
+func (c *CtyunMysqlInstance) generateAzInfos(ctx context.Context, config *CtyunMysqlInstanceConfig, availabilityZoneInfos *[]mysql.AvailabilityZoneInfoRequest) (err error) {
+	if config.AvailabilityZoneInfo.IsNull() || config.AvailabilityZoneInfo.IsUnknown() {
+		// 		 		1AZ 			2AZ				3个以上AZ
+		// 单实例        AZ1  			AZ2				AZ3
+		// 1主1备		AZ1				AZ1,AZ2			AZ1,2个AZ2
+		// 1主2备		AZ1  			AZ1,2个AZ2      AZ1, AZ2, AZ3
+		// 1. 判断实例类型，确认需要几个节点
+		nodeNum := business.MysqlNodeNumDict[config.ProdID.ValueString()]
+		// 2. 获取az信息
+		var regionAzList []mysql.TeledbGetAvailabilityZoneResponseReturnObjData
+		regionAzList, err = c.getAzInfoByRegion(ctx, config)
+
+		if len(regionAzList) < 1 {
+			err = errors.New("该资源池AZ信息获取为空，无法直接分配节点AZ信息")
+		}
+		// 定义一个az信息遍历下标
+		idx := 0
+
+		// 3. 生成master结点
+		var masterAzInfo mysql.AvailabilityZoneInfoRequest
+		masterAzInfo.AvailabilityZoneCount = 1
+		masterAzInfo.AvailabilityZoneName = regionAzList[idx].AvailabilityZoneName
+		masterAzInfo.NodeType = "master"
+		*availabilityZoneInfos = append(*availabilityZoneInfos, masterAzInfo)
+		nodeNum = nodeNum - 1
+
+		// 4. 判断实例类型是否为1主1备或，1主2备。若是，则继续生成
+		// 若AzNum为1 或 2，count = nodeNum -1
+		// 若AzNum为3， 分两个azInfo存储
+		if len(regionAzList) > 1 {
+			idx = idx + 1
+		}
+		if nodeNum >= 1 {
+			var slaveAzInfo mysql.AvailabilityZoneInfoRequest
+			slaveAzInfo.AvailabilityZoneName = regionAzList[idx].AvailabilityZoneName
+			slaveAzInfo.AvailabilityZoneCount = 1
+			slaveAzInfo.NodeType = "slave"
+			nodeNum = nodeNum - 1
+			if nodeNum >= 1 {
+				if len(regionAzList) >= 3 {
+					*availabilityZoneInfos = append(*availabilityZoneInfos, slaveAzInfo)
+					idx = idx + 1
+					slaveAzInfo.AvailabilityZoneName = regionAzList[idx].AvailabilityZoneName
+					slaveAzInfo.AvailabilityZoneCount = 1
+					slaveAzInfo.NodeType = "slave"
+				} else {
+					slaveAzInfo.AvailabilityZoneCount = 2
+				}
+				*availabilityZoneInfos = append(*availabilityZoneInfos, slaveAzInfo)
+
+			} else {
+				*availabilityZoneInfos = append(*availabilityZoneInfos, slaveAzInfo)
+			}
+		}
+	} else {
+		var availabilityZoneInfoList []AvailabilityZoneModel
+		diag := config.AvailabilityZoneInfo.ElementsAs(ctx, &availabilityZoneInfoList, true)
+		if diag.HasError() {
+			return
+		}
+		for _, availabilityZoneInfoItem := range availabilityZoneInfoList {
+			availabilityZoneInfo := mysql.AvailabilityZoneInfoRequest{}
+			availabilityZoneInfo.AvailabilityZoneName = availabilityZoneInfoItem.AvailabilityZoneName.ValueString()
+			availabilityZoneInfo.AvailabilityZoneCount = availabilityZoneInfoItem.AvailabilityZoneCount.ValueInt32()
+			availabilityZoneInfo.NodeType = availabilityZoneInfoItem.NodeType.ValueString()
+			*availabilityZoneInfos = append(*availabilityZoneInfos, availabilityZoneInfo)
+		}
+	}
+
+	return
+}
+
+func (c *CtyunMysqlInstance) getUpgradeAzInfo(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig, upgradeParams *mysql.TeledbUpgradeRequest, azInfoList *[]mysql.AvailabilityZoneInfo) (err error) {
+	// 1.获取控制台上该实例目前AZ分布
+	// 获取实例详情
+	if state.InstID.ValueString() == "" {
+		err = errors.New("查询实例详情时，实例 ID为空")
+		return err
+	}
+	detailParams := &mysql.TeledbQueryDetailRequest{
+		OuterProdInstId: state.InstID.ValueString(),
+	}
+	detailHeaders := &mysql.TeledbQueryDetailRequestHeaders{
+		InstID:   state.InstID.ValueString(),
+		RegionID: state.RegionID.ValueString(),
+	}
+	if !state.ProjectID.IsNull() {
+		detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = errors.New("对Mysql实例扩容时，查询实例详情返回为nil，扩容失败，请稍后重试")
+		return
+	} else if resp.StatusCode != 0 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	nodeDist := resp.ReturnObj.AzInfoList
+	// 2.判断是规格扩容还是节点扩容
+	if upgradeParams.ProdPerformanceSpec != nil {
+		// 3.规格扩容直接输入实例AZ分布情况
+		err = c.getNodeDist(ctx, azInfoList, nodeDist)
+		return
+	} else if upgradeParams.ProdId != nil {
+		// 4.节点扩容需要获取az信息，确定需要增加的节点数。
+		stateNodeNum := business.MysqlNodeNumDict[state.ProdID.ValueString()]
+		planNodeNum := business.MysqlNodeNumDict[plan.ProdID.ValueString()]
+		addNodeNum := planNodeNum - stateNodeNum
+		if addNodeNum <= 0 {
+			// 如果需要增加的节点数小于等于0，无需操作
+			return
+		}
+		err = c.getAddNodeDist(ctx, azInfoList, nodeDist, state, int(addNodeNum))
+	}
+	return
+}
+
+func (c *CtyunMysqlInstance) getNodeDist(_ context.Context, azInfoList *[]mysql.AvailabilityZoneInfo, nodeDist []mysql.AzInfo) (err error) {
+	nodeMap := make(map[string]int32)
+	// 计算节点类型，az内节点出现频率
+	// 例： 1主2备
+	// az1 = 3
+	// az1 = 1 或者 az2 = 2
+	for _, nodeDistItem := range nodeDist {
+		var azInfo mysql.AvailabilityZoneInfo
+		azInfo.AvailabilityZoneName = nodeDistItem.AzId
+		key := nodeDistItem.AzId
+		if _, exists := nodeMap[key]; exists {
+			nodeMap[key] = nodeMap[key] + 1
+		} else {
+			nodeMap[key] = 1
+		}
+	}
+	// 将map转成 mysql扩容的参数
+	for key, value := range nodeMap {
+		var azInfo mysql.AvailabilityZoneInfo
+		azInfo.AvailabilityZoneCount = value
+		azInfo.AvailabilityZoneName = key
+		*azInfoList = append(*azInfoList, azInfo)
+	}
+	return
+}
+
+func (c *CtyunMysqlInstance) getAddNodeDist(ctx context.Context, azInfoList *[]mysql.AvailabilityZoneInfo, nodeDist []mysql.AzInfo, state *CtyunMysqlInstanceConfig, addNodeNum int) (err error) {
+	// 定义map,存放az-节点数分布
+	nodeMap := make(map[string]int32)
+	addNodeMap := make(map[string]int32)
+	// 获取该资源池az列表
+	regionAzList, err := c.getAzInfoByRegion(ctx, state)
+	if err != nil {
+		return err
+	}
+	// 对map进行初始化
+	for _, AzInfo := range regionAzList {
+		if _, exist := nodeMap[AzInfo.AvailabilityZoneName]; !exist {
+			nodeMap[AzInfo.AvailabilityZoneName] = 0
+		}
+	}
+	// 统计每个az的节点数
+	for _, nodeDistItem := range nodeDist {
+		//var azInfo mysql.AvailabilityZoneInfo
+		//azInfo.AvailabilityZoneName = nodeDistItem.AzId
+		key := nodeDistItem.AzId
+		if _, exists := nodeMap[key]; exists {
+			nodeMap[key] = nodeMap[key] + 1
+		} else {
+			nodeMap[key] = 1
+		}
+	}
+	// 根据需要增加的节点数，每次选取，最小的value值的az
+	for i := 0; i < addNodeNum; i++ {
+		minNodeNum := int32(3)
+		minAzName := ""
+		for key, value := range nodeMap {
+			if value < minNodeNum {
+				minNodeNum = value
+				minAzName = key
+			}
+		}
+
+		if _, exists := addNodeMap[minAzName]; exists {
+			addNodeMap[minAzName] = addNodeMap[minAzName] + 1
+		} else {
+			addNodeMap[minAzName] = 1
+		}
+		nodeMap[minAzName] = nodeMap[minAzName] + 1
+	}
+	// 将map转成 mysql扩容的参数
+	for key, value := range addNodeMap {
+		var azInfo mysql.AvailabilityZoneInfo
+		azInfo.AvailabilityZoneCount = value
+		azInfo.AvailabilityZoneName = key
+		*azInfoList = append(*azInfoList, azInfo)
+	}
+	return
+}
+
+func (c *CtyunMysqlInstance) getAzInfoByRegion(ctx context.Context, config *CtyunMysqlInstanceConfig) (regionAzList []mysql.TeledbGetAvailabilityZoneResponseReturnObjData, err error) {
+	params := &mysql.TeledbGetAvailabilityZoneRequest{
+		RegionId: config.RegionID.ValueString(),
+	}
+	header := &mysql.TeledbGetAvailabilityZoneRequestHeader{}
+	if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
+		header.ProjectID = config.ProjectID.ValueStringPointer()
+	}
+	resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbGetAvailabilityZone.Do(ctx, c.meta.Credential, params, header)
+	if err2 != nil {
+		err = err2
+		return
+	} else if resp == nil {
+		err = errors.New("查询该资源池AZ信息时，返回为nil。请稍后再试")
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj.Data == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	regionAzList = resp.ReturnObj.Data
+	return
+}
+
+func (c *CtyunMysqlInstance) UpgradeStorageLoop(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig, NodeType string) (err error) {
+	count := 60
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 获取实例详情
+			detailParams := &mysql.TeledbQueryDetailRequest{
+				OuterProdInstId: state.InstID.ValueString(),
+			}
+			detailHeaders := &mysql.TeledbQueryDetailRequestHeaders{
+				InstID:   state.InstID.ValueString(),
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 0 {
+				err = fmt.Errorf("API return error. Message: %s", resp.Message)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			runningStatus := resp.ReturnObj.ProdRunningStatus
+			orderStatus := resp.ReturnObj.ProdOrderStatus
+			// 若符合预期，跳出循环，扩容成功
+			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted {
+				if NodeType == business.PgsqlStorageTypeMaster {
+					if resp.ReturnObj.DiskSize == plan.StorageSpace.ValueInt32() {
+						return false
+					}
+				} else if NodeType == business.PgsqlStorageTypeBackUp {
+					if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() == resp.ReturnObj.BackupDiskSize {
+						return false
+					}
+				}
+			}
+			return true
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未升级成功！")
+	}
+	return
+}
+
+func (c *CtyunMysqlInstance) upgradeMysqlStorage(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig, upgradeParams *mysql.TeledbUpgradeRequest, upgradeHeader *mysql.TeledbUpgradeRequestHeader) (err error) {
+	err = c.StartedLoop(ctx, state)
+	if err != nil {
+		return
+	}
+	resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbUpgradeApi.Do(ctx, c.meta.Credential, upgradeParams, upgradeHeader)
+	if err2 != nil {
+		err = err2
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("update storage failed, API return error. Message: %s Error: %s", resp.Message, resp.Error)
+		return
+	}
+	// 扩容后，轮循请求实例详情，确认已经完成升配
+	err = c.UpgradeStorageLoop(ctx, state, plan, *upgradeParams.NodeType)
+	return
+}
+
+// checkSpec 检查规格
+func (c *CtyunMysqlInstance) checkSpec(ctx context.Context, plan *CtyunMysqlInstanceConfig) error {
+	// 先根据spec_name调用云主机规格接口
+	_, err := c.ecsService.GetFlavorByName(ctx, plan.FlavorName.ValueString(), plan.RegionID.ValueString())
+	if err != nil {
+		return err
+	}
+
+	f := strings.Split(plan.FlavorName.ValueString(), ".")
+	hostType := strings.ToUpper(f[0])
+	plan.instanceSeries = string(hostType[0]) // S、M 或 C
+	if len(hostType) > 2 {
+		plan.instanceSeries = string(hostType[1])
+	}
+	// 再调用数据库规格接口
+	mysqlFlavor, err := c.mysqlService.GetFlavorByProdIdAndFlavorName(
+		ctx,
+		plan.ProdID.ValueString(),
+		plan.FlavorName.ValueString(),
+		plan.RegionID.ValueString(),
+		plan.instanceSeries,
+	)
+	if err != nil {
+		return err
+	}
+	plan.prodPerformanceSpec = mysqlFlavor.ProdPerformanceSpec
+	plan.hostType = mysqlFlavor.Generation
+
+	// 映射关系
+	if strings.HasPrefix(plan.hostType, "K") { // 鲲鹏
+		plan.cpuType = "KunPeng"
+	} else if strings.HasPrefix(plan.hostType, "H") { // 海光
+		plan.cpuType = "Hygon"
+	} else if strings.HasPrefix(plan.hostType, "F") {
+		plan.cpuType = "Phytium"
+	} else {
+		plan.cpuType = "Intel"
+	}
+	plan.osType = "ctyunos"
+	return nil
+}
+
 type CtyunMysqlInstanceConfig struct {
 	CycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 支持on_demand和month
 	RegionID                    types.String `tfsdk:"region_id"`                      // 资源池Id
 	VpcID                       types.String `tfsdk:"vpc_id"`                         // 虚拟私有云Id
-	HostType                    types.String `tfsdk:"host_type"`                      // 主机类型 host type: S6 or S7
+	FlavorName                  types.String `tfsdk:"flavor_name"`                    // 规格名称
 	SubnetID                    types.String `tfsdk:"subnet_id"`                      // 子网Id
 	SecurityGroupID             types.String `tfsdk:"security_group_id"`              // 安全组
 	Name                        types.String `tfsdk:"name"`                           // 集群名称
@@ -1287,8 +1642,6 @@ type CtyunMysqlInstanceConfig struct {
 	CycleCount                  types.Int32  `tfsdk:"cycle_count"`                    // 购买时长：单位月（范围：1-12，24，36）
 	AutoRenew                   types.Bool   `tfsdk:"auto_renew"`                     // 自动续订状态
 	ProdID                      types.String `tfsdk:"prod_id"`                        // 产品id
-	CpuType                     types.String `tfsdk:"cpu_type"`                       // cpu类型：10是鲲鹏，20是海光，30是intel,40是amd,50是飞腾，60是龙芯，70是兆芯
-	OsType                      types.String `tfsdk:"os_type"`                        // 系统类型：0是裸机，1是windows，2是centos，3是ubuntu，4是android，5是redhat，6是kylin，7是uos,8是suse，9是asianux，10是open_euler，11是ctyunos，12是euler
 	MasterOrderID               types.String `tfsdk:"master_order_id"`                // 订单id
 	InstID                      types.String `tfsdk:"inst_id"`                        // 实例id
 	ProjectID                   types.String `tfsdk:"project_id"`                     // 项目id
@@ -1306,15 +1659,19 @@ type CtyunMysqlInstanceConfig struct {
 	PauseEnable                 types.Bool   `tfsdk:"pause_enable"`                   // 是否允许暂停
 	MysqlPort                   types.String `tfsdk:"mysql_port"`                     // 数据库端口
 	SecurityGroupStatus         types.Int32  `tfsdk:"security_group_status"`          // 安全组状态 0->normal, 1->changing, 2->deleted
-	InstanceSeries              types.String `tfsdk:"instance_series"`                // 实例规格（默认：通用型=1） InstSpec
 	StorageType                 types.String `tfsdk:"storage_type"`                   // 存储类型：SSD, SATA, SAS, SSD-genric, FAST-SSD
 	StorageSpace                types.Int32  `tfsdk:"storage_space"`                  // 存储空间（单位：GB，范围100到32768）
 	BackupStorageSpace          types.Int32  `tfsdk:"backup_storage_space"`           // 备份节点，存储空间扩容使用
-	ProdPerformanceSpec         types.String `tfsdk:"prod_performance_spec"`          // 规格（例：4C8G）
 	AvailabilityZoneInfo        types.List   `tfsdk:"availability_zone_info"`         // 可用区信息
 	RunningControl              types.String `tfsdk:"running_control"`                //
 	ProdOrderStatus             types.Int32  `tfsdk:"prod_order_status"`
 	ID                          types.String `tfsdk:"id"` // 实例id
+
+	osType              string
+	cpuType             string
+	prodPerformanceSpec string
+	hostType            string
+	instanceSeries      string
 }
 
 type AvailabilityZoneModel struct {
