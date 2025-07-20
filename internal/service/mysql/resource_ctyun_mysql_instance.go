@@ -898,6 +898,7 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 	if err != nil {
 		return
 	}
+	var cnt int
 	result := retryer.Start(
 		func(currentTime int) bool {
 			// 获取实例详情
@@ -932,7 +933,11 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 				}
 			}
 			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
-				return false
+				// 有三次是start，才认为状态正常
+				cnt++
+				if cnt > 3 {
+					return false
+				}
 			}
 			if orderStatus == business.MysqlOrderStatusPause {
 				err = errors.New("订单处于暂停状态，不可进行变更操作")
