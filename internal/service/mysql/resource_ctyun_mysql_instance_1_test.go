@@ -6,16 +6,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunMysqlInstance1(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_instance." + rnd
 	resourceFile := "resource_ctyun_mysql_instance.tf"
@@ -24,8 +19,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql" + utils.GenerateRandomString()
 	password := "kqjwyk123."
-	//period := 1
-	//autoRenewStatus := 0
 
 	storageType := "SATA"
 	storageSpace := 100
@@ -33,8 +26,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"slave"}]`, dependence.azName)
 	// 单节点
 	ProdId := "Single57"
-	// 单机到一主一备
-	//updatedProdID := 10001001
 	// 一主两备
 	updatedDoubleProId := "Master2Slave57"
 	cycleBillMode := "on_demand"
@@ -49,9 +40,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// 2 包周期创建，创建1主1备，升级为1主2备, 关机，开启，重启验证
-			// 创建1主1备-》1主2备已经完成
-			// 单节点-》1主2备,验证通过
+			// 按需，单节点，升级为1主2备, 关机，开启，重启验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, "", "", flavorName, ProdId, "", storageType, storageSpace, NodeOneAvailabilityZoneInfo, "", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(

@@ -6,16 +6,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunMysqlInstance(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_instance." + rnd
@@ -30,8 +25,6 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "kqjwyk111*"
-	cycleCount := "cycle_count=1"
-	autoRenewStatus := `auto_renew=false`
 	prodID := "Single57"
 	flavorName := "s7.xlarge.2"
 
@@ -48,11 +41,6 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	updatedFlavorName := "s7.xlarge.4"
 	// 单机到一主一备
 	updatedProdID := "MasterSlave57"
-	// 一主两备
-	updatedDoubleProId := "Master2Slave57"
-	cycleBillMode := "month"
-	backupOneAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"},{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName, dependence.azName)
-
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -133,6 +121,46 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", ""),
 				Destroy: true,
 			},
+		},
+	})
+}
+
+func TestAccCtyunMysqlInstanceMonth(t *testing.T) {
+	t.Parallel()
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_mysql_instance." + rnd
+	resourceFile := "resource_ctyun_mysql_instance.tf"
+	vpcID := dependence.vpcID
+	subnetID := dependence.subnetID
+	securityGroupID := dependence.securityGroupID
+	name := "tf-mysql-" + utils.GenerateRandomString()
+	password := "kqjwyk111*"
+	cycleCount := "cycle_count=1"
+	autoRenewStatus := `auto_renew=false`
+
+	flavorName := "s7.xlarge.2"
+
+	storageType := "SATA"
+	storageSpace := 100
+	updatedDiskAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info = [{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName)
+
+	// 单机到一主一备
+	updatedProdID := "MasterSlave57"
+	// 一主两备
+	updatedDoubleProId := "Master2Slave57"
+	cycleBillMode := "month"
+	backupOneAvailabilityZoneInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"},{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"slave"}]`, dependence.azName, dependence.azName)
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
 			// 2 包周期创建，创建1主1备，升级为1主2备,
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleBillMode, vpcID, subnetID, securityGroupID, name, password, cycleCount, autoRenewStatus, flavorName, updatedProdID, "", storageType, storageSpace, backupOneAvailabilityZoneInfo, "", ""),

@@ -403,6 +403,7 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 		return
 	}
 	state.FlavorName = plan.FlavorName
+	time.Sleep(30 * time.Second)
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeMysqlInstance(ctx, &state)
 	if err != nil {
