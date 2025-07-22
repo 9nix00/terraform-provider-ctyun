@@ -112,6 +112,9 @@ locals {
 
 data "ctyun_ccse_plugin_market" "test" {
   chart_name = local.chart_name
+  depends_on = [
+    ctyun_ccse_cluster.test
+  ]
 }
 
 locals {

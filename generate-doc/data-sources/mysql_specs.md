@@ -28,7 +28,7 @@ data "ctyun_mysql_specs" "test" {
 
 ### Required
 
-- `instance_series` (String) 实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)
+- `instance_series` (String) 实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)
 
 ### Optional
 

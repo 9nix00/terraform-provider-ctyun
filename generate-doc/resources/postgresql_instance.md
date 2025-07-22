@@ -217,6 +217,7 @@ resource "ctyun_postgresql_instance" "test" {
 - `alive` (Number) 实例是否存活,0:存活，-1:异常
 - `disk_rated` (Number) 磁盘使用率
 - `id` (String) pgsql 实例id
+- `master_order_id` (String) 订单id
 - `outer_prod_inst_id` (String) 对外的实例ID，对应PaaS平台
 - `prod_db_engine` (String) 数据库实例引擎
 - `prod_order_status` (Number) 订单状态，0：正常，1：冻结，2：删除，3：操作中，4：失败,2005:扩容中
