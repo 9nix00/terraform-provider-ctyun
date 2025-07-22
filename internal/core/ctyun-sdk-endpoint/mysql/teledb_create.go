@@ -75,6 +75,8 @@ type MysqlNodeInfoListRequest struct {
 	StorageSpace         int32                         `json:"storageSpace"`         // 存储空间(单位:G，范围100,32768)
 	ProdPerformanceSpec  string                        `json:"prodPerformanceSpec"`  // 规格(例: 4C8G)
 	Disks                int32                         `json:"disks"`                // 磁盘（默认为1）
+	BackupStorageType    string                        `json:"backupStorageType"`    // 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
+	BackupStorageSpace   int32                         `json:"backupStorageSpace"`   // 备份空间大小（类型SATA）
 	AvailabilityZoneInfo []AvailabilityZoneInfoRequest `json:"availabilityZoneInfo"` // 可用区信息
 }
 type AvailabilityZoneInfoRequest struct {

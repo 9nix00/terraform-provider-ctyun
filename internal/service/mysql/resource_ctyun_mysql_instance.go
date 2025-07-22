@@ -16,8 +16,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -186,13 +188,26 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					int32validator.Between(100, 32768),
 				},
 			},
+			"backup_storage_type": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "备份空间磁盘存储类型：SSD=超高IO、SATA=普通IO、SAS=高IO",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.StorageTypeSSD, business.StorageTypeSATA, business.StorageTypeSAS),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: stringdefault.StaticString(business.StorageTypeSATA),
+			},
 			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "备份节点存储空间(单位:G，范围100,32768)，不支持主备磁盘空间同时升配。若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间",
+				Description: "备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
+				Default: int32default.StaticInt32(100),
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Optional:    true,
@@ -493,6 +508,8 @@ func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *Ct
 	mysqlNodeInfo.StorageType = config.StorageType.ValueString()
 	mysqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mysqlNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
+	mysqlNodeInfo.BackupStorageType = config.BackupStorageType.ValueString()
+	mysqlNodeInfo.BackupStorageSpace = config.BackupStorageSpace.ValueInt32()
 	mysqlNodeInfo.Disks = 1
 	// 处理availabilityZoneInfo可用区信息
 
@@ -1600,7 +1617,7 @@ func (c *CtyunMysqlInstance) checkSpec(ctx context.Context, plan *CtyunMysqlInst
 	hostType := strings.ToUpper(f[0])
 	plan.instanceSeries = string(hostType[0]) // S、M 或 C
 	if len(hostType) > 2 {
-		plan.instanceSeries = string(hostType[1])
+		plan.instanceSeries = hostType
 	}
 	// 再调用数据库规格接口
 	mysqlFlavor, err := c.mysqlService.GetFlavorByProdIdAndFlavorName(
@@ -1661,6 +1678,7 @@ type CtyunMysqlInstanceConfig struct {
 	SecurityGroupStatus         types.Int32  `tfsdk:"security_group_status"`          // 安全组状态 0->normal, 1->changing, 2->deleted
 	StorageType                 types.String `tfsdk:"storage_type"`                   // 存储类型：SSD, SATA, SAS, SSD-genric, FAST-SSD
 	StorageSpace                types.Int32  `tfsdk:"storage_space"`                  // 存储空间（单位：GB，范围100到32768）
+	BackupStorageType           types.String `tfsdk:"backup_storage_type"`            // 备份存储空间磁盘类型
 	BackupStorageSpace          types.Int32  `tfsdk:"backup_storage_space"`           // 备份节点，存储空间扩容使用
 	AvailabilityZoneInfo        types.List   `tfsdk:"availability_zone_info"`         // 可用区信息
 	RunningControl              types.String `tfsdk:"running_control"`                //
