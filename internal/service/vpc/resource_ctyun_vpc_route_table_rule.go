@@ -284,29 +284,38 @@ func (c *ctyunVpcRouteTableRule) create(ctx context.Context, plan CtyunVpcRouteT
 // getAndMerge 从远端查询
 func (c *ctyunVpcRouteTableRule) getAndMerge(ctx context.Context, plan *CtyunVpcRouteTableRuleConfig) (err error) {
 	ruleID, routeTableID, regionID := plan.RuleID.ValueString(), plan.RouteTableID.ValueString(), plan.RegionID.ValueString()
-	params := &ctvpc.CtvpcNewRouteRulesListRequest{
-		RegionID:     regionID,
-		RouteTableID: routeTableID,
-		PageSize:     50,
+	var rules []*ctvpc.CtvpcNewRouteRulesListReturnObjRouteRulesResponse
+	pageNo := 1
+	for {
+		params := &ctvpc.CtvpcNewRouteRulesListRequest{
+			RegionID:     regionID,
+			RouteTableID: routeTableID,
+			PageSize:     50,
+			PageNo:       int32(pageNo),
+		}
+		var resp *ctvpc.CtvpcNewRouteRulesListResponse
+		resp, err = c.meta.Apis.SdkCtVpcApis.CtvpcNewRouteRulesListApi.Do(ctx, c.meta.SdkCredential, params)
+		if err != nil {
+			return
+		} else if resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
+			return
+		}
+		rules = append(rules, resp.ReturnObj.RouteRules...)
+		if int32(pageNo) >= resp.ReturnObj.TotalPage {
+			break
+		}
+		pageNo++
 	}
-	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcNewRouteRulesListApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-
-	rules := resp.ReturnObj.RouteRules
 	if len(rules) == 0 {
 		err = common.InvalidReturnObjResultsError
 		return
 	}
 	var exist bool
-	for _, r := range resp.ReturnObj.RouteRules {
+	for _, r := range rules {
 		if utils.SecString(r.RouteRuleID) == ruleID {
 			exist = true
 			plan.NextHopID = utils.SecStringValue(r.NextHopID)
