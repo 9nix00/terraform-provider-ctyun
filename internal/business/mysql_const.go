@@ -265,9 +265,21 @@ var MysqlInstanceSeries = []string{
 	"M", // 内存增强型
 }
 var MysqlInstanceSeriesDict = map[string]string{
-	"S": "1",
-	"C": "2",
-	"M": "3",
+	"S":     "1",
+	"C":     "2",
+	"M":     "3",
+	"HS1":   "4",
+	"HC1":   "5",
+	"HM1":   "6",
+	"KS1":   "7",
+	"KC1":   "8",
+	"KM1":   "9",
+	"KS2NE": "10",
+	"KC2NE": "11",
+	"KM2NE": "12",
+	"HS3NE": "13",
+	"HC3NE": "14",
+	"HM3NE": "15",
 }
 var MysqlCpuType = []string{
 	"KunPeng",  // 鲲鹏

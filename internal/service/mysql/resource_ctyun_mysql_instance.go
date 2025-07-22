@@ -1617,7 +1617,7 @@ func (c *CtyunMysqlInstance) checkSpec(ctx context.Context, plan *CtyunMysqlInst
 	hostType := strings.ToUpper(f[0])
 	plan.instanceSeries = string(hostType[0]) // S、M 或 C
 	if len(hostType) > 2 {
-		plan.instanceSeries = string(hostType[1])
+		plan.instanceSeries = hostType
 	}
 	// 再调用数据库规格接口
 	mysqlFlavor, err := c.mysqlService.GetFlavorByProdIdAndFlavorName(
