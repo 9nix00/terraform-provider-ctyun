@@ -24,7 +24,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	name := "github.com/ctyun-it/terraform-provider-ctyun" + utils.GenerateRandomString()
+	name := "mysql" + utils.GenerateRandomString()
 	password := "kqjwyk123."
 	//period := 1
 	//autoRenewStatus := 0
