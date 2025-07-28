@@ -380,6 +380,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		kafka.NewCtyunKafkaInstances(),
 		kafka.NewCtyunKafkaSpecs(),
 		rabbitmq.NewCtyunRabbitmqInstances(),
+		rabbitmq.NewCtyunRabbitmqSpecs(),
 		ccse.NewCtyunCcsePluginMarket(),
 		pgsql.NewCtyunPgsqlInstances(),
 		pgsql.NewCtyunPgsqlSpecs(),

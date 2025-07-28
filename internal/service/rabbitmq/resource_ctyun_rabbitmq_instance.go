@@ -265,6 +265,10 @@ func (c *ctyunRabbitmqInstance) Read(ctx context.Context, request resource.ReadR
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 
@@ -320,8 +324,28 @@ func (c *ctyunRabbitmqInstance) Delete(ctx context.Context, request resource.Del
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+	instance, err := c.getByID(ctx, state)
+	if err != nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.RabbitMqStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.checkAfterDestroy(ctx, state)
 	if err != nil {
 		return
 	}
@@ -761,13 +785,29 @@ func (c *ctyunRabbitmqInstance) updateName(ctx context.Context, plan, state Ctyu
 	return
 }
 
-// delete 删除
-func (c *ctyunRabbitmqInstance) delete(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+// unsubscribe 退订
+func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
 	params := &amqp.AmqpInstancesUnsubscribeInstRequest{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// destroy 退订
+func (c *ctyunRabbitmqInstance) destroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	params := &amqp.AmqpInstanceDeleteRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -786,9 +826,6 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
 			instance, err = c.getByName(ctx, plan)
 			if err != nil {
-				if strings.Contains(err.Error(), "not found") {
-					return true
-				}
 				return false
 			}
 			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
@@ -808,8 +845,8 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+// checkAfterUnsubscribe 退订后检查
+func (c *ctyunRabbitmqInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -819,7 +856,7 @@ func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan Ctyun
 			if err != nil {
 				return false
 			}
-			if instance != nil && instance.Status != 5 {
+			if instance != nil && instance.Status != business.RabbitMqStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true
@@ -829,7 +866,33 @@ func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan Ctyun
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
+		err = fmt.Errorf("退订时间过长")
+	}
+	return
+}
+
+// checkAfterDestroy 销毁后检查
+func (c *ctyunRabbitmqInstance) checkAfterDestroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
+			instance, err = c.getByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance != nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }
@@ -857,7 +920,6 @@ func (c *ctyunRabbitmqInstance) getByName(ctx context.Context, plan CtyunRabbitm
 			return
 		}
 	}
-	err = fmt.Errorf("not found %s", plan.InstanceName.ValueString())
 	return
 }
 

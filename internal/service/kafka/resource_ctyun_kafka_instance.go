@@ -366,7 +366,7 @@ func (c *ctyunKafkaInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "退订状态") {
+		if strings.Contains(err.Error(), "已经销毁") {
 			err = nil
 			response.State.RemoveResource(ctx)
 		}
@@ -425,11 +425,33 @@ func (c *ctyunKafkaInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+
+	instance, err := c.getByNameOrID(ctx, state)
+	if err != nil || instance == nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.KafkaStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
 	if err != nil {
 		return
 	}
+	err = c.checkAfterDestroy(ctx, state)
+	if err != nil {
+		return
+	}
+
 	response.Diagnostics.AddWarning("删除Kakfa集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -672,10 +694,10 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	if err != nil {
 		return
 	}
-	switch instance.Status {
-	case business.KafkaStatusExpired, business.KafkaStatusDeregister, business.KafkaStatusUnsubscribed:
-		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
+	if instance == nil {
+		return fmt.Errorf("%s 已经销毁", plan.ID.ValueString())
 	}
+
 	plan.InstanceName = types.StringValue(instance.InstanceName)
 	if len(instance.Version) >= 3 {
 		plan.EngineVersion = types.StringValue(instance.Version[:3])
@@ -1132,8 +1154,8 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 	return
 }
 
-// delete 删除
-func (c *ctyunKafkaInstance) delete(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+// unsubscribe 退订
+func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
 	params := &ctgkafka.CtgkafkaUnsubscribeInstV3Request{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
@@ -1147,6 +1169,77 @@ func (c *ctyunKafkaInstance) delete(ctx context.Context, plan CtyunKafkaInstance
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return
+	}
+	return
+}
+
+// unsubscribe 退订后检查
+func (c *ctyunKafkaInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
+			instance, err = c.getByNameOrID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance.Status != business.KafkaStatusUnsubscribed {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("退订时间过长")
+	}
+	return
+}
+
+// destroy 销毁
+func (c *ctyunKafkaInstance) destroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	params := &ctgkafka.CtgkafkaInstanceDeleteV3Request{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaInstanceDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// unsubscribe 销毁后检查
+func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
+			instance, err = c.getByNameOrID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance != nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }

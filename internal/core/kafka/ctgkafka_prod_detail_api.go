@@ -83,13 +83,13 @@ type CtgkafkaProdDetailReturnObjResponseSkuResItem struct {
 		CpuArch  string `json:"cpuArch"`
 		HostType string `json:"hostType"`
 		Spec     []struct {
-			SpecName     string  `json:"specName"`
-			Description  string  `json:"description"`
-			Tps          *string `json:"tps"`
-			MaxPartition *string `json:"maxPartition"`
-			Flow         *string `json:"flow"`
-			Cpu          int     `json:"cpu"`
-			Memory       int     `json:"memory"`
+			SpecName     string `json:"specName"`
+			Description  string `json:"description"`
+			Tps          int32  `json:"tps"`
+			MaxPartition int32  `json:"maxPartition"`
+			Flow         int32  `json:"flow"`
+			Cpu          int32  `json:"cpu"`
+			Memory       int32  `json:"memory"`
 		} `json:"spec"`
 	} `json:"resItems"`
 }

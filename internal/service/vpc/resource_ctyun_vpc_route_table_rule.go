@@ -138,6 +138,7 @@ func (c *ctyunVpcRouteTableRule) Create(ctx context.Context, request resource.Cr
 		return
 	}
 	plan.RuleID = types.StringValue(ruleID)
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {

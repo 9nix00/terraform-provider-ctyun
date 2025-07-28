@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -43,9 +42,9 @@ type CtyunKafkaSpecsSkuResItemResItems struct {
 type CtyunKafkaSpecsSkuResItemResItemsSpec struct {
 	SpecName     types.String `tfsdk:"spec_name"`
 	Description  types.String `tfsdk:"description"`
-	Tps          types.String `tfsdk:"tps"`
-	MaxPartition types.String `tfsdk:"max_partition"`
-	Flow         types.String `tfsdk:"flow"`
+	Tps          types.Int32  `tfsdk:"tps"`
+	MaxPartition types.Int32  `tfsdk:"max_partition"`
+	Flow         types.Int32  `tfsdk:"flow"`
 	Cpu          types.Int32  `tfsdk:"cpu"`
 	Memory       types.Int32  `tfsdk:"memory"`
 }
@@ -77,7 +76,6 @@ type CtyunKafkaSpecsConfig struct {
 }
 
 func (c *ctyunKafkaSpecs) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
-
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030704**`,
 		Attributes: map[string]schema.Attribute{
@@ -158,15 +156,15 @@ func (c *ctyunKafkaSpecs) Schema(_ context.Context, _ datasource.SchemaRequest, 
 																		Description: "产品规格描述",
 																		Computed:    true,
 																	},
-																	"tps": schema.StringAttribute{
+																	"tps": schema.Int32Attribute{
 																		Description: "单个代理TPS",
 																		Computed:    true,
 																	},
-																	"max_partition": schema.StringAttribute{
+																	"max_partition": schema.Int32Attribute{
 																		Description: "单个代理最大分区数",
 																		Computed:    true,
 																	},
-																	"flow": schema.StringAttribute{
+																	"flow": schema.Int32Attribute{
 																		Description: "单个代理流量规格",
 																		Computed:    true,
 																	},
@@ -281,11 +279,11 @@ func (c *ctyunKafkaSpecs) Read(ctx context.Context, request datasource.ReadReque
 					spItem := CtyunKafkaSpecsSkuResItemResItemsSpec{
 						SpecName:     types.StringValue(sp.SpecName),
 						Description:  types.StringValue(sp.Description),
-						Tps:          utils.SecStringValue(sp.Tps),
-						MaxPartition: utils.SecStringValue(sp.MaxPartition),
-						Flow:         utils.SecStringValue(sp.Flow),
-						Cpu:          types.Int32Value(int32(sp.Cpu)),
-						Memory:       types.Int32Value(int32(sp.Memory)),
+						Tps:          types.Int32Value(sp.Tps),
+						MaxPartition: types.Int32Value(sp.MaxPartition),
+						Flow:         types.Int32Value(sp.Flow),
+						Cpu:          types.Int32Value(sp.Cpu),
+						Memory:       types.Int32Value(sp.Memory),
 					}
 					rItem.Spec = append(rItem.Spec, spItem)
 				}

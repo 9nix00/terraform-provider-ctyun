@@ -410,7 +410,7 @@ func (c *ctyunRedisInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "can't find") || strings.Contains(err.Error(), "已退订") {
+		if strings.Contains(err.Error(), "can't find") {
 			err = nil
 			response.State.RemoveResource(ctx)
 		}
@@ -466,15 +466,32 @@ func (c *ctyunRedisInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+	instance, err := c.getByName(ctx, state)
+	if err != nil || instance == nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.RedisStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
 	if err != nil {
 		return
 	}
-	err = c.checkAfterDelete(ctx, state)
+	err = c.checkAfterDestroy(ctx, state)
 	if err != nil {
 		return
 	}
+
 	response.Diagnostics.AddWarning("删除Redis集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -774,14 +791,34 @@ func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisI
 	return
 }
 
-// delete 删除
-func (c *ctyunRedisInstance) delete(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
-	ID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+// unsubscribe 退订
+func (c *ctyunRedisInstance) unsubscribe(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
 	params := &dcs2.Dcs2DeleteInstanceRequest{
 		RegionId:   regionID,
-		ProdInstId: ID,
+		ProdInstId: id,
 	}
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DeleteInstanceApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// destroy 销毁
+func (c *ctyunRedisInstance) destroy(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+	params := &dcs2.Dcs2DestroyInstanceRequest{
+		RegionId:   regionID,
+		ProdInstId: id,
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DestroyInstanceApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
@@ -813,6 +850,9 @@ func (c *ctyunRedisInstance) getByName(ctx context.Context, plan CtyunRedisInsta
 	}
 	if len(resp.ReturnObj.Rows) > 0 {
 		instance = resp.ReturnObj.Rows[0]
+		if instance == nil {
+			err = common.InvalidReturnObjResultsError
+		}
 	}
 	return
 }
@@ -828,7 +868,7 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 0 || instance.ProdInstId == "" {
+			if instance == nil || instance.Status != business.RedisStatusRunning || instance.ProdInstId == "" {
 				return true
 			}
 
@@ -845,8 +885,8 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+// checkAfterUnsubscribe 退订后检查
+func (c *ctyunRedisInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -856,7 +896,7 @@ func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil && instance.Status != 8 {
+			if instance != nil && instance.Status != business.RedisStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true
@@ -867,6 +907,32 @@ func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRed
 	}
 	if !executeSuccessFlag {
 		err = fmt.Errorf("删除时间过长")
+	}
+	return
+}
+
+// checkAfterDestroy 销毁后检查
+func (c *ctyunRedisInstance) checkAfterDestroy(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *dcs2.Dcs2DescribeInstancesReturnObjRowsResponse
+			instance, err = c.getByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance == nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }
