@@ -51,10 +51,14 @@ const (
 	MongodbNodeTypeS      = "s"      // 单机版
 	MongodbNodeBackup     = "backup" // 备份节点
 
-	MongodbStorageTypeSSD       = "SSD"        // 超高IO
-	MongodbStorageTypeSAS       = "SAS"        // 高IO
-	MongodbStorageTypeSATA      = "SATA"       // 普通IO
-	MongodbStorageTypeSSDGenric = "SSD-Genric" // 通用型SSD
+	MongodbStorageTypeSSD        = "SSD"        // 超高IO
+	MongodbStorageTypeSAS        = "SAS"        // 高IO
+	MongodbStorageTypeSATA       = "SATA"       // 普通IO
+	MongodbStorageTypeSSDGenric  = "SSD-Genric" // 通用型SSD
+	MongodbBackupStorageTypeSSD  = "SSD"
+	MongodbBackupStorageTypeSAS  = "SAS"
+	MongodbBackupStorageTypeSATA = "SATA"
+	MongodbBackupStorageTypeOS   = "OS" // 对象存储
 
 	MongodbProdTypeSingle   = "single"
 	MongodbProdTypeReplica  = "replica"

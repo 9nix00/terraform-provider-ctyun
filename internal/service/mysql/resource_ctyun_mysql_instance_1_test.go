@@ -16,7 +16,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
-	hostType := "S7"
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql" + utils.GenerateRandomString()
@@ -24,7 +23,6 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	//period := 1
 	//autoRenewStatus := 0
 
-	instanceSeries := "S"
 	storageType := "SATA"
 	storageSpace := 100
 	flavorName := "c7.xlarge.2"

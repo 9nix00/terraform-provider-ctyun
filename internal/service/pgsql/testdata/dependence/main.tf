@@ -93,12 +93,12 @@ locals {
   real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-pgsql"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
+# resource "ctyun_eip" "eip_test" {
+#   name                = "tf-eip-for-pgsql"
+#   bandwidth           = 1
+#   cycle_type          = "on_demand"
+#   demand_billing_type = "upflowc"
+# }
 
 
 
