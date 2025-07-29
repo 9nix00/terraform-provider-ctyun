@@ -350,6 +350,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebs.NewCtyunEbsVolumes(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
+		ecs.NewCtyunEcsSnapshots(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -451,6 +452,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
+		ecs.NewCtyunEcsSnapshot(),
 	)
 }
 
