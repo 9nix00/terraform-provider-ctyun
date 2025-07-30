@@ -27,12 +27,8 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 	diskType := "SSD"
 
 	initName := "tf-rabbitmq-init-" + utils.GenerateRandomString()
-	initCpu := 2
-	initMem := 4
 
 	updatedName := "tf-rabbitmq-updated-" + utils.GenerateRandomString()
-	updatedCpu := 4
-	updatedMem := 8
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -49,8 +45,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					initName,
-					initCpu,
-					initMem,
+					dependence.rabbitmqClusterSpecName,
 					nodeNum,
 					zone,
 					diskSize,
@@ -61,8 +56,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
-					resource.TestCheckResourceAttr(resourceName, "cpu_num", strconv.Itoa(initCpu)),
-					resource.TestCheckResourceAttr(resourceName, "mem_size", strconv.Itoa(initMem)),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.rabbitmqClusterSpecName),
 					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(nodeNum)),
 					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
 					resource.TestCheckResourceAttr(resourceName, "disk_type", diskType),
@@ -79,8 +73,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,
-					updatedCpu,
-					updatedMem,
+					dependence.rabbitmqClusterSpecName2,
 					nodeNum,
 					zone,
 					diskSize,
@@ -91,8 +84,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "cpu_num", strconv.Itoa(updatedCpu)),
-					resource.TestCheckResourceAttr(resourceName, "mem_size", strconv.Itoa(updatedMem)),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.rabbitmqClusterSpecName2),
 					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(nodeNum)),
 					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
 					resource.TestCheckResourceAttr(resourceName, "disk_type", diskType),
@@ -109,8 +101,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,
-					updatedCpu,
-					updatedMem,
+					dependence.rabbitmqClusterSpecName2,
 					nodeNum,
 					zone,
 					diskSize,
@@ -159,8 +150,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,
-					updatedCpu,
-					updatedMem,
+					dependence.rabbitmqClusterSpecName2,
 					nodeNum,
 					zone,
 					diskSize,

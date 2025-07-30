@@ -481,6 +481,7 @@ func (c *ctyunRedisInstance) Delete(ctx context.Context, request resource.Delete
 		if err != nil {
 			return
 		}
+		time.Sleep(60 * time.Second)
 	}
 	// 销毁
 	err = c.destroy(ctx, state)

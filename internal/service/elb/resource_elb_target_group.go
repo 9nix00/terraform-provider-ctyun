@@ -70,6 +70,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerProtocols...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -129,6 +132,11 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 						path.MatchRoot("algorithm"),
 						types.StringValue(business.TargetGroupAlgorithmLC),
 						types.StringValue(business.TargetGroupAlgorithmSH),
+					),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("protocol"),
+						types.StringValue(business.ListenerProtocolHTTP),
+						types.StringValue(business.ListenerProtocolHTTPS),
 					),
 				},
 			},

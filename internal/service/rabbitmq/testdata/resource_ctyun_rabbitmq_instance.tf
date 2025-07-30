@@ -1,14 +1,13 @@
 resource "ctyun_rabbitmq_instance" "%[1]s" {
   instance_name = "%[2]s"
-  cpu_num = %[3]d
-  mem_size = %[4]d
-  node_num = %[5]d
-  zone_list = ["%[6]s"]
-  disk_size = %[7]d
-  disk_type = "%[8]s"
-  vpc_id = "%[9]s"
-  subnet_id = "%[10]s"
-  security_group_id = "%[11]s"
+  spec_name = "%[3]s"
+  node_num = %[4]d
+  zone_list = ["%[5]s"]
+  disk_size = %[6]d
+  disk_type = "%[7]s"
+  vpc_id = "%[8]s"
+  subnet_id = "%[9]s"
+  security_group_id = "%[10]s"
   cycle_type = "month"
   cycle_count = 1
 }

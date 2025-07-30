@@ -3,7 +3,6 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -58,8 +57,7 @@ type CtyunRabbitmqInstanceConfig struct {
 	RegionID        types.String `tfsdk:"region_id"`
 	ZoneList        types.Set    `tfsdk:"zone_list"`
 	InstanceName    types.String `tfsdk:"instance_name"`
-	CpuNum          types.Int32  `tfsdk:"cpu_num"`
-	MemSize         types.Int32  `tfsdk:"mem_size"`
+	SpecName        types.String `tfsdk:"spec_name"`
 	DiskType        types.String `tfsdk:"disk_type"`
 	DiskSize        types.Int32  `tfsdk:"disk_size"`
 	NodeNum         types.Int32  `tfsdk:"node_num"`
@@ -69,7 +67,7 @@ type CtyunRabbitmqInstanceConfig struct {
 	CycleType       types.String `tfsdk:"cycle_type"`
 	CycleCount      types.Int32  `tfsdk:"cycle_count"`
 
-	azInfo string
+	zoneList []string
 }
 
 func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -103,19 +101,9 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				Required:    true,
 				Description: "实例名称",
 			},
-			"cpu_num": schema.Int32Attribute{
+			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "cpu数量，支持2、4、8、16、32、64，您可查看<a href=\"https://www.ctyun.cn/document/10029625/10032819\">产品规格说明</a>",
-				Validators: []validator.Int32{
-					int32validator.OneOf(2, 4, 8, 16, 32, 64),
-				},
-			},
-			"mem_size": schema.Int32Attribute{
-				Required:    true,
-				Description: "内存大小，是cpu的2倍，支持4、8、16、32、64、128",
-				Validators: []validator.Int32{
-					int32validator.OneOf(4, 8, 16, 32, 64, 128),
-				},
+				Description: "实例的规格类型，建议使用ctyun_rabbitmq_specs查看",
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
@@ -339,6 +327,7 @@ func (c *ctyunRabbitmqInstance) Delete(ctx context.Context, request resource.Del
 		if err != nil {
 			return
 		}
+		time.Sleep(60 * time.Second)
 	}
 	// 销毁
 	err = c.destroy(ctx, state)
@@ -403,8 +392,93 @@ func (c *ctyunRabbitmqInstance) checkBeforeCreate(ctx context.Context, plan *Cty
 	if err != nil {
 		return err
 	}
+	err = c.checkZoneList(ctx, plan)
+	if err != nil {
+		return err
+	}
+	err = c.checkSpecParams(ctx, *plan)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	zones, err := business.NewRegionService(c.meta).GetZonesByRegionID(ctx, regionID)
+// checkSpecParams 检查规格参数
+func (c *ctyunRabbitmqInstance) checkSpecParams(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	nodeNum := plan.NodeNum.ValueInt32()
+	specName := plan.SpecName.ValueString()
+	diskType := plan.DiskType.ValueString()
+
+	if strings.HasSuffix(specName, "single") && nodeNum != 1 {
+		return fmt.Errorf("单机版实例节点数必须为1")
+	} else if strings.HasSuffix(specName, "cluster") && nodeNum < 3 {
+		return fmt.Errorf("集群版实例节点数必须大于等于3")
+	}
+	// 组装请求体
+	params := &amqp.AmqpProdDetailRequest{
+		RegionId: plan.RegionID.ValueString(),
+	}
+	// 调用API
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+
+	var skuRes amqp.AmqpProdDetailReturnObjDataSeriesSkuResItemResponse
+	var skuDisk amqp.AmqpProdDetailReturnObjDataSeriesSkuDiskItemResponse
+	for _, s := range resp.ReturnObj.Data.Series {
+		for _, p := range s.Sku {
+			if p.ProdName == "集群版" && plan.NodeNum.ValueInt32() >= 3 {
+				skuRes = p.ResItem
+				skuDisk = p.DiskItem
+				break
+			} else if p.ProdName == "单机版" && plan.NodeNum.ValueInt32() == 1 {
+				skuRes = p.ResItem
+				skuDisk = p.DiskItem
+				break
+			}
+		}
+	}
+
+	var specAvailable bool
+	for _, r := range skuRes.ResItems {
+		for _, s := range r.Spec {
+			if s.SpecName == specName {
+				specAvailable = true
+				break
+			}
+		}
+		if specAvailable {
+			break
+		}
+	}
+	if !specAvailable {
+		return fmt.Errorf("本资源池不支持 %s", specName)
+	}
+
+	var diskAvailable bool
+	for _, d := range skuDisk.ResItems {
+		if d == diskType {
+			diskAvailable = true
+			break
+		}
+	}
+	if !diskAvailable {
+		return fmt.Errorf("本资源池不支持 %s", diskType)
+	}
+
+	return
+}
+
+// checkZoneList 检查zoneList
+func (c *ctyunRabbitmqInstance) checkZoneList(ctx context.Context, plan *CtyunRabbitmqInstanceConfig) (err error) {
+	zones, err := business.NewRegionService(c.meta).GetZonesByRegionID(ctx, plan.RegionID.ValueString())
 	if err != nil {
 		return err
 	}
@@ -419,15 +493,7 @@ func (c *ctyunRabbitmqInstance) checkBeforeCreate(ctx context.Context, plan *Cty
 	for _, s := range str {
 		zoneList = append(zoneList, s.ValueString())
 	}
-	var list []map[string]string
-	for _, az := range zoneList {
-		if !z[az] {
-			err = fmt.Errorf("可用区 %s 不属于资源池 %s", az, regionID)
-		}
-		azInfo := map[string]string{"az_name": az}
-		list = append(list, azInfo)
-	}
-	plan.azInfo = utils.JsonString(list)
+	plan.zoneList = zoneList
 	return
 }
 
@@ -449,17 +515,14 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		RegionId:        plan.RegionID.ValueString(),
 		ClusterName:     plan.InstanceName.ValueString(),
 		ProjectId:       plan.ProjectID.ValueString(),
-		HostType:        "S7",
-		EngineType:      "rabbitmq",
-		CpuNum:          plan.CpuNum.ValueInt32(),
-		MemSize:         plan.MemSize.ValueInt32(),
+		SpecName:        plan.SpecName.ValueString(),
 		NodeNum:         plan.NodeNum.ValueInt32(),
 		DiskType:        plan.DiskType.ValueString(),
-		DiskSize:        fmt.Sprintf("%d", plan.DiskSize.ValueInt32()),
+		DiskSize:        plan.DiskSize.ValueInt32(),
 		VpcId:           plan.VpcID.ValueString(),
 		SubnetId:        plan.SubnetID.ValueString(),
 		SecurityGroupId: plan.SecurityGroupID.ValueString(),
-		AzInfo:          plan.azInfo,
+		ZoneList:        plan.zoneList,
 	}
 
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
@@ -482,17 +545,14 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		RegionId:        plan.RegionID.ValueString(),
 		ClusterName:     plan.InstanceName.ValueString(),
 		ProjectId:       plan.ProjectID.ValueString(),
-		HostType:        "S7",
-		EngineType:      "rabbitmq",
-		CpuNum:          plan.CpuNum.ValueInt32(),
-		MemSize:         plan.MemSize.ValueInt32(),
+		SpecName:        plan.SpecName.ValueString(),
 		NodeNum:         plan.NodeNum.ValueInt32(),
 		DiskType:        plan.DiskType.ValueString(),
-		DiskSize:        fmt.Sprintf("%d", plan.DiskSize.ValueInt32()),
+		DiskSize:        plan.DiskSize.ValueInt32(),
 		VpcId:           plan.VpcID.ValueString(),
 		SubnetId:        plan.SubnetID.ValueString(),
 		SecurityGroupId: plan.SecurityGroupID.ValueString(),
-		AzInfo:          plan.azInfo,
+		ZoneList:        plan.zoneList,
 	}
 
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
@@ -519,13 +579,8 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	if plan.ZoneList.IsNull() {
 		plan.ZoneList = types.SetNull(types.StringType)
 	}
-	u, m, err := c.parseSpec(instance.Prod)
-	if err != nil {
-		return
-	}
 
-	plan.CpuNum = types.Int32Value(int32(u))
-	plan.MemSize = types.Int32Value(int32(m))
+	plan.SpecName = types.StringValue(instance.Prod)
 	return
 }
 
@@ -695,14 +750,15 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, pla
 
 // updateSpec 更新规格
 func (c *ctyunRabbitmqInstance) updateSpec(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
-	if plan.CpuNum.Equal(state.CpuNum) && plan.MemSize.Equal(state.MemSize) {
+	if plan.SpecName.Equal(state.SpecName) {
 		return
 	}
-	if plan.CpuNum.ValueInt32() < state.CpuNum.ValueInt32() || plan.MemSize.ValueInt32() < state.MemSize.ValueInt32() {
+	ou, om, _ := c.parseSpec(state.SpecName.ValueString())
+	u, m, _ := c.parseSpec(plan.SpecName.ValueString())
+	if u <= ou && m <= om {
 		err = fmt.Errorf("只支持规格扩容")
 		return
 	}
-
 	err = c.specExtend(ctx, plan, state)
 	if err != nil {
 		return
@@ -715,8 +771,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 	params := &amqp.AmqpInstancesSpecExtendRequest{
 		RegionId:   state.RegionID.ValueString(),
 		ProdInstId: state.ID.ValueString(),
-		CpuNum:     plan.CpuNum.ValueInt32(),
-		MemSize:    plan.MemSize.ValueInt32(),
+		SpecName:   plan.SpecName.ValueString(),
 		AutoPay:    true,
 	}
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
@@ -735,7 +790,6 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var u int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -744,11 +798,7 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, 
 			if err != nil {
 				return false
 			}
-			u, _, err = c.parseSpec(instance.Prod)
-			if err != nil {
-				return false
-			}
-			if instance.Status != 1 || plan.CpuNum.ValueInt32() != int32(u) {
+			if instance.Status != 1 || instance.Prod != plan.SpecName.ValueString() {
 				return true
 			}
 			time.Sleep(30 * time.Second)

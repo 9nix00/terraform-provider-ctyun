@@ -69,11 +69,11 @@ type AmqpProdDetailReturnObjDataSeriesResponse struct {
 }
 
 type AmqpProdDetailReturnObjDataSeriesSkuResponse struct {
-	ProdId   string                                                `json:"prodId"`   /*  系列产品id  */
-	ProdName string                                                `json:"prodName"` /*  产品系列名称  */
-	ProdCode string                                                `json:"prodCode"` /*  产品系列编码  */
-	ResItem  *AmqpProdDetailReturnObjDataSeriesSkuResItemResponse  `json:"resItem"`  /*  主机信息  */
-	DiskItem *AmqpProdDetailReturnObjDataSeriesSkuDiskItemResponse `json:"diskItem"` /*  磁盘信息  */
+	ProdId   string                                               `json:"prodId"`   /*  系列产品id  */
+	ProdName string                                               `json:"prodName"` /*  产品系列名称  */
+	ProdCode string                                               `json:"prodCode"` /*  产品系列编码  */
+	ResItem  AmqpProdDetailReturnObjDataSeriesSkuResItemResponse  `json:"resItem"`  /*  主机信息  */
+	DiskItem AmqpProdDetailReturnObjDataSeriesSkuDiskItemResponse `json:"diskItem"` /*  磁盘信息  */
 }
 
 type AmqpProdDetailReturnObjDataSeriesSkuResItemResponse struct {

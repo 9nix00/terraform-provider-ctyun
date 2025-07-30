@@ -42,8 +42,7 @@ func (this *AmqpInstancesSpecExtendApi) Do(ctx context.Context, credential ctyun
 
 type AmqpInstancesSpecExtendRequest struct {
 	ProdInstId string `json:"prodInstId"`
-	CpuNum     int32  `json:"cpuNum"`
-	MemSize    int32  `json:"memSize"`
+	SpecName   string `json:"specName"`
 	AutoPay    bool   `json:"autoPay"`
 	RegionId   string `json:"regionId"`
 }
