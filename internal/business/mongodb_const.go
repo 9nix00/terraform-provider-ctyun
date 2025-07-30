@@ -340,3 +340,21 @@ var MongodbClusterNodeBaseNumMap = map[string]int32{
 	"shard":  3,
 	"config": 1,
 }
+
+var MongodbReplicaNodeNum = map[string]int32{
+	"Replica3R34": 3,
+	"Replica3R40": 3,
+	"Replica5R34": 5,
+	"Replica5R40": 5,
+	"Replica7R34": 7,
+	"Replica7R40": 7,
+	"Replica3R42": 3,
+	"Replica5R42": 5,
+	"Replica7R42": 7,
+	"Replica3R50": 3,
+	"Replica5R50": 5,
+	"Replica7R50": 7,
+	"Replica3R60": 3,
+	"Replica5R60": 5,
+	"Replica7R60": 7,
+}

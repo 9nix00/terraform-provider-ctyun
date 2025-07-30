@@ -102,9 +102,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
+				Description: "备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.StorageType...),
+					stringvalidator.OneOf(business.StorageTypeSSD, business.StorageTypeSATA, business.StorageTypeSAS, business.BackupStorageTypeOS),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -422,6 +422,9 @@ func (c *CtyunPostgresqlInstance) Update(ctx context.Context, request resource.U
 	if err != nil {
 		return
 	}
+	if !plan.AvailabilityZoneInfo.IsNull() {
+		state.AvailabilityZoneInfo = plan.AvailabilityZoneInfo
+	}
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergePgsqlInstance(ctx, &state)
 	if err != nil {
@@ -518,8 +521,14 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		header.ProjectId = config.ProjectID.ValueStringPointer()
 	}
 	// 处理backupStorage
-	if config.BackupStorageType.ValueString() != "" {
-		params.BackupStorageType = config.BackupStorageType.ValueStringPointer()
+	if !config.BackupStorageType.IsNull() && !config.BackupStorageType.IsUnknown() {
+		backupStorageType := config.BackupStorageType.ValueString()
+		if config.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
+			backupStorageType = strings.ToLower(config.BackupStorageType.ValueString())
+		} else {
+
+		}
+		params.BackupStorageType = &backupStorageType
 	}
 
 	if config.AppointVip.ValueString() != "" {
@@ -659,7 +668,7 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.ProdOrderStatus = types.Int32Value(returnObj.ProdOrderStatus)
 	config.ProdRunningStatus = types.Int32Value(returnObj.ProdRunningStatus)
 	config.ToolType = types.Int32Value(returnObj.ToolType)
-	config.BackupStorageType = types.StringValue(returnObj.BackupDiskType)
+	//config.BackupStorageType = types.StringValue(returnObj.BackupDiskType)
 	backupDiskSize := c.ParseStorageSize(&returnObj.BackupDiskSize)
 	diskSize, err := strconv.ParseInt(backupDiskSize, 10, 32)
 	if err != nil {
@@ -1398,7 +1407,10 @@ func (c *CtyunPostgresqlInstance) upgradeStorage(ctx context.Context, state *Cty
 		InstId:   state.ID.ValueString(),
 		NodeType: &nodeType,
 	}
-
+	backupUpgradeParams := &pgsql.PgsqlUpgradeRequest{
+		InstId:   state.ID.ValueString(),
+		NodeType: &nodeType,
+	}
 	upgradeHeaders := &pgsql.PgsqlUpgradeRequestHeader{}
 	if state.ProjectID.ValueString() != "" {
 		upgradeHeaders.ProjectID = state.ProjectID.ValueStringPointer()
@@ -1417,12 +1429,12 @@ func (c *CtyunPostgresqlInstance) upgradeStorage(ctx context.Context, state *Cty
 	// 若backupStorageSpace不为空，触发备用存储空间扩容，且plan backupStorageSpace与state不相同
 	if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() != state.BackupStorageSpace.ValueInt32() {
 		storageSize32 := plan.BackupStorageSpace.ValueInt32()
-		upgradeParams.DiskVolume = &storageSize32
+		backupUpgradeParams.DiskVolume = &storageSize32
 		nodeType = "backup"
-		upgradeParams.NodeType = &nodeType
+		backupUpgradeParams.NodeType = &nodeType
 	}
-	if upgradeParams.DiskVolume != nil {
-		err = c.upgradeStorgeRequest(ctx, upgradeParams, upgradeHeaders, state, plan)
+	if backupUpgradeParams.DiskVolume != nil {
+		err = c.upgradeStorgeRequest(ctx, backupUpgradeParams, upgradeHeaders, state, plan)
 		if err != nil {
 			return
 		}
@@ -1724,7 +1736,7 @@ type CtyunPostgresqlInstanceConfig struct {
 	RegionID             types.String `tfsdk:"region_id"`              // 目标资源池Id
 	FlavorName           types.String `tfsdk:"flavor_name"`            // 规格名称
 	ProdID               types.String `tfsdk:"prod_id"`                // 产品id
-	BackupStorageType    types.String `tfsdk:"backup_storage_type"`    // 备份存储类型, SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
+	BackupStorageType    types.String `tfsdk:"backup_storage_type"`    // 备份存储类型, SSD=超高IO、SATA=普通IO、SAS=高IO
 	BackupStorageSpace   types.Int32  `tfsdk:"backup_storage_space"`   // 备份存储空间大小
 	VpcID                types.String `tfsdk:"vpc_id"`                 // 虚拟私有云Id，，回收站恢复到新实例场景非必传则取原实例配置
 	SubnetId             types.String `tfsdk:"subnet_id"`              // 子网Id，，回收站恢复到新实例场景非必传则取原实例配置
