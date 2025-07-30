@@ -314,7 +314,7 @@ func (c *ctyunEcsSnapshot) updateName(ctx context.Context, plan, state CtyunEcsS
 	return
 }
 
-// updateName 修改名称
+// checkName 校验名称是否重复
 func (c *ctyunEcsSnapshot) checkName(ctx context.Context, plan CtyunEcsSnapshotConfig) (err error) {
 	params := &ctecs2.CtecsQuerySnapshotListV41Request{
 		RegionID:     plan.RegionId.ValueString(),

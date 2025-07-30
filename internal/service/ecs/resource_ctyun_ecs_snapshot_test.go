@@ -26,7 +26,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 
 	initName := "init-snapshot-" + rnd
 	updatedName := "updated-snapshot-" + rnd
-	instanceId := "5e1092c3-a33b-d225-6434-396e009e355b"
+	instanceId := dependence.ecsID
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

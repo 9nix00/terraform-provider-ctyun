@@ -33,3 +33,7 @@ output "key_pair_name" {
 output "key_pair_name2" {
   value = ctyun_keypair.keypair_test2.name
 }
+
+output "ecs_id" {
+  value = ctyun_ecs.ecs_test.id
+}

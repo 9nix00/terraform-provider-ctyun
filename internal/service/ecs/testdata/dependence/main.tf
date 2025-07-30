@@ -51,7 +51,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
   ram    = 4
   arch   = "x86"
   series = "C"
-  type   = "CPU_C7"
+  type   = "CPU_C8"
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test2" {
@@ -61,3 +61,18 @@ data "ctyun_ecs_flavors" "ecs_flavor_test2" {
   series = "C"
   type   = "CPU_C7"
 }
+
+resource "ctyun_ecs" "ecs_test" {
+  instance_name       = "tf-ecs-for-snapshot"
+  display_name        = "tf-ecs-for-snapshot"
+  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
+  image_id            = data.ctyun_images.image_test.images[0].id
+  system_disk_type    = "sata"
+  system_disk_size    = 40
+  vpc_id              = ctyun_vpc.vpc_test.id
+  password            = "P@ssW0rd_1"
+  cycle_type          = "on_demand"
+  subnet_id           = ctyun_subnet.subnet_test.id
+  is_destroy_instance = false
+}
+
