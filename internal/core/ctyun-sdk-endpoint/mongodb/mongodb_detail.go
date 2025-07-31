@@ -89,7 +89,8 @@ type DetailRespReturnObjVOSInfo struct {
 	Host             string  `json:"host"`                      // 主机地址
 	ProdInstSetName  *string `json:"prodInstSetName,omitempty"` // 产品实例集名
 	ProdInstId       string  `json:"prodInstId"`                // 产品实例ID
-	CpuCount         *int    `json:"cpuCount,omitempty"`        // CPU数量
+	CpuCount         int32   `json:"cpuCount"`                  // CPU数量
+	AzId             *string `json:"azId,omitempty"`            // az id
 }
 
 type DetailRespReturnObj struct {

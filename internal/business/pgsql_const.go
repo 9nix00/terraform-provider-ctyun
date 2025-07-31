@@ -255,6 +255,29 @@ var PgsqlNodeTypeDict = map[string]string{
 	"ReadOnly168":      "readNode",
 }
 
+var PgsqlNodeNumDict = map[string]int32{
+	"Single1222":       1,
+	"MasterSlave1222":  2,
+	"Single1417":       1,
+	"MasterSlave1417":  2,
+	"Single1320":       1,
+	"MasterSlave1320":  2,
+	"ReadOnly1222":     -1,
+	"ReadOnly1320":     -1,
+	"ReadOnly1417":     -1,
+	"Single1512":       1,
+	"MasterSlave1512":  2,
+	"ReadOnly1512":     -1,
+	"Master2Slave1222": 3,
+	"Master2Slave1417": 3,
+	"Master2Slave1320": 3,
+	"Master2Slave1512": 3,
+	"Single168":        1,
+	"MasterSlave168":   2,
+	"Master2Slave168":  3,
+	"ReadOnly168":      -1,
+}
+
 var PgsqlProdVersionDict = map[string]string{
 	"Single1222":       "12.22",
 	"MasterSlave1222":  "12.22",
