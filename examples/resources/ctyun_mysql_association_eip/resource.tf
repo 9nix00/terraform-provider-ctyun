@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-nat"
+  name        = "tf-vpc-for-mysql"
   cidr        = "192.168.0.0/16"
   description = "terraform-kafka测试使用"
   enable_ipv6 = true
@@ -20,7 +20,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-nat1"
+  name        = "tf-subnet-for-mysql1"
   cidr        = "192.168.1.0/24"
   description = "terraform-kafka测试使用"
   dns = [

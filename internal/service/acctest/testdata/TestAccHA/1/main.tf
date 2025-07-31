@@ -19,7 +19,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-test1"
+  name                = "tf-eip-test134"
   bandwidth           = 1
   cycle_type          = "on_demand"
   demand_billing_type = "bandwidth"
@@ -109,7 +109,8 @@ resource "ctyun_elb_loadbalancer" "test" {
   resource_type = "external"
   vpc_id        = ctyun_vpc.vpc_test.id
   eip_id        = ctyun_eip.eip_test.id
-  cycle_type    = "on_demand"
+  cycle_type    = "month"
+  cycle_count   = 1
 }
 
 resource "ctyun_elb_listener" "elb_listener_test" {

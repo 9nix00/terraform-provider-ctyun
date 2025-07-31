@@ -48,7 +48,8 @@ resource "ctyun_nat" "nat_test"{
   vpc_id = ctyun_vpc.vpc_test.id
   spec = 1
   name = "tf-nat"
-  cycle_type = "on_demand"
+  cycle_type    = "month"
+  cycle_count   = 1
 }
 
 resource "ctyun_nat_snat" "snat_test"{
