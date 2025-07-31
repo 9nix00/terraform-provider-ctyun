@@ -16,7 +16,7 @@ resource "ctyun_vpc_route_table" "route" {
 resource "ctyun_nat" "nat_test2"{
   vpc_id = ctyun_vpc.vpc_test.id
   spec = 1
-  name = "tf-nat2"
+  name = "tf-nat2-route"
   description = "terraform测试使用"
   cycle_type = "on_demand"
 }

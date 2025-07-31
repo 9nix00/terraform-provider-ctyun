@@ -47,7 +47,7 @@ resource "ctyun_eip" "eip_test" {
 resource "ctyun_nat" "nat_test"{
   vpc_id = ctyun_vpc.vpc_test.id
   spec = 1
-  name = "tf-nat"
+  name = "tf-nat-unified-gateway"
   cycle_type    = "month"
   cycle_count   = 1
 }
