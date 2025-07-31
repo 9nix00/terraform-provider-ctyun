@@ -133,11 +133,6 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 						types.StringValue(business.TargetGroupAlgorithmLC),
 						types.StringValue(business.TargetGroupAlgorithmSH),
 					),
-					validator2.AlsoRequiresEqualString(
-						path.MatchRoot("protocol"),
-						types.StringValue(business.ListenerProtocolHTTP),
-						types.StringValue(business.ListenerProtocolHTTPS),
-					),
 				},
 			},
 			"cookie_expire": schema.Int64Attribute{

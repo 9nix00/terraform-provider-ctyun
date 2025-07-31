@@ -34,7 +34,7 @@ auto_renew = false
 	initRetentionHours := 80
 
 	updatedName := "tf-kafka-updated-" + utils.GenerateRandomString()
-	updatedNodeNum := 4
+	updatedNodeNum := 5
 	updatedDiskSize := 200
 	updatedRetentionHours := 60
 
