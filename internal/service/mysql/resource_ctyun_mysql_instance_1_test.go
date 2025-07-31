@@ -13,12 +13,15 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_instance." + rnd
+
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql" + utils.GenerateRandomString()
 	password := "kqjwyk123."
+	//period := 1
+	//autoRenewStatus := 0
 
 	storageType := "SATA"
 	storageSpace := 100

@@ -17,10 +17,9 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	}
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
-	backupStorageType := `backup_storage_type="SATA"`
+	backupStorageType := `backup_storage_type="SSD"`
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 	cycleType := "month"
-	hostType := "S7"
 	prodId := "Single1222"
 	storageType := "SATA"
 	StorageSpace := 100
@@ -28,18 +27,15 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
 	password := "Kqjwyk123="
 	caseCensitive := true
-	instanceSeries := "S"
-	prodPerformanceSpce := "2C4G"
+	flavorName := "s7.large.2"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
-	osType := "ctyunos"
-	cpuType := "Intel"
+	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
 	period := fmt.Sprint(`cycle_count=1`)
 
 	updatedProdID := "Master2Slave1222"
-	updatedAzInfo := `[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":2, "node_type":"master"}]`
+	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":2, "node_type":"master"}]`
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -54,32 +50,32 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 			// 按包周期创建单节点，并测试单节点->1主2备扩容
 			// Create
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, prodId, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, azInfo, "", "", osType, cpuType, period, backupStorageType),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, flavorName, prodId, storageType, StorageSpace, name, password, caseCensitive,
+					vpcID, subnetID, securityGroupID, azInfo, "", "", period, backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
 				),
 			},
 			// 升配至1主2备
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period, backupStorageType),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, flavorName, updatedProdID, storageType, StorageSpace, name, password, caseCensitive,
+					vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", period, backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
 				),
 			},
 			// destroy
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, hostType, updatedProdID, storageType, StorageSpace, name, password, caseCensitive, instanceSeries,
-					prodPerformanceSpce, vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", osType, cpuType, period, backupStorageType),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, flavorName, updatedProdID, storageType, StorageSpace, name, password, caseCensitive,
+					vpcID, subnetID, securityGroupID, updatedAzInfo, "", "", period, backupStorageType, ""),
 				Destroy: true,
 			},
 		},

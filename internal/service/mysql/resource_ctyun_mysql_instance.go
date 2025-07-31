@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -70,7 +71,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 		Attributes: map[string]schema.Attribute{
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_instances查询支持的规格",
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格",
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -1458,6 +1459,7 @@ func (c *CtyunMysqlInstance) getAddNodeDist(ctx context.Context, azInfoList *[]m
 	// 定义map,存放az-节点数分布
 	nodeMap := make(map[string]int32)
 	addNodeMap := make(map[string]int32)
+	defaultAzId := ""
 	// 获取该资源池az列表
 	regionAzList, err := c.getAzInfoByRegion(ctx, state)
 	if err != nil {
@@ -1465,8 +1467,11 @@ func (c *CtyunMysqlInstance) getAddNodeDist(ctx context.Context, azInfoList *[]m
 	}
 	// 对map进行初始化
 	for _, AzInfo := range regionAzList {
-		if _, exist := nodeMap[AzInfo.AvailabilityZoneName]; !exist {
-			nodeMap[AzInfo.AvailabilityZoneName] = 0
+		if defaultAzId == "" {
+			defaultAzId = AzInfo.AvailabilityZoneId
+		}
+		if _, exist := nodeMap[AzInfo.AvailabilityZoneId]; !exist {
+			nodeMap[AzInfo.AvailabilityZoneId] = 0
 		}
 	}
 	// 统计每个az的节点数
@@ -1482,7 +1487,7 @@ func (c *CtyunMysqlInstance) getAddNodeDist(ctx context.Context, azInfoList *[]m
 	}
 	// 根据需要增加的节点数，每次选取，最小的value值的az
 	for i := 0; i < addNodeNum; i++ {
-		minNodeNum := int32(3)
+		minNodeNum := int32(math.MaxInt32)
 		minAzName := ""
 		for key, value := range nodeMap {
 			if value < minNodeNum {
@@ -1490,7 +1495,9 @@ func (c *CtyunMysqlInstance) getAddNodeDist(ctx context.Context, azInfoList *[]m
 				minAzName = key
 			}
 		}
-
+		if minAzName == "" {
+			minAzName = defaultAzId
+		}
 		if _, exists := addNodeMap[minAzName]; exists {
 			addNodeMap[minAzName] = addNodeMap[minAzName] + 1
 		} else {
@@ -1531,6 +1538,11 @@ func (c *CtyunMysqlInstance) getAzInfoByRegion(ctx context.Context, config *Ctyu
 		return
 	}
 	regionAzList = resp.ReturnObj.Data
+	if regionAzList == nil || len(regionAzList) == 0 {
+		err = errors.New("查询该资源池AZ信息时，返回为空。请稍后再试")
+		return
+	}
+
 	return
 }
 

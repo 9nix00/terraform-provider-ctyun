@@ -19,6 +19,7 @@ type Apis struct {
 	PgsqlUnBindEipApi           *PgsqlUnBindEipApi
 	PgsqlBoundEipListApi        *PgsqlBoundEipListApi
 	PgsqlDeleteSecurityGroupApi *PgsqlDeleteSecurityGroupApi
+	PgsqlGetNodeListApi         *PgsqlGetNodeListApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -47,6 +48,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		PgsqlUnBindEipApi:           NewPgsqlUnBindEipApi(client),
 		PgsqlBoundEipListApi:        NewPgsqlBoundEipListApi(client),
 		PgsqlDeleteSecurityGroupApi: NewPgsqlDeleteSecurityGroupApi(client),
+		PgsqlGetNodeListApi:         NewPgsqlGetNodeListApi(client),
 	}
 
 }

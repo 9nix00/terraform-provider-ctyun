@@ -92,7 +92,7 @@ const (
 	StorageTypeSAS       = "SAS"        //高IO
 	StorageTypeSSDGenric = "SSD-genric" //通用型SSD
 	StorageTypeFASTSSD   = "FAST-SSD"   //极速型SSD
-
+	BackupStorageTypeOS  = "OS"
 )
 
 var ProdType = []string{

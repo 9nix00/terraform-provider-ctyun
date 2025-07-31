@@ -9,8 +9,11 @@ resource "ctyun_mongodb_instance" "%[1]s" {
   name              = "%[9]s"
   password          = "%[10]s"
   prod_id           = "%[11]s"
-  node_info_list = [%[12]s]
+  # node_info_list = [%[12]s]
+  %[12]s // availability_zone_info
   %[13]s  // read_port
   %[14]s //  is_upgrade_back_up
   region_id = "bb9fdb42056f11eda1610242ac110002"
+  instance_series = "%[15]s"
+  prod_performance_spec = "%[16]s"
 }

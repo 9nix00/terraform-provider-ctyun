@@ -51,10 +51,14 @@ const (
 	MongodbNodeTypeS      = "s"      // 单机版
 	MongodbNodeBackup     = "backup" // 备份节点
 
-	MongodbStorageTypeSSD       = "SSD"        // 超高IO
-	MongodbStorageTypeSAS       = "SAS"        // 高IO
-	MongodbStorageTypeSATA      = "SATA"       // 普通IO
-	MongodbStorageTypeSSDGenric = "SSD-Genric" // 通用型SSD
+	MongodbStorageTypeSSD        = "SSD"        // 超高IO
+	MongodbStorageTypeSAS        = "SAS"        // 高IO
+	MongodbStorageTypeSATA       = "SATA"       // 普通IO
+	MongodbStorageTypeSSDGenric  = "SSD-Genric" // 通用型SSD
+	MongodbBackupStorageTypeSSD  = "SSD"
+	MongodbBackupStorageTypeSAS  = "SAS"
+	MongodbBackupStorageTypeSATA = "SATA"
+	MongodbBackupStorageTypeOS   = "OS" // 对象存储
 
 	MongodbProdTypeSingle   = "single"
 	MongodbProdTypeReplica  = "replica"
@@ -335,4 +339,22 @@ var MongodbClusterNodeBaseNumMap = map[string]int32{
 	"mongos": 1,
 	"shard":  3,
 	"config": 1,
+}
+
+var MongodbReplicaNodeNum = map[string]int32{
+	"Replica3R34": 3,
+	"Replica3R40": 3,
+	"Replica5R34": 5,
+	"Replica5R40": 5,
+	"Replica7R34": 7,
+	"Replica7R40": 7,
+	"Replica3R42": 3,
+	"Replica5R42": 5,
+	"Replica7R42": 7,
+	"Replica3R50": 3,
+	"Replica5R50": 5,
+	"Replica7R50": 7,
+	"Replica3R60": 3,
+	"Replica5R60": 5,
+	"Replica7R60": 7,
 }
