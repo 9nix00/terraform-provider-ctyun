@@ -70,6 +70,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerProtocols...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,

@@ -27,21 +27,44 @@ func (c *ctyunRabbitmqSpecs) Metadata(_ context.Context, request datasource.Meta
 	response.TypeName = request.ProviderTypeName + "_rabbitmq_specs"
 }
 
-type CtyunRabbitmqSpecsModel struct {
-	FlavorID      types.String  `tfsdk:"flavor_id"`
-	SpecName      types.String  `tfsdk:"spec_name"`
-	FlavorType    types.String  `tfsdk:"flavor_type"`
-	FlavorName    types.String  `tfsdk:"flavor_name"`
-	CpuNum        types.Int32   `tfsdk:"cpu_num"`
-	MemSize       types.Int32   `tfsdk:"mem_size"`
-	MultiQueue    types.Int32   `tfsdk:"multi_queue"`
-	Pps           types.Int32   `tfsdk:"pps"`
-	BandwidthBase types.Float64 `tfsdk:"bandwidth_base"`
-	BandwidthMax  types.Int32   `tfsdk:"bandwidth_max"`
-	Series        types.String  `tfsdk:"series"`
-	AzList        []string      `tfsdk:"az_list"`
-	//CpuArch       interface{}   `tfsdk:"cpuArch"`
+type CtyunRabbitmqSpecsSkuResItem struct {
+	ResType  types.String                           `tfsdk:"res_type"`
+	ResName  types.String                           `tfsdk:"res_name"`
+	ResItems []CtyunRabbitmqSpecsSkuResItemResItems `tfsdk:"res_items"`
+}
 
+type CtyunRabbitmqSpecsSkuResItemResItems struct {
+	CpuArch  types.String                               `tfsdk:"cpu_arch"`
+	HostType types.String                               `tfsdk:"host_type"`
+	Spec     []CtyunRabbitmqSpecsSkuResItemResItemsSpec `tfsdk:"spec"`
+}
+
+type CtyunRabbitmqSpecsSkuResItemResItemsSpec struct {
+	SpecName    types.String `tfsdk:"spec_name"`
+	Description types.String `tfsdk:"description"`
+	Cpu         types.Int32  `tfsdk:"cpu"`
+	Memory      types.Int32  `tfsdk:"memory"`
+}
+
+type CtyunRabbitmqSpecsSkuDiskItem struct {
+	ResType  types.String `tfsdk:"res_type"`
+	ResName  types.String `tfsdk:"res_name"`
+	ResItems []string     `tfsdk:"res_items"`
+}
+
+type CtyunRabbitmqSpecsSku struct {
+	ProdId   types.String                  `tfsdk:"prod_id"`
+	ProdName types.String                  `tfsdk:"prod_name"`
+	ProdCode types.String                  `tfsdk:"prod_code"`
+	ResItem  CtyunRabbitmqSpecsSkuResItem  `tfsdk:"res_item"`
+	DiskItem CtyunRabbitmqSpecsSkuDiskItem `tfsdk:"disk_item"`
+}
+
+type CtyunRabbitmqSpecsModel struct {
+	ProdId   types.String            `tfsdk:"prod_id"`
+	ProdName types.String            `tfsdk:"prod_name"`
+	ProdCode types.String            `tfsdk:"prod_code"`
+	Sku      []CtyunRabbitmqSpecsSku `tfsdk:"sku"`
 }
 
 type CtyunRabbitmqSpecsConfig struct {
@@ -59,58 +82,114 @@ func (c *ctyunRabbitmqSpecs) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "资源池ID",
 			},
 			"specs": schema.ListNestedAttribute{
-				Description: "List of RabbitMQ specifications.",
+				Description: "产品系列信息",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"flavor_id": schema.StringAttribute{
-							Description: "规格id",
+						"prod_id": schema.StringAttribute{
+							Description: "产品系列id",
 							Computed:    true,
 						},
-						"spec_name": schema.StringAttribute{
-							Description: "套餐名称",
+						"prod_name": schema.StringAttribute{
+							Description: "产品系列名称",
 							Computed:    true,
 						},
-						"flavor_type": schema.StringAttribute{
-							Description: "规格类型",
+						"prod_code": schema.StringAttribute{
+							Description: "产品系列编码",
 							Computed:    true,
 						},
-						"flavor_name": schema.StringAttribute{
-							Description: "规格名称",
+						"sku": schema.ListNestedAttribute{
+							Description: "产品系列详情",
 							Computed:    true,
-						},
-						"cpu_num": schema.Int32Attribute{
-							Description: "CPU",
-							Computed:    true,
-						},
-						"mem_size": schema.Int32Attribute{
-							Description: "内存",
-							Computed:    true,
-						},
-						"multi_queue": schema.Int32Attribute{
-							Description: "并发队列数量",
-							Computed:    true,
-						},
-						"pps": schema.Int32Attribute{
-							Description: "每秒包数",
-							Computed:    true,
-						},
-						"bandwidth_base": schema.Float64Attribute{
-							Description: "基准带宽",
-							Computed:    true,
-						},
-						"bandwidth_max": schema.Int32Attribute{
-							Description: "最大带宽",
-							Computed:    true,
-						},
-						"series": schema.StringAttribute{
-							Description: "系列",
-							Computed:    true,
-						},
-						"az_list": schema.ListAttribute{
-							Description: "可用区",
-							Computed:    true,
-							ElementType: types.StringType,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"prod_id": schema.StringAttribute{
+										Description: "产品系列详情id",
+										Computed:    true,
+									},
+									"prod_name": schema.StringAttribute{
+										Description: "产品系列详情名称",
+										Computed:    true,
+									},
+									"prod_code": schema.StringAttribute{
+										Description: "产品系列详情编码",
+										Computed:    true,
+									},
+									"res_item": schema.SingleNestedAttribute{
+										Description: "主机信息",
+										Computed:    true,
+										Attributes: map[string]schema.Attribute{
+											"res_type": schema.StringAttribute{
+												Description: "资源类型：ecs",
+												Computed:    true,
+											},
+											"res_name": schema.StringAttribute{
+												Description: "资源名称：云服务器",
+												Computed:    true,
+											},
+											"res_items": schema.ListNestedAttribute{
+												Description: "主机规格信息",
+												Computed:    true,
+												NestedObject: schema.NestedAttributeObject{
+													Attributes: map[string]schema.Attribute{
+														"cpu_arch": schema.StringAttribute{
+															Description: "cpu架构",
+															Computed:    true,
+														},
+														"host_type": schema.StringAttribute{
+															Description: "主机类型",
+															Computed:    true,
+														},
+														"spec": schema.ListNestedAttribute{
+															Description: "主机规格列表",
+															Computed:    true,
+															NestedObject: schema.NestedAttributeObject{
+																Attributes: map[string]schema.Attribute{
+																	"spec_name": schema.StringAttribute{
+																		Description: "产品规格名称",
+																		Computed:    true,
+																	},
+																	"description": schema.StringAttribute{
+																		Description: "产品规格描述",
+																		Computed:    true,
+																	},
+																	"cpu": schema.Int64Attribute{
+																		Description: "cpu核心数",
+																		Computed:    true,
+																	},
+																	"memory": schema.Int64Attribute{
+																		Description: "内存大小",
+																		Computed:    true,
+																	},
+																},
+															},
+														},
+													},
+												},
+											},
+										},
+									},
+									"disk_item": schema.SingleNestedAttribute{
+										Description: "磁盘信息",
+										Computed:    true,
+										Attributes: map[string]schema.Attribute{
+											"res_type": schema.StringAttribute{
+												Description: "资源类型：ebs",
+												Computed:    true,
+											},
+											"res_name": schema.StringAttribute{
+												Description: "资源名称：磁盘",
+												Computed:    true,
+											},
+											"res_items": schema.ListAttribute{
+												Description: "磁盘类型",
+												Computed:    true,
+												ElementType: types.StringType,
+											},
+										},
+									},
+								},
+							},
 						},
 					},
 				},
@@ -139,9 +218,9 @@ func (c *ctyunRabbitmqSpecs) Read(ctx context.Context, request datasource.ReadRe
 
 	config.RegionID = types.StringValue(regionId)
 	// 组装请求体
-	params := &amqp.AmqpInstancesQueryProdRequest{regionId}
+	params := &amqp.AmqpProdDetailRequest{regionId}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryProdApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -153,20 +232,44 @@ func (c *ctyunRabbitmqSpecs) Read(ctx context.Context, request datasource.ReadRe
 	}
 	config.Specs = []CtyunRabbitmqSpecsModel{}
 	// 解析返回值
-	for _, spec := range resp.ReturnObj.Data {
+	for _, s := range resp.ReturnObj.Data.Series {
 		item := CtyunRabbitmqSpecsModel{
-			FlavorID:      types.StringValue(spec.FlavorID),
-			FlavorType:    types.StringValue(spec.FlavorType),
-			FlavorName:    types.StringValue(spec.FlavorName),
-			SpecName:      types.StringValue(spec.SpecName),
-			CpuNum:        types.Int32Value(spec.CpuNum),
-			MemSize:       types.Int32Value(spec.MemSize),
-			MultiQueue:    types.Int32Value(spec.MultiQueue),
-			Pps:           types.Int32Value(spec.Pps),
-			BandwidthBase: types.Float64Value(spec.BandwidthBase),
-			BandwidthMax:  types.Int32Value(spec.BandwidthMax),
-			Series:        types.StringValue(spec.Series),
-			AzList:        spec.AzList,
+			ProdId:   types.StringValue(s.ProdId),
+			ProdName: types.StringValue(s.ProdName),
+			ProdCode: types.StringValue(s.ProdCode),
+		}
+		for _, sk := range s.Sku {
+			skItem := CtyunRabbitmqSpecsSku{
+				ProdId:   types.StringValue(sk.ProdId),
+				ProdName: types.StringValue(sk.ProdName),
+				ProdCode: types.StringValue(sk.ProdCode),
+				ResItem: CtyunRabbitmqSpecsSkuResItem{
+					ResName: types.StringValue(sk.ResItem.ResName),
+					ResType: types.StringValue(sk.ResItem.ResType),
+				},
+				DiskItem: CtyunRabbitmqSpecsSkuDiskItem{
+					ResName:  types.StringValue(sk.DiskItem.ResName),
+					ResType:  types.StringValue(sk.DiskItem.ResType),
+					ResItems: sk.DiskItem.ResItems,
+				},
+			}
+			for _, r := range sk.ResItem.ResItems {
+				rItem := CtyunRabbitmqSpecsSkuResItemResItems{
+					CpuArch:  types.StringValue(r.CpuArch),
+					HostType: types.StringValue(r.HostType),
+				}
+				for _, sp := range r.Spec {
+					spItem := CtyunRabbitmqSpecsSkuResItemResItemsSpec{
+						SpecName:    types.StringValue(sp.SpecName),
+						Description: types.StringValue(sp.Description),
+						Cpu:         types.Int32Value(sp.Cpu),
+						Memory:      types.Int32Value(sp.Memory),
+					}
+					rItem.Spec = append(rItem.Spec, spItem)
+				}
+				skItem.ResItem.ResItems = append(skItem.ResItem.ResItems, rItem)
+			}
+			item.Sku = append(item.Sku, skItem)
 		}
 		config.Specs = append(config.Specs, item)
 	}

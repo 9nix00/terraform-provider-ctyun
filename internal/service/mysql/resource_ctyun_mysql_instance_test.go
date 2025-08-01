@@ -102,7 +102,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 			},
 			// 升配验证-单机规格扩容->1主1备
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", updatedBackupStorageSpace),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "inst_id"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave57"),
@@ -110,7 +110,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 			},
 			// datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", updatedBackupStorageSpace) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_name=%s.name", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "1"),
@@ -118,7 +118,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 			},
 			//销毁
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", ""),
+				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", updatedBackupStorageSpace),
 				Destroy: true,
 			},
 		},

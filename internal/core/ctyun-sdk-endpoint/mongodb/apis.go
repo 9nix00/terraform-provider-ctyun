@@ -1,8 +1,6 @@
 package mongodb
 
-import (
-	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-)
+import ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 type Apis struct {
 	MongodbCreateApi              *MongodbCreateApi

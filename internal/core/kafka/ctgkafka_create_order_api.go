@@ -95,5 +95,4 @@ type CtgkafkaCreateOrderReturnObjResponseData struct {
 	Submitted  bool   `json:"submitted"`
 	NewOrderId string `json:"newOrderId"`
 	NewOrderNo string `json:"newOrderNo"`
-	TotalPrice string `json:"totalPrice"`
 }

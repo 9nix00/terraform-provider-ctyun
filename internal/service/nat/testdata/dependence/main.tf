@@ -22,7 +22,7 @@ resource "ctyun_vpc" "vpc_test" {
 resource "ctyun_nat" "nat_test"{
   vpc_id = ctyun_vpc.vpc_test.id
   spec = 1
-  name = "tf-nat"
+  name = "tf-nat-for-test"
   description = "terraform测试使用"
   cycle_type = "on_demand"
 }
