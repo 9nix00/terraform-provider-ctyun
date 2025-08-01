@@ -6,11 +6,11 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "tf-subnet-for-ecs"
   cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
-  dns         = [
+  dns = [
     "114.114.114.114",
     "8.8.8.8",
     "8.8.4.4"
@@ -19,13 +19,13 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_security_group" "security_group_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "tf-sg-for-ecs"
   description = "terraform测试使用"
 }
 
 resource "ctyun_ecs_affinity_group" "affinity_group_test" {
-  affinity_group_name = "tf-affinity-group-for-ecs"
+  affinity_group_name   = "tf-affinity-group-for-ecs"
   affinity_group_policy = "anti-affinity"
 }
 
@@ -42,8 +42,8 @@ resource "ctyun_keypair" "keypair_test2" {
 data "ctyun_images" "image_test" {
   name       = "CentOS Linux 8.4"
   visibility = "public"
-  page_no = 1
-  page_size = 10
+  page_no    = 1
+  page_size  = 10
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {

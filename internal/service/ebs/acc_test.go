@@ -11,6 +11,7 @@ const dependenceDir = "testdata/dependence"
 
 type Dependence struct {
 	ecsID string
+	ebsID string
 }
 
 var dependence Dependence
@@ -26,6 +27,9 @@ func TestMain(m *testing.M) {
 	}
 	dependence = Dependence{
 		ecsID: outputs["ecs_id"].Value,
+	}
+	dependence = Dependence{
+		ebsID: outputs["ebs_id"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 

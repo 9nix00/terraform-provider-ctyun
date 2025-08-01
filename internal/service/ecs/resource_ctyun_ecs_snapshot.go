@@ -382,8 +382,7 @@ func (c *ctyunEcsSnapshot) StartedLoop(ctx context.Context, state *CtyunEcsSnaps
 			}
 
 			runningStatus := resp.ReturnObj.Results[0].SnapshotStatus
-			if runningStatus != business.EcsSnapshotStatusAvailable {
-				err = errors.New("快照仍未到启用状态")
+			if runningStatus == business.EcsSnapshotStatusAvailable {
 				return false
 			}
 			return true

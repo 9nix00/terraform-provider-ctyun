@@ -30,7 +30,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
   ram    = 4
   arch   = "x86"
   series = "C"
-  type   = "CPU_C7"
+  type   = "CPU_C8"
 }
 
 resource "ctyun_ecs" "ecs_test" {
@@ -45,4 +45,12 @@ resource "ctyun_ecs" "ecs_test" {
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
+}
+
+resource "ctyun_ebs" "ebs_test" {
+  name       = "ebs-test25"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
 }
