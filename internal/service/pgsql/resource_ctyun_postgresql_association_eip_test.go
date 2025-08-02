@@ -29,8 +29,8 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 	specsDatasourceFile := "datasource_ctyun_postgresql_specs.tf"
 
 	eipId := dependence.eipID
-	eipAddress := dependence.eipAddress
 	instId := dependence.PgsqlID
+	//instId := "1bb2c455994c419ca0acadbc436c44c8"
 
 	//prodType := "1"
 	//prodCode := "POSTGRESQL"
@@ -48,7 +48,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 绑定eip
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
 					resource.TestCheckResourceAttr(resourceName, "eip_status", "1"),
@@ -57,13 +57,11 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 			// resource验证
 			//datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId) +
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
 				),
 			},
 			// spec datasource验证
@@ -75,7 +73,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 			},
 			// 解绑
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
+				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, instId),
 				Destroy: true,
 			},
 		},
