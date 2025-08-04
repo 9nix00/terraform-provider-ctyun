@@ -111,7 +111,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 	sfsName := "hpfs-" + utils.GenerateRandomString()
 	updatedSfsName := "hpfs-" + utils.GenerateRandomString() + "-new"
 	azName := "cn-huadong1-jsnj1A-public-ctcloud"
-	sfsSize := 1024
+	sfsSize := 512
 	updatedSfsSize := 512
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
