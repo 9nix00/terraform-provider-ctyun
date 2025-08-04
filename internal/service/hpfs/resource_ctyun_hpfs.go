@@ -8,13 +8,16 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -38,7 +41,7 @@ func (c *ctyunHpfs) Configure(_ context.Context, request resource.ConfigureReque
 	c.meta = meta
 }
 
-func NewCtyunMongodbInstance() resource.Resource {
+func NewCtyunHpfsInstance() resource.Resource {
 	return &ctyunHpfs{}
 }
 
@@ -55,22 +58,30 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-
-			"sfs_type": schema.StringAttribute{
-				Required:    true,
-				Description: "并行文件类型 (hpc/hpc_cache)",
-				Validators: []validator.String{
-					stringvalidator.OneOf("hpc", "hpc_cache"),
-				},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
+			//"sfs_type": schema.StringAttribute{
+			//	Required:    true,
+			//	Description: "并行文件类型 (HPC性能型)",
+			//	Validators: []validator.String{
+			//		stringvalidator.OneOf("HPC性能型"),
+			//	},
+			//	PlanModifiers: []planmodifier.String{
+			//		stringplanmodifier.RequiresReplace(),
+			//	},
+			//},
 			"sfs_protocol": schema.StringAttribute{
 				Required:    true,
-				Description: "协议类型",
+				Description: "协议类型，可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
 				Validators: []validator.String{
-					stringvalidator.OneOf("NFS", "CIFS"),
+					stringvalidator.OneOf("nfs", "hpfs"),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -78,62 +89,87 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 			},
 			"cycle_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "包周期类型",
+				Computed:    true,
+				Description: "订购周期类型，只支持on_demand",
+				Default:     stringdefault.StaticString(business.OrderCycleTypeOnDemand),
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.OrderCycleTypeOnDemand),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"cycle_count": schema.Int64Attribute{
+			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "包周期数",
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
+				Description: "订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36",
+				Validators: []validator.Int32{
+					validator2.AlsoRequiresEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+					),
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+					int32validator.Between(1, 36),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"sfs_name": schema.StringAttribute{
 				Required:    true,
-				Description: "并行文件名",
+				Description: "并行文件名,仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符",
 				Validators: []validator.String{
-					stringvalidator.LengthAtLeast(1),
+					stringvalidator.LengthBetween(2, 255),
 				},
 			},
-			"sfs_size": schema.Int64Attribute{
+			"sfs_size": schema.Int32Attribute{
 				Required:    true,
 				Description: "文件大小（GB），范围: 500-32768",
-				Validators: []validator.Int64{
-					int64validator.Between(500, 32768),
-				},
-				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.RequiresReplace(),
+				Validators: []validator.Int32{
+					// 范围验证
+					int32validator.Between(500, 32768),
+					// 自定义步长验证
+					validator2.SfsSize(),
 				},
 			},
 			"az_name": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
+				Computed:    true,
 				Description: "可用区名称",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"cluster_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "集群名称",
+				Computed:    true,
+				Description: "集群名称，仅资源池支持指定集群时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
+				PlanModifiers: []planmodifier.String{
+					//stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"baseline": schema.StringAttribute{
 				Optional:    true,
-				Description: "性能基线",
-				Validators: []validator.String{
-					stringvalidator.OneOf("low", "medium", "high"),
+				Computed:    true,
+				Description: "性能基线（MB/s/TB），仅资源池支持性能基线时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
+				PlanModifiers: []planmodifier.String{
+					//stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "虚拟网 ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "子网 ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -154,13 +190,13 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Computed:    true,
 				Description: "并行文件状态",
 			},
-			"used_size": schema.Int64Attribute{
+			"used_size": schema.Int32Attribute{
 				Computed:    true,
 				Description: "已用大小（MB）",
 			},
 			"dataflow_list": schema.SetAttribute{
 				ElementType: types.StringType,
-				Optional:    true,
+				Computed:    true,
 				Description: "HPFS文件系统下的数据流动策略ID列表",
 			},
 		},
@@ -185,7 +221,12 @@ func (c *ctyunHpfs) Create(ctx context.Context, request resource.CreateRequest, 
 	if !isValid || err != nil {
 		return
 	}
-	err = c.createHpfs(ctx, &plan)
+	createParams, err := c.createHpfs(ctx, &plan)
+	if err != nil {
+		return
+	}
+	// 创建后，通过创建的请求轮询，确认创建成功
+	err = c.createLoop(ctx, &plan, createParams, 60)
 	if err != nil {
 		return
 	}
@@ -279,12 +320,11 @@ func (c *ctyunHpfs) Delete(ctx context.Context, request resource.DeleteRequest, 
 		return
 	}
 
-	params := &hpfs.HpfsRenameSfsRequest{
+	params := &hpfs.HpfsRefundSfsRequest{
 		RegionID: state.RegionID.ValueString(),
 		SfsUID:   state.ID.ValueString(),
-		SfsName:  state.SfsName.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkHpfsApis.HpfsRenameSfsApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.SdkHpfsApis.HpfsRefundSfsApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp == nil {
@@ -303,14 +343,15 @@ func (c *ctyunHpfs) Delete(ctx context.Context, request resource.DeleteRequest, 
 
 func (c *ctyunHpfs) checkBeforeHpfs(ctx context.Context, plan CtyunHpfsConfig) (inValid bool, err error) {
 	// 判断sfs_type，sfs_protocol是否合理，/v4/hpfs/list-cluster
+
 	return true, nil
 }
 
-func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) error {
+func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*hpfs.HpfsNewSfsRequest, error) {
 	params := &hpfs.HpfsNewSfsRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    config.RegionID.ValueString(),
-		SfsType:     config.SfsType.ValueString(),
+		SfsType:     "hpfs_perf",
 		SfsProtocol: config.SfsProtocol.ValueString(),
 		CycleType:   config.CycleType.ValueString(),
 		SfsName:     config.SfsName.ValueString(),
@@ -338,20 +379,24 @@ func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) err
 	}
 	resp, err := c.meta.Apis.SdkHpfsApis.HpfsNewSfsApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
-		return err
+		return nil, err
 	} else if resp == nil {
 		err = errors.New("开通hpfs失败，返回nil")
-		return err
+		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		if strings.Contains(resp.Message, "in progress") {
+			err = nil
+		} else {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+			return nil, err
+		}
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
-		return err
+		return nil, err
 	}
 	config.MasterOrderID = types.StringValue(resp.ReturnObj.MasterOrderID)
-	config.ID = types.StringValue(resp.ReturnObj.Resources[0].SfsUID)
-	return nil
+	//config.ID = types.StringValue(resp.ReturnObj.Resources[0].SfsUID)
+	return params, nil
 }
 
 func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig) error {
@@ -363,9 +408,10 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 	hpfsDetail := hpfsResp.ReturnObj
 	config.SfsName = types.StringValue(hpfsDetail.SfsName)
 	config.SfsSize = types.Int32Value(hpfsDetail.SfsSize)
-	config.SfsType = types.StringValue(hpfsDetail.SfsType)
 	config.SfsStatus = types.StringValue(hpfsDetail.SfsStatus)
 	config.ClusterName = types.StringValue(hpfsDetail.ClusterName)
+	config.UsedSize = types.Int32Value(hpfsDetail.UsedSize)
+	config.Baseline = types.StringValue(hpfsDetail.Baseline)
 	dataFlowList, diags := types.SetValueFrom(ctx, types.StringType, hpfsDetail.DataflowList)
 	if diags.HasError() {
 		err = errors.New(diags[0].Detail())
@@ -429,12 +475,23 @@ func (c *ctyunHpfs) hfpsRename(ctx context.Context, state *CtyunHpfsConfig, plan
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return err
 	}
+	err = c.renameLoop(ctx, state, plan, 60)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (c *ctyunHpfs) updateHpfsSize(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
 	// 判断是否需要进行修改
 	if plan.SfsSize.IsNull() || state.SfsSize == plan.SfsSize {
+		return nil
+	}
+	if plan.SfsSize.ValueInt32() < state.SfsSize.ValueInt32() {
+		return errors.New("并行文件暂不支持缩容能力")
+	}
+	// state和plan阶段sfs_size相同，不触发变配
+	if plan.SfsSize.ValueInt32() == state.SfsSize.ValueInt32() {
 		return nil
 	}
 	// 配置修改参数
@@ -451,13 +508,51 @@ func (c *ctyunHpfs) updateHpfsSize(ctx context.Context, state *CtyunHpfsConfig, 
 		err = errors.New("hpfs sfs_size修改失败，返回值为Nil。")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		if strings.Contains(resp.Message, " in progress") {
+			err = nil
+		} else {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+			return err
+		}
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return err
 	}
+
+	// 变配完成后，轮询确认升级完成
+	err = c.updateHpfsSizeLoop(ctx, state, plan)
+	if err != nil {
+		return err
+	}
 	return nil
+}
+
+func (c *ctyunHpfs) updateHpfsSizeLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			resp, err2 := c.getHpfsDetail(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			if resp.ReturnObj.SfsSize == plan.SfsSize.ValueInt32() {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未变配成功！")
+	}
+	return err
 }
 
 func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loopCount ...int) (err error) {
@@ -471,25 +566,101 @@ func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loo
 	}
 	result := retryer.Start(
 		func(currentTime int) bool {
-			resp, _ := c.getHpfsDetail(ctx, config)
-			if resp.StatusCode == common.ErrorStatusCode && strings.Contains(resp.Message, "不存在") {
+			resp, err2 := c.getHpfsDetail(ctx, config)
+			if err2 != nil {
+				err = err
+				return false
+			} else if resp == nil {
+				return false
+			} else if resp.StatusCode != common.NormalStatusCode {
 				return false
 			}
 			return true
-
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {
 		return errors.New("轮询已达最大次数，资源仍未退订成功！")
 	}
-
 	return
 }
 
+func (c *ctyunHpfs) createLoop(ctx context.Context, plan *CtyunHpfsConfig, params *hpfs.HpfsNewSfsRequest, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 轮询创建接口，当返回的id不为空，这跳出循环
+			resp, err2 := c.meta.Apis.SdkHpfsApis.HpfsNewSfsApi.Do(ctx, c.meta.SdkCredential, params)
+			if err2 != nil {
+				err2 = err
+				return false
+			} else if resp == nil {
+				err = errors.New("开通hpfs失败，返回nil")
+				return false
+			} else if resp.StatusCode != common.NormalStatusCode {
+				if strings.Contains(resp.Message, "in progress") {
+					err = nil
+					return true
+				} else {
+					err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+					return false
+				}
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			id := resp.ReturnObj.Resources[0].SfsUID
+			if id != "" {
+				plan.ID = types.StringValue(id)
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未创建成功！")
+	}
+	return err
+
+}
+
+func (c *ctyunHpfs) renameLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*5, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			resp, err2 := c.getHpfsDetail(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			if resp.ReturnObj.SfsName == plan.SfsName.ValueString() {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未更名成功！")
+	}
+	return err
+}
+
 type CtyunHpfsConfig struct {
-	RegionID      types.String `tfsdk:"region_id"`       // 资源池 ID
-	ClientToken   types.String `tfsdk:"client_token"`    // 客户端存根，用于保证订单幂等性
-	ProjectID     types.String `tfsdk:"project_id"`      // 资源所属企业项目 ID
-	SfsType       types.String `tfsdk:"sfs_type"`        // 并行文件类型
+	RegionID  types.String `tfsdk:"region_id"`  // 资源池 ID
+	ProjectID types.String `tfsdk:"project_id"` // 资源所属企业项目 ID
+	//SfsType       types.String `tfsdk:"sfs_type"`        // 并行文件类型
 	SfsProtocol   types.String `tfsdk:"sfs_protocol"`    // 协议类型
 	CycleType     types.String `tfsdk:"cycle_type"`      // 包周期类型
 	CycleCount    types.Int32  `tfsdk:"cycle_count"`     // 包周期数

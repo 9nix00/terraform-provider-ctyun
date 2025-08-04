@@ -6,29 +6,171 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var (
-	_ datasource.DataSource              = &ctyunHpfsInstances{}
-	_ datasource.DataSourceWithConfigure = &ctyunHpfsInstances{}
+	_ datasource.DataSource              = &CtyunHpfsInstances{}
+	_ datasource.DataSourceWithConfigure = &CtyunHpfsInstances{}
 )
 
-type ctyunHpfsInstances struct {
+type CtyunHpfsInstances struct {
 	meta *common.CtyunMetadata
 }
 
-func (c *ctyunHpfsInstances) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+func NewCtyunHpfsInstances() datasource.DataSource {
+	return &CtyunHpfsInstances{}
+}
+
+func (c *CtyunHpfsInstances) Configure(ctx context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+
+func (c *CtyunHpfsInstances) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_hpfs_instances"
 }
 
-func (c *ctyunHpfsInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
-	//TODO implement me
-	panic("implement me")
+func (c *CtyunHpfsInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
+	response.Schema = schema.Schema{
+		MarkdownDescription: "",
+		Attributes: map[string]schema.Attribute{
+			"region_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池id",
+			},
+			"sfs_status": schema.StringAttribute{
+				Optional:    true,
+				Description: "并行文件状态。creating/available/unusable，不传为查询全部",
+			},
+			"sfs_protocol": schema.StringAttribute{
+				Optional:    true,
+				Description: "挂载协议。2 种，nfs/hpfs ，不传为查询全部",
+				Validators: []validator.String{
+					stringvalidator.OneOf("nfs", "hpfs"),
+				},
+			},
+			"az_name": schema.StringAttribute{
+				Optional:    true,
+				Description: "多可用区下的可用区名字，不传为查询全部",
+			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "资源所属企业项目 ID，默认为 0 ",
+			},
+			"page_size": schema.Int32Attribute{
+				Optional:    true,
+				Description: "每页包含的元素个数范围(1-50)，默认值为10",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 50),
+				},
+			},
+			"page_no": schema.Int32Attribute{
+				Optional:    true,
+				Description: "列表的分页页码，默认值为1",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
+			},
+			"hpfs_instances": schema.ListNestedAttribute{
+				Computed:    true,
+				Description: "hpfs列表",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"sfs_name": schema.StringAttribute{
+							Computed:    true,
+							Description: "并行文件命名",
+						},
+						"sfs_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "并行文件唯一 ID",
+						},
+						"sfs_size": schema.Int32Attribute{
+							Computed:    true,
+							Description: "大小（GB）",
+						},
+						"sfs_type": schema.StringAttribute{
+							Computed:    true,
+							Description: "类型，hpfs_perf(HPC性能型)",
+						},
+						"sfs_protocol": schema.StringAttribute{
+							Computed:    true,
+							Description: "挂载协议，nfs/hpfs",
+						},
+						"sfs_status": schema.StringAttribute{
+							Computed:    true,
+							Description: "并行文件状态",
+						},
+						"used_size": schema.Int32Attribute{
+							Computed:    true,
+							Description: "已用大小（MB）",
+						},
+						"create_time": schema.Int64Attribute{
+							Computed:    true,
+							Description: "创建时刻，epoch 时戳，精度毫秒",
+						},
+						"update_time": schema.Int64Attribute{
+							Computed:    true,
+							Description: "更新时刻，epoch 时戳，精度毫秒",
+						},
+						"project_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "资源所属企业项目 ID",
+						},
+						"on_demand": schema.BoolAttribute{
+							Computed:    true,
+							Description: "是否按需订购",
+						},
+						"region_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "资源池 ID",
+						},
+						"az_name": schema.StringAttribute{
+							Computed:    true,
+							Description: "多可用区下的可用区名字",
+						},
+						"cluster_name": schema.StringAttribute{
+							Computed:    true,
+							Description: "集群名称",
+						},
+						"baseline": schema.StringAttribute{
+							Computed:    true,
+							Description: "性能基线（MB/s/TB）",
+						},
+						"hpfs_share_path": schema.StringAttribute{
+							Computed:    true,
+							Description: "HPFS文件系统共享路径(Linux)",
+						},
+						"secret_key": schema.StringAttribute{
+							Computed:    true,
+							Description: "HPC型挂载需要的密钥",
+						},
+						"dataflow_list": schema.SetAttribute{
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "HPFS文件系统下的数据流动策略ID列表",
+						},
+						"dataflow_count": schema.Int32Attribute{
+							Computed:    true,
+							Description: "HPFS文件系统下的数据流动策略数量",
+						},
+					},
+				},
+			},
+		},
+	}
 }
 
-func (c *ctyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (c *CtyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -49,8 +191,8 @@ func (c *ctyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRe
 	}
 	params := &hpfs.HpfsListSfsRequest{
 		RegionID: regionId,
-		PageSize: config.pageSize.ValueInt32(),
-		PageNo:   config.pageNo.ValueInt32(),
+		PageSize: 10,
+		PageNo:   1,
 	}
 
 	if !config.SfsStatus.IsNull() {
@@ -64,6 +206,13 @@ func (c *ctyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRe
 	}
 	if !config.ProjectID.IsNull() {
 		params.ProjectID = config.ProjectID.ValueString()
+	}
+
+	if !config.PageSize.IsNull() && config.PageSize.ValueInt32() != 0 {
+		params.PageSize = config.PageSize.ValueInt32()
+	}
+	if !config.PageNo.IsNull() && config.PageNo.ValueInt32() != 0 {
+		params.PageNo = config.PageNo.ValueInt32()
 	}
 
 	resp, err := c.meta.Apis.SdkHpfsApis.HpfsListSfsApi.Do(ctx, c.meta.SdkCredential, params)
@@ -100,6 +249,7 @@ func (c *ctyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRe
 		hpfsInstance.HpfsSharePath = types.StringValue(hpfsItem.HpfsSharePath)
 		hpfsInstance.SecretKey = types.StringValue(hpfsItem.SecretKey)
 		hpfsInstance.DataflowCount = types.Int32Value(hpfsItem.DataflowCount)
+		hpfsInstance.SfsProtocol = types.StringValue(hpfsItem.SfsProtocol)
 		dataflowList, diagnostics := types.SetValueFrom(ctx, types.StringType, hpfsItem.DataflowList)
 		if diagnostics.HasError() {
 			err = errors.New(diagnostics[0].Detail())
@@ -108,15 +258,11 @@ func (c *ctyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRe
 		hpfsInstance.DataflowList = dataflowList
 		hpfsInstances = append(hpfsInstances, hpfsInstance)
 	}
-
-}
-
-func (c *ctyunHpfsInstances) Configure(ctx context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
-	if request.ProviderData == nil {
+	config.HpfsInstances = hpfsInstances
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+	if response.Diagnostics.HasError() {
 		return
 	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
 }
 
 type CtyunHpfsInstancesModel struct {
@@ -147,7 +293,7 @@ type CtyunHpfsInstancesConfig struct {
 	SfsProtocol   types.String              `tfsdk:"sfs_protocol"`   // 挂载协议。2 种，nfs/hpfs ，不传为查询全部
 	AzName        types.String              `tfsdk:"az_name"`        // 多可用区下的可用区名字，不传为查询全部
 	ProjectID     types.String              `tfsdk:"project_id"`     // 资源所属企业项目 ID，默认为"0"
-	pageSize      types.Int32               `tfsdk:"page_size"`      // 每页包含的元素个数范围(1-50)，默认值为10
-	pageNo        types.Int32               `tfsdk:"page_no"`        // 列表的分页页码，默认值为1
+	PageSize      types.Int32               `tfsdk:"page_size"`      // 每页包含的元素个数范围(1-50)，默认值为10
+	PageNo        types.Int32               `tfsdk:"page_no"`        // 列表的分页页码，默认值为1
 	HpfsInstances []CtyunHpfsInstancesModel `tfsdk:"hpfs_instances"` // hpfs列表
 }

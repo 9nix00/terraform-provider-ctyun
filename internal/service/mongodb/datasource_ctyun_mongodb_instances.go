@@ -26,6 +26,16 @@ type ctyunMongodbInstances struct {
 func (c *ctyunMongodbInstances) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mongodb_instances"
 }
+func NewCtyunMongodbInstances() datasource.DataSource {
+	return &ctyunMongodbInstances{}
+}
+func (c *ctyunMongodbInstances) Configure(ctx context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
 
 func (c *ctyunMongodbInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
@@ -386,17 +396,6 @@ func (c *ctyunMongodbInstances) Read(ctx context.Context, request datasource.Rea
 	if response.Diagnostics.HasError() {
 		return
 	}
-}
-
-func NewCtyunMongodbInstances() datasource.DataSource {
-	return &ctyunMongodbInstances{}
-}
-func (c *ctyunMongodbInstances) Configure(ctx context.Context, request datasource.ConfigureRequest, response *datasource.ConfigureResponse) {
-	if request.ProviderData == nil {
-		return
-	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
 }
 
 type CtyunMongodbInstanceModel struct {
