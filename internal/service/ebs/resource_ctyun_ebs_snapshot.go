@@ -266,9 +266,9 @@ func (c *ctyunEbsSnapshot) create(ctx context.Context, plan *CtyunEbsSnapshotCon
 	}
 	var masterOrderId, snapshotJobID string
 	if resp != nil && resp.ErrorCode == common.EbsOrderInProgress {
-		if resp != nil && resp.ReturnObj.MasterOrderID != "" {
+		if  resp.ReturnObj.MasterOrderID != "" {
 			masterOrderId = resp.ReturnObj.MasterOrderID
-		} else if resp != nil && resp.ReturnObj.Resources != nil && len(resp.ReturnObj.Resources) > 0 && resp.ReturnObj.Resources[0].OrderID != "" {
+		} else if resp.ReturnObj.Resources != nil && len(resp.ReturnObj.Resources) > 0 && resp.ReturnObj.Resources[0].OrderID != "" {
 			masterOrderId = resp.ReturnObj.Resources[0].OrderID
 		}
 
@@ -282,7 +282,7 @@ func (c *ctyunEbsSnapshot) create(ctx context.Context, plan *CtyunEbsSnapshotCon
 		id := loop.Uuid[0]
 		plan.Id = types.StringValue(id)
 	}
-	if err == nil && resp.ReturnObj.SnapshotJobID != "" {
+	if resp != nil && resp.ReturnObj.SnapshotJobID != "" {
 		snapshotJobID = resp.ReturnObj.SnapshotJobID
 		err := c.queryJob(ctx, plan, snapshotJobID)
 		if err != nil {
