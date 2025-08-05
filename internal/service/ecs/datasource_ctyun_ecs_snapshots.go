@@ -35,13 +35,14 @@ type ctyunEcsSnapshotsModel struct {
 }
 
 type ctyunEcsSnapshotsConfig struct {
-	RegionID     types.String             `tfsdk:"region_id"`
-	InstanceID   types.String             `tfsdk:"instance_id"`
-	SnapshotID   types.String             `tfsdk:"snapshot_id"`
-	SnapshotName types.String             `tfsdk:"snapshot_name"`
-	PageNo       types.Int32              `tfsdk:"page_no"`
-	PageSize     types.Int32              `tfsdk:"page_size"`
-	Snapshots    []ctyunEcsSnapshotsModel `tfsdk:"snapshots"`
+	RegionID       types.String             `tfsdk:"region_id"`
+	InstanceID     types.String             `tfsdk:"instance_id"`
+	SnapshotID     types.String             `tfsdk:"snapshot_id"`
+	SnapshotName   types.String             `tfsdk:"snapshot_name"`
+	SnapshotStatus types.String             `tfsdk:"snapshot_status"`
+	PageNo         types.Int32              `tfsdk:"page_no"`
+	PageSize       types.Int32              `tfsdk:"page_size"`
+	Snapshots      []ctyunEcsSnapshotsModel `tfsdk:"snapshots"`
 }
 
 func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
@@ -62,6 +63,11 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "云主机快照名称",
+			},
+			"snapshot_status": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "快照状态",
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
@@ -125,10 +131,13 @@ func (c *ctyunEcsSnapshots) Read(ctx context.Context, request datasource.ReadReq
 	config.Snapshots = []ctyunEcsSnapshotsModel{}
 	// 组装请求体
 	params := &ctecs2.CtecsQuerySnapshotListV41Request{
-		RegionID:     config.RegionID.ValueString(),
-		SnapshotName: config.SnapshotName.ValueString(),
-		SnapshotID:   config.SnapshotID.ValueString(),
-		InstanceID:   config.InstanceID.ValueString(),
+		RegionID:       config.RegionID.ValueString(),
+		SnapshotName:   config.SnapshotName.ValueString(),
+		SnapshotID:     config.SnapshotID.ValueString(),
+		SnapshotStatus: config.SnapshotStatus.ValueString(),
+		InstanceID:     config.InstanceID.ValueString(),
+		PageNo:         config.PageNo.ValueInt32(),
+		PageSize:       config.PageSize.ValueInt32(),
 	}
 	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsQuerySnapshotListV41Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -145,6 +154,8 @@ func (c *ctyunEcsSnapshots) Read(ctx context.Context, request datasource.ReadReq
 		item := ctyunEcsSnapshotsModel{
 			SnapshotID:   types.StringValue(snapshot.SnapshotID),
 			SnapshotName: types.StringValue(snapshot.SnapshotName),
+			InstanceID:   types.StringValue(snapshot.InstanceID),
+			InstanceName: types.StringValue(snapshot.InstanceName),
 		}
 
 		config.Snapshots = append(config.Snapshots, item)
