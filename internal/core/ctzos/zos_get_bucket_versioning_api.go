@@ -54,4 +54,7 @@ type ZosGetBucketVersioningResponse struct {
 	Description string `json:"description,omitempty"` /*  状态描述，一般为中文  */
 	ErrorCode   string `json:"errorCode,omitempty"`   /*  业务细分码（仅失败时具有此参数），为 product.module.code 三段式码  */
 	Error       string `json:"error,omitempty"`       /*  业务细分码（大驼峰形式，仅失败时具有此参数），为 Product.Module.Code 三段式码  */
+	ReturnObj   struct {
+		Status string `json:"status"` // 桶的版本状态，值是 Enabled 或 Suspended
+	} `json:"returnObj"`
 }
