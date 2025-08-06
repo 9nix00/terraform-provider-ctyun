@@ -9,9 +9,12 @@ import (
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -52,6 +55,9 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"snapshot_name": schema.StringAttribute{
 				Required:    true,
@@ -59,9 +65,11 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"snapshot_status": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "云硬盘快照状态： pending：创建中, available：可用， restoring：恢复中， error：错误",
 			},
@@ -71,11 +79,20 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Validators: []validator.String{
 					stringvalidator.OneOf("custom", "forever"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"retention_time": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "自定义快照保留天数。取值范围：1-65535。当快照保留策略为custom时该参数为必填，当快照保留策略为forever时，自动设置为65535",
+				Validators: []validator.Int64{
+					int64validator.Between(1, 65535),
+				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -266,7 +283,7 @@ func (c *ctyunEbsSnapshot) create(ctx context.Context, plan *CtyunEbsSnapshotCon
 	}
 	var masterOrderId, snapshotJobID string
 	if resp != nil && resp.ErrorCode == common.EbsOrderInProgress {
-		if  resp.ReturnObj.MasterOrderID != "" {
+		if resp.ReturnObj.MasterOrderID != "" {
 			masterOrderId = resp.ReturnObj.MasterOrderID
 		} else if resp.ReturnObj.Resources != nil && len(resp.ReturnObj.Resources) > 0 && resp.ReturnObj.Resources[0].OrderID != "" {
 			masterOrderId = resp.ReturnObj.Resources[0].OrderID

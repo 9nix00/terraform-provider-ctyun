@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -82,6 +84,9 @@ func (c *ctyunEbsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "云硬盘快照ID",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"snapshot_name": schema.StringAttribute{
 				Optional:    true,
@@ -92,6 +97,9 @@ func (c *ctyunEbsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "云硬盘ID",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"snapshot_status": schema.StringAttribute{
 				Optional:    true,

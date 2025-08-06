@@ -9,6 +9,7 @@ import (
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -46,16 +47,18 @@ func (c *ctyunEcsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"snapshot_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机快照名称，长度为2-63字符，头尾不支持输入空格",
+				Description: "云主机快照名称，长度为2-63字符，头尾不支持输入空格。支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
 			},
 			"snapshot_status": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "云主机快照状态： pending：创建中, available：可用， restoring：恢复中， error：错误",
 			},
