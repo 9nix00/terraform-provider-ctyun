@@ -58,11 +58,12 @@ type CtecsQueryJobInfoV41Response struct {
 }
 
 type CtecsQueryJobInfoV41ReturnObjResponse struct {
-	JobID      string                                       `json:"jobID,omitempty"`      /*  异步任务ID  */
-	Status     int32                                        `json:"status,omitempty"`     /*  任务状态 (0:执行中 1:执行成功 2:执行失败)  */
-	JobStatus  string                                       `json:"jobStatus,omitempty"`  /*  job任务状态(executing:执行中, success:执行成功, fail:执行失败)  */
-	ResourceId string                                       `json:"resourceId,omitempty"` /*  资源ID  */
-	Fields     *CtecsQueryJobInfoV41ReturnObjFieldsResponse `json:"fields"`               /*  任务信息  */
+	JobID      string                                       `json:"jobID,omitempty"`     /*  异步任务ID  */
+	Status     int32                                        `json:"status,omitempty"`    /*  任务状态 (0:执行中 1:执行成功 2:执行失败)  */
+	JobStatus  string                                       `json:"jobStatus,omitempty"` /*  job任务状态(executing:执行中, success:执行成功, fail:执行失败)  */
+	ResourceId string                                       `json:"resourceId,omitempty"`
+	Fields     *CtecsQueryJobInfoV41ReturnObjFieldsResponse `json:"fields"` /*  任务信息  */
+	ID         string                                       `json:"ID"`     /*  资源ID  */
 }
 
 type CtecsQueryJobInfoV41ReturnObjFieldsResponse struct {

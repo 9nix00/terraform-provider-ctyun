@@ -348,8 +348,10 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		nat.NewCtyunSNats(),
 		nat.NewCtyunDNats(),
 		ebs.NewCtyunEbsVolumes(),
+		ebs.NewCtyunEbsSnapshots(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
+		ecs.NewCtyunEcsSnapshots(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -405,6 +407,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunIdp(),
 		ebs.NewCtyunEbs(),
 		ebs.NewCtyunEbsAssociation(),
+		ebs.NewCtyunEbsSnapshot(),
 		image.NewCtyunImage(),
 		image.NewCtyunImageAssociationUser(),
 		ecs.NewCtyunKeypair(),
@@ -452,6 +455,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
+		ecs.NewCtyunEcsSnapshot(),
 	)
 }
 
