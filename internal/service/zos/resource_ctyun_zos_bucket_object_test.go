@@ -30,7 +30,7 @@ func TestAccCtyunZosBucketObject(t *testing.T) {
 
 	nextAcl := "public-read-write"
 	nextTags := ``
-
+	dependenceBucket := dependence.bucket
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]

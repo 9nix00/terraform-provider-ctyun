@@ -56,7 +56,7 @@ type ZosPutBucketLoggingBucketLoggingStatusRequest struct {
 }
 
 type ZosPutBucketLoggingBucketLoggingStatusLoggingEnabledRequest struct {
-	TargetPrefix string                                                                     `json:"targetPrefix,omitempty"` /*  所有日志对象键的前缀。如果你在一个桶中存储来自多个桶的日志文件，你可以使用前缀来区分哪些日志文件来自哪个桶。  */
+	TargetPrefix string                                                                     `json:"targetPrefix"`           /*  所有日志对象键的前缀。如果你在一个桶中存储来自多个桶的日志文件，你可以使用前缀来区分哪些日志文件来自哪个桶。  */
 	TargetBucket string                                                                     `json:"targetBucket,omitempty"` /*  指定希望 ZOS 存储服务器访问日志的桶。你可以让你的日志传递到你拥有的任何桶，包括被记录的同一个桶。你也可以配置多个桶，将它们的日志传递到同一个目标桶。在这种情况下，你应该为每个源桶选择一个不同的TargetPrefix，以便交付的日志文件可以通过密钥区分  */
 	TargetGrants []*ZosPutBucketLoggingBucketLoggingStatusLoggingEnabledTargetGrantsRequest `json:"targetGrants"`           /*  授权信息  */
 }
