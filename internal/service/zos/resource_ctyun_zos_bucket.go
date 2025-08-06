@@ -102,12 +102,12 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "标签，默认为空",
+				Description: "标签，支持更新",
 			},
 			"acl": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "桶权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'",
+				Description: "桶权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ZosAclPrivate, business.ZosAclPublicRead, business.ZosAclPublicReadWrite),
 				},
@@ -116,18 +116,18 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"version_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否启用版本控制，默认不启用。若启用后暂停，将无法在桶内创建新的历史版本，之前创建的历史版本会保留",
+				Description: "是否启用版本控制，默认不启用。若启用后暂停，将无法在桶内创建新的历史版本，之前创建的历史版本会保留，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 			"log_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否启用日志转存策略，默认不启用。",
+				Description: "是否启用日志转存策略，默认不启用。支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 			"log_bucket": schema.StringAttribute{
 				Optional:    true,
-				Description: "日志存储桶，当log_enabled为true时必填，可以让日志传递到拥有的任何桶（包括当前桶）",
+				Description: "日志存储桶，当log_enabled为true时必填，可以让日志传递到拥有的任何桶（包括当前桶），支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("log_enabled"),
@@ -141,7 +141,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"log_prefix": schema.StringAttribute{
 				Optional:    true,
-				Description: "日志生成的目录+前缀，如log/logfile，当log_enabled为true时必填",
+				Description: "日志生成的目录+前缀，如log/logfile，当log_enabled为true时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("log_enabled"),

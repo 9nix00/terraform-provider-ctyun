@@ -128,7 +128,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			"acl": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'",
+				Description: "权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ZosAclPrivate, business.ZosAclPublicRead, business.ZosAclPublicReadWrite),
 				},
@@ -183,7 +183,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "标签",
+				Description: "标签，支持更新",
 			},
 			"etag": schema.StringAttribute{
 				Computed:    true,
