@@ -9,6 +9,7 @@ import (
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -52,10 +53,13 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"snapshot_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云硬盘快照名称，长度为2-63字符，头尾不支持输入空格",
+				Description: "云硬盘快照名称，长度为2-63字符，头尾不支持输入空格。支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
@@ -266,7 +270,7 @@ func (c *ctyunEbsSnapshot) create(ctx context.Context, plan *CtyunEbsSnapshotCon
 	}
 	var masterOrderId, snapshotJobID string
 	if resp != nil && resp.ErrorCode == common.EbsOrderInProgress {
-		if  resp.ReturnObj.MasterOrderID != "" {
+		if resp.ReturnObj.MasterOrderID != "" {
 			masterOrderId = resp.ReturnObj.MasterOrderID
 		} else if resp.ReturnObj.Resources != nil && len(resp.ReturnObj.Resources) > 0 && resp.ReturnObj.Resources[0].OrderID != "" {
 			masterOrderId = resp.ReturnObj.Resources[0].OrderID
