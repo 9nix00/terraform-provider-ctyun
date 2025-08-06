@@ -58,7 +58,6 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"snapshot_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机快照ID",
 				Validators: []validator.String{
 					validator2.UUID(),
@@ -66,17 +65,14 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"snapshot_name": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机快照名称",
 			},
 			"snapshot_status": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "快照状态",
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机ID",
 				Validators: []validator.String{
 					validator2.UUID(),
@@ -84,12 +80,10 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "页码，取值范围：正整数（≥1），注：默认值为1",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "每页记录数目，取值范围：[1,50]，注：默认值为10",
 			},
 			"snapshots": schema.ListNestedAttribute{

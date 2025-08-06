@@ -82,7 +82,6 @@ func (c *ctyunEbsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"snapshot_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘快照ID",
 				Validators: []validator.String{
 					validator2.UUID(),
@@ -90,12 +89,10 @@ func (c *ctyunEbsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"snapshot_name": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘快照名称",
 			},
 			"disk_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘ID",
 				Validators: []validator.String{
 					validator2.UUID(),
@@ -103,32 +100,26 @@ func (c *ctyunEbsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"snapshot_status": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘快照状态。取值为：available：可用，freezing：冻结，creating：创建中，deleting：删除中，rollbacking：回滚中，cloning：从快照创建云硬盘中，error：错误",
 			},
 			"snapshot_type": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘快照创建类型。取值为：manu：手动，timer：自动",
 			},
 			"volume_attr": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘属性。取值为：data：数据盘，system：系统盘",
 			},
 			"retention_policy": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云硬盘快照保留策略。取值为：forever：永久保留，custom：自定义保留天数",
 			},
 			"page_no": schema.Int64Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "页码，取值范围：正整数（≥1），注：默认值为1",
 			},
 			"page_size": schema.Int64Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "每页记录数目，取值范围：[1,50]，注：默认值为10",
 			},
 			"snapshots": schema.ListNestedAttribute{
