@@ -690,7 +690,7 @@ func (c *CtyunElbLoadBalancerResource) deleteLoop(ctx context.Context, params *c
 			}
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {
-		return nil, errors.New("轮询已达最大次数，资源仍未创建成功！")
+		return nil, errors.New("轮询已达最大次数，资源仍未退订成功！")
 	}
 
 	return

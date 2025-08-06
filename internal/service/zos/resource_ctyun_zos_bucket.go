@@ -89,7 +89,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"bucket": schema.StringAttribute{
 				Required:    true,
-				Description: "桶名称，不可为空。长度3-63个字符内（含）字符只能有大小写字母、数字以及英文句号（.）和中划线（-）。禁止两个英文句号（.）或英文句号（.）中划线（-）相邻。禁止英文句号（.）和中划线（-）作为开头或结尾。",
+				Description: "桶名称，不可为空。长度3-63个字符内（含）字符只能有大小写字母、数字以及中划线（-）。禁止两个中划线（-）相邻。禁止中划线（-）作为开头或结尾。",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

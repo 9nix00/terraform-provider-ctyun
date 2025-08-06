@@ -21,6 +21,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"sync"
 )
@@ -81,4 +82,5 @@ type Apis struct {
 	SdkMongodbApis *mongodb.Apis
 	SdkAmqpApis    *amqp.Apis
 	SdkCrsApis     *crs.Apis
+	SdkHpfsApis    *hpfs.Apis
 }

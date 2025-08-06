@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -85,12 +86,19 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(3, 63),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-][a-zA-Z0-9])+$"), "桶名称不符合规则"),
+				},
 			},
 			"key": schema.StringAttribute{
 				Required:    true,
-				Description: "对象名称",
+				Description: "对象名称，长度1-1024",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 1024),
 				},
 			},
 			"source": schema.StringAttribute{
