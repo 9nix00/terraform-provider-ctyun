@@ -59,7 +59,6 @@ func (c *ctyunEcsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 				},
 			},
 			"snapshot_status": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
 				Description: "云主机快照状态： pending：创建中, available：可用， restoring：恢复中， error：错误",
 			},
