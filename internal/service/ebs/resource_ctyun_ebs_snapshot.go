@@ -59,7 +59,7 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"snapshot_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云硬盘快照名称，长度为2-63字符，头尾不支持输入空格。支持更新",
+				Description: "云硬盘快照名称，长度为2-63字符，头尾不支持输入空格",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
