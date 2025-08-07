@@ -10,7 +10,9 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -59,6 +61,9 @@ type CtyunZosBucketConfig struct {
 	LogEnabled     types.Bool   `tfsdk:"log_enabled"`
 	LogBucket      types.String `tfsdk:"log_bucket"`
 	LogPrefix      types.String `tfsdk:"log_prefix"`
+	RetentionMode  types.String `tfsdk:"retention_mode"`
+	RetentionDay   types.Int64  `tfsdk:"retention_day"`
+	RetentionYear  types.Int64  `tfsdk:"retention_year"`
 }
 
 func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -118,6 +123,12 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Computed:    true,
 				Description: "是否启用版本控制，默认不启用。若启用后暂停，将无法在桶内创建新的历史版本，之前创建的历史版本会保留，支持更新",
 				Default:     booldefault.StaticBool(false),
+				Validators: []validator.Bool{
+					validator2.CrossFieldBool(
+						path.MatchRoot("retention_mode"),
+						[]attr.Value{types.StringValue("COMPLIANCE")},
+						[]attr.Value{types.BoolValue(true)}),
+				},
 			},
 			"log_enabled": schema.BoolAttribute{
 				Optional:    true,
@@ -151,6 +162,40 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 						path.MatchRoot("log_enabled"),
 						types.BoolValue(false),
 					),
+				},
+			},
+			"retention_mode": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Default:     stringdefault.StaticString(""),
+				Description: "合规保留模式，创建后不支持修改。默认为空，表示不开启合规保留，若填写则必须为COMPLIANCE，且version_enabled必须为true",
+				Validators: []validator.String{
+					stringvalidator.OneOf("COMPLIANCE"),
+					stringvalidator.Any(
+						stringvalidator.AlsoRequires(path.MatchRoot("retention_year")),
+						stringvalidator.AlsoRequires(path.MatchRoot("retention_day")),
+					),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"retention_day": schema.Int64Attribute{
+				Optional:    true,
+				Description: "合规保留天数，支持1-1000，当retention_mode不为空时，retention_day与retention_year只能填写其中之一，支持更新",
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("retention_mode")),
+					int64validator.ConflictsWith(path.MatchRoot("retention_year")),
+					int64validator.Between(1, 1000),
+				},
+			},
+			"retention_year": schema.Int64Attribute{
+				Optional:    true,
+				Description: "合规保留年数，支持1-60，当retention_mode不为空时，retention_day与retention_year只能填写其中之一，支持更新",
+				Validators: []validator.Int64{
+					int64validator.AlsoRequires(path.MatchRoot("retention_mode")),
+					int64validator.ConflictsWith(path.MatchRoot("retention_day")),
+					int64validator.Between(1, 60),
 				},
 			},
 			"cmk_uuid": schema.StringAttribute{
@@ -292,6 +337,9 @@ func (c *ctyunZosBucket) Update(ctx context.Context, request resource.UpdateRequ
 	if err != nil {
 		return
 	}
+	state.RetentionMode = plan.RetentionMode
+	state.RetentionDay = plan.RetentionDay
+	state.RetentionYear = plan.RetentionYear
 	state.ACL = plan.ACL // 没有接口查询acl，所以只能这样更新
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -383,6 +431,12 @@ func (c *ctyunZosBucket) create(ctx context.Context, plan CtyunZosBucketConfig) 
 		StorageType: plan.StorageType.ValueString(),
 		AZPolicy:    plan.AzPolicy.ValueString(),
 	}
+	if plan.RetentionMode.ValueString() != "" {
+		t := true
+		params.OtherBucketInfo = &ctzos.ZosCreateBucketOtherBucketInfoRequest{
+			ObjectLockEnabledForBucket: &t,
+		}
+	}
 
 	resp, err := c.meta.Apis.SdkCtZosApis.ZosCreateBucketApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -417,6 +471,14 @@ func (c *ctyunZosBucket) createExtra(ctx context.Context, plan CtyunZosBucketCon
 			return
 		}
 	}
+	// 合规保留设置
+	if plan.RetentionMode.ValueString() != "" {
+		err = c.setRetention(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
+
 	return
 }
 
@@ -447,6 +509,12 @@ func (c *ctyunZosBucket) update(ctx context.Context, plan, state CtyunZosBucketC
 			return
 		}
 	}
+	if !plan.RetentionDay.Equal(state.RetentionDay) || !plan.RetentionYear.Equal(state.RetentionYear) {
+		err = c.setRetention(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 
@@ -458,6 +526,25 @@ func (c *ctyunZosBucket) setAcl(ctx context.Context, plan CtyunZosBucketConfig) 
 		ACL:      plan.ACL.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkCtZosApis.ZosPutBucketAclApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return
+	}
+	return
+}
+
+// setRetention 设置合规保留策略
+func (c *ctyunZosBucket) setRetention(ctx context.Context, plan CtyunZosBucketConfig) (err error) {
+	params := &ctzos.ZosPutObjectLockConfRequest{
+		Bucket:        plan.Bucket.ValueString(),
+		RegionID:      plan.RegionID.ValueString(),
+		RetentionMode: plan.RetentionMode.ValueString(),
+		Days:          plan.RetentionDay.ValueInt64(),
+		Years:         plan.RetentionYear.ValueInt64(),
+	}
+	resp, err := c.meta.Apis.SdkCtZosApis.ZosPutObjectLockConfApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
