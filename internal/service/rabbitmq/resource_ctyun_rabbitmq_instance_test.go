@@ -24,7 +24,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 	zone := os.Getenv("CTYUN_AZ_NAME")
 	nodeNum := 3
 	diskSize := 100
-	diskType := "SSD"
+	diskType := "SAS"
 
 	initName := "tf-rabbitmq-init-" + utils.GenerateRandomString()
 

@@ -35,9 +35,9 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	updateNodeNum := 2
 	updatedVisibilityPostHostScript := "MTIz"
 	updatedVisibilityHostScript := "YWJj"
-	updatedSysDiskType := "SSD"
+	updatedSysDiskType := "SAS"
 	updatedSysDiskSize := 200
-	updatedDataDiskType := "SSD"
+	updatedDataDiskType := "SAS"
 	updatedDataDiskSize := 400
 	updatedCycleType := "month"
 	updatedExtra := `cycle_count             = 1
