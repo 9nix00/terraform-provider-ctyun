@@ -396,7 +396,7 @@ func (c *ctyunEcsBackupRepo) updateSize(ctx context.Context, plan, state CtyunEc
 	}
 	params := &ctecs2.CtecsUpgradeInstanceBackupRepoRequest{
 		RegionID:        plan.RegionID.ValueString(),
-		RepositoryID:    plan.Id.ValueString(),
+		RepositoryID:    state.Id.ValueString(),
 		Size:            int32(plan.Size.ValueInt64()),
 		PayVoucherPrice: float32(plan.PayVoucherPrice.ValueFloat64()),
 		ClientToken:     uuid.NewString(),

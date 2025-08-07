@@ -115,6 +115,10 @@ func (c *ctyunEcsBackups) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "云主机备份名称",
 						},
+						"project_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "企业项目ID，企业项目管理服务提供统一的云资源按企业项目管理，以及企业项目内的资源管理，成员管理。您可以通过查看创建企业项目了解如何创建企业项目",
+						},
 						"instance_backup_status": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机备份状态，取值范围：CREATING: 备份创建中, ACTIVE: 可用， RESTORING: 备份恢复中，DELETING: 删除中，EXPIRED：到期，ERROR：错误",
@@ -171,10 +175,6 @@ func (c *ctyunEcsBackups) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "完成时间",
 						},
-						"project_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "企业项目ID",
-						},
 						"backup_type": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份类型，取值范围：FULL：全量备份，INCREMENT：增量备份",
@@ -197,7 +197,13 @@ func (c *ctyunEcsBackups) Read(ctx context.Context, request datasource.ReadReque
 	if response.Diagnostics.HasError() {
 		return
 	}
+	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
+		return
+	}
 
+	config.RegionID = types.StringValue(regionId)
 	// 组装请求体
 	params := &ctecs2.CtecsListInstanceBackupV41Request{
 		RegionID:             config.RegionID.ValueString(),

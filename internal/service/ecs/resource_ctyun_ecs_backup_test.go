@@ -25,9 +25,9 @@ func TestAccCtyunBackup(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ecs_backups.tf"
 
 	initName := "init-backup"
-	updatedName := "updated-backup"
+	updatedName := "updated-backup-" + rnd
 	instanceId := dependence.ecsID
-	repositoryID := "a94ee44e-8a86-42f6-9986-4e9df5cb3c18"
+	repositoryID := "0cd13a89-5ada-42a7-95e8-60fb9705eecc"
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -57,7 +57,7 @@ func TestAccCtyunBackup(t *testing.T) {
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, instanceId, updatedName) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "backups.#", "1"),
@@ -75,11 +75,11 @@ func TestAccCtyunBackup(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
-					"project_id",
+					"full_backup",
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, instanceId, updatedName) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

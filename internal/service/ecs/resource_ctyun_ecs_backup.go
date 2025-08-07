@@ -44,7 +44,6 @@ type CtyunEcsBackupConfig struct {
 	InstanceBackupName        types.String `tfsdk:"instance_backup_name"`
 	InstanceBackupDescription types.String `tfsdk:"instance_backup_description"`
 	RepositoryID              types.String `tfsdk:"repository_id"`
-	ProjectID                 types.String `tfsdk:"project_id"`
 
 	// 返回字段
 	InstanceBackupStatus types.String `tfsdk:"instance_backup_status"`
@@ -55,6 +54,7 @@ type CtyunEcsBackupConfig struct {
 	CreatedTime          types.String `tfsdk:"created_time"`
 	BackupType           types.String `tfsdk:"backup_type"`
 	FullBackup           types.Bool   `tfsdk:"full_backup"`
+	ProjectID            types.String `tfsdk:"project_id"`
 }
 
 func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -111,21 +111,16 @@ func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 					validator2.UUID(),
 				},
 			},
-			"project_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "企业项目ID，企业项目管理服务提供统一的云资源按企业项目管理，以及企业项目内的资源管理，成员管理。您可以通过查看创建企业项目了解如何创建企业项目。注：默认值为\"0\"",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
-			},
 			"full_backup": schema.BoolAttribute{
 				Optional:    true,
 				Description: "是否启用全量备份，取值范围：true：是，false：否。若启用该参数，则此次备份的类型为全量备份。注：只有4.0资源池支持该参数。",
 			},
 
 			// 返回字段
+			"project_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "企业项目ID，企业项目管理服务提供统一的云资源按企业项目管理，以及企业项目内的资源管理，成员管理。您可以通过查看创建企业项目了解如何创建企业项目。注：默认值为\"0\"",
+			},
 			"instance_backup_status": schema.StringAttribute{
 				Computed:    true,
 				Description: "备份状态，取值范围：CREATING: 备份创建中, ACTIVE: 可用， RESTORING: 备份恢复中，DELETING: 删除中，EXPIRED：到期，ERROR：错误",
@@ -172,10 +167,11 @@ func (c *ctyunEcsBackup) Create(ctx context.Context, request resource.CreateRequ
 	}
 
 	// 实际创建
-	err = c.create(ctx, &plan)
+	id, err := c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
+	plan.Id = types.StringValue(id)
 	// 在设置状态前确保 ID 已经设置
 	if plan.Id.ValueString() == "" {
 		err = fmt.Errorf("failed to create instance backup: ID is empty")
@@ -219,7 +215,13 @@ func (c *ctyunEcsBackup) getAndMerge(ctx context.Context, cfg *CtyunEcsBackupCon
 	result := resp.ReturnObj
 	cfg.InstanceBackupName = types.StringValue(result.InstanceBackupName)
 	cfg.InstanceBackupStatus = types.StringValue(result.InstanceBackupStatus)
-	cfg.InstanceBackupDescription = types.StringValue(result.InstanceBackupDescription)
+	// 处理 instance_backup_description 字段，确保空值处理一致
+	if result.InstanceBackupDescription == "" {
+		cfg.InstanceBackupDescription = types.StringNull()
+	} else {
+		cfg.InstanceBackupDescription = types.StringValue(result.InstanceBackupDescription)
+	}
+
 	cfg.InstanceID = types.StringValue(result.InstanceID)
 	cfg.InstanceName = types.StringValue(result.InstanceName)
 	cfg.RepositoryID = types.StringValue(result.RepositoryID)
@@ -270,8 +272,8 @@ func (c *ctyunEcsBackup) Update(ctx context.Context, request resource.UpdateRequ
 
 	// 准备更新参数
 	params := &ctecs2.CtecsUpdateInstanceBackupV41Request{
-		RegionID:                  plan.RegionID.ValueString(),
-		InstanceBackupID:          plan.Id.ValueString(),
+		RegionID:                  state.RegionID.ValueString(),
+		InstanceBackupID:          state.Id.ValueString(),
 		InstanceBackupName:        plan.InstanceBackupName.ValueString(),
 		InstanceBackupDescription: plan.InstanceBackupDescription.ValueString(),
 	}
@@ -289,12 +291,12 @@ func (c *ctyunEcsBackup) Update(ctx context.Context, request resource.UpdateRequ
 	}
 
 	// 查询更新后的信息
-	err = c.getAndMerge(ctx, &plan)
+	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		return
 	}
 
-	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunEcsBackup) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -325,7 +327,7 @@ func (c *ctyunEcsBackup) Configure(_ context.Context, request resource.Configure
 }
 
 // create 创建
-func (c *ctyunEcsBackup) create(ctx context.Context, plan *CtyunEcsBackupConfig) (err error) {
+func (c *ctyunEcsBackup) create(ctx context.Context, plan *CtyunEcsBackupConfig) (id string, err error) {
 
 	params := &ctecs2.CtecsCreateInstanceBackupV41Request{
 		RegionID:                  plan.RegionID.ValueString(),
@@ -351,8 +353,7 @@ func (c *ctyunEcsBackup) create(ctx context.Context, plan *CtyunEcsBackupConfig)
 		return
 	}
 
-	plan.Id = types.StringValue(resp.ReturnObj.Results.InstanceBackupID)
-
+	id = resp.ReturnObj.Results.InstanceBackupID
 	return
 }
 
