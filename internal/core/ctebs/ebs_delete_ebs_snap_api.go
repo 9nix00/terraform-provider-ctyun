@@ -48,7 +48,7 @@ func (a *EbsDeleteEbsSnapApi) Do(ctx context.Context, credential core.Credential
 type EbsDeleteEbsSnapRequest struct {
 	RegionID    string   `json:"regionID,omitempty"` /*  资源池ID，请根据查询资源池列表接口返回值进行传参，获取“regionId”参数。  */
 	SnapshotIDs []string `json:"snapshotIDs"`        /*  云硬盘快照ID列表，请根据“查询快照列表接口”，获取snapshotID参数的返回值并进行传参。当refundOrder为true时不校验该字段，将删除所有的快照，该字段传[ ]即可。  */
-	RefundOrder *bool    `json:"refundOrder"`        /*  是否退订该硬盘下的所有的快照，取值范围：
+	RefundOrder bool     `json:"refundOrder"`        /*  是否退订该硬盘下的所有的快照，取值范围：
 	●true：将删除所有的快照并删除订单
 	●false：只删除快照不删除订单
 	默认值为false。  */
@@ -57,8 +57,8 @@ type EbsDeleteEbsSnapRequest struct {
 
 type EbsDeleteEbsSnapResponse struct {
 	StatusCode  int32                              `json:"statusCode"`            /*  返回状态码（800为成功，900为处理中/失败）。  */
-	Message     *string                            `json:"message,omitempty"`     /*  成功或失败时的描述，一般为英文描述。  */
-	Description *string                            `json:"description,omitempty"` /*  成功或失败时的描述，一般为中文描述。  */
+	Message     string                             `json:"message,omitempty"`     /*  成功或失败时的描述，一般为英文描述。  */
+	Description string                             `json:"description,omitempty"` /*  成功或失败时的描述，一般为中文描述。  */
 	ReturnObj   *EbsDeleteEbsSnapReturnObjResponse `json:"returnObj"`             /*  返回数据结构体。  */
 	Details     *string                            `json:"details,omitempty"`     /*  可忽略。  */
 	ErrorCode   *string                            `json:"errorCode,omitempty"`   /*  业务细分码，为product.module.code三段式码。请参考错误码。  */

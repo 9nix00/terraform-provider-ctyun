@@ -46,3 +46,11 @@ resource "ctyun_ecs" "ecs_test" {
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
 }
+
+resource "ctyun_ebs" "ebs_test" {
+  name       = "ebs-test25"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
+}

@@ -21,7 +21,6 @@ func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 
 	cycleType := "on_demand"
-	hostType := "S7"
 	prodId := "Single1222"
 	storageType := "SATA"
 	backupStorageType := `backup_storage_type="SATA"`
@@ -37,7 +36,7 @@ func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
 	//azInfo := `availability_zone_info = [{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
 
 	flavorName := "s7.large.2"
-	appointVip := `appoint_vip="192.168.0.1"`
+	appointVip := `appoint_vip="192.168.4.111"`
 	updatedFlavorName := "s7.large.4"
 	updatedProdId := "MasterSlave1222"
 	updatedStorageSpace := 120
@@ -62,42 +61,38 @@ func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType),
-					resource.TestCheckResourceAttr(resourceName, "appoint_vip", "192.168.0.1"),
+					resource.TestCheckResourceAttr(resourceName, "appoint_vip", "192.168.4.111"),
 				),
 			},
 			// 关机 + 主磁盘升配 + 备用磁盘升配 + sepc + prodid升配
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, updatedStorageSpace, name, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, "running_control=stop", "", backupStorageType, appointVip),
+					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, `running_control="stop"`, "", backupStorageType, appointVip),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222")),
 			},
 			// 开机
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, updatedStorageSpace, name, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, "running_control=start", "", backupStorageType, appointVip),
+					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, `running_control="start"`, "", backupStorageType, appointVip),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222")),
 			},
 			// 重启
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, updatedStorageSpace, name, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, "running_control=restart", "", backupStorageType, appointVip),
+					vpcID, subnetID, securityGroupID, "", `backup_storage_space=120`, `running_control="restart"`, "", backupStorageType, appointVip),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "host_type", hostType)),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222")),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, updatedStorageSpace, name, password, caseCensitive,

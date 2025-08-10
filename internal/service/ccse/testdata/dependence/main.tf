@@ -92,7 +92,7 @@ resource "ctyun_ccse_cluster" "test" {
     ]
 
     sys_disk = {
-      type = "SSD"
+      type = "SAS"
       size = 80
     }
 

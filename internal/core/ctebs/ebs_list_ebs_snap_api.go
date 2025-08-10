@@ -76,8 +76,8 @@ type EbsListEbsSnapRequest struct {
 
 type EbsListEbsSnapResponse struct {
 	StatusCode  int32                            `json:"statusCode"`            /*  返回状态码（800为成功，900为失败）。  */
-	Message     *string                          `json:"message,omitempty"`     /*  成功或失败时的描述，一般为英文描述。  */
-	Description *string                          `json:"description,omitempty"` /*  成功或失败时的描述，一般为中文描述。  */
+	Message     string                           `json:"message,omitempty"`     /*  成功或失败时的描述，一般为英文描述。  */
+	Description string                           `json:"description,omitempty"` /*  成功或失败时的描述，一般为中文描述。  */
 	ReturnObj   *EbsListEbsSnapReturnObjResponse `json:"returnObj"`             /*  返回数据结构体。  */
 	Details     *string                          `json:"details,omitempty"`     /*  可忽略。  */
 	ErrorCode   *string                          `json:"errorCode,omitempty"`   /*  业务细分码，为product.module.code三段式码。请参考错误码。  */
@@ -108,7 +108,7 @@ type EbsListEbsSnapReturnObjSnapshotListResponse struct {
 	RetentionPolicy  *string `json:"retentionPolicy,omitempty"`  /*  快照保留策略，取值为：
 	●custom：自定义保留天数。
 	●forever：永久保留。  */
-	RetentionTime *string `json:"retentionTime,omitempty"` /*  快照保留时间。  */
+	RetentionTime int64   `json:"retentionTime,omitempty"` /*  快照保留时间。  */
 	SnapshotID    *string `json:"snapshotID,omitempty"`    /*  快照ID。  */
 	SnapshotType  *string `json:"snapshotType,omitempty"`  /*  快照类型，取值为：
 	●manu：手动。
@@ -118,7 +118,7 @@ type EbsListEbsSnapReturnObjSnapshotListResponse struct {
 	●data：数据盘。
 	●system：系统盘。  */
 	VolumeName   *string `json:"volumeName,omitempty"`   /*  云硬盘名称。  */
-	VolumeSize   int32   `json:"volumeSize"`             /*  云硬盘大小。  */
+	VolumeSize   int64   `json:"volumeSize"`             /*  云硬盘大小。  */
 	VolumeSource *string `json:"volumeSource,omitempty"` /*  云硬盘来源，如果为空，<br />则是普通云硬盘，<br />如果不为空，<br />则是由快照创建而来，<br />显示来源快照ID  */
 	VolumeStatus *string `json:"volumeStatus,omitempty"` /*  云硬盘的状态，请参考<a href="https://www.ctyun.cn/document/10027696/10168629">云硬盘使用状态</a>  */
 	DiskID       *string `json:"diskID,omitempty"`       /*  云硬盘ID。  */

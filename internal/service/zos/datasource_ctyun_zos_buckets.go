@@ -3,6 +3,7 @@ package zos
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -42,11 +43,11 @@ type CtyunZosBucketsModel struct {
 }
 
 type CtyunZosBucketsConfig struct {
-	RegionID  types.String `tfsdk:"region_id"`
-	ProjectID types.String `tfsdk:"project_id"`
-	PageNo    types.Int64  `tfsdk:"page_no"`
-	PageSize  types.Int64  `tfsdk:"page_size"`
-
+	RegionID     types.String           `tfsdk:"region_id"`
+	ProjectID    types.String           `tfsdk:"project_id"`
+	PageNo       types.Int64            `tfsdk:"page_no"`
+	PageSize     types.Int64            `tfsdk:"page_size"`
+	Bucket       types.String           `tfsdk:"bucket"`
 	CurrentCount types.Int64            `tfsdk:"current_count"`
 	TotalCount   types.Int64            `tfsdk:"total_count"`
 	Buckets      []CtyunZosBucketsModel `tfsdk:"buckets"`
@@ -65,6 +66,10 @@ func (c *ctyunZosBuckets) Schema(_ context.Context, _ datasource.SchemaRequest, 
 				Computed:    true,
 				Optional:    true,
 				Description: "企业项目ID",
+			},
+			"bucket": schema.StringAttribute{
+				Optional:    true,
+				Description: "桶名称",
 			},
 			"page_no": schema.Int64Attribute{
 				Optional:    true,
@@ -146,12 +151,56 @@ func (c *ctyunZosBuckets) Read(ctx context.Context, request datasource.ReadReque
 		return
 	}
 	projectId := c.meta.GetExtraIfEmpty(config.ProjectID.ValueString(), common.ExtraProjectId)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+	if config.Bucket.ValueString() != "" {
+		err = c.getBucket(ctx, &config)
+	} else {
+		err = c.listBuckets(ctx, &config)
+	}
+	if err != nil {
+		return
+	}
+	// 保存到state
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+}
+
+func (c *ctyunZosBuckets) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+
+func (c *ctyunZosBuckets) getBucket(ctx context.Context, config *CtyunZosBucketsConfig) (err error) {
+	b, err := business.NewZosService(c.meta).GetZosBucketInfo(ctx, config.Bucket.ValueString(), config.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+	item := CtyunZosBucketsModel{
+		Bucket:       types.StringValue(b.Bucket),
+		ProjectID:    types.StringValue(b.ProjectID),
+		StorageType:  types.StringValue(b.StorageType),
+		IsEncrypted:  types.BoolValue(true),
+		CmkUUID:      utils.SecStringValue(b.CmkUUID),
+		AzPolicy:     types.StringValue(b.AZPolicy),
+		CreationDate: types.StringValue(b.Ctime),
+	}
+	if b.CmkUUID == nil {
+		item.IsEncrypted = types.BoolValue(false)
+	}
+	config.Buckets = []CtyunZosBucketsModel{item}
+	return
+}
+
+func (c *ctyunZosBuckets) listBuckets(ctx context.Context, config *CtyunZosBucketsConfig) (err error) {
 	// 组装请求体
 	params := &ctzos.ZosListBucketsRequest{
-		RegionID: regionId,
+		RegionID: config.RegionID.ValueString(),
 	}
-	if projectId != "" {
-		params.ProjectID = projectId
+	if config.ProjectID.ValueString() != "" {
+		params.ProjectID = config.ProjectID.ValueString()
 	}
 	pageNo := config.PageNo.ValueInt64()
 	pageSize := config.PageSize.ValueInt64()
@@ -191,14 +240,5 @@ func (c *ctyunZosBuckets) Read(ctx context.Context, request datasource.ReadReque
 		}
 		config.Buckets = append(config.Buckets, item)
 	}
-	// 保存到state
-	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
-}
-
-func (c *ctyunZosBuckets) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
-	if request.ProviderData == nil {
-		return
-	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
+	return
 }

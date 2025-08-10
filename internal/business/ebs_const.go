@@ -14,6 +14,8 @@ const (
 	EbsDiskTypeSsd       = "ssd"
 	EbsDiskTypeSsdGenric = "ssd-genric"
 	EbsDiskTypeFastSsd   = "fast-ssd"
+
+	EbsSnapshotStatusAvailable = "available"
 )
 
 const (

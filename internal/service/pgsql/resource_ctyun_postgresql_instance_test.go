@@ -218,6 +218,18 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SATA"),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "100")),
 			},
+
+			// 升级1主1备结点, 同时升级备份空间，主存储空间和spec
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, storageSpace, name, password, caseCensitive,
+					vpcID, subnetID, securityGroupID, "", backupStorageSpace, "", "", backupStorageType, ""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", updatedProdId),
+					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName)),
+			},
 			// 升级1主1备结点, 同时升级备份空间，主存储空间和spec
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdId, storageType, updatedStorageSpace, name, password, caseCensitive,
@@ -226,8 +238,8 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
-					resource.TestCheckResourceAttr(resourceName, "prod_id", prodId),
-					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", updatedProdId),
+					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SATA"),
@@ -257,7 +269,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	flavorName := "c7.large.2"
 	prodId := "Master2Slave1512"
 	storageType := "SSD"
-	backupStorageType := `backup_storage_space="SSD"`
+	backupStorageType := `backup_storage_type="SSD"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	password := "Kqjwyk123="
@@ -267,7 +279,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	backupStorageSpace := `backup_storage_space=100`
 
 	updatedStorageSpace := 150
-	updatedBackupStorageSpace := 200
+	updatedBackupStorageSpace := `backup_storage_space=200`
 	updatedFlavorName := "c7.large.4"
 	caseCensitive := false
 	resource.Test(t, resource.TestCase{
@@ -296,7 +308,6 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "100")),
 			},
 			// 升配主备磁盘，spec
-
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, updatedStorageSpace, name, password, caseCensitive,
 					vpcID, subnetID, securityGroupID, "", updatedBackupStorageSpace, "", "", backupStorageType, ""),
@@ -308,7 +319,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", backupStorageType),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200")),
 			},
 

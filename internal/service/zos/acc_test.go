@@ -9,7 +9,9 @@ import (
 
 const dependenceDir = "testdata/dependence"
 
-var dependenceBucket string
+var dependence struct {
+	bucket string
+}
 
 func TestMain(m *testing.M) {
 	// 初始化依赖资源
@@ -20,7 +22,8 @@ func TestMain(m *testing.M) {
 		terraform.DestroyResource(dependenceDir)
 		os.Exit(1)
 	}
-	dependenceBucket = outputs["bucket"].Value
+	dependence.bucket = outputs["bucket"].Value
+
 	fmt.Println("依赖资源初始化完毕")
 
 	// 执行测试用例

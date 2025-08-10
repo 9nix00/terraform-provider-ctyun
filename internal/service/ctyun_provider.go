@@ -25,6 +25,7 @@ import (
 	pgsql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -34,6 +35,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/elb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/hpfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/iam"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/image"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/kafka"
@@ -321,6 +323,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis: pgsql2.NewApis(client),
 			SdkMongodbApis: mongodb2.NewApis(client),
+			SdkHpfsApis:    hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -348,8 +351,10 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		nat.NewCtyunSNats(),
 		nat.NewCtyunDNats(),
 		ebs.NewCtyunEbsVolumes(),
+		ebs.NewCtyunEbsSnapshots(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
+		ecs.NewCtyunEcsSnapshots(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -387,6 +392,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		common2.NewCtyunZones(),
 		mysql2.NewCtyunMysqlWhiteLists(),
 		mongodb.NewCtyunMongodbInstances(),
+		hpfs.NewCtyunHpfsInstances(),
+		hpfs.NewCtyunHpfsClusters(),
 	)
 }
 
@@ -405,6 +412,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunIdp(),
 		ebs.NewCtyunEbs(),
 		ebs.NewCtyunEbsAssociation(),
+		ebs.NewCtyunEbsSnapshot(),
 		image.NewCtyunImage(),
 		image.NewCtyunImageAssociationUser(),
 		ecs.NewCtyunKeypair(),
@@ -452,6 +460,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
+		ecs.NewCtyunEcsSnapshot(),
+		hpfs.NewCtyunHpfsInstance(),
 	)
 }
 

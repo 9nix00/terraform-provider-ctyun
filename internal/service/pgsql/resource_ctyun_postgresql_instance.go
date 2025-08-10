@@ -101,8 +101,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			// 存储与备份
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO",
+				Description: "备份存储类型: OS=对象存储, SSD=超高IO, SATA=普通IO, SAS=高IO。注：当填写OS时，无需填写backup_storage_size",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.StorageTypeSSD, business.StorageTypeSATA, business.StorageTypeSAS, business.BackupStorageTypeOS),
 				},
@@ -131,6 +130,12 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Optional:    true,
 				Computed:    true,
 				Description: "备份存储空间大小",
+				Validators: []validator.Int32{
+					validator2.ConflictsWithEqualInt32(
+						path.MatchRoot("backup_storage_type"),
+						types.StringValue(business.BackupStorageTypeOS),
+					),
+				},
 			},
 			// 网络配置
 			"vpc_id": schema.StringAttribute{
@@ -460,7 +465,7 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 	}
 
 	// 确保订单已完成状态才能退订
-	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, 60)
+	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
 	if err != nil {
 		return
 	}
@@ -520,16 +525,6 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		params.ProjectId = config.ProjectID.ValueStringPointer()
 		header.ProjectId = config.ProjectID.ValueStringPointer()
 	}
-	// 处理backupStorage
-	if !config.BackupStorageType.IsNull() && !config.BackupStorageType.IsUnknown() {
-		backupStorageType := config.BackupStorageType.ValueString()
-		if config.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
-			backupStorageType = strings.ToLower(config.BackupStorageType.ValueString())
-		} else {
-
-		}
-		params.BackupStorageType = &backupStorageType
-	}
 
 	if config.AppointVip.ValueString() != "" {
 		params.AppointVip = config.AppointVip.ValueStringPointer()
@@ -553,9 +548,19 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	mysqlNodeInfo.Disks = 1
 	mysqlNodeInfo.NodeType = business.PgsqlNodeTypeDict[config.ProdID.ValueString()]
 
-	if config.BackupStorageSpace.ValueInt32() != 0 {
-		backupStorageSpace := fmt.Sprintf("%d", config.BackupStorageSpace.ValueInt32())
-		mysqlNodeInfo.BackupStorageSpace = &backupStorageSpace
+	// 处理backupStorage
+	if !config.BackupStorageType.IsNull() && !config.BackupStorageType.IsUnknown() {
+		backupStorageType := config.BackupStorageType.ValueString()
+		if config.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
+			backupStorageType = strings.ToLower(config.BackupStorageType.ValueString())
+			params.BackupStorageType = &backupStorageType
+		} else {
+			if config.BackupStorageSpace.ValueInt32() != 0 {
+				backupStorageSpace := fmt.Sprintf("%d", config.BackupStorageSpace.ValueInt32())
+				mysqlNodeInfo.BackupStorageSpace = &backupStorageSpace
+				mysqlNodeInfo.BackupStorageType = &backupStorageType
+			}
+		}
 	}
 
 	// 处理availabilityZoneInfo
@@ -1027,7 +1032,7 @@ func (c *CtyunPostgresqlInstance) InfoLoop(ctx context.Context, state *CtyunPost
 	return
 }
 
-func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, orderStatus int32, loopCount ...int) (err error) {
+func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, orderStatus int32, runningStatus int32, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -1073,7 +1078,8 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 				return true
 			}
 			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
-			if detailOrderStatus == orderStatus {
+			detailRunningStatus := resp.ReturnObj.ProdRunningStatus
+			if detailOrderStatus == orderStatus && detailRunningStatus == orderStatus {
 				return false
 			}
 			return true
@@ -1241,7 +1247,7 @@ func (c *CtyunPostgresqlInstance) generateAvailabilityZoneInfo(ctx context.Conte
 		}
 
 		//2.构建az-节点数的map
-		azNodeNumMap, err2 := c.getAzNodeNumMap(ctx, config, process)
+		azNodeNumMap, err2 := c.getAzNodeNumMap(ctx, state, process)
 		if err2 != nil {
 			err = err2
 			return
@@ -1271,7 +1277,7 @@ func (c *CtyunPostgresqlInstance) generateAvailabilityZoneInfo(ctx context.Conte
 			azNodeNumMap[minAzId] = azNodeNumMap[minAzId] + 1
 		}
 		// 判断是否为spec升配
-		if process == "update_spce" {
+		if process == "update_spec" {
 			resultAzNodeMap = azNodeNumMap
 		}
 
@@ -1349,9 +1355,9 @@ func (c *CtyunPostgresqlInstance) getAzInfoByRegion(ctx context.Context, config 
 	return
 }
 
-func (c *CtyunPostgresqlInstance) getAzNodeNumMap(ctx context.Context, config *CtyunPostgresqlInstanceConfig, process string) (azNodeNumMap map[string]int32, err error) {
+func (c *CtyunPostgresqlInstance) getAzNodeNumMap(ctx context.Context, state *CtyunPostgresqlInstanceConfig, process string) (azNodeNumMap map[string]int32, err error) {
 	//  获取该资源池有几个az
-	regionAzList, err2 := c.getAzInfoByRegion(ctx, config)
+	regionAzList, err2 := c.getAzInfoByRegion(ctx, state)
 	if err2 != nil {
 		err = err2
 		return
@@ -1365,13 +1371,13 @@ func (c *CtyunPostgresqlInstance) getAzNodeNumMap(ctx context.Context, config *C
 	// 区分创建，还是更新，若更新需要获取各个节点所在az
 	if strings.Contains(process, "update") {
 		params := &pgsql.PgsqlGetNodeListRequest{
-			ProdInstId: config.ID.ValueString(),
+			ProdInstId: state.ID.ValueString(),
 		}
 		header := &pgsql.PgsqlGetNodeListHeaders{
-			RegionID: config.RegionID.ValueString(),
+			RegionID: state.RegionID.ValueString(),
 		}
-		if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
-			header.ProjectID = config.ProjectID.ValueStringPointer()
+		if !state.ProjectID.IsNull() && !state.ProjectID.IsUnknown() {
+			header.ProjectID = state.ProjectID.ValueStringPointer()
 		}
 		resp, err3 := c.meta.Apis.SdkCtPgsqlApis.PgsqlGetNodeListApi.Do(ctx, c.meta.Credential, params, header)
 		if err3 != nil {
@@ -1408,12 +1414,25 @@ func (c *CtyunPostgresqlInstance) upgradeStorage(ctx context.Context, state *Cty
 		NodeType: &nodeType,
 	}
 	backupUpgradeParams := &pgsql.PgsqlUpgradeRequest{
-		InstId:   state.ID.ValueString(),
-		NodeType: &nodeType,
+		InstId: state.ID.ValueString(),
 	}
 	upgradeHeaders := &pgsql.PgsqlUpgradeRequestHeader{}
 	if state.ProjectID.ValueString() != "" {
 		upgradeHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+	// 若备份空间和主节点存储空间都不为空，则先升配备份空间
+	// 若backupStorageSpace不为空，触发备用存储空间扩容，且plan backupStorageSpace与state不相同
+	if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() != state.BackupStorageSpace.ValueInt32() {
+		storageSize32 := plan.BackupStorageSpace.ValueInt32()
+		backupUpgradeParams.DiskVolume = &storageSize32
+		backupNodeType := "backup"
+		backupUpgradeParams.NodeType = &backupNodeType
+	}
+	if backupUpgradeParams.DiskVolume != nil {
+		err = c.upgradeStorgeRequest(ctx, backupUpgradeParams, upgradeHeaders, state, plan)
+		if err != nil {
+			return
+		}
 	}
 
 	// 若StorageSpace不为空，触发扩容主存储空间，且plan storageSpace与state不相同时
@@ -1426,19 +1445,7 @@ func (c *CtyunPostgresqlInstance) upgradeStorage(ctx context.Context, state *Cty
 			return
 		}
 	}
-	// 若backupStorageSpace不为空，触发备用存储空间扩容，且plan backupStorageSpace与state不相同
-	if plan.BackupStorageSpace.ValueInt32() != 0 && plan.BackupStorageSpace.ValueInt32() != state.BackupStorageSpace.ValueInt32() {
-		storageSize32 := plan.BackupStorageSpace.ValueInt32()
-		backupUpgradeParams.DiskVolume = &storageSize32
-		nodeType = "backup"
-		backupUpgradeParams.NodeType = &nodeType
-	}
-	if backupUpgradeParams.DiskVolume != nil {
-		err = c.upgradeStorgeRequest(ctx, backupUpgradeParams, upgradeHeaders, state, plan)
-		if err != nil {
-			return
-		}
-	}
+
 	return
 }
 
@@ -1472,7 +1479,7 @@ func (c *CtyunPostgresqlInstance) upgradeRequest(ctx context.Context, params *pg
 	return
 }
 
-func (c *CtyunPostgresqlInstance) UpgradeStorageLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
+func (c *CtyunPostgresqlInstance) UpgradeStorageLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig, storageType string, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -1490,17 +1497,19 @@ func (c *CtyunPostgresqlInstance) UpgradeStorageLoop(ctx context.Context, state 
 			returnObj := detailInfo.ReturnObj
 			runningStatus := returnObj.ProdRunningStatus
 			orderStatus := returnObj.ProdOrderStatus
-			if returnObj.DiskSize == plan.StorageSpace.ValueInt32() {
-				flag := false
-				if plan.BackupStorageSpace.ValueInt32() == 0 {
-					flag = true
-				}
+			flag := false
+
+			if storageType == "backup" {
 				if plan.BackupStorageSpace.ValueInt32() != 0 && c.ParseStorageSize(&returnObj.BackupDiskSize) == fmt.Sprintf("%d", plan.BackupStorageSpace.ValueInt32()) {
 					flag = true
 				}
-				if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted && flag {
-					return false
+			} else if storageType == "master" {
+				if returnObj.DiskSize == plan.StorageSpace.ValueInt32() {
+					flag = true
 				}
+			}
+			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlOrderStatusStarted && flag {
+				return false
 			}
 			return true
 		})
@@ -1610,7 +1619,12 @@ func (c *CtyunPostgresqlInstance) upgradeStorgeRequest(ctx context.Context, para
 	}
 
 	// 更新后，轮询确认时候更新完成
-	err = c.UpgradeStorageLoop(ctx, state, plan, 60)
+	if *params.NodeType == "backup" {
+		err = c.UpgradeStorageLoop(ctx, state, plan, "backup", 60)
+	} else {
+		err = c.UpgradeStorageLoop(ctx, state, plan, "master", 60)
+	}
+
 	if err != nil {
 		return
 	}

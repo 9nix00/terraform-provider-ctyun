@@ -45,3 +45,7 @@ func TestAccHA(t *testing.T) {
 func TestAccRouteRules(t *testing.T) {
 	runTest(t)
 }
+
+func TestAccBatchEcs(t *testing.T) {
+	runTest(t)
+}
