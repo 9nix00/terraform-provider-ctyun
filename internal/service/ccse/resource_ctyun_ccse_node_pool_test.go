@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccCtyunCcseNodePool(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

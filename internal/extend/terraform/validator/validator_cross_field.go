@@ -29,7 +29,6 @@ type validatorCrossFieldResponse struct {
 }
 
 func CrossFieldBool(expression path.Expression, sourceValues, targetValues []attr.Value) validator.Bool {
-	fmt.Println(123)
 	return &validatorCrossField{sourceExpression: expression, sourceValues: sourceValues, targetValues: targetValues}
 }
 

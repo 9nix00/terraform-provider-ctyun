@@ -90,6 +90,7 @@ func TestAccCtyunZosBucket(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"project_id",
 					"acl",
+					"retention_mode",
 				},
 			},
 			{
@@ -221,6 +222,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 				ImportStateVerifyIgnore: []string{
 					"project_id",
 					"acl",
+					"retention_mode",
 				},
 			},
 			{

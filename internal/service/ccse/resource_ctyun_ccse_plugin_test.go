@@ -11,6 +11,7 @@ import (
 )
 
 func TestAccCtyunCcsePlugin(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_ccse_plugin." + rnd
