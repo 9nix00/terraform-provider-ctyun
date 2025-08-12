@@ -172,11 +172,6 @@ func (c *ctyunEcsBackup) Create(ctx context.Context, request resource.CreateRequ
 		return
 	}
 	plan.Id = types.StringValue(id)
-	// 在设置状态前确保 ID 已经设置
-	if plan.Id.ValueString() == "" {
-		err = fmt.Errorf("failed to create instance backup: ID is empty")
-		return
-	}
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 
 	//轮询状态为可用状态

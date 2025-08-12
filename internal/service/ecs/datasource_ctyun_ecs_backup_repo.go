@@ -226,7 +226,7 @@ func (c *ctyunEcsBackupRepos) Read(ctx context.Context, request datasource.ReadR
 			UsedSize:       types.Int64Value(int64(repo.UsedSize)),
 			CreatedAt:      types.StringValue(repo.CreatedAt),
 			ExpiredAt:      types.StringValue(repo.ExpiredAt),
-			Expired:        types.BoolValue(*repo.Expired),
+			Expired:        types.BoolValue(repo.Expired),
 			Freeze:         types.BoolValue(*repo.Freeze),
 			Paas:           types.BoolValue(*repo.Paas),
 			BackupList:     backupList,

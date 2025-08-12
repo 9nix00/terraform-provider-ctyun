@@ -354,6 +354,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ecs.NewCtyunEcsSnapshots(),
 		ecs.NewCtyunEcsBackupRepos(),
 		ecs.NewCtyunEcsBackups(),
+		ecs.NewCtyunEcsBackupPolicies(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -459,6 +460,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsSnapshot(),
 		ecs.NewCtyunEcsBackupRepo(),
 		ecs.NewCtyunEcsBackup(),
+		ecs.NewCtyunEcsBackupPolicy(),
+		ecs.NewCtyunEcsBackupPolicyBindInstances(),
+		ecs.NewCtyunEcsBackupPolicyBindRepo(),
 	)
 }
 

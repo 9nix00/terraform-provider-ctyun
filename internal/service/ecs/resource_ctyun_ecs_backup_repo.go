@@ -249,7 +249,7 @@ func (c *ctyunEcsBackupRepo) getAndMerge(ctx context.Context, cfg *CtyunEcsBacku
 	cfg.UsedSize = types.Int64Value(int64(result.UsedSize))
 	cfg.CreatedAt = types.StringValue(result.CreatedAt)
 	cfg.ExpiredAt = types.StringValue(result.ExpiredAt)
-	cfg.Expired = types.BoolValue(*result.Expired)
+	cfg.Expired = types.BoolValue(result.Expired)
 	cfg.Freeze = types.BoolValue(*result.Freeze)
 	cfg.Paas = types.BoolValue(*result.Paas)
 	cfg.BackupCount = types.Int64Value(int64(result.BackupCount))

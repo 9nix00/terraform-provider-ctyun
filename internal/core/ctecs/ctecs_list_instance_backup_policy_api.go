@@ -85,21 +85,25 @@ type CtecsListInstanceBackupPolicyReturnObjResponse struct {
 }
 
 type CtecsListInstanceBackupPolicyReturnObjPolicyListResponse struct {
-	RegionID       string                                                                    `json:"regionID,omitempty"`      /*  资源池ID，您可以调用[regionID](https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87)查看最新的天翼云资源池列表  */
-	Status         int32                                                                     `json:"status,omitempty"`        /*  是否启用策略，取值范围：<br />0：停用，<br />1：启用  */
-	PolicyID       string                                                                    `json:"policyID,omitempty"`      /*  云主机备份策略ID  */
-	PolicyName     string                                                                    `json:"policyName,omitempty"`    /*  云主机备份策略名称  */
-	CycleType      string                                                                    `json:"cycleType,omitempty"`     /*  云主机备份周期类型，取值范围： <br />day：按天备份<br />week：按星期备份  */
-	CycleDay       int32                                                                     `json:"cycleDay,omitempty"`      /*  只有cycleType为day时返回备份周期值  */
-	CycleWeek      string                                                                    `json:"cycleWeek,omitempty"`     /*  只有cycleType为week时返回备份周期，取值范围：0-6代表星期日-星期六，如果一周有多天备份，以逗号隔开  */
-	Time           string                                                                    `json:"time,omitempty"`          /*  备份整点时间，取值范围：0-23，如果一天内多个时间节点备份，以逗号隔开  */
-	RetentionType  string                                                                    `json:"retentionType,omitempty"` /*  云主机备份保留类型，取值范围：<br />date：按时间保留，<br />num：按数量保留，<br />all：永久保留  */
-	RetentionNum   int32                                                                     `json:"retentionNum,omitempty"`  /*  只有retentionType为num时返回保留数量值  */
-	RetentionDay   int32                                                                     `json:"retentionDay,omitempty"`  /*  只有retentionType为date时返回保留天数值  */
-	ResourceCount  int32                                                                     `json:"resourceCount,omitempty"` /*  策略已绑定的云主机数量  */
-	ResourceIDs    string                                                                    `json:"resourceIDs,omitempty"`   /*  策略已绑定的云主机ID，以逗号分隔  */
-	RepositoryList []*CtecsListInstanceBackupPolicyReturnObjPolicyListRepositoryListResponse `json:"repositoryList"`          /*  策略已绑定的云主机备份库列表  */
-	ProjectID      string                                                                    `json:"projectID,omitempty"`     /*  企业项目ID  */
+	RegionID      string `json:"regionID,omitempty"`      /*  资源池ID，您可以调用[regionID](https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87)查看最新的天翼云资源池列表  */
+	Status        int32  `json:"status,omitempty"`        /*  是否启用策略，取值范围：<br />0：停用，<br />1：启用  */
+	PolicyID      string `json:"policyID,omitempty"`      /*  云主机备份策略ID  */
+	PolicyName    string `json:"policyName,omitempty"`    /*  云主机备份策略名称  */
+	CycleType     string `json:"cycleType,omitempty"`     /*  云主机备份周期类型，取值范围： <br />day：按天备份<br />week：按星期备份  */
+	CycleDay      int32  `json:"cycleDay,omitempty"`      /*  只有cycleType为day时返回备份周期值  */
+	CycleWeek     string `json:"cycleWeek,omitempty"`     /*  只有cycleType为week时返回备份周期，取值范围：0-6代表星期日-星期六，如果一周有多天备份，以逗号隔开  */
+	Time          string `json:"time,omitempty"`          /*  备份整点时间，取值范围：0-23，如果一天内多个时间节点备份，以逗号隔开  */
+	RetentionType string `json:"retentionType,omitempty"` /*  云主机备份保留类型，取值范围：<br />date：按时间保留，<br />num：按数量保留，<br />all：永久保留  */
+	RetentionNum  int32  `json:"retentionNum,omitempty"`  /*  只有retentionType为num时返回保留数量值  */
+	RetentionDay  int32  `json:"retentionDay,omitempty"`  /*  只有retentionType为date时返回保留天数值  */
+	ResourceCount int32  `json:"resourceCount,omitempty"` /*  策略已绑定的云主机数量  */
+	//TODO  openapi返回字段多了个空格，待修复后修改
+	ResourceIDs        string                                                                    `json:"resourceIDs ,omitempty"`       /*  策略已绑定的云主机ID，以逗号分隔  */
+	RepositoryList     []*CtecsListInstanceBackupPolicyReturnObjPolicyListRepositoryListResponse `json:"repositoryList"`               /*  策略已绑定的云主机备份库列表  */
+	ProjectID          string                                                                    `json:"projectID,omitempty"`          /*  企业项目ID  */
+	FullBackupInterval int32                                                                     `json:"fullBackupInterval,omitempty"` /*  是否启用周期性全量备份。-1代表不开启，默认为-1；取值范围为[-1,100]，即每执行n次增量备份后，执行一次全量备份；若传入为0，代表每一次均为全量备份。  */
+	AdvRetentionStatus bool                                                                      `json:"advRetentionStatus,omitempty"` /*  是否开启高级保留策略，false（不启用），true(启用)，默认值为false。需校验云主机备份保留类型（retentionType），若保留类型为按数量保存（num），可开启高级保留策略；若保留类型为date（按时间保存）或all（永久保存），不可开启高级保留策略。  */
+	AdvRetention       *AdvRetention                                                             `json:"advRetention,omitempty"`       /*  高级保留策略内容，只有retentionType为num且advRetentionStatus为true才生效  */
 }
 
 type CtecsListInstanceBackupPolicyReturnObjPolicyListRepositoryListResponse struct {
