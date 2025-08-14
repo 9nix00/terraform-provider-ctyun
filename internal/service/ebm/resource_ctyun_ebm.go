@@ -57,6 +57,7 @@ type CtyunEbmConfig struct {
 	AzName               types.String `tfsdk:"az_name"`
 	DeviceType           types.String `tfsdk:"device_type"`
 	InstanceName         types.String `tfsdk:"instance_name"`
+	Name                 types.String `tfsdk:"name"`
 	Hostname             types.String `tfsdk:"hostname"`
 	ImageUUID            types.String `tfsdk:"image_uuid"`
 	Password             types.String `tfsdk:"password"`
@@ -90,6 +91,10 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"instance_id": schema.StringAttribute{
 				Computed:    true,
@@ -924,6 +929,7 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.AzName = utils.SecStringValue(instance.AzName)
 	cfg.DeviceType = utils.SecStringValue(instance.DeviceType)
 	cfg.InstanceName = utils.SecStringValue(instance.DisplayName)
+	cfg.Name = cfg.InstanceName
 	cfg.Hostname = utils.SecStringValue(instance.InstanceName)
 	cfg.ImageUUID = utils.SecStringValue(instance.ImageID)
 	cfg.VpcID = utils.SecStringValue(instance.VpcID)

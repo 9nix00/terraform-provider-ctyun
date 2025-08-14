@@ -54,6 +54,7 @@ func (c *ctyunCcseCluster) Metadata(_ context.Context, request resource.Metadata
 
 type CtyunCcseClusterConfig struct {
 	ID                 types.String             `tfsdk:"id"`
+	Name               types.String             `tfsdk:"name"`
 	MasterOrderID      types.String             `tfsdk:"master_order_id"`
 	RegionID           types.String             `tfsdk:"region_id"`
 	BaseInfo           CtyunCcseClusterBaseInfo `tfsdk:"base_info"`
@@ -135,6 +136,10 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -1147,7 +1152,7 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	if instance.BizState == business.CcseRefundedBizState || instance.BizState == business.CcseRefundingBizState {
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
-
+	plan.Name = types.StringValue(instance.ClusterName)
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)

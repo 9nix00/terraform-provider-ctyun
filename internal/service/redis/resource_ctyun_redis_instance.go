@@ -51,6 +51,7 @@ func (c *ctyunRedisInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunRedisInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
@@ -84,6 +85,10 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -753,6 +758,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 	copiesCount, _ := strconv.Atoi(instance.CopiesCount)
 	plan.CopiesCount = types.Int32Value(int32(copiesCount))
 	plan.InstanceName = types.StringValue(instance.InstanceName)
+	plan.Name = plan.InstanceName
 	for _, p := range instance.PaasInstAttrs {
 		switch p.AttrKey {
 		case "vpcUuid":

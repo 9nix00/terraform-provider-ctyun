@@ -51,7 +51,7 @@ type CtyunCcseNodePoolConfig struct {
 	ID                       types.String              `tfsdk:"id"`
 	ClusterID                types.String              `tfsdk:"cluster_id"`
 	RegionID                 types.String              `tfsdk:"region_id"`
-	NodePoolName             types.String              `tfsdk:"node_pool_name"`
+	NodePoolName             types.String              `tfsdk:"name"`
 	CycleCount               types.Int64               `tfsdk:"cycle_count"`
 	CycleType                types.String              `tfsdk:"cycle_type"`
 	AutoRenew                types.Bool                `tfsdk:"auto_renew"`
@@ -106,7 +106,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"node_pool_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "节点池名称",
 			},
