@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -30,7 +31,8 @@ func NewCtyunEcsBackup() resource.Resource {
 }
 
 type ctyunEcsBackup struct {
-	meta *common.CtyunMetadata
+	meta       *common.CtyunMetadata
+	ecsService *business.EcsService
 }
 
 func (c *ctyunEcsBackup) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -59,7 +61,7 @@ type CtyunEcsBackupConfig struct {
 
 func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730/10141018**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10033761**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -114,6 +116,9 @@ func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"full_backup": schema.BoolAttribute{
 				Optional:    true,
 				Description: "是否启用全量备份，取值范围：true：是，false：否。若启用该参数，则此次备份的类型为全量备份。注：只有4.0资源池支持该参数。",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 
 			// 返回字段
@@ -166,6 +171,12 @@ func (c *ctyunEcsBackup) Create(ctx context.Context, request resource.CreateRequ
 		return
 	}
 
+	// 校验创建动作的前置条件
+	err = c.checkCreate(ctx, plan)
+	if err != nil {
+		return
+	}
+
 	// 实际创建
 	id, err := c.create(ctx, &plan)
 	if err != nil {
@@ -186,6 +197,36 @@ func (c *ctyunEcsBackup) Create(ctx context.Context, request resource.CreateRequ
 	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+}
+
+func (c *ctyunEcsBackup) checkCreate(ctx context.Context, plan CtyunEcsBackupConfig) error {
+	// 1.云主机和备份存储库必须存在
+	err := c.ecsService.MustExist(ctx, plan.InstanceID.ValueString(), plan.RegionID.ValueString())
+	if err != nil {
+		return err
+	}
+	// 2.云主机的状态必须处于开机或关机状态下
+	status, err := c.ecsService.GetEcsStatus(ctx, plan.InstanceID.ValueString(), plan.RegionID.ValueString())
+	if err != nil {
+		return err
+	}
+	if err != nil {
+		return err
+	}
+	allowedStatuses := map[string]bool{
+		business.EcsStatusRunning: true,
+		business.EcsStatusStopped: true,
+	}
+
+	if !allowedStatuses[status] {
+		return fmt.Errorf("云主机状态无效(当前:%s)，仅允许在%s或%s状态下创建云主机备份",
+			status, business.EcsStatusRunning, business.EcsStatusStopped)
+	}
+
+	// 3.当备份存储库的容量小于0，已到期或已冻结这些情况下，备份存储库不可用 （创建接口返回 不需提前校验）
+	//4.云主机盘限制：不可含有本地盘、共享盘、ISCSI磁盘模式盘
+	//5. 云主机所挂全部盘的状态需要为"已挂载"
+	return nil
 }
 
 // getAndMerge 查询
@@ -319,6 +360,7 @@ func (c *ctyunEcsBackup) Configure(_ context.Context, request resource.Configure
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.ecsService = business.NewEcsService(meta)
 }
 
 // create 创建
