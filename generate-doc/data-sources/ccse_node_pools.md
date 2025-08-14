@@ -36,7 +36,7 @@ output "t" {
 
 ### Optional
 
-- `node_pool_name` (String) 节点池名称
+- `name` (String) 节点池名称
 - `page_no` (Number) 列表的页码
 - `page_size` (Number) 每页数据量大小
 - `region_id` (String) 资源池ID
@@ -64,7 +64,7 @@ Read-Only:
 - `item_def_name` (String) 规格名称
 - `mirror_id` (String) 镜像id
 - `mirror_name` (String) 镜像名称
-- `node_pool_name` (String) 节点池名称
+- `name` (String) 节点池名称
 - `visibility_host_script` (String) 部署前执行自定义脚本，base64编码
 - `visibility_post_host_script` (String) 部署后执行自定义脚本，base64编码
 

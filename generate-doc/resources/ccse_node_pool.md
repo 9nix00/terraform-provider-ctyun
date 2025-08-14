@@ -28,7 +28,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 
 resource "ctyun_ccse_node_pool" "example" {
   cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
-  node_pool_name           = "default-pool"
+  name           = "default-pool"
   cycle_type              = "month"
   cycle_count = 1
   auto_renew = true
@@ -61,7 +61,7 @@ resource "ctyun_ccse_node_pool" "example" {
 # 裸金属节点池（physical.s5.2xlarge4不支持云硬盘）
 # resource "ctyun_ccse_node_pool" "example" {
 #   cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
-#   node_pool_name           = "default-pool1"
+#   name           = "default-pool1"
 #   cycle_type              = "month"
 #   cycle_count = 1
 #   auto_renew = true
@@ -92,7 +92,7 @@ resource "ctyun_ccse_node_pool" "example" {
 - `instance_type` (String) 实例类型，支持ecs（云主机）、ebm（裸金属）
 - `item_def_name` (String) 实例规格名称，使用至少4C8G以上的规格，云主机规格通过ctyun_ecs_flavors查询，裸金属规格通过ctyun_ebm_device_types查询
 - `mirror_type` (Number) 镜像类型，支持传0（私有），1（公有），可查看<a href="https://www.ctyun.cn/document/10026730/10030151">镜像概述</a>
-- `node_pool_name` (String) 节点池名称
+- `name` (String) 节点池名称
 
 ### Optional
 

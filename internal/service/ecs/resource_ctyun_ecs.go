@@ -56,6 +56,10 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "id",
 			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
+			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
 				Description: "主机名称（hostname），不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字",
@@ -1227,6 +1231,7 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	cfg.Id = types.StringValue(instance_details_resp.InstanceId)
 	cfg.InstanceName = types.StringValue(instance_details_resp.InstanceName)
 	cfg.DisplayName = types.StringValue(instance_details_resp.DisplayName)
+	cfg.Name = cfg.DisplayName
 	cfg.FlavorId = types.StringValue(instance_details_resp.Flavor.FlavorId)
 	cfg.ImageId = types.StringValue(instance_details_resp.Image.ImageId)
 	cfg.VpcId = types.StringValue(instance_details_resp.VpcId)
@@ -1384,6 +1389,7 @@ func (c *ctyunEcs) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 
 type CtyunEcsConfig struct {
 	Id                     types.String  `tfsdk:"id"`
+	Name                   types.String  `tfsdk:"name"`
 	InstanceName           types.String  `tfsdk:"instance_name"`
 	DisplayName            types.String  `tfsdk:"display_name"`
 	FlavorId               types.String  `tfsdk:"flavor_id"`
