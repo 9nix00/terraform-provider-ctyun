@@ -29,7 +29,7 @@ func (c *ctyunEcsBackupPolicies) Metadata(_ context.Context, request datasource.
 
 type ctyunEcsBackupPoliciesModel struct {
 	RegionID           types.String          `tfsdk:"region_id"`
-	PolicyID           types.String          `tfsdk:"policy_id"`
+	PolicyID           types.String          `tfsdk:"id"`
 	PolicyName         types.String          `tfsdk:"name"`
 	Status             types.Int64           `tfsdk:"status"`
 	CycleType          types.String          `tfsdk:"cycle_type"`
@@ -56,7 +56,7 @@ type ctyunEcsBackupPoliciesConfig struct {
 	RegionID       types.String                  `tfsdk:"region_id"`
 	ProjectID      types.String                  `tfsdk:"project_id"`
 	PolicyName     types.String                  `tfsdk:"name"`
-	PolicyID       types.String                  `tfsdk:"policy_id"`
+	PolicyID       types.String                  `tfsdk:"id"`
 	PageNo         types.Int32                   `tfsdk:"page_no"`
 	PageSize       types.Int32                   `tfsdk:"page_size"`
 	BackupPolicies []ctyunEcsBackupPoliciesModel `tfsdk:"backup_policies"`
@@ -79,7 +79,7 @@ func (c *ctyunEcsBackupPolicies) Schema(_ context.Context, _ datasource.SchemaRe
 				Optional:    true,
 				Description: "云主机备份策略名称。满足以下规则：只能由数字、英文字母、中划线-、下划线_、点.组成，长度为2-64字符",
 			},
-			"policy_id": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Optional:    true,
 				Description: "云主机备份策略ID，32字符",
 			},
@@ -99,7 +99,7 @@ func (c *ctyunEcsBackupPolicies) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 							Description: "资源池ID",
 						},
-						"policy_id": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机备份策略ID",
 						},

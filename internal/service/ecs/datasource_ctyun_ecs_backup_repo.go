@@ -29,9 +29,9 @@ func (c *ctyunEcsBackupRepos) Metadata(_ context.Context, request datasource.Met
 
 type ctyunEcsBackupReposModel struct {
 	RegionID       types.String   `tfsdk:"region_id"`
-	RepositoryID   types.String   `tfsdk:"repository_id"`
+	RepositoryID   types.String   `tfsdk:"id"`
 	ProjectID      types.String   `tfsdk:"project_id"`
-	RepositoryName types.String   `tfsdk:"repository_name"`
+	RepositoryName types.String   `tfsdk:"name"`
 	Status         types.String   `tfsdk:"status"`
 	Size           types.Int64    `tfsdk:"size"`
 	FreeSize       types.Float64  `tfsdk:"free_size"`
@@ -49,8 +49,8 @@ type ctyunEcsBackupReposModel struct {
 type ctyunEcsBackupReposConfig struct {
 	RegionID       types.String               `tfsdk:"region_id"`
 	ProjectID      types.String               `tfsdk:"project_id"`
-	RepositoryName types.String               `tfsdk:"repository_name"`
-	RepositoryID   types.String               `tfsdk:"repository_id"`
+	RepositoryName types.String               `tfsdk:"name"`
+	RepositoryID   types.String               `tfsdk:"id"`
 	Status         types.String               `tfsdk:"status"`
 	PageNo         types.Int32                `tfsdk:"page_no"`
 	PageSize       types.Int32                `tfsdk:"page_size"`
@@ -71,11 +71,11 @@ func (c *ctyunEcsBackupRepos) Schema(_ context.Context, _ datasource.SchemaReque
 				Computed:    true,
 				Description: "企业项目ID，企业项目管理服务提供统一的云资源按企业项目管理，以及企业项目内的资源管理，成员管理。",
 			},
-			"repository_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
 				Description: "云主机备份存储库名称，满足以下规则：只能由数字、字母、-组成，不能以数字和-开头、且不能以-结尾，长度为2-63字符",
 			},
-			"repository_id": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Optional:    true,
 				Description: "云主机备份存储库ID",
 			},
@@ -99,7 +99,7 @@ func (c *ctyunEcsBackupRepos) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "资源池ID",
 						},
-						"repository_id": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "存储库ID",
 						},
@@ -107,7 +107,7 @@ func (c *ctyunEcsBackupRepos) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "企业项目ID",
 						},
-						"repository_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "存储库名称",
 						},

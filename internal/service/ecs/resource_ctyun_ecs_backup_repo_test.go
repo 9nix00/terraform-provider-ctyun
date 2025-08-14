@@ -42,7 +42,7 @@ package ecs_test
 //			{
 //				Config: utils.LoadTestCase(resourceFile, rnd, initName),
 //				Check: resource.ComposeAggregateTestCheckFunc(
-//					resource.TestCheckResourceAttr(resourceName, "repository_name", initName),
+//					resource.TestCheckResourceAttr(resourceName, "name", initName),
 //					resource.TestCheckResourceAttrSet(resourceName, "id"),
 //				),
 //			},
@@ -50,7 +50,7 @@ package ecs_test
 //			{
 //				Config: utils.LoadTestCase(resourceFile, rnd, updatedName),
 //				Check: resource.ComposeAggregateTestCheckFunc(
-//					resource.TestCheckResourceAttr(resourceName, "repository_name", updatedName),
+//					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 //					resource.TestCheckResourceAttrSet(resourceName, "id"),
 //				),
 //			},
@@ -60,7 +60,7 @@ package ecs_test
 //					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 //				Check: resource.ComposeAggregateTestCheckFunc(
 //					resource.TestCheckResourceAttr(datasourceName, "backup_repos.#", "1"),
-//					resource.TestCheckResourceAttr(datasourceName, "backup_repos.0.repository_name", updatedName),
+//					resource.TestCheckResourceAttr(datasourceName, "backup_repos.0.name", updatedName),
 //				),
 //			},
 //			{

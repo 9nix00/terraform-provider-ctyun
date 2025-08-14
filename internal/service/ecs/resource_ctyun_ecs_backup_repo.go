@@ -42,7 +42,7 @@ type CtyunEcsBackupRepoConfig struct {
 	Id              types.String  `tfsdk:"id"`
 	RegionID        types.String  `tfsdk:"region_id"`
 	ProjectID       types.String  `tfsdk:"project_id"`
-	RepositoryName  types.String  `tfsdk:"repository_name"`
+	RepositoryName  types.String  `tfsdk:"name"`
 	CycleCount      types.Int64   `tfsdk:"cycle_count"`
 	CycleType       types.String  `tfsdk:"cycle_type"`
 	Size            types.Int64   `tfsdk:"size"`
@@ -91,7 +91,7 @@ func (c *ctyunEcsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
-			"repository_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份存储库名称，满足以下规则：长度为2-63字符，头尾不支持输入空格",
 				Validators: []validator.String{
