@@ -74,7 +74,6 @@ func (v validatorCrossField) Validate(ctx context.Context, req validatorCrossFie
 
 			if !mpVal.IsNull() {
 				for _, obj := range v.sourceValues {
-					fmt.Println(mpVal.String(), obj.String(), targetValid)
 					if mpVal.Equal(obj) && !targetValid {
 						res.Diagnostics.Append(validatordiag.InvalidAttributeCombinationDiagnostic(
 							req.Path,

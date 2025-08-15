@@ -28,9 +28,10 @@ func (this *VpcQueryApi) Do(ctx context.Context, credential ctyunsdk.Credential,
 		WithCredential(&credential).
 		AddParam("clientToken", req.ClientToken).
 		AddParam("regionID", req.RegionId).
-		AddParam("projectID", req.ProjectId).
 		AddParam("vpcID", req.VpcId)
-
+	if req.ProjectId != "" {
+		builder.AddParam("projectID", req.ProjectId)
+	}
 	response, err := this.client.RequestToEndpoint(ctx, EndpointNameCtvpc, builder)
 	if err != nil {
 		return nil, err
