@@ -28,9 +28,10 @@ func (this *SecurityGroupDescribeAttributeApi) Do(ctx context.Context, credentia
 	builder.
 		AddParam("regionID", req.RegionId).
 		AddParam("securityGroupID", req.SecurityGroupId).
-		AddParam("projectID", req.ProjectId).
 		AddParam("direction", req.Direction)
-
+	if req.ProjectId != "" {
+		builder.AddParam("projectID", req.ProjectId)
+	}
 	response, err := this.client.RequestToEndpoint(ctx, EndpointNameCtvpc, builder)
 	if err != nil {
 		return nil, err
