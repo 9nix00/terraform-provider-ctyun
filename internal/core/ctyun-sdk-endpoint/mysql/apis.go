@@ -8,6 +8,7 @@ type Apis struct {
 	TeledbCreateApi             *TeledbCreateApi
 	TeledbUpgradeApi            *TeledbUpgradeApi
 	TeledbRefundApi             *TeledbRefundApi
+	TeledbDestroyApi            *TeledbDestroyApi
 	TeledbQueryDetailApi        *TeledbQueryDetailApi
 	TeledbGetListApi            *TeledbGetListApi
 	TeledbStartApi              *TeledbStartApi
@@ -39,6 +40,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		TeledbCreateApi:             NewTeledbCreateApi(client),
 		TeledbUpgradeApi:            NewTeledbUpgradeApi(client),
 		TeledbRefundApi:             NewTeledbRefundApi(client),
+		TeledbDestroyApi:            NewTeledbDestroyApi(client),
 		TeledbQueryDetailApi:        NewTeledbQueryDetailApi(client),
 		TeledbGetListApi:            NewTeledbGetListApi(client),
 		TeledbStartApi:              NewTeledbStartApi(client),

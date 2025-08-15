@@ -445,27 +445,23 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-	deleteParams := &mysql.TeledbRefundRequest{
-		InstId: state.InstID.ValueString(),
-	}
-	deleteHeader := &mysql.TeledbRefundRequestHeader{}
-	if state.ProjectID.ValueString() != "" {
-		deleteHeader.ProjectID = state.ProjectID.ValueString()
-	}
-	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbRefundApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
+	err = c.refund(ctx, state)
 	if err != nil {
-		return
-	} else if resp.StatusCode != 200 {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
 	// 轮询确认时候退订成功
-	err = c.DeleteLoop(ctx, &state, 60)
+	err = c.refundLoop(ctx, state)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.AddWarning("删除Mysql集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
+	err = c.destroy(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.destroyLoop(ctx, state)
+	if err != nil {
+		return
+	}
 }
 
 // CreateMysqlInstance 创建mysql实例
@@ -975,7 +971,27 @@ func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlI
 	return
 }
 
-func (c *CtyunMysqlInstance) DeleteLoop(ctx context.Context, state *CtyunMysqlInstanceConfig, loopCount ...int) (err error) {
+// refund 退订
+func (c *CtyunMysqlInstance) refund(ctx context.Context, state CtyunMysqlInstanceConfig) (err error) {
+	deleteParams := &mysql.TeledbRefundRequest{
+		InstId: state.InstID.ValueString(),
+	}
+	deleteHeader := &mysql.TeledbRefundRequestHeader{}
+	if state.ProjectID.ValueString() != "" {
+		deleteHeader.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbRefundApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// refundLoop 退订后检查
+func (c *CtyunMysqlInstance) refundLoop(ctx context.Context, state CtyunMysqlInstanceConfig, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -1026,6 +1042,72 @@ func (c *CtyunMysqlInstance) DeleteLoop(ctx context.Context, state *CtyunMysqlIn
 				err = errors.New("退订状态有误，当前状态为：" + fmt.Sprintf("%d", status))
 				return false
 			}
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未退订成功！")
+	}
+	return
+}
+
+// destroy 销毁
+func (c *CtyunMysqlInstance) destroy(ctx context.Context, state CtyunMysqlInstanceConfig) (err error) {
+	deleteParams := &mysql.TeledbDestroyRequest{
+		InstId: state.InstID.ValueString(),
+	}
+	deleteHeader := &mysql.TeledbDestroyRequestHeader{}
+	if state.ProjectID.ValueString() != "" {
+		deleteHeader.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbDestroyApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// destroyLoop 销毁后检查
+func (c *CtyunMysqlInstance) destroyLoop(ctx context.Context, state CtyunMysqlInstanceConfig, loopCount ...int) (err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			params := &mysql.TeledbGetListRequest{
+				PageNow:      1,
+				PageSize:     100,
+				ProdInstName: state.Name.ValueStringPointer(),
+			}
+			headers := &mysql.TeledbGetListHeaders{
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				headers.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbGetListApi.Do(ctx, c.meta.Credential, params, headers)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 0 {
+				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			// 若查询列表已经查询不到，资源已经销毁
+			if len(resp.ReturnObj.List) == 0 {
+				return false
+			}
+			return true
 		},
 	)
 	if result.ReturnReason == business.ReachMaxLoopTime {

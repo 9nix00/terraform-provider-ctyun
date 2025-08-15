@@ -1280,32 +1280,6 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunKafkaInstance) checkAfterDelete(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 180)
-	retryer.Start(
-		func(currentTime int) bool {
-			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
-			if err != nil {
-				return false
-			}
-			if instance != nil && instance.Status != business.KafkaStatusUnsubscribed {
-				return true
-			}
-			executeSuccessFlag = true
-			return false
-		})
-	if err != nil {
-		return
-	}
-	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
-	}
-	return
-}
-
 // getByNameOrID 根据ID或名称查询集群
 func (c *ctyunKafkaInstance) getByNameOrID(ctx context.Context, plan CtyunKafkaInstanceConfig) (instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse, err error) {
 	params := &ctgkafka.CtgkafkaInstQueryRequest{
