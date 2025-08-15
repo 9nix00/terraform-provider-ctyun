@@ -52,6 +52,7 @@ func (c *ctyunRabbitmqInstance) Metadata(_ context.Context, request resource.Met
 
 type CtyunRabbitmqInstanceConfig struct {
 	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
 	MasterOrderID   types.String `tfsdk:"master_order_id"`
 	ProjectID       types.String `tfsdk:"project_id"`
 	RegionID        types.String `tfsdk:"region_id"`
@@ -77,6 +78,10 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -576,6 +581,7 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 		return
 	}
 	plan.InstanceName = types.StringValue(instance.ClusterName)
+	plan.Name = plan.InstanceName
 	if plan.ZoneList.IsNull() {
 		plan.ZoneList = types.SetNull(types.StringType)
 	}

@@ -52,6 +52,7 @@ func (c *ctyunKafkaInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunKafkaInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`             /*  企业项目ID(默认值：0)。您可以通过 <a href="https://www.ctyun.cn/document/10017248/10017965">查看企业项目资源</a> 获取企业项目ID。  */
@@ -84,6 +85,10 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -700,6 +705,7 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	}
 
 	plan.InstanceName = types.StringValue(instance.InstanceName)
+	plan.Name = plan.InstanceName
 	if len(instance.Version) >= 3 {
 		plan.EngineVersion = types.StringValue(instance.Version[:3])
 	}
