@@ -96,10 +96,10 @@ type CtecsListInstanceBackupRepoReturnObjResultsResponse struct {
 	Size           int32    `json:"size,omitempty"`           /*  云主机存储库总容量，单位GB  */
 	FreeSize       float32  `json:"freeSize"`                 /*  云主机存储库剩余大小，单位GB(废弃该字段)   */
 	RemainingSize  float32  `json:"remainingSize"`            /*  云主机存储库剩余大小，单位GB  */
-	UsedSize       int32    `json:"usedSize,omitempty"`       /*  云主机存储库使用大小，单位Byte  */
+	UsedSize       int64    `json:"usedSize,omitempty"`       /*  云主机存储库使用大小，单位Byte  */
 	CreatedAt      string   `json:"createdAt,omitempty"`      /*  创建时间  */
 	ExpiredAt      string   `json:"expiredAt,omitempty"`      /*  到期时间  */
-	Expired        *bool    `json:"expired"`                  /*  存储库是否到期  */
+	Expired        bool     `json:"expired"`                  /*  存储库是否到期  */
 	Freeze         *bool    `json:"freeze"`                   /*  是否冻结  */
 	Paas           *bool    `json:"paas"`                     /*  是否支持PAAS  */
 	BackupList     []string `json:"backupList"`               /*  存储库下可用的备份ID列表  */

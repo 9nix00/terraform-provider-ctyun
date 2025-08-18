@@ -19,6 +19,7 @@ const (
 	EcsStatusUnsubscribing = "unsubscribing"
 
 	EcsSnapshotStatusAvailable = "available"
+	EcsBackupRepoStatusActive  = "active"
 
 	EcsFlavorType_CPU                  = "CPU"
 	EcsFlavorType_CPU_C3               = "CPU_C3"

@@ -59,7 +59,7 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 					validator2.UUID(),
 				},
 			},
-			"snapshot_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "云硬盘快照名称，长度为2-63字符，头尾不支持输入空格",
 				Validators: []validator.String{
@@ -434,7 +434,7 @@ func (c *ctyunEbsSnapshot) ImportState(ctx context.Context, request resource.Imp
 type CtyunEbsSnapshotConfig struct {
 	Id              types.String `tfsdk:"id"`
 	DiskId          types.String `tfsdk:"disk_id"`
-	SnapshotName    types.String `tfsdk:"snapshot_name"`
+	SnapshotName    types.String `tfsdk:"name"`
 	SnapshotStatus  types.String `tfsdk:"snapshot_status"`
 	RetentionPolicy types.String `tfsdk:"retention_policy"`
 	RetentionTime   types.Int64  `tfsdk:"retention_time"`
