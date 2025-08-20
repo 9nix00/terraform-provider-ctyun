@@ -126,7 +126,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 			},
 			"sfs_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "文件大小（GB），范围: 500-32768",
+				Description: "文件大小（GB），范围: 500-32768。支持修改",
 				Validators: []validator.Int32{
 					// 范围验证
 					int32validator.Between(500, 32768),
@@ -148,7 +148,6 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Computed:    true,
 				Description: "集群名称，仅资源池支持指定集群时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
 				PlanModifiers: []planmodifier.String{
-					//stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
@@ -157,7 +156,6 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Computed:    true,
 				Description: "性能基线（MB/s/TB），仅资源池支持性能基线时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
 				PlanModifiers: []planmodifier.String{
-					//stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},

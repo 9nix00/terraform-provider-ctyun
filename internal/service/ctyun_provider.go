@@ -27,6 +27,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
 	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
@@ -45,6 +46,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
+	scaling2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/scaling"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpce"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/zos"
@@ -324,6 +326,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtPgsqlApis: pgsql2.NewApis(client),
 			SdkMongodbApis: mongodb2.NewApis(client),
 			SdkHpfsApis:    hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
+			SdkScalingApis: scaling.NewApis(fmt.Sprintf(endpointUrl, scaling.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -394,6 +397,11 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mongodb.NewCtyunMongodbInstances(),
 		hpfs.NewCtyunHpfsInstances(),
 		hpfs.NewCtyunHpfsClusters(),
+		scaling2.NewCtyunScalings(),
+		scaling2.NewCtyunScalingConfigs(),
+		scaling2.NewCtyunScalingActivities(),
+		scaling2.NewCtyunScalingEcsList(),
+		scaling2.NewCtyunScalingPolicies(),
 	)
 }
 
@@ -462,6 +470,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),
 		hpfs.NewCtyunHpfsInstance(),
+		scaling2.NewCtyunScaling(),
+		scaling2.NewCtyunScalingConfig(),
+		scaling2.NewCtyunScalingPolicy(),
+		scaling2.NewCtyunScalingEcs(),
 	)
 }
 
