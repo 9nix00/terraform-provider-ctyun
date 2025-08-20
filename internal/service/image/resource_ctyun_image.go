@@ -395,10 +395,10 @@ func (c *ctyunImage) waitForUploadImageActive(ctx context.Context, cfg CtyunImag
 			}
 			switch response.Images[0].Status {
 			case business.ImageStatusQueued:
-				return true
+				return false
 			case business.ImageStatusActive:
 				executeSuccessFlag = true
-				return false
+				return true
 			default:
 				// 默认为执行失败
 				return false

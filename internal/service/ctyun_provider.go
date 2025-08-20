@@ -12,6 +12,7 @@ import (
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	sdkctimage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
@@ -41,6 +42,7 @@ import (
 	mysql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/nat"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ports"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
@@ -315,6 +317,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
 			SdkDcs2Apis:    dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
 			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
+			SdkCtImageApis: sdkctimage.NewApis(fmt.Sprintf(endpointUrl, sdkctimage.EndpointName), coreClient),
 			SdkCtMysqlApis: mysql.NewApis(client),
 			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 			SdkAmqpApis:    amqp.NewApis(client),
@@ -384,6 +387,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		pgsql.NewCtyunPgsqlInstances(),
 		pgsql.NewCtyunPgsqlSpecs(),
 		common2.NewCtyunZones(),
+		ports.NewCtyunNetworkInterfaces(),
 	)
 }
 
@@ -404,6 +408,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ebs.NewCtyunEbsAssociation(),
 		image.NewCtyunImage(),
 		image.NewCtyunImageAssociationUser(),
+		image.NewCtyunImageFromEcs(),
 		ecs.NewCtyunKeypair(),
 		vpc.NewCtyunBandwidth(),
 		vpc.NewCtyunBandwidthAssociationEip(),
@@ -448,6 +453,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
+		ports.NewCtyunNetworkInterface(),
+		ports.NewCtyunEcsPortAssociation(),
 	)
 }
 

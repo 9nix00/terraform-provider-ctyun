@@ -8,6 +8,7 @@ import (
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	sdkCtImage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
@@ -81,4 +82,5 @@ type Apis struct {
 	SdkMongodbApis *mongodb.Apis
 	SdkAmqpApis    *amqp.Apis
 	SdkCrsApis     *crs.Apis
+	SdkCtImageApis *sdkCtImage.Apis
 }

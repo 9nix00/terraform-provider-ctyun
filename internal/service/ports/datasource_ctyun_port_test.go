@@ -1,0 +1,36 @@
+package ports_test
+
+import (
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"os"
+	"testing"
+
+	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+)
+
+func TestAccCtyunNetworkInterfaces_basic(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+	rnd := utils.GenerateRandomString()
+	dataSourceName := "data.ctyun_ports." + rnd
+	dataSourceFile := "data_ctyun_network_interfaces.tf"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			{
+				// 测试基本查询
+				Config: utils.LoadTestCase(
+					dataSourceFile, rnd, rnd+"_filtered",
+				),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(dataSourceName, "region_id"),
+					resource.TestCheckResourceAttrSet(dataSourceName, "network_interfaces.#"),
+				),
+			},
+		},
+	})
+}
