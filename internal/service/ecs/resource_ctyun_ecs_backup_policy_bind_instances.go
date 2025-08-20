@@ -228,39 +228,44 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkBeforeBindInstances(ctx context
 	}
 
 	if cfg.InstanceIDList.ValueString() != "" {
+		// 拆分实例ID列表
+		instanceIDs := strings.Split(cfg.InstanceIDList.ValueString(), ",")
+		// 对每个实例ID进行校验
+		for _, instanceID := range instanceIDs {
+			//1.使用限制，本接口只支持在拉萨3、上海7、广州6、郴州2、长沙3、北京5、内蒙6、南京3、重庆2、合肥2、成都4、晋中、昆明2、乌鲁木齐27、福州25、衡阳3、长沙37、张家界2、华北2、央企北京1、华东1、上海32、上海33、上海36资源池进行公测
+			//3.云主机备份策略可绑定的云主机有配额限制，请在配额限制范围内绑定
+			//5.云主机盘限制：不可含有本地盘、共享盘、ISCSI磁盘模式盘
 
-		//1.使用限制，本接口只支持在拉萨3、上海7、广州6、郴州2、长沙3、北京5、内蒙6、南京3、重庆2、合肥2、成都4、晋中、昆明2、乌鲁木齐27、福州25、衡阳3、长沙37、张家界2、华北2、央企北京1、华东1、上海32、上海33、上海36资源池进行公测
-		//3.云主机备份策略可绑定的云主机有配额限制，请在配额限制范围内绑定
-		//5.云主机盘限制：不可含有本地盘、共享盘、ISCSI磁盘模式盘
-
-		//查询云主机
-		instance_details_resp, err2 := c.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, c.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
-			RegionId:   cfg.RegionID.ValueString(),
-			InstanceId: cfg.Id.ValueString(),
-		})
-		if err2 != nil {
-			// 实例已经被退订的情况
-			if err2.ErrorCode() == common.EcsInstanceNotFound {
-				return nil
+			//查询云主机
+			instance_details_resp, err2 := c.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, c.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
+				RegionId:   cfg.RegionID.ValueString(),
+				InstanceId: instanceID,
+			})
+			if err2 != nil {
+				// 实例已经被退订的情况
+				if err2.ErrorCode() == common.EcsInstanceNotFound {
+					return nil
+				}
+				return err2
 			}
-			return err2
+
+			status := instance_details_resp.InstanceStatus
+			allowedStatuses := map[string]bool{
+				business.EcsStatusRunning: true,
+				business.EcsStatusStopped: true,
+			}
+			//2.备份策略与云主机处于相同的企业项目下，才可进行绑定
+			if instance_details_resp.ProjectId != resp.ReturnObj.PolicyList[0].ProjectID {
+				return fmt.Errorf("备份策略与云主机处于相同的企业项目下，才可进行绑定")
+			}
+
+			//4.云主机存在且状态为运行中或关机，不可重复绑定
+			if !allowedStatuses[status] {
+				return fmt.Errorf("云主机状态无效(当前:%s)，仅允许在%s或%s状态下绑定备份策略",
+					status, business.EcsStatusRunning, business.EcsStatusStopped)
+			}
 		}
 
-		status := instance_details_resp.InstanceStatus
-		allowedStatuses := map[string]bool{
-			business.EcsStatusRunning: true,
-			business.EcsStatusStopped: true,
-		}
-		//2.备份策略与云主机处于相同的企业项目下，才可进行绑定
-		if instance_details_resp.ProjectId != resp.ReturnObj.PolicyList[0].ProjectID {
-			return fmt.Errorf("备份策略与云主机处于相同的企业项目下，才可进行绑定")
-		}
-
-		//4.云主机存在且状态为运行中或关机，不可重复绑定
-		if !allowedStatuses[status] {
-			return fmt.Errorf("云主机状态无效(当前:%s)，仅允许在%s或%s状态下绑定备份策略",
-				status, business.EcsStatusRunning, business.EcsStatusStopped)
-		}
 	}
 
 	return
