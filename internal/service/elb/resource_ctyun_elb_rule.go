@@ -180,8 +180,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "转发规则 ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "转发规则 ID",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,

@@ -169,5 +169,6 @@ resource "ctyun_ebm" "ebm_test2" {
 - `instance_id` (String) 物理机UUID，值与id相同
 - `interface_id` (String) 主网卡UUID
 - `master_order_id` (String) 订单id
+- `name` (String) 名称
 - `port_id` (String) 主网卡PORT UUID
 - `system_disk_id` (String) 系统盘的id

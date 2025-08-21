@@ -33,3 +33,19 @@ output "chart_values_yaml" {
 output "chart_values_json" {
   value = jsonencode(data.ctyun_ccse_plugin_market.test2.values)
 }
+
+output "ecs_id" {
+  value = ctyun_ecs.ecs_test.id
+}
+
+output "ebm_id" {
+  value = ctyun_ebm.ebm_test.id
+}
+
+output "ecs_mirror_id" {
+  value = "3d2c356a-685a-4e8c-b904-bb0725bfc220"
+}
+
+output "ebm_mirror_id" {
+  value =  "im-lplf1yqhl3mewvc5pjvha70wklej"
+}

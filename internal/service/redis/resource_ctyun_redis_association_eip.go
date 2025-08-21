@@ -49,8 +49,9 @@ func (c *ctyunRedisAssociationEip) Schema(_ context.Context, _ resource.SchemaRe
 		MarkdownDescription: `**详细说明请见文档：**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

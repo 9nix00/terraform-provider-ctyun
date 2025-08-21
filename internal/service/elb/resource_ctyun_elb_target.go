@@ -118,8 +118,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "后端主机服务(elb_target)ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "后端主机服务(elb_target)ID",
 			},
 			"health_check_status": schema.StringAttribute{
 				Computed:    true,

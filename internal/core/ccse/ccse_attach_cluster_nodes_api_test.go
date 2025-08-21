@@ -15,6 +15,8 @@ func TestCcseAttachClusterNodesApi_Do(t *testing.T) {
 	api := apis.CcseAttachClusterNodesApi
 
 	// 构造请求
+	var isSyncClusterResourceLabels bool = false
+	var cpuCFSQuota bool = true
 	request := &CcseAttachClusterNodesRequest{
 		ClusterId: "47281b02f87757478f20b1827c97cadf",
 		RegionId:  "bb9fdb42056f11eda1610242ac110002",
@@ -24,12 +26,16 @@ func TestCcseAttachClusterNodesApi_Do(t *testing.T) {
 				AzName:     "",
 			},
 		},
-		VmType:    "ecs",
-		Runtime:   "",
-		ImageUuid: "",
-		LoginType: "",
-		Password:  "",
-		Labels:    &CcseAttachClusterNodesLabelsRequest{},
+		VmType:      "ecs",
+		Runtime:     "",
+		ImageType:   1,
+		ImageUuid:   "",
+		LoginType:   "",
+		Password:    "",
+		KeyName:     "KeyPair-a589",
+		KeyPairId:   "ba425a97-9ad9-2d45-e21a-770d2ebeb477",
+		Labels:      &CcseAttachClusterNodesLabelsRequest{},
+		Annotations: &CcseAttachClusterNodesAnnotationsRequest{},
 		Taints: []*CcseAttachClusterNodesTaintsRequest{
 			{
 				Key:    "",
@@ -39,6 +45,22 @@ func TestCcseAttachClusterNodesApi_Do(t *testing.T) {
 		},
 		VisibilityPostHostScript: "",
 		VisibilityHostScript:     "",
+		KubeletArgs: &CcseAttachClusterNodesKubeletArgsRequest{
+			KubeAPIQPS:           50,
+			KubeAPIBurst:         100,
+			MaxPods:              110,
+			RegistryPullQPS:      5,
+			RegistryBurst:        10,
+			PodPidsLimit:         -1,
+			EventRecordQPS:       50,
+			EventBurst:           100,
+			TopologyManagerScope: "container",
+			CpuCFSQuota:          &cpuCFSQuota,
+		},
+		IsSyncClusterResourceLabels: &isSyncClusterResourceLabels,
+		ResourceLabels:              &CcseAttachClusterNodesResourceLabelsRequest{},
+		KubeletDirectory:            "",
+		ContainerDataDirectory:      "",
 	}
 
 	// 发起调用

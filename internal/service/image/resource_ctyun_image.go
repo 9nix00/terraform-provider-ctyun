@@ -40,8 +40,9 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027726**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
 			},
 			"file_source": schema.StringAttribute{
 				Required:    true,

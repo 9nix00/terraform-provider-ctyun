@@ -109,8 +109,9 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Description: "订购的受理单id",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "磁盘id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "磁盘id",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,

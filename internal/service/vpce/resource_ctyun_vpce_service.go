@@ -70,8 +70,9 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10042658/10217013**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

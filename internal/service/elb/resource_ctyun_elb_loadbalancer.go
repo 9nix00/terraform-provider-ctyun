@@ -135,8 +135,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "负载均衡Id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "负载均衡Id",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,

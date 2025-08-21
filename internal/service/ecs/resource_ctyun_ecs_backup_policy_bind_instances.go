@@ -50,9 +50,6 @@ func (c *ctyunEcsBackupPolicyBindInstances) Schema(_ context.Context, _ resource
 			"id": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份策略id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

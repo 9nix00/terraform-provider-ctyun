@@ -95,3 +95,4 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
+- `name` (String) 名称

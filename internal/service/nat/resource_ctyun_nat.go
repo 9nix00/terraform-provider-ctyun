@@ -48,8 +48,9 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID，值与nat_gateway_id相同",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID，值与nat_gateway_id相同",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

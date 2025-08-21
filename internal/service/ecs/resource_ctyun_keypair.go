@@ -33,8 +33,9 @@ func (c *ctyunKeypair) Schema(_ context.Context, _ resource.SchemaRequest, respo
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730/10230554**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "密钥对的id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "密钥对的id",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,

@@ -33,8 +33,9 @@ func (c *ctyunPolicyAssociationUser) Schema(_ context.Context, _ resource.Schema
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10345725/10409392**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "绑定关系id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "绑定关系id",
 			},
 			"user_id": schema.StringAttribute{
 				Required:    true,

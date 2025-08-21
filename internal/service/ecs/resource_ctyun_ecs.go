@@ -53,8 +53,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -84,6 +85,10 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"actual_image_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "实际镜像id，重装、集群纳管等操作会导致actual_image_id与image_id不同",
 			},
 			"system_disk_type": schema.StringAttribute{
 				Required:    true,
@@ -1233,7 +1238,7 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	cfg.DisplayName = types.StringValue(instance_details_resp.DisplayName)
 	cfg.Name = cfg.DisplayName
 	cfg.FlavorId = types.StringValue(instance_details_resp.Flavor.FlavorId)
-	cfg.ImageId = types.StringValue(instance_details_resp.Image.ImageId)
+	cfg.ActualImageID = types.StringValue(instance_details_resp.Image.ImageId)
 	cfg.VpcId = types.StringValue(instance_details_resp.VpcId)
 	cfg.Status = types.StringValue(instance_details_resp.InstanceStatus)
 	cfg.ExpireTime = types.StringValue(utils.FromRFC3339ToLocal(instance_details_resp.ExpiredTime))
@@ -1394,6 +1399,7 @@ type CtyunEcsConfig struct {
 	DisplayName            types.String  `tfsdk:"display_name"`
 	FlavorId               types.String  `tfsdk:"flavor_id"`
 	ImageId                types.String  `tfsdk:"image_id"`
+	ActualImageID          types.String  `tfsdk:"actual_image_id"`
 	SystemDiskType         types.String  `tfsdk:"system_disk_type"`
 	SystemDiskSize         types.Int64   `tfsdk:"system_disk_size"`
 	VpcId                  types.String  `tfsdk:"vpc_id"`
