@@ -38,7 +38,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) Metadata(_ context.Context, request reso
 }
 
 type CtyunEcsBackupPolicyBindDisksConfig struct {
-	Id         types.String `tfsdk:"id"`
+	PolicyID   types.String `tfsdk:"policy_id"`
 	RegionID   types.String `tfsdk:"region_id"`
 	DiskIDList types.String `tfsdk:"disk_id_list"`
 }
@@ -47,7 +47,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) Schema(_ context.Context, _ resource.Sch
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026752/10037452**`,
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
+			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云硬盘备份策略id",
 				PlanModifiers: []planmodifier.String{
@@ -187,7 +187,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) create(ctx context.Context, plan CtyunEc
 
 	params := &ctebsbackup.EbsbackupEbsBackupPolicyBindDisksRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 		DiskIDs:  plan.DiskIDList.ValueString(),
 	}
 
@@ -211,7 +211,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) create(ctx context.Context, plan CtyunEc
 func (c *ctyunEcsBackupPolicyBindDisks) checkBeforeBindDisks(ctx context.Context, cfg CtyunEcsBackupPolicyBindDisksConfig) (err error) {
 	params := &ctebsbackup.EbsbackupListBackupPolicyRequest{
 		RegionID: cfg.RegionID.ValueString(),
-		PolicyID: cfg.Id.ValueString(),
+		PolicyID: cfg.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupListBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
@@ -279,7 +279,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) checkAfterBindDisks(ctx context.Context,
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联  regionID： %s", plan.Id.String(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString())
+		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联  regionID： %s", plan.PolicyID.String(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString())
 	}
 	return nil
 }
@@ -292,7 +292,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) checkBeforeDissociate(ctx context.Contex
 		return
 	}
 	if bindID != plan.DiskIDList.ValueString() {
-		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联", plan.Id.String(), plan.DiskIDList.ValueString())
+		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联", plan.PolicyID.String(), plan.DiskIDList.ValueString())
 		return
 	}
 	return
@@ -319,7 +319,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) checkAfterDissociation(ctx context.Conte
 		return
 	}
 	if !executeSuccessFlag {
-		return fmt.Errorf("云硬盘策略 %s 和云硬盘%s  解绑失败", plan.Id.ValueString(), plan.DiskIDList.ValueString())
+		return fmt.Errorf("云硬盘策略 %s 和云硬盘%s  解绑失败", plan.PolicyID.ValueString(), plan.DiskIDList.ValueString())
 	}
 	return nil
 }
@@ -328,7 +328,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) checkAfterDissociation(ctx context.Conte
 func (c *ctyunEcsBackupPolicyBindDisks) delete(ctx context.Context, plan CtyunEcsBackupPolicyBindDisksConfig) (err error) {
 	params := &ctebsbackup.EbsbackupEbsBackupPolicyUnbindDisksRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 		DiskIDs:  plan.DiskIDList.ValueString(),
 	}
 
@@ -353,7 +353,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) getBindingDisks(ctx context.Context, pla
 	// 组装请求体
 	params := &ctebsbackup.EbsbackupListEbsBackupPolicyDisksRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupListEbsBackupPolicyDisksApi.Do(ctx, c.meta.SdkCredential, params)
@@ -378,7 +378,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) getBindingDisks(ctx context.Context, pla
 
 // getAndMerge 查询绑定关系
 func (c *ctyunEcsBackupPolicyBindDisks) getAndMerge(ctx context.Context, plan *CtyunEcsBackupPolicyBindDisksConfig) (err error) {
-	policyId, instanceIDList, regionID := plan.Id.ValueString(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString()
+	policyId, instanceIDList, regionID := plan.PolicyID.ValueString(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString()
 	bindID, err := c.getBindingDisks(ctx, *plan)
 	if err != nil {
 		return
@@ -406,7 +406,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) ImportState(ctx context.Context, request
 	}
 
 	cfg.DiskIDList = types.StringValue(instanceIDList)
-	cfg.Id = types.StringValue(policyID)
+	cfg.PolicyID = types.StringValue(policyID)
 	cfg.RegionID = types.StringValue(regionID)
 
 	// 查询远端

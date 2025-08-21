@@ -37,7 +37,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) Metadata(_ context.Context, request resou
 }
 
 type CtyunEcsBackupPolicyBindRepoConfig struct {
-	Id           types.String `tfsdk:"id"`
+	PolicyID     types.String `tfsdk:"policy_id"`
 	RegionID     types.String `tfsdk:"region_id"`
 	RepositoryID types.String `tfsdk:"repository_id"`
 }
@@ -46,7 +46,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.Sche
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10235038**`,
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
+			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份策略id",
 				PlanModifiers: []planmodifier.String{
@@ -183,7 +183,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) create(ctx context.Context, plan CtyunEcs
 
 	params := &ctecs2.CtecsInstanceBackupPolicyBindRepoRequest{
 		RegionID:     plan.RegionID.ValueString(),
-		PolicyID:     plan.Id.ValueString(),
+		PolicyID:     plan.PolicyID.ValueString(),
 		RepositoryID: plan.RepositoryID.ValueString(),
 	}
 
@@ -207,7 +207,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) create(ctx context.Context, plan CtyunEcs
 func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, cfg CtyunEcsBackupPolicyBindRepoConfig) (err error) {
 	params := &ctecs2.CtecsListInstanceBackupPolicyRequest{
 		RegionID: cfg.RegionID.ValueString(),
-		PolicyID: cfg.Id.ValueString(),
+		PolicyID: cfg.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
@@ -281,7 +281,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkAfterBindRepo(ctx context.Context, p
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联  regionID： %s", plan.Id.String(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString())
+		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联  regionID： %s", plan.PolicyID.String(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString())
 	}
 	return nil
 }
@@ -293,7 +293,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeDissociate(ctx context.Context
 		return
 	}
 	if !hasBind {
-		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联", plan.Id.String(), plan.RepositoryID.ValueString())
+		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联", plan.PolicyID.String(), plan.RepositoryID.ValueString())
 		return
 	}
 	return
@@ -319,7 +319,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkAfterDissociation(ctx context.Contex
 		return
 	}
 	if !executeSuccessFlag {
-		return fmt.Errorf("云主机备份策略 %s 和存储库%s  解绑失败", plan.Id.ValueString(), plan.RepositoryID.ValueString())
+		return fmt.Errorf("云主机备份策略 %s 和存储库%s  解绑失败", plan.PolicyID.ValueString(), plan.RepositoryID.ValueString())
 	}
 	return nil
 }
@@ -328,7 +328,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkAfterDissociation(ctx context.Contex
 func (c *ctyunEcsBackupPolicyBindRepo) delete(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
 	params := &ctecs2.CtecsInstanceBackupPolicyUnbindRepoRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 	}
 
 	// 创建实例
@@ -352,7 +352,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) getBindingRepos(ctx context.Context, plan
 
 	params := &ctecs2.CtecsListInstanceBackupPolicyRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
@@ -388,7 +388,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) getBindingRepos(ctx context.Context, plan
 
 // getAndMerge 查询绑定关系
 func (c *ctyunEcsBackupPolicyBindRepo) getAndMerge(ctx context.Context, plan *CtyunEcsBackupPolicyBindRepoConfig) (err error) {
-	policyId, repositoryID, regionID := plan.Id.ValueString(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString()
+	policyId, repositoryID, regionID := plan.PolicyID.ValueString(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString()
 	hasBind, err := c.getBindingRepos(ctx, *plan)
 
 	if err != nil {
