@@ -103,6 +103,7 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 		},
 	})
 }
+
 func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 	err := os.Setenv("TF_ACC", "1")
 	if err != nil {
@@ -123,8 +124,6 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 	// 更新后的测试参数
 	updatedPortName := "updated-port-" + rnd
 	updatedDescription := "updated port description"
-	updatedSecondaryIpCount := 2
-	updatedIpv6AddressCount := 0
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
@@ -146,7 +145,7 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 			},
 			// 更新测试
 			{
-				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, updatedSecondaryIpCount, updatedIpv6AddressCount),
+				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
 					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
@@ -160,7 +159,7 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 			},
 			// 删除测试（通过Destroy步骤）
 			{
-				Config:  utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, updatedSecondaryIpCount, updatedIpv6AddressCount),
+				Config:  utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Destroy: true,
 			},
 		},

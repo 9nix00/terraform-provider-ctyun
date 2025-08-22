@@ -15,7 +15,7 @@ func TestAccCtyunNetworkInterfaces_basic(t *testing.T) {
 		return
 	}
 	rnd := utils.GenerateRandomString()
-	dataSourceName := "data.ctyun_ports." + rnd
+	dataSourceName := "data.ctyun_ports." + rnd + "_filtered"
 	dataSourceFile := "data_ctyun_network_interfaces.tf"
 
 	resource.Test(t, resource.TestCase{
@@ -24,7 +24,7 @@ func TestAccCtyunNetworkInterfaces_basic(t *testing.T) {
 			{
 				// 测试基本查询
 				Config: utils.LoadTestCase(
-					dataSourceFile, rnd, rnd+"_filtered",
+					dataSourceFile, rnd, dependence.vpcID,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(dataSourceName, "region_id"),
