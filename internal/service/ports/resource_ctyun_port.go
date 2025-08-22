@@ -66,6 +66,9 @@ func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaReque
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "网卡ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -309,7 +312,7 @@ func (c *ctyunNetworkInterface) Create(ctx context.Context, request resource.Cre
 
 		response.Diagnostics.AddError(
 			"创建弹性网卡失败",
-			fmt.Sprintf("API返回数据为空 %s", errorInfo),
+			fmt.Sprintf("API返回数据: %s", errorInfo),
 		)
 		return
 	}
@@ -354,13 +357,15 @@ func (c *ctyunNetworkInterface) Create(ctx context.Context, request resource.Cre
 			}
 		}
 		plan.Ipv6Addresses, _ = types.ListValue(types.StringType, ipv6Addrs)
+	} else {
+		// 如果没有IPv6地址，确保字段被正确初始化为空列表
+		plan.Ipv6Addresses, _ = types.ListValue(types.StringType, []attr.Value{})
 	}
 
 	// 设置主私有IP地址
 	if resp.ReturnObj.PrivateIpAddress != nil {
 		plan.PrimaryIpAddress = types.StringValue(*resp.ReturnObj.PrivateIpAddress)
 	}
-
 	// 设置实例信息
 	plan.InstanceId = types.StringPointerValue(resp.ReturnObj.InstanceID)
 	plan.InstanceType = types.StringPointerValue(resp.ReturnObj.InstanceType)
@@ -673,6 +678,8 @@ func (c *ctyunNetworkInterface) updatePlanFromResponse(plan *CtyunNetworkInterfa
 		plan.SecondaryPrivateIps, _ = types.SetValue(types.StringType, secondaryIps)
 	}
 
+	// ... 在 updatePlanFromResponse 方法中 ...
+
 	// 设置IPv6地址
 	if resp.Ipv6Addresses != nil {
 		ipv6Addrs := make([]attr.Value, len(resp.Ipv6Addresses))
@@ -682,5 +689,9 @@ func (c *ctyunNetworkInterface) updatePlanFromResponse(plan *CtyunNetworkInterfa
 			}
 		}
 		plan.Ipv6Addresses, _ = types.ListValue(types.StringType, ipv6Addrs)
+	} else {
+		// 如果没有IPv6地址，确保字段被正确初始化为空列表
+		plan.Ipv6Addresses, _ = types.ListValue(types.StringType, []attr.Value{})
 	}
+
 }

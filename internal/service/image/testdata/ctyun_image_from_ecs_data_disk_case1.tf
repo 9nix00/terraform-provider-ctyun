@@ -1,15 +1,17 @@
 
-# 从云主机整机创建私有镜像
+# 从云主机数据盘创建私有镜像
 resource "ctyun_image_from_ecs" "%[1]s" {
-  # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）
-  image_type="entire_machine"
 
+  image_type="data_disk"
+  # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）
   image_name = "%[2]s"
-  # 必选参数：云主机ID（状态需为running或stopped，至少有1块数据盘）
+
   description = "%[3]s"
+  # 必选参数：云主机ID（状态需为stopped，部分资源池支持running）
   instance_id = "%[4]s"
-  # 可选参数：云主机备份存储库ID（非多可用区资源池时必填）
-  # repository_id = "repo-1234567890abcdef"
+
+  # 必选参数：数据盘ID（需挂载于指定云主机）
+  data_disk_id = "%[5]s"
 
   # 可选参数：企业项目ID（默认0，即default项目）
   project_id = "0"

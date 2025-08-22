@@ -42,6 +42,8 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 					resourceFile, rnd,
 					name,
 					description,
+					dependence.subnetID,
+					dependence.securityGroupID,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -57,6 +59,8 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 					resourceFile, rnd,
 					updatedName,
 					updatedDescription,
+					dependence.subnetID,
+					dependence.securityGroupID,
 				),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
@@ -94,6 +98,134 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 					updatedName,
 					updatedDescription,
 				),
+				Destroy: true,
+			},
+		},
+	})
+}
+func TestAccCtyunNetworkInterface_case1(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+	rnd := utils.GenerateRandomString()
+	name := "ctyun_port." + rnd
+	configFile := "resource_ctyun_network_interface_case1.tf"
+
+	// 初始测试参数
+	initialPortName := "test-port-" + rnd
+	initialDescription := "test port description"
+	subnetId := dependence.subnetID
+	securityGroupId := dependence.securityGroupID
+	secondaryIpCount := 1
+	ipv6AddressCount := 0
+
+	// 更新后的测试参数
+	updatedPortName := "updated-port-" + rnd
+	updatedDescription := "updated port description"
+	updatedSecondaryIpCount := 2
+	updatedIpv6AddressCount := 0
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+
+		Steps: []resource.TestStep{
+			// 创建测试
+			{
+				Config: utils.LoadTestCase(configFile, rnd, initialPortName, initialDescription, subnetId, securityGroupId, secondaryIpCount, ipv6AddressCount),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "mac_address"),
+					resource.TestCheckResourceAttrSet(name, "status"),
+					resource.TestCheckResourceAttr(name, "name", initialPortName),
+					resource.TestCheckResourceAttr(name, "description", initialDescription),
+					resource.TestCheckResourceAttr(name, "subnet_id", subnetId),
+					resource.TestCheckResourceAttr(name, "secondary_private_ip_count", "1"),
+				),
+			},
+			// 更新测试
+			{
+				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, updatedSecondaryIpCount, updatedIpv6AddressCount),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "mac_address"),
+					resource.TestCheckResourceAttrSet(name, "status"),
+					resource.TestCheckResourceAttr(name, "name", updatedPortName),
+					resource.TestCheckResourceAttr(name, "description", updatedDescription),
+					resource.TestCheckResourceAttr(name, "subnet_id", subnetId),
+					resource.TestCheckResourceAttr(name, "secondary_private_ip_count", "2"),
+				),
+			},
+			// 删除测试（通过Destroy步骤）
+			{
+				Config:  utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, updatedSecondaryIpCount, updatedIpv6AddressCount),
+				Destroy: true,
+			},
+		},
+	})
+
+}
+
+func TestAccCtyunNetworkInterface_case2(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+	rnd := utils.GenerateRandomString()
+	name := "ctyun_port." + rnd
+	configFile := "resource_ctyun_network_interface_case2.tf"
+
+	// 初始测试参数
+	initialPortName := "test-port-" + rnd
+	initialDescription := "test port description"
+
+	subnetId := dependence.subnetID
+	primaryIp := "192.168.1.1" // 使用自动分配
+	securityGroupId := dependence.securityGroupID
+	secondaryIpCount := 1
+	ipv6AddressCount := 0
+
+	// 更新后的测试参数（只更新name和description字段）
+	updatedPortName := "updated-port-" + rnd
+	updatedDescription := "updated port description"
+
+	resource.Test(t, resource.TestCase{
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+
+		Steps: []resource.TestStep{
+			// 创建测试 - 包含所有可选字段
+			{
+				Config: utils.LoadTestCase(configFile, rnd, initialPortName, initialDescription, subnetId, primaryIp, securityGroupId, secondaryIpCount, ipv6AddressCount),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "mac_address"),
+					resource.TestCheckResourceAttrSet(name, "status"),
+					resource.TestCheckResourceAttr(name, "name", initialPortName),
+					resource.TestCheckResourceAttr(name, "description", initialDescription),
+					resource.TestCheckResourceAttr(name, "subnet_id", subnetId),
+					resource.TestCheckResourceAttr(name, "secondary_private_ip_count", "1"),
+					resource.TestCheckResourceAttr(name, "ipv6_address_count", "0"),
+				),
+			},
+			// 更新测试 - 只更新name和description字段
+			{
+				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, primaryIp, securityGroupId, secondaryIpCount, ipv6AddressCount),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttrSet(name, "id"),
+					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "mac_address"),
+					resource.TestCheckResourceAttrSet(name, "status"),
+					resource.TestCheckResourceAttr(name, "name", updatedPortName),
+					resource.TestCheckResourceAttr(name, "description", updatedDescription),
+					resource.TestCheckResourceAttr(name, "subnet_id", subnetId),
+				),
+			},
+			// 删除测试（通过Destroy步骤）
+			{
+				Config:  utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, primaryIp, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Destroy: true,
 			},
 		},

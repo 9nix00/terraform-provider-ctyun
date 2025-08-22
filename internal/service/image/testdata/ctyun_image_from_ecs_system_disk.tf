@@ -12,8 +12,8 @@ resource "ctyun_image_from_ecs" "%[1]s" {
   image_name = "%[2]s"
 
   # 必选参数：云主机ID（状态需为stopped，部分资源池支持running）
-  instance_id = "8ac99164-8759-946c-29e0-e10cf21e80c4"
   description = "%[3]s"
+  instance_id = "%[4]s"
 
 
   # 可选参数：企业项目ID（默认0，即default项目）

@@ -50,8 +50,9 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 		Attributes: map[string]schema.Attribute{
 			// 新增：资源ID（由API返回，自动生成）
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "私有镜像唯一标识（镜像ID）",
+				Computed:      true,
+				Description:   "私有镜像唯一标识（镜像ID）",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			// 公共必填参数（所有创建方式均需）
 			"image_name": schema.StringAttribute{
@@ -81,7 +82,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 			// 公共可选参数（所有创建方式均支持）
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Computed:    false, // API 不返回，就不要 computed
+				Computed:    true,
 				Description: "镜像描述。长度1~128字符，不能以空格开头或结尾。",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 128),
@@ -127,10 +128,10 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 							Description: "标签键。",
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(1, 32),
-								stringvalidator.RegexMatches(
-									regexp.MustCompile(`^[^\\s\\n].*[^\\s\\n]$|^[^\\s\\n]$`),
-									"标签键不能换行或以空格开头/结尾。",
-								),
+								//stringvalidator.RegexMatches(
+								//	regexp.MustCompile(`^[^\\s\\n].*[^\\s\\n]$|^[^\\s\\n]$`),
+								//	"标签键不能换行或以空格开头/结尾。",
+								//),
 							},
 						},
 						"label_value": schema.StringAttribute{
@@ -138,10 +139,10 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 							Description: "标签值。",
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(1, 32),
-								stringvalidator.RegexMatches(
-									regexp.MustCompile(`^[^\\s\\n].*[^\\s\\n]$|^[^\\s\\n]$`),
-									"标签值不能换行或以空格开头/结尾。",
-								),
+								//stringvalidator.RegexMatches(
+								//	regexp.MustCompile(`^[^\\s\\n].*[^\\s\\n]$|^[^\\s\\n]$`),
+								//	"标签值不能换行或以空格开头/结尾。",
+								//),
 							},
 						},
 					},
@@ -151,6 +152,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 					listplanmodifier.RequiresReplace(),
 				},
 			},
+
 			"enable_image_integrity_check": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -160,7 +162,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 
 			// 系统盘/数据盘/整机共用参数（云主机ID）
 			"instance_id": schema.StringAttribute{
-				Optional:    true,
+				Required:    true,
 				Description: "云主机ID，系统盘、数据盘、整机创建方式必填。",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 64),
@@ -229,23 +231,9 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-
-			// 快照特有参数
-			"snapshot_id": schema.StringAttribute{
-				Optional:    true,
-				Description: "云主机快照ID，仅快照创建方式必填，状态需为available。",
-				Validators: []validator.String{
-					stringvalidator.LengthBetween(1, 64),
-				},
-				// 快照变更需重建
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 		},
 	}
 }
-
 func (c *ctyunImageFromEcs) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var plan CtyunImageFromEcsConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
@@ -254,228 +242,250 @@ func (c *ctyunImageFromEcs) Create(ctx context.Context, request resource.CreateR
 	}
 
 	// 根据传入的不同参数确定创建方式
-	regionId := plan.RegionId.ValueString()
-	projectId := plan.ProjectId.ValueString()
 	imageType := plan.ImageType.ValueString()
 
 	switch imageType {
 	case "system_disk":
-		// 系统盘创建方式
-		// 构造标签列表
-		var labels []*ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest
-		if plan.Labels != nil {
-			labels = make([]*ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest, len(plan.Labels))
-			for i, label := range plan.Labels {
-				labels[i] = &ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest{
-					LabelKey:   label.LabelKey.ValueString(),
-					LabelValue: label.LabelValue.ValueString(),
-				}
-			}
-		}
-
-		// 系统盘创建方式
-		systemReq := &ctimage.CtimageCreateEcsSystemDiskImageRequest{
-			ImageName:                 plan.ImageName.ValueString(),
-			RegionID:                  regionId,
-			InstanceID:                plan.InstanceId.ValueString(),
-			Description:               plan.Description.ValueString(),
-			EnableImageIntegrityCheck: plan.EnableImageIntegrityCheck.ValueBoolPointer(),
-			Labels:                    labels,
-			MaximumRAM:                int32(plan.MaximumRAM.ValueInt64()),
-			MinimumRAM:                int32(plan.MinimumRAM.ValueInt64()),
-			ProjectID:                 projectId,
-		}
-
-		resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateEcsSystemDiskImageApi.Do(ctx, c.meta.SdkCredential, systemReq)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
-			response.Diagnostics.AddError("创建镜像失败", "API返回数据为空")
-			return
-		}
-
-		image := resp.ReturnObj.Images[0]
-		plan.ImageName = types.StringValue(image.ImageName)
-		plan.RegionId = types.StringValue(regionId)
-		plan.ProjectId = types.StringValue(projectId)
-		plan.Id = types.StringValue(image.ImageID)
-		plan.Description = types.StringValue(image.Description)
-
-		// 设置其他属性
-		if image.EnableImageIntegrityCheck != nil {
-			plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
-		}
-
-		plan.MaximumRAM = types.Int64Value(int64(image.MaximumRAM))
-		plan.MinimumRAM = types.Int64Value(int64(image.MinimumRAM))
-
-		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-		if response.Diagnostics.HasError() {
-			return
-		}
-
-		// 轮询镜像状态直到active
-		err = c.waitForUploadImageActive(ctx, plan)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		// 查询镜像状态信息
-		instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-		if ctyunRequestError != nil {
-			response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-			return
-		}
-		response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-
+		c.createSystemDiskImage(ctx, plan, response)
 	case "data_disk":
-		// 数据盘创建方式
-		// 构造标签列表
-		var labels []*ctimage.CtimageCreateEcsDataDiskImageLabelsRequest
-		if plan.Labels != nil {
-			labels = make([]*ctimage.CtimageCreateEcsDataDiskImageLabelsRequest, len(plan.Labels))
-			for i, label := range plan.Labels {
-				labels[i] = &ctimage.CtimageCreateEcsDataDiskImageLabelsRequest{
-					LabelKey:   label.LabelKey.ValueString(),
-					LabelValue: label.LabelValue.ValueString(),
-				}
-			}
-		}
-
-		// 数据盘创建方式
-		dataDiskReq := &ctimage.CtimageCreateEcsDataDiskImageRequest{
-			ImageName:                 plan.ImageName.ValueString(),
-			RegionID:                  regionId,
-			InstanceID:                plan.InstanceId.ValueString(),
-			DataDiskID:                plan.DataDiskId.ValueString(),
-			Description:               plan.Description.ValueString(),
-			EnableImageIntegrityCheck: plan.EnableImageIntegrityCheck.ValueBoolPointer(),
-			Labels:                    labels,
-			ProjectID:                 projectId,
-		}
-
-		resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateEcsDataDiskImageApi.Do(ctx, c.meta.SdkCredential, dataDiskReq)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
-			response.Diagnostics.AddError("创建镜像失败", "API返回数据为空")
-			return
-		}
-
-		image := resp.ReturnObj.Images[0]
-		plan.ImageName = types.StringValue(image.ImageName)
-		plan.RegionId = types.StringValue(regionId)
-		plan.ProjectId = types.StringValue(projectId)
-		plan.Id = types.StringValue(image.ImageID)
-		plan.Description = types.StringValue(image.Description)
-
-		// 设置其他属性
-		if image.EnableImageIntegrityCheck != nil {
-			plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
-		}
-
-		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-		if response.Diagnostics.HasError() {
-			return
-		}
-
-		// 轮询镜像状态直到active
-		err = c.waitForUploadImageActive(ctx, plan)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		// 查询镜像状态信息
-		instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-		if ctyunRequestError != nil {
-			response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-			return
-		}
-		response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-
+		c.createDataDiskImage(ctx, plan, response)
 	case "entire_machine":
-		// 整机创建方式
-		// 构造标签列表
-		var labels []*ctimage.CtimageCreateFullEcsImageLabelsRequest
-		if plan.Labels != nil {
-			labels = make([]*ctimage.CtimageCreateFullEcsImageLabelsRequest, len(plan.Labels))
-			for i, label := range plan.Labels {
-				labels[i] = &ctimage.CtimageCreateFullEcsImageLabelsRequest{
-					LabelKey:   label.LabelKey.ValueString(),
-					LabelValue: label.LabelValue.ValueString(),
-				}
-			}
-		}
-
-		// 整机创建方式
-		entireReq := &ctimage.CtimageCreateFullEcsImageRequest{
-			ImageName:   plan.ImageName.ValueString(),
-			RegionID:    regionId,
-			InstanceID:  plan.InstanceId.ValueString(),
-			Description: plan.Description.ValueString(),
-			Labels:      labels,
-			ProjectID:   projectId,
-		}
-		// repository_id在非多可用区资源池时必填
-		if !plan.RepositoryId.IsNull() {
-			entireReq.RepositoryID = plan.RepositoryId.ValueString()
-		}
-
-		resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateFullEcsImageApi.Do(ctx, c.meta.SdkCredential, entireReq)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
-			response.Diagnostics.AddError("创建镜像失败", "API返回数据为空")
-			return
-		}
-
-		image := resp.ReturnObj.Images[0]
-		plan.ImageName = types.StringValue(image.ImageName)
-		plan.RegionId = types.StringValue(regionId)
-		plan.ProjectId = types.StringValue(projectId)
-		plan.Id = types.StringValue(image.ImageID)
-		plan.Description = types.StringValue(image.Description)
-
-		// 设置其他属性
-		if image.EnableImageIntegrityCheck != nil {
-			plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
-		}
-
-		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-		if response.Diagnostics.HasError() {
-			return
-		}
-
-		// 轮询镜像状态直到active
-		err = c.waitForUploadImageActive(ctx, plan)
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-			return
-		}
-
-		// 查询镜像状态信息
-		instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-		if ctyunRequestError != nil {
-			response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-			return
-		}
-		response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-
+		c.createEntireMachineImage(ctx, plan, response)
 	default:
 		response.Diagnostics.AddError("参数错误", "未提供有效的创建参数组合")
 		return
 	}
+}
+
+func (c *ctyunImageFromEcs) createSystemDiskImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+	// 系统盘创建方式
+	// 构造标签列表
+	// 根据传入的不同参数确定创建方式
+	regionId := plan.RegionId.ValueString()
+	projectId := plan.ProjectId.ValueString()
+	var labels []*ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest
+	if plan.Labels != nil {
+		labels = make([]*ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest, len(plan.Labels))
+		for i, label := range plan.Labels {
+			labels[i] = &ctimage.CtimageCreateEcsSystemDiskImageLabelsRequest{
+				LabelKey:   label.LabelKey.ValueString(),
+				LabelValue: label.LabelValue.ValueString(),
+			}
+		}
+	}
+
+	// 系统盘创建方式
+	systemReq := &ctimage.CtimageCreateEcsSystemDiskImageRequest{
+		ImageName:                 plan.ImageName.ValueString(),
+		RegionID:                  regionId,
+		InstanceID:                plan.InstanceId.ValueString(),
+		Description:               plan.Description.ValueString(),
+		EnableImageIntegrityCheck: plan.EnableImageIntegrityCheck.ValueBoolPointer(),
+		Labels:                    labels,
+		MaximumRAM:                int32(plan.MaximumRAM.ValueInt64()),
+		MinimumRAM:                int32(plan.MinimumRAM.ValueInt64()),
+		ProjectID:                 projectId,
+	}
+
+	resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateEcsSystemDiskImageApi.Do(ctx, c.meta.SdkCredential, systemReq)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
+		log.Printf("[DEBUG] 创建镜像失败，API返回: %+v", resp)
+		response.Diagnostics.AddError("创建镜像失败", fmt.Sprintf("API返回数据为空，完整响应: %+v", resp))
+		return
+	}
+
+	image := resp.ReturnObj.Images[0]
+	plan.ImageName = types.StringValue(image.ImageName)
+	plan.RegionId = types.StringValue(regionId)
+	plan.ProjectId = types.StringValue(projectId)
+	plan.Id = types.StringValue(image.ImageID)
+	plan.Description = types.StringValue(image.Description)
+
+	// 设置其他属性
+	if image.EnableImageIntegrityCheck != nil {
+		plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
+	}
+
+	plan.MaximumRAM = types.Int64Value(int64(image.MaximumRAM))
+	plan.MinimumRAM = types.Int64Value(int64(image.MinimumRAM))
+
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 轮询镜像状态直到active
+	err = c.waitForUploadImageActive(ctx, plan)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	// 查询镜像状态信息
+	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
+	if ctyunRequestError != nil {
+		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+
+}
+func (c *ctyunImageFromEcs) createDataDiskImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+	// 构造标签列表
+	// 根据传入的不同参数确定创建方式
+	regionId := plan.RegionId.ValueString()
+	projectId := plan.ProjectId.ValueString()
+	// 数据盘创建方式
+	// 构造标签列表
+	var labels []*ctimage.CtimageCreateEcsDataDiskImageLabelsRequest
+	if plan.Labels != nil {
+		labels = make([]*ctimage.CtimageCreateEcsDataDiskImageLabelsRequest, len(plan.Labels))
+		for i, label := range plan.Labels {
+			labels[i] = &ctimage.CtimageCreateEcsDataDiskImageLabelsRequest{
+				LabelKey:   label.LabelKey.ValueString(),
+				LabelValue: label.LabelValue.ValueString(),
+			}
+		}
+	}
+
+	// 数据盘创建方式
+	dataDiskReq := &ctimage.CtimageCreateEcsDataDiskImageRequest{
+		ImageName:                 plan.ImageName.ValueString(),
+		RegionID:                  regionId,
+		InstanceID:                plan.InstanceId.ValueString(),
+		DataDiskID:                plan.DataDiskId.ValueString(),
+		Description:               plan.Description.ValueString(),
+		EnableImageIntegrityCheck: plan.EnableImageIntegrityCheck.ValueBoolPointer(),
+		Labels:                    labels,
+		ProjectID:                 projectId,
+	}
+
+	resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateEcsDataDiskImageApi.Do(ctx, c.meta.SdkCredential, dataDiskReq)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
+		log.Printf("[DEBUG] 创建镜像失败，API返回: %+v", resp)
+		response.Diagnostics.AddError("创建镜像失败", fmt.Sprintf("API返回数据为空，完整响应: %+v", resp))
+		return
+	}
+	image := resp.ReturnObj.Images[0]
+	plan.ImageName = types.StringValue(image.ImageName)
+	plan.RegionId = types.StringValue(regionId)
+	plan.ProjectId = types.StringValue(projectId)
+	plan.Id = types.StringValue(image.ImageID)
+	plan.Description = types.StringValue(image.Description)
+
+	// 设置其他属性
+	if image.EnableImageIntegrityCheck != nil {
+		plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 轮询镜像状态直到active
+	err = c.waitForUploadImageActive(ctx, plan)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	// 查询镜像状态信息
+	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
+	if ctyunRequestError != nil {
+		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+
+}
+func (c *ctyunImageFromEcs) createEntireMachineImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+
+	// 构造标签列表
+	// 根据传入的不同参数确定创建方式
+	regionId := plan.RegionId.ValueString()
+	projectId := plan.ProjectId.ValueString()
+	// 整机创建方式
+	// 构造标签列表
+	var labels []*ctimage.CtimageCreateFullEcsImageLabelsRequest
+	if plan.Labels != nil {
+		labels = make([]*ctimage.CtimageCreateFullEcsImageLabelsRequest, len(plan.Labels))
+		for i, label := range plan.Labels {
+			labels[i] = &ctimage.CtimageCreateFullEcsImageLabelsRequest{
+				LabelKey:   label.LabelKey.ValueString(),
+				LabelValue: label.LabelValue.ValueString(),
+			}
+		}
+	}
+
+	// 整机创建方式
+	entireReq := &ctimage.CtimageCreateFullEcsImageRequest{
+		ImageName:   plan.ImageName.ValueString(),
+		RegionID:    regionId,
+		InstanceID:  plan.InstanceId.ValueString(),
+		Description: plan.Description.ValueString(),
+		Labels:      labels,
+		ProjectID:   projectId,
+	}
+	// repository_id在非多可用区资源池时必填
+	if !plan.RepositoryId.IsNull() {
+		entireReq.RepositoryID = plan.RepositoryId.ValueString()
+	}
+
+	resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateFullEcsImageApi.Do(ctx, c.meta.SdkCredential, entireReq)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	if resp.ReturnObj == nil || len(resp.ReturnObj.Images) == 0 {
+		log.Printf("[DEBUG] 创建镜像失败，API返回: %+v", resp)
+		response.Diagnostics.AddError("创建镜像失败", fmt.Sprintf("API返回数据为空，完整响应: %+v", resp))
+		return
+	}
+
+	image := resp.ReturnObj.Images[0]
+	plan.ImageName = types.StringValue(image.ImageName)
+	plan.RegionId = types.StringValue(regionId)
+	plan.ProjectId = types.StringValue(projectId)
+	plan.Id = types.StringValue(image.ImageID)
+	plan.Description = types.StringValue(image.Description)
+
+	// 设置其他属性
+	if image.EnableImageIntegrityCheck != nil {
+		plan.EnableImageIntegrityCheck = types.BoolPointerValue(image.EnableImageIntegrityCheck)
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 轮询镜像状态直到active
+	err = c.waitForUploadImageActive(ctx, plan)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	// 查询镜像状态信息
+	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
+	if ctyunRequestError != nil {
+		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+
 }
 
 func (c *ctyunImageFromEcs) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
@@ -558,58 +568,38 @@ func (c *ctyunImageFromEcs) checkBeforeUpdate(ctx context.Context, plan, state C
 // updateImageAttributes 按字段更新镜像属性
 func (c *ctyunImageFromEcs) updateImageAttributes(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
 	// 更新镜像名称
-	err = c.updateImageName(ctx, plan, state)
+	err = c.updateImage(ctx, plan, state)
 	if err != nil {
 		return
 	}
 
-	// 更新镜像描述
-	err = c.updateImageDescription(ctx, plan, state)
-	if err != nil {
-		return
+	return
+}
+
+// updateImage 更新镜像描述
+func (c *ctyunImageFromEcs) updateImage(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
+	params := &ctimage.CtimageUpdateImageRequest{
+		ImageID:  state.Id.ValueString(),
+		RegionID: state.RegionId.ValueString(),
+	}
+	if !plan.Description.Equal(state.Description) {
+		params.Description = plan.Description.ValueString()
+	}
+
+	if !plan.ImageName.Equal(state.ImageName) {
+		params.ImageName = plan.ImageName.ValueString()
 	}
 
 	// 仅在系统盘镜像类型下更新内存限制
 	if plan.ImageType.ValueString() == "system_disk" {
-		// 更新内存限制
-		err = c.updateImageMemoryLimits(ctx, plan, state)
-		if err != nil {
-			return
+		if !plan.MinimumRAM.Equal(state.MinimumRAM) {
+			params.MaximumRAM = int32(plan.MaximumRAM.ValueInt64())
+		}
+		if !plan.MinimumRAM.Equal(state.MinimumRAM) {
+			params.MinimumRAM = int32(plan.MinimumRAM.ValueInt64())
 		}
 	}
-	return
-}
-
-// updateImageName 更新镜像名称
-func (c *ctyunImageFromEcs) updateImageName(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	if plan.ImageName.Equal(state.ImageName) {
-		return
-	}
-
-	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageUpdateImageRequest{
-		ImageID:   state.Id.ValueString(),
-		RegionID:  state.RegionId.ValueString(),
-		ImageName: plan.ImageName.ValueString(),
-	})
-
-	if err != nil {
-		return fmt.Errorf("更新镜像名称失败: %w", err)
-	}
-
-	return
-}
-
-// updateImageDescription 更新镜像描述
-func (c *ctyunImageFromEcs) updateImageDescription(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	if plan.Description.Equal(state.Description) {
-		return
-	}
-
-	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageUpdateImageRequest{
-		ImageID:     state.Id.ValueString(),
-		RegionID:    state.RegionId.ValueString(),
-		Description: plan.Description.ValueString(),
-	})
+	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, params)
 
 	if err != nil {
 		return fmt.Errorf("更新镜像描述失败: %w", err)
@@ -619,24 +609,6 @@ func (c *ctyunImageFromEcs) updateImageDescription(ctx context.Context, plan, st
 }
 
 // updateImageMemoryLimits 更新内存限制
-func (c *ctyunImageFromEcs) updateImageMemoryLimits(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	if plan.MinimumRAM.Equal(state.MinimumRAM) && plan.MaximumRAM.Equal(state.MaximumRAM) {
-		return
-	}
-
-	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageUpdateImageRequest{
-		ImageID:    state.Id.ValueString(),
-		RegionID:   state.RegionId.ValueString(),
-		MinimumRAM: int32(plan.MinimumRAM.ValueInt64()),
-		MaximumRAM: int32(plan.MaximumRAM.ValueInt64()),
-	})
-
-	if err != nil {
-		return fmt.Errorf("更新镜像内存限制失败: %w", err)
-	}
-
-	return
-}
 
 // getImageByID 根据ID获取镜像详情
 func (c *ctyunImageFromEcs) getImageByID(ctx context.Context, cfg CtyunImageFromEcsConfig) (*ctimage.CtimageDetailImageReturnObjImagesResponse, error) {
@@ -861,10 +833,6 @@ type CtyunImageFromEcsConfig struct {
 	// 备份存储库ID（仅整机镜像创建时，非多可用区资源池必填）
 	// 约束：需为未到期、未冻结且容量充足的云主机备份存储库
 	RepositoryId types.String `tfsdk:"repository_id"`
-
-	// 快照ID（仅快照镜像创建必填，系统盘/数据盘/整机镜像创建不可填）
-	// 约束：快照状态需为available，包含的系统盘快照未加密
-	SnapshotID types.String `tfsdk:"snapshot_id"`
 
 	// 最小内存限制（GiB，仅系统盘/快照镜像支持，修改接口支持更新）
 	// 约束：取值为0（不限制）、1、2、4、8、16、32、64、128、256、512，需≤MaximumRAM

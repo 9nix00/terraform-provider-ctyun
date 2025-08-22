@@ -1,4 +1,4 @@
-package image_test
+package ports_test
 
 import (
 	"fmt"
@@ -20,7 +20,7 @@ type Dependence struct {
 var dependence Dependence
 
 func TestMain(m *testing.M) {
-	if skip := os.Getenv("SKIP_IMAGE_TEST"); skip != "" {
+	if skip := os.Getenv("SKIP_PORTS_TEST"); skip != "" {
 		return
 	}
 	// 初始化依赖资源
