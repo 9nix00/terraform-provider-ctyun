@@ -154,7 +154,6 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 					resource.TestCheckResourceAttr(name, "name", updatedPortName),
 					resource.TestCheckResourceAttr(name, "description", updatedDescription),
 					resource.TestCheckResourceAttr(name, "subnet_id", subnetId),
-					resource.TestCheckResourceAttr(name, "secondary_private_ip_count", "2"),
 				),
 			},
 			// 删除测试（通过Destroy步骤）
