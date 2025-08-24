@@ -72,8 +72,9 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026735/10181237**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,

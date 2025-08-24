@@ -114,8 +114,9 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "证书ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "证书ID",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,

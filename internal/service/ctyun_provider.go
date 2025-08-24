@@ -401,6 +401,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mongodb.NewCtyunMongodbInstances(),
 		hpfs.NewCtyunHpfsInstances(),
 		hpfs.NewCtyunHpfsClusters(),
+		ccse.NewCtyunCcseTemplateMarket(),
 	)
 }
 
@@ -476,6 +477,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsBackupPolicy(),
 		ecs.NewCtyunEcsBackupPolicyBindInstances(),
 		ecs.NewCtyunEcsBackupPolicyBindRepo(),
+		ccse.NewCtyunCcseNodeAssociation(),
+		ccse.NewCtyunCcseTemplateInstance(),
 	)
 }
 

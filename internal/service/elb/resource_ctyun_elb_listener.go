@@ -155,8 +155,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Description: "x forward for功能。false（未开启）、true（开启）",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "监听器 ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "监听器 ID",
 			},
 			"default_action_type": schema.StringAttribute{
 				Required:    true,

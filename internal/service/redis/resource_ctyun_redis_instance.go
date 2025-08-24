@@ -83,8 +83,9 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10029727**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,

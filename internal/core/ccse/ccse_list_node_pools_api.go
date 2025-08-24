@@ -35,8 +35,12 @@ func (a *CcseListNodePoolsApi) Do(ctx context.Context, credential core.Credentia
 	if req.NodePoolName != "" {
 		ctReq.AddParam("nodePoolName", req.NodePoolName)
 	}
-	ctReq.AddParam("pageNow", strconv.FormatInt(int64(req.PageNow), 10))
-	ctReq.AddParam("pageSize", strconv.FormatInt(int64(req.PageSize), 10))
+	if req.PageNow != 0 {
+		ctReq.AddParam("pageNow", strconv.FormatInt(int64(req.PageNow), 10))
+	}
+	if req.PageSize != 0 {
+		ctReq.AddParam("pageSize", strconv.FormatInt(int64(req.PageSize), 10))
+	}
 	response, err := a.client.RequestToEndpoint(ctx, ctReq)
 	if err != nil {
 		return nil, err

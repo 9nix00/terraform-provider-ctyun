@@ -18,7 +18,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-nat"
+  name        = "tf-vpc-for-pgsql"
   cidr        = "192.168.0.0/16"
   description = "terraform-kafka测试使用"
   enable_ipv6 = true
@@ -26,7 +26,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-nat1"
+  name        = "tf-subnet-for-pgsql"
   cidr        = "192.168.1.0/24"
   description = "terraform-kafka测试使用"
   dns = [
@@ -73,7 +73,7 @@ resource "ctyun_postgresql_instance" "test" {
 }
 
 resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-nat"
+  name                = "tf-eip-for-pgsql"
   bandwidth           = 1
   cycle_type          = "on_demand"
   demand_billing_type = "upflowc"
@@ -91,7 +91,6 @@ resource "ctyun_postgresql_association_eip" "pgsql_association_eip_test" {
 
 ### Required
 
-- `eip` (String) 弹性ip
 - `eip_id` (String) 弹性id
 - `inst_id` (String) 实例id
 
@@ -102,4 +101,5 @@ resource "ctyun_postgresql_association_eip" "pgsql_association_eip_test" {
 
 ### Read-Only
 
+- `eip` (String) 弹性ip地址
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding

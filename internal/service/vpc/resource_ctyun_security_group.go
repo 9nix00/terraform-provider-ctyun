@@ -37,8 +37,9 @@ func (c *ctyunSecurityGroup) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730/10225459**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,

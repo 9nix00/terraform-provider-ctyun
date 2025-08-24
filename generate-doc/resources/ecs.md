@@ -147,4 +147,5 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 - `fixed_ip` (String) 加入子网后的ip地址
 - `id` (String) id
 - `master_order_id` (String) 订购的受理单ID
+- `name` (String) 名称
 - `system_disk_id` (String) 系统盘的id

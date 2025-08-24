@@ -56,8 +56,9 @@ func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.Schem
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10042658/10048506**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "规则ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "规则ID",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

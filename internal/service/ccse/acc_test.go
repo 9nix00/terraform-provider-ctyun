@@ -19,6 +19,10 @@ type Dependence struct {
 	chartVersion2   string
 	chartValuesYaml string
 	chartValuesJson string
+	ecsID           string
+	ebmID           string
+	ecsMirrorID     string
+	ebmMirrorID     string
 }
 
 var dependence Dependence
@@ -42,6 +46,10 @@ func TestMain(m *testing.M) {
 		chartVersion2:   outputs["chart_version2"].Value,
 		chartValuesYaml: outputs["chart_values_yaml"].Value,
 		chartValuesJson: outputs["chart_values_json"].Value,
+		ecsID:           outputs["ecs_id"].Value,
+		ecsMirrorID:     outputs["ecs_mirror_id"].Value,
+		ebmID:           outputs["ebm_id"].Value,
+		ebmMirrorID:     outputs["ebm_mirror_id"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 

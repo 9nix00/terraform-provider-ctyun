@@ -33,6 +33,7 @@ output "ctyun_test" {
 
 ### Optional
 
+- `bucket` (String) 桶名称
 - `page_no` (Number) 列表的页码
 - `page_size` (Number) 每页数据量大小，取值1-50
 - `project_id` (String) 企业项目ID

@@ -137,6 +137,7 @@ type Apis struct {
 	CcseDeleteTemplateInstanceApi                *CcseDeleteTemplateInstanceApi
 	CcseDeployTemplateInstanceApi                *CcseDeployTemplateInstanceApi
 	CcseAttachClusterNodesApi                    *CcseAttachClusterNodesApi
+	CcseRemoveNodeV2Api                          *CcseRemoveNodeV2Api
 	CcseGetSubUserClusterNamespacesApi           *CcseGetSubUserClusterNamespacesApi
 	CcseClusterUpgradePrecheckApi                *CcseClusterUpgradePrecheckApi
 	CcseUpdateClusterKubeConfigExpirationTimeApi *CcseUpdateClusterKubeConfigExpirationTimeApi
@@ -329,5 +330,6 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		CcseDeleteDaemonSetApi:                       NewCcseDeleteDaemonSetApi(client),
 		CcseCreateDaemonSetApi:                       NewCcseCreateDaemonSetApi(client),
 		CcseUpgradeNodePoolApi:                       NewCcseUpgradeNodePoolApi(client),
+		CcseRemoveNodeV2Api:                          NewCcseRemoveNodeV2Api(client),
 	}
 }

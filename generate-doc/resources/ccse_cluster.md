@@ -59,7 +59,7 @@ resource "ctyun_ccse_cluster" "example" {
     cycle_type  = "on_demand"
     container_runtime = "containerd"
     timezone    = "Asia/Shanghai"
-    cluster_version = "1.25.6"
+    cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
     cluster_series = "cce.standard"
@@ -192,7 +192,7 @@ resource "ctyun_ccse_cluster" "example" {
 #     cycle_type  = "on_demand"
 #     container_runtime = "containerd"
 #     timezone    = "Asia/Shanghai"
-#     cluster_version = "1.25.6"
+#     cluster_version = "1.29.3"
 #     deploy_type   = "single"
 #     kube_proxy    = "iptables"
 #     cluster_series = "cce.standard"
@@ -255,6 +255,7 @@ resource "ctyun_ccse_cluster" "example" {
 - `id` (String) ID
 - `internal_kube_config` (String) 内网连接信息
 - `master_order_id` (String) 主订单号
+- `name` (String) 名称
 
 <a id="nestedatt--base_info"></a>
 ### Nested Schema for `base_info`

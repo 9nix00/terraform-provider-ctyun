@@ -281,8 +281,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			//	Description: "订单id",
 			//},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "pgsql 实例id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "pgsql 实例id",
 			},
 			"alive": schema.Int32Attribute{
 				Computed:    true,

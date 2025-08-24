@@ -69,8 +69,9 @@ func (c *ctyunEcsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10033770**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "云主机备份策略id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "云主机备份策略id",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

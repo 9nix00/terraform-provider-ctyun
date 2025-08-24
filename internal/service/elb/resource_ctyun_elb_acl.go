@@ -79,8 +79,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "访问控制ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "访问控制ID",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,

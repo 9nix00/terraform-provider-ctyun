@@ -319,8 +319,9 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Description: "0.正常 1.欠费暂停 2.已注销 3.创建中 4.施工失败 5.到期退订状态 6.新增的状态-openApi暂停 7.创建完成等待变更单 8.待注销 9.手动暂停 10.手动退订",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "实例Id，同inst_id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "实例Id，同inst_id",
 			},
 		},
 	}
@@ -454,6 +455,7 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
+	time.Sleep(30 * time.Second)
 	err = c.destroy(ctx, state)
 	if err != nil {
 		return
