@@ -368,7 +368,7 @@ func (c *ctyunCcseNodePool) Create(ctx context.Context, request resource.CreateR
 	}
 
 	plan.ID = types.StringValue(id)
-
+	time.Sleep(30 * time.Second)
 	// 扩容
 	planB := plan
 	planB.NodeNum = types.Int32Value(0)
