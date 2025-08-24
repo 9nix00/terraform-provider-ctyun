@@ -455,6 +455,7 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	if err != nil {
 		return
 	}
+	time.Sleep(30 * time.Second)
 	err = c.destroy(ctx, state)
 	if err != nil {
 		return
