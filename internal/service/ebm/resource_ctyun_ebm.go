@@ -60,6 +60,7 @@ type CtyunEbmConfig struct {
 	Name                 types.String `tfsdk:"name"`
 	Hostname             types.String `tfsdk:"hostname"`
 	ImageUUID            types.String `tfsdk:"image_uuid"`
+	ActualImageID        types.String `tfsdk:"actual_image_id"`
 	Password             types.String `tfsdk:"password"`
 	ProjectID            types.String `tfsdk:"project_id"`
 	SystemDiskType       types.String `tfsdk:"system_disk_type"`
@@ -150,6 +151,10 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"actual_image_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "实际镜像id，重装、集群纳管等操作会导致actual_image_id与image_id不同",
 			},
 			"password": schema.StringAttribute{
 				Sensitive:   true,
@@ -932,7 +937,7 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.InstanceName = utils.SecStringValue(instance.DisplayName)
 	cfg.Name = cfg.InstanceName
 	cfg.Hostname = utils.SecStringValue(instance.InstanceName)
-	cfg.ImageUUID = utils.SecStringValue(instance.ImageID)
+	cfg.ActualImageID = utils.SecStringValue(instance.ImageID)
 	cfg.VpcID = utils.SecStringValue(instance.VpcID)
 	cfg.Status = utils.SecLowerStringValue(instance.EbmState)
 

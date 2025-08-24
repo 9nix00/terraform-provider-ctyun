@@ -16,25 +16,26 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 	"time"
 )
 
 var (
-	_ resource.Resource                = &CtyunCcseNodeAssociation{}
-	_ resource.ResourceWithConfigure   = &CtyunCcseNodeAssociation{}
-	_ resource.ResourceWithImportState = &CtyunCcseNodeAssociation{}
+	_ resource.Resource                = &ctyunCcseNodeAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunCcseNodeAssociation{}
+	_ resource.ResourceWithImportState = &ctyunCcseNodeAssociation{}
 )
 
-type CtyunCcseNodeAssociation struct {
+type ctyunCcseNodeAssociation struct {
 	meta *common.CtyunMetadata
 }
 
 func NewCtyunCcseNodeAssociation() resource.Resource {
-	return &CtyunCcseNodeAssociation{}
+	return &ctyunCcseNodeAssociation{}
 }
 
-func (c *CtyunCcseNodeAssociation) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+func (c *ctyunCcseNodeAssociation) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_ccse_node_association"
 }
 
@@ -57,7 +58,7 @@ type CtyunCcseNodeAssociationConfig struct {
 	IsEvict                  types.Bool   `tfsdk:"is_evict"`
 }
 
-func (c *CtyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452**`,
 		Attributes: map[string]schema.Attribute{
@@ -98,12 +99,14 @@ func (c *CtyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.Any(
+						stringvalidator.RegexMatches(regexp.MustCompile("^ss-[a-z0-9]{28}$"), "不符合裸金属id规范"),
+						validator2.UUID(),
+					),
 				},
 			},
 			"visibility_post_host_script": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "部署后执行自定义脚本，base64编码",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -111,7 +114,6 @@ func (c *CtyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"visibility_host_script": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "部署前执行自定义脚本，base64编码",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -175,7 +177,7 @@ func (c *CtyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 	}
 }
 
-func (c *CtyunCcseNodeAssociation) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunCcseNodeAssociation) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -209,7 +211,7 @@ func (c *CtyunCcseNodeAssociation) Create(ctx context.Context, request resource.
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *CtyunCcseNodeAssociation) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunCcseNodeAssociation) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -234,11 +236,11 @@ func (c *CtyunCcseNodeAssociation) Read(ctx context.Context, request resource.Re
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *CtyunCcseNodeAssociation) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunCcseNodeAssociation) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	return
 }
 
-func (c *CtyunCcseNodeAssociation) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunCcseNodeAssociation) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -261,7 +263,7 @@ func (c *CtyunCcseNodeAssociation) Delete(ctx context.Context, request resource.
 	}
 }
 
-func (c *CtyunCcseNodeAssociation) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunCcseNodeAssociation) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -270,7 +272,7 @@ func (c *CtyunCcseNodeAssociation) Configure(_ context.Context, request resource
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [name],[clusterID],[regionID]
-func (c *CtyunCcseNodeAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+func (c *ctyunCcseNodeAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -295,7 +297,7 @@ func (c *CtyunCcseNodeAssociation) ImportState(ctx context.Context, request reso
 }
 
 // association 纳管节点池
-func (c *CtyunCcseNodeAssociation) association(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
+func (c *ctyunCcseNodeAssociation) association(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
 	params := &ccse2.CcseAttachClusterNodesRequest{
 		ClusterId: plan.ClusterID.ValueString(),
 		RegionId:  plan.RegionID.ValueString(),
@@ -329,7 +331,7 @@ func (c *CtyunCcseNodeAssociation) association(ctx context.Context, plan CtyunCc
 }
 
 // checkAfterAssociation 纳管后检查
-func (c *CtyunCcseNodeAssociation) checkAfterAssociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (name string, err error) {
+func (c *ctyunCcseNodeAssociation) checkAfterAssociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (name string, err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -357,7 +359,7 @@ func (c *CtyunCcseNodeAssociation) checkAfterAssociation(ctx context.Context, pl
 }
 
 // getNodeByInstanceID 根据主机id查询节点
-func (c *CtyunCcseNodeAssociation) getNodeByInstanceID(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (node *ccse2.CcseListClusterNodesReturnObjResponse, err error) {
+func (c *ctyunCcseNodeAssociation) getNodeByInstanceID(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (node *ccse2.CcseListClusterNodesReturnObjResponse, err error) {
 	params := &ccse2.CcseListClusterNodesRequest{
 		ClusterId: plan.ClusterID.ValueString(),
 		RegionId:  plan.RegionID.ValueString(),
@@ -372,16 +374,17 @@ func (c *CtyunCcseNodeAssociation) getNodeByInstanceID(ctx context.Context, plan
 		err = common.InvalidReturnObjError
 		return
 	}
-	for _, node = range resp.ReturnObj {
-		if node.EcsId == plan.InstanceID.ValueString() {
-			return node, nil
+	for _, n := range resp.ReturnObj {
+		if n.EcsId == plan.InstanceID.ValueString() {
+			node = n
+			return
 		}
 	}
 	return
 }
 
 // getNodeDetailByName 根据节点名称查询节点详情
-func (c *CtyunCcseNodeAssociation) getNodeDetailByName(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (node *ccse2.CcseGetNodeDetailReturnObjResponse, err error) {
+func (c *ctyunCcseNodeAssociation) getNodeDetailByName(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (node *ccse2.CcseGetNodeDetailReturnObjResponse, err error) {
 	params := &ccse2.CcseGetNodeDetailRequest{
 		ClusterId: plan.ClusterID.ValueString(),
 		RegionId:  plan.RegionID.ValueString(),
@@ -402,7 +405,7 @@ func (c *CtyunCcseNodeAssociation) getNodeDetailByName(ctx context.Context, plan
 }
 
 // getCustomPoolID 查询节点池ID
-func (c *CtyunCcseNodeAssociation) getCustomPoolID(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (poolID string, err error) {
+func (c *ctyunCcseNodeAssociation) getCustomPoolID(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (poolID string, err error) {
 	params := &ccse2.CcseListNodePoolsRequest{
 		RegionId:     plan.RegionID.ValueString(),
 		ClusterId:    plan.ClusterID.ValueString(),
@@ -424,7 +427,7 @@ func (c *CtyunCcseNodeAssociation) getCustomPoolID(ctx context.Context, plan Cty
 }
 
 // getAndMerge 从远端查询
-func (c *CtyunCcseNodeAssociation) getAndMerge(ctx context.Context, plan *CtyunCcseNodeAssociationConfig) (err error) {
+func (c *ctyunCcseNodeAssociation) getAndMerge(ctx context.Context, plan *CtyunCcseNodeAssociationConfig) (err error) {
 	poolID, err := c.getCustomPoolID(ctx, *plan)
 	if err != nil {
 		return
@@ -443,7 +446,7 @@ func (c *CtyunCcseNodeAssociation) getAndMerge(ctx context.Context, plan *CtyunC
 }
 
 // dissociation 移除节点
-func (c *CtyunCcseNodeAssociation) dissociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
+func (c *ctyunCcseNodeAssociation) dissociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
 	params := &ccse2.CcseRemoveNodeV2Request{
 		ClusterId:  plan.ClusterID.ValueString(),
 		NodePoolId: plan.DefaultPoolID.ValueString(),
@@ -463,7 +466,7 @@ func (c *CtyunCcseNodeAssociation) dissociation(ctx context.Context, plan CtyunC
 }
 
 // checkAfterDissociation 移除后检查
-func (c *CtyunCcseNodeAssociation) checkAfterDissociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
+func (c *ctyunCcseNodeAssociation) checkAfterDissociation(ctx context.Context, plan CtyunCcseNodeAssociationConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(

@@ -63,6 +63,12 @@ func TestAccCtyunCcseNodeAssociationEcs(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"password",
+					"az_name",
+					"instance_id",
+					"instance_type",
+					"mirror_id",
+					"visibility_host_script",
+					"visibility_post_host_script",
 				},
 			},
 			{
