@@ -53,8 +53,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 }
 
 locals {
-  # cluster_name = "tf-ccse-cluster-${local.random_string}"
-  cluster_name = "tf-ccse-cluster-3feded8540d"
+  cluster_name = "tf-ccse-cluster-${local.random_string}"
 }
 
 resource "ctyun_ccse_cluster" "test" {
