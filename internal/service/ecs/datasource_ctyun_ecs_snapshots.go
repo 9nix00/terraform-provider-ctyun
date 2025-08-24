@@ -30,8 +30,8 @@ func (c *ctyunEcsSnapshots) Metadata(_ context.Context, request datasource.Metad
 }
 
 type ctyunEcsSnapshotsModel struct {
-	SnapshotID   types.String `tfsdk:"snapshot_id"`
-	SnapshotName types.String `tfsdk:"snapshot_name"`
+	SnapshotID   types.String `tfsdk:"id"`
+	SnapshotName types.String `tfsdk:"name"`
 	InstanceID   types.String `tfsdk:"instance_id"`
 	InstanceName types.String `tfsdk:"instance_name"`
 }
@@ -39,8 +39,8 @@ type ctyunEcsSnapshotsModel struct {
 type ctyunEcsSnapshotsConfig struct {
 	RegionID       types.String             `tfsdk:"region_id"`
 	InstanceID     types.String             `tfsdk:"instance_id"`
-	SnapshotID     types.String             `tfsdk:"snapshot_id"`
-	SnapshotName   types.String             `tfsdk:"snapshot_name"`
+	SnapshotID     types.String             `tfsdk:"id"`
+	SnapshotName   types.String             `tfsdk:"name"`
 	SnapshotStatus types.String             `tfsdk:"snapshot_status"`
 	PageNo         types.Int32              `tfsdk:"page_no"`
 	PageSize       types.Int32              `tfsdk:"page_size"`
@@ -56,27 +56,23 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 				Computed:    true,
 				Description: "资源池id，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 			},
-			"snapshot_id": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机快照ID",
 				Validators: []validator.String{
 					validator2.UUID(),
 				},
 			},
-			"snapshot_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机快照名称",
 			},
 			"snapshot_status": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "快照状态",
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机ID",
 				Validators: []validator.String{
 					validator2.UUID(),
@@ -84,23 +80,21 @@ func (c *ctyunEcsSnapshots) Schema(_ context.Context, _ datasource.SchemaRequest
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "页码，取值范围：正整数（≥1），注：默认值为1",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "每页记录数目，取值范围：[1,50]，注：默认值为10",
 			},
 			"snapshots": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"snapshot_id": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机快照ID",
 						},
-						"snapshot_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机快照名称",
 						},

@@ -10,6 +10,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
@@ -304,26 +305,27 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-			CtEbsApis:      ctebs.NewApis(client),
-			CtEcsApis:      ctecs.NewApis(client),
-			CtIamApis:      ctiam.NewApis(client),
-			CtImageApis:    ctimage.NewApis(client),
-			CtVpcApis:      ctvpc.NewApis(client),
-			CtEbmApis:      ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
-			SdkCtEbsApis:   ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
-			SdkCtEcsApis:   ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
-			SdkCtVpcApis:   ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
-			SdkCtZosApis:   ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
-			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
-			SdkDcs2Apis:    dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
-			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
-			SdkCtMysqlApis: mysql.NewApis(client),
-			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
-			SdkAmqpApis:    amqp.NewApis(client),
-			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
-			SdkCtPgsqlApis: pgsql2.NewApis(client),
-			SdkMongodbApis: mongodb2.NewApis(client),
-			SdkHpfsApis:    hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
+			CtEbsApis:       ctebs.NewApis(client),
+			CtEcsApis:       ctecs.NewApis(client),
+			CtIamApis:       ctiam.NewApis(client),
+			CtImageApis:     ctimage.NewApis(client),
+			CtVpcApis:       ctvpc.NewApis(client),
+			CtEbmApis:       ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtEbsApis:    ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
+			SdkCtEcsApis:    ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
+			SdkCtVpcApis:    ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
+			SdkCtZosApis:    ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
+			SdkCcseApis:     ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
+			SdkDcs2Apis:     dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
+			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
+			SdkCtMysqlApis:  mysql.NewApis(client),
+			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
+			SdkAmqpApis:     amqp.NewApis(client),
+			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
+			SdkCtPgsqlApis:  pgsql2.NewApis(client),
+			SdkMongodbApis:  mongodb2.NewApis(client),
+			SdkHpfsApis:     hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
+			CtEbsBackupApis: ctebsbackup.NewApis(fmt.Sprintf(endpointUrl, ctebsbackup.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -352,9 +354,14 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		nat.NewCtyunDNats(),
 		ebs.NewCtyunEbsVolumes(),
 		ebs.NewCtyunEbsSnapshots(),
+		ebs.NewCtyunEbsBackups(),
+		ebs.NewCtyunEbsBackupRepos(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
 		ecs.NewCtyunEcsSnapshots(),
+		ecs.NewCtyunEcsBackupRepos(),
+		ecs.NewCtyunEcsBackups(),
+		ecs.NewCtyunEcsBackupPolicies(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -413,6 +420,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ebs.NewCtyunEbs(),
 		ebs.NewCtyunEbsAssociation(),
 		ebs.NewCtyunEbsSnapshot(),
+		ebs.NewCtyunEbsBackup(),
+		ebs.NewCtyunEbsBackupRepo(),
 		image.NewCtyunImage(),
 		image.NewCtyunImageAssociationUser(),
 		ecs.NewCtyunKeypair(),
@@ -462,6 +471,11 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),
 		hpfs.NewCtyunHpfsInstance(),
+		ecs.NewCtyunEcsBackupRepo(),
+		ecs.NewCtyunEcsBackup(),
+		ecs.NewCtyunEcsBackupPolicy(),
+		ecs.NewCtyunEcsBackupPolicyBindInstances(),
+		ecs.NewCtyunEcsBackupPolicyBindRepo(),
 	)
 }
 

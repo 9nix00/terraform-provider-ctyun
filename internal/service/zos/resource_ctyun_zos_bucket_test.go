@@ -122,12 +122,14 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 	initTagStr, _ := json.Marshal(initTags)
 	initLogPrefix := "log/myfile"
 	initLogBucket := dependence.bucket
+	retention := "retention_year = 2"
 
 	updatedAcl := "private"
 	updatedTags := map[string]string{"a": "b"}
 	updatedTagStr, _ := json.Marshal(updatedTags)
 	updatedLogPrefix := "log/mylog"
 	updatedLogBucket := bucket
+	updatedRetention := "retention_day = 10"
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -140,7 +142,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, bucket, initAcl, azPolicy, storageType, initTagStr, initLogBucket, initLogPrefix),
+				Config: utils.LoadTestCase(resourceFile, rnd, bucket, initAcl, azPolicy, storageType, initTagStr, initLogBucket, initLogPrefix, retention),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "bucket", bucket),
 					resource.TestCheckResourceAttr(resourceName, "acl", initAcl),
@@ -151,6 +153,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "log_enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log_prefix", initLogPrefix),
 					resource.TestCheckResourceAttr(resourceName, "log_bucket", initLogBucket),
+					resource.TestCheckResourceAttr(resourceName, "retention_year", "2"),
 					func(s *terraform.State) error {
 						obj, _ := s.RootModule().Resources[resourceName]
 						c := obj.Primary.Attributes["tags.c"]
@@ -163,7 +166,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, bucket, initAcl, azPolicy, storageType, initTagStr, initLogBucket, initLogPrefix) +
+				Config: utils.LoadTestCase(resourceFile, rnd, bucket, initAcl, azPolicy, storageType, initTagStr, initLogBucket, initLogPrefix, retention) +
 					utils.LoadTestCase(datasourceFile, dnd, bucket),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "buckets.0.bucket", bucket),
@@ -172,7 +175,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, bucket, updatedAcl, azPolicy, storageType, updatedTagStr, updatedLogBucket, updatedLogPrefix),
+				Config: utils.LoadTestCase(resourceFile, rnd, bucket, updatedAcl, azPolicy, storageType, updatedTagStr, updatedLogBucket, updatedLogPrefix, updatedRetention),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "bucket", bucket),
 					resource.TestCheckResourceAttr(resourceName, "acl", updatedAcl),
@@ -183,6 +186,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "log_enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log_prefix", updatedLogPrefix),
 					resource.TestCheckResourceAttr(resourceName, "log_bucket", updatedLogBucket),
+					resource.TestCheckResourceAttr(resourceName, "retention_day", "10"),
 					func(s *terraform.State) error {
 						obj, _ := s.RootModule().Resources[resourceName]
 						a := obj.Primary.Attributes["tags.a"]

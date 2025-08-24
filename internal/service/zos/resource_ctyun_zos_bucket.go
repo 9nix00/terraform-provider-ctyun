@@ -50,6 +50,7 @@ type CtyunZosBucketConfig struct {
 	ID             types.String `tfsdk:"id"`
 	RegionID       types.String `tfsdk:"region_id"`
 	ACL            types.String `tfsdk:"acl"`
+	Name           types.String `tfsdk:"name"`
 	Bucket         types.String `tfsdk:"bucket"`
 	ProjectID      types.String `tfsdk:"project_id"`
 	StorageType    types.String `tfsdk:"storage_type"`
@@ -73,6 +74,10 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -168,7 +173,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString(""),
-				Description: "合规保留模式，创建后不支持修改。默认为空，表示不开启合规保留，若填写则必须为COMPLIANCE，且version_enabled必须为true",
+				Description: "合规保留模式，创建后不支持修改。默认为空，表示不开启合规保留，若填写，目前只支持为COMPLIANCE，且version_enabled必须为true",
 				Validators: []validator.String{
 					stringvalidator.OneOf("COMPLIANCE"),
 					stringvalidator.Any(
@@ -753,6 +758,7 @@ func (c *ctyunZosBucket) getAndMerge(ctx context.Context, plan *CtyunZosBucketCo
 	} else {
 		plan.IsEncrypted = types.BoolValue(false)
 	}
+	plan.Name = plan.Bucket
 	plan.ID = plan.Bucket
 	// 获取version_enabled
 	err = c.getVersionEnabled(ctx, plan)

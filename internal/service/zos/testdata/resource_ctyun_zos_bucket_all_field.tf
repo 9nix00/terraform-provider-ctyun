@@ -9,5 +9,7 @@ resource "ctyun_zos_bucket" "%[1]s" {
   log_enabled = true
   log_bucket = "%[7]s"
   log_prefix = "%[8]s"
+  retention_mode = "COMPLIANCE"
+  %[9]s
 }
 

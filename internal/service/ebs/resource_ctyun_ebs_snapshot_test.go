@@ -41,7 +41,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, diskId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "snapshot_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "disk_id", diskId),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
@@ -53,7 +53,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "snapshots.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "snapshots.0.snapshot_name", initName),
+					resource.TestCheckResourceAttr(datasourceName, "snapshots.0.name", initName),
 				),
 			},
 			{
