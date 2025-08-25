@@ -51,7 +51,7 @@ func NewCtyunScalingConfig() resource.Resource {
 
 func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性伸缩配置管理，支持配置的创建、修改和删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725/10241446",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

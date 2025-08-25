@@ -41,7 +41,7 @@ func (c *CtyunScalingEcsList) Metadata(ctx context.Context, request datasource.M
 
 func (c *CtyunScalingEcsList) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "",
+		Description: "弹性伸缩组内实例列表查询，具体细节可参考文档：https://www.ctyun.cn/document/10027725/10216515",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

@@ -2,9 +2,11 @@ package sfs
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // SfsSfsListReadWriteSfs1Api
@@ -52,6 +54,25 @@ func (a *SfsSfsListReadWriteSfs1Api) Do(ctx context.Context, credential core.Cre
 	return &resp, nil
 }
 
+// 实现自定义反序列化逻辑
+func (b *FlexibleBool) UnmarshalJSON(data []byte) error {
+	// 尝试解析为布尔值
+	if err := json.Unmarshal(data, &b.Value); err == nil {
+		return nil
+	}
+
+	// 尝试解析为字符串
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+
+	// 将字符串转换为布尔值
+	value := strings.ToLower(s) == "true"
+	b.Value = &value
+	return nil
+}
+
 type SfsSfsListReadWriteSfs1Request struct {
 	RegionID string `json:"regionID,omitempty"` /*  资源池ID  */
 	SfsUID   string `json:"sfsUID,omitempty"`   /*  弹性文件功能系统唯一 ID  */
@@ -77,6 +98,11 @@ type SfsSfsListReadWriteSfs1ReturnObjResponse struct {
 }
 
 type SfsSfsListReadWriteSfs1ReturnObjListResponse struct {
-	SfsUID   string `json:"sfsUID"`   /*  弹性文件功能系统唯一 ID  */
-	ReadOnly *bool  `json:"readOnly"` /*  是否是只读  */
+	SfsUID   string       `json:"sfsUID"`   /*  弹性文件功能系统唯一 ID  */
+	ReadOnly FlexibleBool `json:"readOnly"` /*  是否是只读  */
+}
+
+// 新增自定义类型处理 readOnly 字段
+type FlexibleBool struct {
+	Value *bool
 }

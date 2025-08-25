@@ -24,6 +24,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	"sync"
 )
 
@@ -85,4 +86,5 @@ type Apis struct {
 	SdkCrsApis     *crs.Apis
 	SdkHpfsApis    *hpfs.Apis
 	SdkScalingApis *scaling.Apis
+	SdkSfsApi      *sfs.Apis
 }

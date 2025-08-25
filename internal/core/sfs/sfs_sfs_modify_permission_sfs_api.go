@@ -57,12 +57,12 @@ type SfsSfsModifyPermissionSfsRequest struct {
 }
 
 type SfsSfsModifyPermissionSfsResponse struct {
-	StatusCode  int32                                         `json:"statusCode"`  /*  返回状态码(800 为成功，900 为失败)  */
-	Message     string                                        `json:"message"`     /*  响应描述，一般为英文描述  */
-	Description string                                        `json:"description"` /*  响应描述，一般为中文描述  */
-	ReturnObj   []*SfsSfsModifyPermissionSfsReturnObjResponse `json:"returnObj"`   /*  参考[returnObj]  */
-	ErrorCode   string                                        `json:"errorCode"`   /*  业务细分码，为 product.module.code 三段式码，参考[结果码]  */
-	Error       string                                        `json:"error"`       /*  业务细分码，为product.module.code三段式码大驼峰形式  */
+	StatusCode  int32                                       `json:"statusCode"`  /*  返回状态码(800 为成功，900 为失败)  */
+	Message     string                                      `json:"message"`     /*  响应描述，一般为英文描述  */
+	Description string                                      `json:"description"` /*  响应描述，一般为中文描述  */
+	ReturnObj   *SfsSfsModifyPermissionSfsReturnObjResponse `json:"returnObj"`   /*  参考[returnObj]  */
+	ErrorCode   string                                      `json:"errorCode"`   /*  业务细分码，为 product.module.code 三段式码，参考[结果码]  */
+	Error       string                                      `json:"error"`       /*  业务细分码，为product.module.code三段式码大驼峰形式  */
 }
 
 type SfsSfsModifyPermissionSfsReturnObjResponse struct {
