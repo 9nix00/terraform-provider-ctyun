@@ -100,7 +100,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -110,7 +110,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"subnet_ip": schema.StringAttribute{

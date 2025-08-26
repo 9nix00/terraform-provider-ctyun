@@ -138,7 +138,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -148,7 +148,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
@@ -158,7 +158,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"name": schema.StringAttribute{

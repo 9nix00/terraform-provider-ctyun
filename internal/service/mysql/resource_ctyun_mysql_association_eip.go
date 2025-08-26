@@ -46,7 +46,7 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 				Required:    true,
 				Description: "弹性id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.EipValidate(),
 				},
 			},
 			"inst_id": schema.StringAttribute{

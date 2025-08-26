@@ -101,7 +101,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"health_check_id": schema.StringAttribute{

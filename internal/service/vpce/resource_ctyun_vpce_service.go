@@ -93,7 +93,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -152,7 +152,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"auto_connection": schema.BoolAttribute{

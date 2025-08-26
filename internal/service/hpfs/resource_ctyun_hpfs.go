@@ -181,7 +181,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -191,7 +191,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"master_order_id": schema.StringAttribute{

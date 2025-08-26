@@ -107,7 +107,7 @@ func (c *ctyunEbmInterface) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"security_group_ids": schema.SetAttribute{

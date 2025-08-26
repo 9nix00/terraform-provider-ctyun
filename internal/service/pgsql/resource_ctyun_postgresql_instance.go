@@ -151,7 +151,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -161,7 +161,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
@@ -171,7 +171,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"appoint_vip": schema.StringAttribute{

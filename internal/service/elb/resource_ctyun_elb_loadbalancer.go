@@ -76,7 +76,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -86,7 +86,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -112,6 +112,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 						path.MatchRoot("resource_type"),
 						types.StringValue(business.LbResourceTypeExternal),
 					),
+					validator2.EipValidate(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

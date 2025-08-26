@@ -58,7 +58,7 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 				Required:    true,
 				Description: "弹性id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.EipValidate(),
 				},
 			},
 			"eip": schema.StringAttribute{

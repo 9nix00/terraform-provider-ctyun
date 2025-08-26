@@ -54,7 +54,7 @@ func (c *ctyunSecurityGroupRule) Schema(_ context.Context, _ resource.SchemaRequ
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"direction": schema.StringAttribute{

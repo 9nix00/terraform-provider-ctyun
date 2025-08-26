@@ -84,7 +84,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"spec": schema.Int32Attribute{

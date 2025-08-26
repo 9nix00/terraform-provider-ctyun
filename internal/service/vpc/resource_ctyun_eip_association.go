@@ -44,7 +44,7 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.EipValidate(),
 				},
 			},
 			"association_type": schema.StringAttribute{

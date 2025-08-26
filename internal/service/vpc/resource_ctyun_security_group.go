@@ -49,7 +49,7 @@ func (c *ctyunSecurityGroup) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			"name": schema.StringAttribute{

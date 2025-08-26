@@ -132,7 +132,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.VpcValidate(),
 				},
 			},
 			//"host_type": schema.StringAttribute{
@@ -149,7 +149,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SubnetValidate(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
@@ -159,7 +159,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"name": schema.StringAttribute{
