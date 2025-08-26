@@ -1,11 +1,11 @@
-package ecs
+package ebs
 
 import (
 	"context"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
-	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -21,34 +21,34 @@ import (
 )
 
 /*
-云主机备份策略绑定存储库
+云硬盘备份策略绑定存储库
 */
 
-func NewCtyunEcsBackupPolicyBindRepo() resource.Resource {
-	return &ctyunEcsBackupPolicyBindRepo{}
+func NewCtyunEbsBackupPolicyBindRepo() resource.Resource {
+	return &ctyunEbsBackupPolicyBindRepo{}
 }
 
-type ctyunEcsBackupPolicyBindRepo struct {
+type ctyunEbsBackupPolicyBindRepo struct {
 	meta *common.CtyunMetadata
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_ecs_backup_policy_bind_repo"
+func (c *ctyunEbsBackupPolicyBindRepo) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_ebs_backup_policy_bind_repo"
 }
 
-type CtyunEcsBackupPolicyBindRepoConfig struct {
+type CtyunEbsBackupPolicyBindRepoConfig struct {
 	PolicyID     types.String `tfsdk:"policy_id"`
 	RegionID     types.String `tfsdk:"region_id"`
 	RepositoryID types.String `tfsdk:"repository_id"`
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10235038**`,
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026752/10037453**`,
 		Attributes: map[string]schema.Attribute{
 			"policy_id": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机备份策略id",
+				Description: "云硬盘备份策略id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -68,7 +68,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.Sche
 
 			"repository_id": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机备份存储库ID",
+				Description: "云硬盘备份存储库ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -80,14 +80,14 @@ func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.Sche
 	}
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var plan CtyunEcsBackupPolicyBindRepoConfig
+	var plan CtyunEbsBackupPolicyBindRepoConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -115,17 +115,17 @@ func (c *ctyunEcsBackupPolicyBindRepo) Create(ctx context.Context, request resou
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunEcsBackupPolicyBindRepoConfig
+	var state CtyunEbsBackupPolicyBindRepoConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -143,14 +143,14 @@ func (c *ctyunEcsBackupPolicyBindRepo) Read(ctx context.Context, request resourc
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunEcsBackupPolicyBindRepoConfig
+	var state CtyunEbsBackupPolicyBindRepoConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -170,7 +170,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) Delete(ctx context.Context, request resou
 	}
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunEbsBackupPolicyBindRepo) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -179,16 +179,16 @@ func (c *ctyunEcsBackupPolicyBindRepo) Configure(_ context.Context, request reso
 }
 
 // create 创建
-func (c *ctyunEcsBackupPolicyBindRepo) create(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) create(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (err error) {
 
-	params := &ctecs2.CtecsInstanceBackupPolicyBindRepoRequest{
+	params := &ctebsbackup.EbsbackupEbsBackupPolicyBindRepoRequest{
 		RegionID:     plan.RegionID.ValueString(),
-		PolicyID:     plan.PolicyID.ValueString(),
+		PolicyIDs:    plan.PolicyID.ValueString(),
 		RepositoryID: plan.RepositoryID.ValueString(),
 	}
 
 	// 创建实例
-	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsInstanceBackupPolicyBindRepoApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupEbsBackupPolicyBindRepoApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
@@ -204,13 +204,13 @@ func (c *ctyunEcsBackupPolicyBindRepo) create(ctx context.Context, plan CtyunEcs
 	return
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, cfg CtyunEcsBackupPolicyBindRepoConfig) (err error) {
-	params := &ctecs2.CtecsListInstanceBackupPolicyRequest{
+func (c *ctyunEbsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, cfg CtyunEbsBackupPolicyBindRepoConfig) (err error) {
+	params := &ctebsbackup.EbsbackupListBackupPolicyRequest{
 		RegionID: cfg.RegionID.ValueString(),
 		PolicyID: cfg.PolicyID.ValueString(),
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupListBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err
 	} else if resp.StatusCode == common.ErrorStatusCode {
@@ -226,12 +226,12 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, 
 	if cfg.RepositoryID.ValueString() != "" {
 		//1.使用限制，本接口只支持在拉萨3、上海7、广州6、郴州2、长沙3、北京5、内蒙6、南京3、重庆2、合肥2、成都4、晋中、昆明2、乌鲁木齐27、福州25、衡阳3、长沙37、张家界2、华北2、央企北京1、华东1、上海32、上海33、上海36资源池进行公测
 		//2.备份策略与存储库必须存在
-		params := &ctecs2.CtecsListInstanceBackupRepoRequest{
+		params := &ctebsbackup.EbsbackupListEbsBackupRepoRequest{
 			RegionID:     cfg.RegionID.ValueString(),
 			RepositoryID: cfg.RepositoryID.ValueString(),
 		}
 		// 调用API
-		respRepo, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupRepoApi.Do(ctx, c.meta.SdkCredential, params)
+		respRepo, err := c.meta.Apis.CtEbsBackupApis.EbsbackupListEbsBackupRepoApi.Do(ctx, c.meta.SdkCredential, params)
 		if err != nil {
 			return err
 		} else if respRepo.StatusCode == common.ErrorStatusCode {
@@ -240,19 +240,6 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, 
 		} else if respRepo.ReturnObj == nil {
 			err = common.InvalidReturnObjError
 			return err
-		} else if len(respRepo.ReturnObj.Results) != 1 || respRepo.ReturnObj.Results[0].RepositoryID == "" {
-			return fmt.Errorf("存储库必须存在")
-		}
-		//3.备份策略与存储库处于相同的企业项目下
-		if respRepo.ReturnObj.Results[0].ProjectID != resp.ReturnObj.PolicyList[0].ProjectID {
-			return fmt.Errorf("备份策略与存储库需处于相同的企业项目下")
-		}
-		//4.备份策略在此之前未绑定存储库，且该存储库未到期
-		if len(resp.ReturnObj.PolicyList[0].RepositoryList) != 0 {
-			return fmt.Errorf("备份策略已绑定存储库，不可再绑定")
-		}
-		if respRepo.ReturnObj.Results[0].Expired {
-			return fmt.Errorf("该存储库已到期")
 		}
 	}
 
@@ -260,7 +247,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeBindRepo(ctx context.Context, 
 }
 
 // checkAfterBindRepo 绑定后检查
-func (c *ctyunEcsBackupPolicyBindRepo) checkAfterBindRepo(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) checkAfterBindRepo(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -281,26 +268,26 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkAfterBindRepo(ctx context.Context, p
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联  regionID： %s", plan.PolicyID.String(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString())
+		err = fmt.Errorf("云硬盘备份策略 %s 和存储库 %s 未关联  regionID： %s", plan.PolicyID.String(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString())
 	}
 	return nil
 }
 
 // checkBeforeDissociate 解绑前检查
-func (c *ctyunEcsBackupPolicyBindRepo) checkBeforeDissociate(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) checkBeforeDissociate(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (err error) {
 	hasBind, err := c.getBindingRepos(ctx, plan)
 	if err != nil {
 		return
 	}
 	if !hasBind {
-		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联", plan.PolicyID.String(), plan.RepositoryID.ValueString())
+		err = fmt.Errorf("云硬盘备份策略 %s 和存储库 %s 未关联", plan.PolicyID.String(), plan.RepositoryID.ValueString())
 		return
 	}
 	return
 }
 
 // checkAfterDissociation 解绑后检查
-func (c *ctyunEcsBackupPolicyBindRepo) checkAfterDissociation(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) checkAfterDissociation(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -319,20 +306,21 @@ func (c *ctyunEcsBackupPolicyBindRepo) checkAfterDissociation(ctx context.Contex
 		return
 	}
 	if !executeSuccessFlag {
-		return fmt.Errorf("云主机备份策略 %s 和存储库%s  解绑失败", plan.PolicyID.ValueString(), plan.RepositoryID.ValueString())
+		return fmt.Errorf("云硬盘备份策略 %s 和存储库%s  解绑失败", plan.PolicyID.ValueString(), plan.RepositoryID.ValueString())
 	}
 	return nil
 }
 
 // dissociate 解绑
-func (c *ctyunEcsBackupPolicyBindRepo) delete(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (err error) {
-	params := &ctecs2.CtecsInstanceBackupPolicyUnbindRepoRequest{
-		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.PolicyID.ValueString(),
+func (c *ctyunEbsBackupPolicyBindRepo) delete(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (err error) {
+	params := &ctebsbackup.EbsbackupEbsBackupPolicyUnbindRepoRequest{
+		RegionID:     plan.RegionID.ValueString(),
+		PolicyIDs:    plan.PolicyID.ValueString(),
+		RepositoryID: plan.RepositoryID.ValueString(),
 	}
 
 	// 创建实例
-	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsInstanceBackupPolicyUnbindRepoApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupEbsBackupPolicyUnbindRepoApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
@@ -348,14 +336,14 @@ func (c *ctyunEcsBackupPolicyBindRepo) delete(ctx context.Context, plan CtyunEcs
 	return
 }
 
-func (c *ctyunEcsBackupPolicyBindRepo) getBindingRepos(ctx context.Context, plan CtyunEcsBackupPolicyBindRepoConfig) (hasBind bool, err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) getBindingRepos(ctx context.Context, plan CtyunEbsBackupPolicyBindRepoConfig) (hasBind bool, err error) {
 
-	params := &ctecs2.CtecsListInstanceBackupPolicyRequest{
+	params := &ctebsbackup.EbsbackupListBackupPolicyRequest{
 		RegionID: plan.RegionID.ValueString(),
 		PolicyID: plan.PolicyID.ValueString(),
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.CtEbsBackupApis.EbsbackupListBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
@@ -387,7 +375,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) getBindingRepos(ctx context.Context, plan
 }
 
 // getAndMerge 查询绑定关系
-func (c *ctyunEcsBackupPolicyBindRepo) getAndMerge(ctx context.Context, plan *CtyunEcsBackupPolicyBindRepoConfig) (err error) {
+func (c *ctyunEbsBackupPolicyBindRepo) getAndMerge(ctx context.Context, plan *CtyunEbsBackupPolicyBindRepoConfig) (err error) {
 	policyId, repositoryID, regionID := plan.PolicyID.ValueString(), plan.RepositoryID.ValueString(), plan.RegionID.ValueString()
 	hasBind, err := c.getBindingRepos(ctx, *plan)
 
@@ -395,7 +383,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) getAndMerge(ctx context.Context, plan *Ct
 		return
 	}
 	if !hasBind {
-		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联  regionID： %s", policyId, repositoryID, regionID)
+		err = fmt.Errorf("云硬盘备份策略 %s 和存储库 %s 未关联  regionID： %s", policyId, repositoryID, regionID)
 		return
 	}
 	return

@@ -49,7 +49,6 @@ type CtyunEbsBackupRepoConfig struct {
 	Size            types.Int64  `tfsdk:"size"`
 	AutoRenewStatus types.Int64  `tfsdk:"auto_renew_status"`
 	OnDemand        types.String `tfsdk:"on_demand"`
-	ClientToken     types.String `tfsdk:"client_token"`
 
 	Status     types.String  `tfsdk:"status"`
 	FreeSize   types.Float64 `tfsdk:"free_size"`
@@ -134,6 +133,9 @@ func (c *ctyunEbsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.Int64{
 					int64validator.OneOf(0, 1),
 				},
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 			"on_demand": schema.StringAttribute{
 				Optional:    true,
@@ -144,10 +146,6 @@ func (c *ctyunEbsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-			},
-			"client_token": schema.StringAttribute{
-				Optional:    true,
-				Description: "用于保证订单幂等性。要求单个云平台账户内唯一。使用同一个ClientToken值，其他请求参数相同时，则代表为同一个请求。",
 			},
 
 			// 返回字段

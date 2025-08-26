@@ -96,7 +96,7 @@ type EbsbackupCreateBackupReturnObjResponse struct {
 	●SSD：超高IO。
 	●FAST-SSD：极速型SSD。
 	●XSSD-0、XSSD-1、XSSD-2：X系列云硬盘。  */
-	Pass         *bool  `json:"pass"`         /*  是否支持PASS。  */
+	Paas         *bool  `json:"paas"`         /*  是否支持PAAS。  */
 	InstanceID   string `json:"instanceID"`   /*  云硬盘挂载的云主机ID。  */
 	InstanceName string `json:"instanceName"` /*  云硬盘挂载的云主机名称。  */
 	ProjectID    string `json:"projectID"`    /*  企业项目ID。  */
