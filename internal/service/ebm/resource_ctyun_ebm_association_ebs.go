@@ -87,7 +87,7 @@ func (c *ctyunEbmAssociationEbs) Schema(_ context.Context, _ resource.SchemaRequ
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"ebs_id": schema.StringAttribute{

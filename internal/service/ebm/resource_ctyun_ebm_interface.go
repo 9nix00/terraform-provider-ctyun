@@ -116,7 +116,7 @@ func (c *ctyunEbmInterface) Schema(_ context.Context, _ resource.SchemaRequest, 
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(validator2.UUID()),
+					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
 				},
 			},
 			"ipv4": schema.StringAttribute{

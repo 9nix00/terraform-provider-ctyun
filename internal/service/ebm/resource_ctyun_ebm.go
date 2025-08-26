@@ -257,7 +257,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				},
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(validator2.UUID()),
+					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
 				},
 			},
 			"system_disk_type": schema.StringAttribute{

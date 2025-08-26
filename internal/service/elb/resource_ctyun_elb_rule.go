@@ -79,7 +79,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"description": schema.StringAttribute{
@@ -167,7 +167,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 							Required:    true,
 							Description: "后端服务组ID",
 							Validators: []validator.String{
-								validator2.UUID(),
+								stringvalidator.UTF8LengthAtLeast(1),
 							},
 						},
 						"weight": schema.Int32Attribute{

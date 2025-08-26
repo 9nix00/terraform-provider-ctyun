@@ -148,7 +148,7 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 				Required:    true,
 				Description: "镜像id，可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

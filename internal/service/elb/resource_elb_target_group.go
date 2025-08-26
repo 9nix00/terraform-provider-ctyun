@@ -109,7 +109,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Computed:    true,
 				Description: "需要关联的健康检查Id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"algorithm": schema.StringAttribute{
