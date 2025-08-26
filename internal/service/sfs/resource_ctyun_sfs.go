@@ -61,6 +61,9 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"is_encrypt": schema.BoolAttribute{
 				Optional:    true,
@@ -86,6 +89,9 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"sfs_type": schema.StringAttribute{
 				Required:    true,
@@ -110,6 +116,9 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "文件系统名称；单账户单资源池下，命名需唯一",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"sfs_size": schema.Int32Attribute{
 				Required:    true,
@@ -153,6 +162,9 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -160,12 +172,18 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"id": schema.StringAttribute{

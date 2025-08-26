@@ -129,6 +129,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(5),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"description": schema.StringAttribute{

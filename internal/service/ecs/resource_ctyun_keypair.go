@@ -55,6 +55,9 @@ func (c *ctyunKeypair) Schema(_ context.Context, _ resource.SchemaRequest, respo
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"finger_print": schema.StringAttribute{
 				Computed:    true,

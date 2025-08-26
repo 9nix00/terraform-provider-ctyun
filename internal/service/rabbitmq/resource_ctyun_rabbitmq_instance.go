@@ -163,6 +163,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(3),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"vpc_id": schema.StringAttribute{

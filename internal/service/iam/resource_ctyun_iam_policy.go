@@ -105,7 +105,10 @@ func (c *ctyunPolicy) Schema(_ context.Context, _ resource.SchemaRequest, respon
 									ElementType: types.StringType,
 									Description: "资源池级别的维度，当权限点为资源池级别时候才生效，不填默认写*",
 									Default:     setdefault.StaticValue(types.SetValueMust(basetypes.StringType{}, []attr.Value{types.StringValue("*")})),
-									Validators:  []validator.Set{},
+									Validators: []validator.Set{
+										setvalidator.SizeAtLeast(1),
+										setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+									},
 								},
 							},
 						},

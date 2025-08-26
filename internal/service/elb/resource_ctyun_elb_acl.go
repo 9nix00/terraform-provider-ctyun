@@ -84,7 +84,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(10),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"id": schema.StringAttribute{

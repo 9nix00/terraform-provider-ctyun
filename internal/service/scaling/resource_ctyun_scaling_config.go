@@ -12,6 +12,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -61,6 +62,9 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -73,6 +77,9 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"image_id": schema.StringAttribute{
 				Required:    true,
 				Description: "镜像ID，可以通过data.ctyun_images(datasource)获取",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			//"security_group_id_list": schema.SetAttribute{
 			//	ElementType: types.StringType,
@@ -83,6 +90,9 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
 				Description: "规格名称",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"volumes": schema.ListNestedAttribute{
 				Required:    true,
@@ -92,10 +102,16 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 						"volume_type": schema.StringAttribute{
 							Required:    true,
 							Description: "磁盘类型: SATA/SAS/SSD/SATA-KUNPENG/SATA-HAIGUANG/SAS-KUNPENG/SAS-HAIGUANG/SSD-genric",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"volume_size": schema.Int32Attribute{
 							Required:    true,
 							Description: "磁盘大小(GB)",
+							Validators: []validator.Int32{
+								int32validator.AtLeast(1),
+							},
 						},
 						"disk_mode": schema.StringAttribute{
 							Optional:    true,
@@ -200,10 +216,16 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 						"key": schema.StringAttribute{
 							Required:    true,
 							Description: "标签键",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
 							Description: "标签值",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},
@@ -212,6 +234,10 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				ElementType: types.StringType,
 				Optional:    true,
 				Description: "可用区列表，仅多可用区资源池支持",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
 			},
 			"monitor_service": schema.BoolAttribute{
 				Optional:    true,

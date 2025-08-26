@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 )
 
 type ctyunSfsPermissionGroup struct {
@@ -74,10 +75,20 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "权限组名称。名称不能重复，长度为2-63字符，只能由数字、字母(区分大小写)、-组成，不能以数字和-开头、且不能以-结尾",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 63),
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?$`),
+						"权限组名称只能由数字、字母(区分大小写)、-组成，不能以数字和-开头、且不能以-结尾",
+					),
+				},
 			},
 			//"network_type": schema.StringAttribute{
 			//	Required:    true,
