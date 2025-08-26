@@ -55,7 +55,7 @@ type EbsCreatePolicyEbsSnapRequest struct {
 	●true：启用。
 	●false：不启用。
 	默认为true。  */
-	ProjectID *string `json:"projectID,omitempty"` /*  企业项目，默认为“0”。  */
+	ProjectID string `json:"projectID,omitempty"` /*  企业项目，默认为“0”。  */
 }
 
 type EbsCreatePolicyEbsSnapResponse struct {

@@ -38,7 +38,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) Metadata(_ context.Context, request 
 }
 
 type CtyunEcsBackupPolicyBindInstancesConfig struct {
-	Id             types.String `tfsdk:"id"`
+	PolicyID       types.String `tfsdk:"policy_id"`
 	RegionID       types.String `tfsdk:"region_id"`
 	InstanceIDList types.String `tfsdk:"instance_id_list"`
 }
@@ -47,7 +47,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) Schema(_ context.Context, _ resource
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10033775**`,
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
+			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份策略id",
 				Validators: []validator.String{
@@ -187,7 +187,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) create(ctx context.Context, plan Cty
 
 	params := &ctecs2.CtecsInstanceBackupPolicyBindInstancesRequest{
 		RegionID:       plan.RegionID.ValueString(),
-		PolicyID:       plan.Id.ValueString(),
+		PolicyID:       plan.PolicyID.ValueString(),
 		InstanceIDList: plan.InstanceIDList.ValueString(),
 	}
 
@@ -211,7 +211,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) create(ctx context.Context, plan Cty
 func (c *ctyunEcsBackupPolicyBindInstances) checkBeforeBindInstances(ctx context.Context, cfg CtyunEcsBackupPolicyBindInstancesConfig) (err error) {
 	params := &ctecs2.CtecsListInstanceBackupPolicyRequest{
 		RegionID: cfg.RegionID.ValueString(),
-		PolicyID: cfg.Id.ValueString(),
+		PolicyID: cfg.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
@@ -228,39 +228,44 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkBeforeBindInstances(ctx context
 	}
 
 	if cfg.InstanceIDList.ValueString() != "" {
+		// 拆分实例ID列表
+		instanceIDs := strings.Split(cfg.InstanceIDList.ValueString(), ",")
+		// 对每个实例ID进行校验
+		for _, instanceID := range instanceIDs {
+			//1.使用限制，本接口只支持在拉萨3、上海7、广州6、郴州2、长沙3、北京5、内蒙6、南京3、重庆2、合肥2、成都4、晋中、昆明2、乌鲁木齐27、福州25、衡阳3、长沙37、张家界2、华北2、央企北京1、华东1、上海32、上海33、上海36资源池进行公测
+			//3.云主机备份策略可绑定的云主机有配额限制，请在配额限制范围内绑定
+			//5.云主机盘限制：不可含有本地盘、共享盘、ISCSI磁盘模式盘
 
-		//1.使用限制，本接口只支持在拉萨3、上海7、广州6、郴州2、长沙3、北京5、内蒙6、南京3、重庆2、合肥2、成都4、晋中、昆明2、乌鲁木齐27、福州25、衡阳3、长沙37、张家界2、华北2、央企北京1、华东1、上海32、上海33、上海36资源池进行公测
-		//3.云主机备份策略可绑定的云主机有配额限制，请在配额限制范围内绑定
-		//5.云主机盘限制：不可含有本地盘、共享盘、ISCSI磁盘模式盘
-
-		//查询云主机
-		instance_details_resp, err2 := c.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, c.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
-			RegionId:   cfg.RegionID.ValueString(),
-			InstanceId: cfg.Id.ValueString(),
-		})
-		if err2 != nil {
-			// 实例已经被退订的情况
-			if err2.ErrorCode() == common.EcsInstanceNotFound {
-				return nil
+			//查询云主机
+			instance_details_resp, err2 := c.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, c.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
+				RegionId:   cfg.RegionID.ValueString(),
+				InstanceId: instanceID,
+			})
+			if err2 != nil {
+				// 实例已经被退订的情况
+				if err2.ErrorCode() == common.EcsInstanceNotFound {
+					return nil
+				}
+				return err2
 			}
-			return err2
+
+			status := instance_details_resp.InstanceStatus
+			allowedStatuses := map[string]bool{
+				business.EcsStatusRunning: true,
+				business.EcsStatusStopped: true,
+			}
+			//2.备份策略与云主机处于相同的企业项目下，才可进行绑定
+			if instance_details_resp.ProjectId != resp.ReturnObj.PolicyList[0].ProjectID {
+				return fmt.Errorf("备份策略与云主机处于相同的企业项目下，才可进行绑定")
+			}
+
+			//4.云主机存在且状态为运行中或关机，不可重复绑定
+			if !allowedStatuses[status] {
+				return fmt.Errorf("云主机状态无效(当前:%s)，仅允许在%s或%s状态下绑定备份策略",
+					status, business.EcsStatusRunning, business.EcsStatusStopped)
+			}
 		}
 
-		status := instance_details_resp.InstanceStatus
-		allowedStatuses := map[string]bool{
-			business.EcsStatusRunning: true,
-			business.EcsStatusStopped: true,
-		}
-		//2.备份策略与云主机处于相同的企业项目下，才可进行绑定
-		if instance_details_resp.ProjectId != resp.ReturnObj.PolicyList[0].ProjectID {
-			return fmt.Errorf("备份策略与云主机处于相同的企业项目下，才可进行绑定")
-		}
-
-		//4.云主机存在且状态为运行中或关机，不可重复绑定
-		if !allowedStatuses[status] {
-			return fmt.Errorf("云主机状态无效(当前:%s)，仅允许在%s或%s状态下绑定备份策略",
-				status, business.EcsStatusRunning, business.EcsStatusStopped)
-		}
 	}
 
 	return
@@ -291,7 +296,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkAfterBindInstances(ctx context.
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("云主机策略 %s 和云主机 %s 未关联  regionID： %s", plan.Id.String(), plan.InstanceIDList.ValueString(), plan.RegionID.ValueString())
+		err = fmt.Errorf("云主机策略 %s 和云主机 %s 未关联  regionID： %s", plan.PolicyID.String(), plan.InstanceIDList.ValueString(), plan.RegionID.ValueString())
 	}
 	return nil
 }
@@ -304,7 +309,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkBeforeDissociate(ctx context.Co
 		return
 	}
 	if bindID != plan.InstanceIDList.ValueString() {
-		err = fmt.Errorf("云主机策略 %s 和云主机 %s 未关联", plan.Id.String(), plan.InstanceIDList.ValueString())
+		err = fmt.Errorf("云主机策略 %s 和云主机 %s 未关联", plan.PolicyID.String(), plan.InstanceIDList.ValueString())
 		return
 	}
 	return
@@ -331,7 +336,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkAfterDissociation(ctx context.C
 		return
 	}
 	if !executeSuccessFlag {
-		return fmt.Errorf("云主机策略 %s 和云主机%s  解绑失败", plan.Id.ValueString(), plan.InstanceIDList.ValueString())
+		return fmt.Errorf("云主机策略 %s 和云主机%s  解绑失败", plan.PolicyID.ValueString(), plan.InstanceIDList.ValueString())
 	}
 	return nil
 }
@@ -340,7 +345,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) checkAfterDissociation(ctx context.C
 func (c *ctyunEcsBackupPolicyBindInstances) delete(ctx context.Context, plan CtyunEcsBackupPolicyBindInstancesConfig) (err error) {
 	params := &ctecs2.CtecsInstanceBackupPolicyUnbindInstancesRequest{
 		RegionID:       plan.RegionID.ValueString(),
-		PolicyID:       plan.Id.ValueString(),
+		PolicyID:       plan.PolicyID.ValueString(),
 		InstanceIDList: plan.InstanceIDList.ValueString(),
 	}
 
@@ -365,7 +370,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) getBindingInstances(ctx context.Cont
 	// 组装请求体
 	params := &ctecs2.CtecsListInstanceBackupPolicyBindInstancesRequest{
 		RegionID: plan.RegionID.ValueString(),
-		PolicyID: plan.Id.ValueString(),
+		PolicyID: plan.PolicyID.ValueString(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsListInstanceBackupPolicyBindInstancesApi.Do(ctx, c.meta.SdkCredential, params)
@@ -390,7 +395,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) getBindingInstances(ctx context.Cont
 
 // getAndMerge 查询绑定关系
 func (c *ctyunEcsBackupPolicyBindInstances) getAndMerge(ctx context.Context, plan *CtyunEcsBackupPolicyBindInstancesConfig) (err error) {
-	policyId, instanceIDList, regionID := plan.Id.ValueString(), plan.InstanceIDList.ValueString(), plan.RegionID.ValueString()
+	policyId, instanceIDList, regionID := plan.PolicyID.ValueString(), plan.InstanceIDList.ValueString(), plan.RegionID.ValueString()
 	bindID, err := c.getBindingInstances(ctx, *plan)
 	if err != nil {
 		return
@@ -418,7 +423,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) ImportState(ctx context.Context, req
 	}
 
 	cfg.InstanceIDList = types.StringValue(instanceIDList)
-	cfg.Id = types.StringValue(policyID)
+	cfg.PolicyID = types.StringValue(policyID)
 	cfg.RegionID = types.StringValue(regionID)
 
 	// 查询远端

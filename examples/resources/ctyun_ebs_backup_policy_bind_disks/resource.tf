@@ -1,0 +1,16 @@
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  env = "prod"
+}
+
+resource "ctyun_ebs_backup_policy_bind_disks" "test" {
+  id = "a4b793881bbd42edaa6a0002900e5819"
+  disk_id_list = "ae432721-61bf-45b7-b207-7e3256c1c2d6"
+}
