@@ -42,7 +42,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "磁盘命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾",
+				Description: "磁盘命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 63),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "磁盘名称不符合规则"),
@@ -70,7 +70,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"size": schema.Int64Attribute{
 				Required:    true,
-				Description: "磁盘大小，单位GB，取值范围[10, 32768]，不支持缩容",
+				Description: "磁盘大小，单位GB，取值范围[10, 32768]，支持更新（不支持缩容）",
 				Validators: []validator.Int64{
 					int64validator.Between(10, 32768),
 				},
@@ -109,8 +109,9 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Description: "订购的受理单id",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "磁盘id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "磁盘id",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,

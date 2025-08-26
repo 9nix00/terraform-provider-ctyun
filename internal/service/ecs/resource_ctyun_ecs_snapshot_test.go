@@ -42,7 +42,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "snapshot_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceId),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
@@ -51,7 +51,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "snapshot_name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -61,7 +61,7 @@ func TestAccCtyunSnapshot(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "snapshots.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "snapshots.0.snapshot_name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "snapshots.0.name", updatedName),
 				),
 			},
 			{

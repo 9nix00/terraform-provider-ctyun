@@ -87,8 +87,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -367,7 +368,7 @@ func (c *ctyunCcseNodePool) Create(ctx context.Context, request resource.CreateR
 	}
 
 	plan.ID = types.StringValue(id)
-
+	time.Sleep(30 * time.Second)
 	// 扩容
 	planB := plan
 	planB.NodeNum = types.Int32Value(0)

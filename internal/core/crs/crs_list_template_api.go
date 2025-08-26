@@ -79,11 +79,11 @@ type CrsListTemplateResponse struct {
 }
 
 type CrsListTemplateReturnObjResponse struct {
-	Total   int32                                    `json:"total,omitempty"`   /*  总条数  */
-	Size    int32                                    `json:"size,omitempty"`    /*  每页条数  */
-	Current int32                                    `json:"current,omitempty"` /*  当前页码  */
-	Pages   int32                                    `json:"pages,omitempty"`   /*  总页数  */
-	Records *CrsListTemplateReturnObjRecordsResponse `json:"records"`           /*  模板市场列表  */
+	Total   int32                                      `json:"total,omitempty"`   /*  总条数  */
+	Size    int32                                      `json:"size,omitempty"`    /*  每页条数  */
+	Current int32                                      `json:"current,omitempty"` /*  当前页码  */
+	Pages   int32                                      `json:"pages,omitempty"`   /*  总页数  */
+	Records []*CrsListTemplateReturnObjRecordsResponse `json:"records"`           /*  模板市场列表  */
 }
 
 type CrsListTemplateReturnObjRecordsResponse struct {
@@ -91,4 +91,6 @@ type CrsListTemplateReturnObjRecordsResponse struct {
 	RepositoryName   string `json:"repositoryName,omitempty"`   /*  插件名称  */
 	ImageUrl         string `json:"imageUrl,omitempty"`         /*  公网地址  */
 	ImageUrlInternal string `json:"imageUrlInternal,omitempty"` /*  内网地址  */
+	RepositoryId     int64  `json:"repositoryId"`
+	NamespaceId      int64  `json:"namespaceId"`
 }

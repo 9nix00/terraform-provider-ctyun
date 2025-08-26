@@ -50,8 +50,9 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10042658/10048507**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID，使用中转IP地址，和transit_ip相等",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID，使用中转IP地址，和transit_ip相等",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

@@ -38,8 +38,9 @@ func (c *ctyunEcsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730/10335345**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "云主机快照id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "云主机快照id",
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
@@ -51,7 +52,7 @@ func (c *ctyunEcsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 					validator2.UUID(),
 				},
 			},
-			"snapshot_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机快照名称，长度为2-63字符，头尾不支持输入空格。支持更新",
 				Validators: []validator.String{
@@ -424,7 +425,7 @@ func (c *ctyunEcsSnapshot) ImportState(ctx context.Context, request resource.Imp
 type CtyunEcsSnapshotConfig struct {
 	Id             types.String `tfsdk:"id"`
 	InstanceId     types.String `tfsdk:"instance_id"`
-	SnapshotName   types.String `tfsdk:"snapshot_name"`
+	SnapshotName   types.String `tfsdk:"name"`
 	SnapshotStatus types.String `tfsdk:"snapshot_status"`
 	ProjectId      types.String `tfsdk:"project_id"`
 	RegionId       types.String `tfsdk:"region_id"`

@@ -187,8 +187,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "后端服务组ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "后端服务组ID",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,

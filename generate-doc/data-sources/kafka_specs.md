@@ -94,8 +94,8 @@ Read-Only:
 
 - `cpu` (Number) cpu核心数
 - `description` (String) 产品规格描述
-- `flow` (String) 单个代理流量规格
-- `max_partition` (String) 单个代理最大分区数
+- `flow` (Number) 单个代理流量规格
+- `max_partition` (Number) 单个代理最大分区数
 - `memory` (Number) 内存大小
 - `spec_name` (String) 产品规格名称
-- `tps` (String) 单个代理TPS
+- `tps` (Number) 单个代理TPS

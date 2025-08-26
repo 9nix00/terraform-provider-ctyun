@@ -174,8 +174,9 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "健康检查ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "健康检查ID",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,

@@ -75,4 +75,5 @@ type CtecsDetailsInstanceBackupV41ReturnObjResponse struct {
 	CreatedTime               string `json:"createdTime,omitempty"`               /*  创建时间  */
 	FinishedTime              string `json:"finishedTime,omitempty"`              /*  完成时间  */
 	ProjectID                 string `json:"projectID,omitempty"`                 /*  企业项目ID  */
+	BackupType                string `json:"backupType,omitempty"`                /*  备份类型，取值范围：●FULL：全量备份。●INCREMENT：增量备份。只有4.0资源池此参数有效  */
 }

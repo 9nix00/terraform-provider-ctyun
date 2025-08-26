@@ -233,8 +233,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容。默认true(主备一起扩容)",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "mongodb实例id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "mongodb实例id",
 			},
 			//"instance_series": schema.StringAttribute{
 			//	Required:    true,

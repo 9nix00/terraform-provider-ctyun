@@ -83,8 +83,9 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -1276,32 +1277,6 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 	}
 	if !executeSuccessFlag {
 		err = fmt.Errorf("创建时间过长")
-	}
-	return
-}
-
-// checkAfterDelete 删除后检查
-func (c *ctyunKafkaInstance) checkAfterDelete(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 180)
-	retryer.Start(
-		func(currentTime int) bool {
-			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
-			if err != nil {
-				return false
-			}
-			if instance != nil && instance.Status != business.KafkaStatusUnsubscribed {
-				return true
-			}
-			executeSuccessFlag = true
-			return false
-		})
-	if err != nil {
-		return
-	}
-	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
 	}
 	return
 }

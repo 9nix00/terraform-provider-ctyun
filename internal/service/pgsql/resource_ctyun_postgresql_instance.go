@@ -281,8 +281,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			//	Description: "订单id",
 			//},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "pgsql 实例id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "pgsql 实例id",
 			},
 			"alive": schema.Int32Attribute{
 				Computed:    true,
@@ -456,32 +457,36 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 		return
 	}
 
-	deleteParams := &pgsql.PgsqlRefundRequest{
-		InstId: state.ID.ValueString(),
-	}
-	deleteHeader := &pgsql.PgsqlRefundRequestHeader{}
-	if state.ProjectID.ValueString() != "" {
-		deleteHeader.ProjectID = state.ProjectID.ValueStringPointer()
-	}
-
 	// 确保订单已完成状态才能退订
-	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
+	//err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
+	//if err != nil {
+	//	return
+	//}
+
+	instance, err := c.detail(ctx, state)
+	if err != nil {
+		return
+	}
+	if instance.Alive >= 0 {
+		err = c.refund(ctx, state)
+		if err != nil {
+			return
+		}
+		// 轮询确认时候退订成功
+		err = c.refundLoop(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	err = c.destroy(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.destroyLoop(ctx, state)
 	if err != nil {
 		return
 	}
 
-	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlRefundApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
-	if err != nil {
-		return
-	} else if resp.StatusCode != 200 {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	}
-	// 轮询确认时候退订成功
-	err = c.RefundLoop(ctx, &state, 60)
-	if err != nil {
-		return
-	}
 	response.Diagnostics.AddWarning("删除PostgreSql集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -1089,7 +1094,54 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 	}
 	return
 }
-func (c *CtyunPostgresqlInstance) RefundLoop(ctx context.Context, config *CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
+
+// detail 查询详情
+func (c *CtyunPostgresqlInstance) detail(ctx context.Context, state CtyunPostgresqlInstanceConfig) (pg *pgsql.PgsqlDetailResponseReturnObj, err error) {
+	detailParams := &pgsql.PgsqlDetailRequest{
+		ProdInstId: state.ID.ValueString(),
+	}
+	detailHeaders := &pgsql.PgsqlDetailRequestHeader{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+	if err != nil {
+		return nil, err
+	} else if resp.StatusCode != 800 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	pg = resp.ReturnObj
+	return
+}
+
+// refund 退订
+func (c *CtyunPostgresqlInstance) refund(ctx context.Context, state CtyunPostgresqlInstanceConfig) (err error) {
+	deleteParams := &pgsql.PgsqlRefundRequest{
+		InstId: state.ID.ValueString(),
+	}
+	deleteHeader := &pgsql.PgsqlRefundRequestHeader{}
+	if state.ProjectID.ValueString() != "" {
+		deleteHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlRefundApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// refundLoop 退订后检查
+func (c *CtyunPostgresqlInstance) refundLoop(ctx context.Context, state CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -1103,13 +1155,13 @@ func (c *CtyunPostgresqlInstance) RefundLoop(ctx context.Context, config *CtyunP
 			listParams := &pgsql.PgsqlListRequest{
 				PageNum:      1,
 				PageSize:     100,
-				ProdInstName: config.Name.ValueStringPointer(),
+				ProdInstName: state.Name.ValueStringPointer(),
 			}
 			listHeaders := &pgsql.PgsqlListRequestHeader{
-				RegionID: config.RegionID.ValueString(),
+				RegionID: state.RegionID.ValueString(),
 			}
-			if config.ProjectID.ValueString() != "" {
-				listHeaders.ProjectID = config.ProjectID.ValueStringPointer()
+			if state.ProjectID.ValueString() != "" {
+				listHeaders.ProjectID = state.ProjectID.ValueStringPointer()
 			}
 			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlListApi.Do(ctx, c.meta.Credential, listParams, listHeaders)
 			if err2 != nil {
@@ -1128,6 +1180,72 @@ func (c *CtyunPostgresqlInstance) RefundLoop(ctx context.Context, config *CtyunP
 			}
 			return true
 		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未退订成功！")
+	}
+	return
+}
+
+// destroy 销毁
+func (c *CtyunPostgresqlInstance) destroy(ctx context.Context, state CtyunPostgresqlInstanceConfig) (err error) {
+	deleteParams := &pgsql.TeledbDestroyRequest{
+		InstId: state.ID.ValueString(),
+	}
+	deleteHeader := &pgsql.TeledbDestroyRequestHeader{}
+	if state.ProjectID.ValueString() != "" {
+		deleteHeader.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlDestroyApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// destroyLoop 销毁后检查
+func (c *CtyunPostgresqlInstance) destroyLoop(ctx context.Context, state CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			params := &pgsql.PgsqlListRequest{
+				PageNum:      1,
+				PageSize:     100,
+				ProdInstName: state.Name.ValueStringPointer(),
+			}
+			headers := &pgsql.PgsqlListRequestHeader{
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				headers.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlListApi.Do(ctx, c.meta.Credential, params, headers)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 800 {
+				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			// 若查询列表已经查询不到，资源已经销毁
+			if len(resp.ReturnObj.List) == 0 {
+				return false
+			}
+			return true
+		},
+	)
 	if result.ReturnReason == business.ReachMaxLoopTime {
 		return errors.New("轮询已达最大次数，资源仍未退订成功！")
 	}
