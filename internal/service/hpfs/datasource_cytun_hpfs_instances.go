@@ -86,7 +86,7 @@ func (c *CtyunHpfsInstances) Schema(ctx context.Context, request datasource.Sche
 				Description: "hpfs列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"sfs_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "并行文件命名",
 						},
@@ -266,7 +266,7 @@ func (c *CtyunHpfsInstances) Read(ctx context.Context, request datasource.ReadRe
 }
 
 type CtyunHpfsInstancesModel struct {
-	SfsName       types.String `tfsdk:"sfs_name"`        // 并行文件命名
+	SfsName       types.String `tfsdk:"name"`            // 并行文件命名
 	SfsID         types.String `tfsdk:"sfs_id"`          // 并行文件唯一ID
 	SfsSize       types.Int32  `tfsdk:"sfs_size"`        // 大小(GB)
 	SfsType       types.String `tfsdk:"sfs_type"`        // 文件系统类型

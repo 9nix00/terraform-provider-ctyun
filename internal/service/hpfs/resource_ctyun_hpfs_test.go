@@ -51,7 +51,7 @@ func TestAccCtyunHpfs(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, cycleType, sfsName, sfsSize),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_name", sfsName),
+					resource.TestCheckResourceAttr(resourceName, "name", sfsName),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", strconv.Itoa(sfsSize)),
 				),
 			},
@@ -60,7 +60,7 @@ func TestAccCtyunHpfs(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, cycleType, updatedSfsName, updatedSfsSize),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_name", updatedSfsName),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedSfsName),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", strconv.Itoa(updatedSfsSize)),
 				),
 			},
@@ -128,7 +128,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, azName, cluster, baseline),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_name", sfsName),
+					resource.TestCheckResourceAttr(resourceName, "name", sfsName),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", strconv.Itoa(sfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "cluster_name", cluster),
 					resource.TestCheckResourceAttr(resourceName, "baseline", baseline),
@@ -139,7 +139,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, azName, cluster, baseline),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_name", updatedSfsName),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedSfsName),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", strconv.Itoa(updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "cluster_name", cluster),
 					resource.TestCheckResourceAttr(resourceName, "baseline", baseline),
@@ -154,7 +154,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 }
 
 type CtyunHpfsInstancesModel struct {
-	SfsName       string   `tfsdk:"sfs_name"`        // 并行文件命名
+	SfsName       string   `tfsdk:"name"`            // 并行文件命名
 	SfsID         string   `tfsdk:"sfs_id"`          // 并行文件唯一ID
 	SfsSize       int32    `tfsdk:"sfs_size"`        // 大小(GB)
 	SfsType       string   `tfsdk:"sfs_type"`        // 文件系统类型

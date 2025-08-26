@@ -117,7 +117,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 					int32planmodifier.RequiresReplace(),
 				},
 			},
-			"sfs_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "并行文件名,仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符",
 				Validators: []validator.String{
@@ -126,7 +126,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 			},
 			"sfs_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "文件大小（GB），范围: 500-32768",
+				Description: "文件大小（GB），范围: 500-32768。支持修改",
 				Validators: []validator.Int32{
 					// 范围验证
 					int32validator.Between(500, 32768),
@@ -148,7 +148,6 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Computed:    true,
 				Description: "集群名称，仅资源池支持指定集群时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
 				PlanModifiers: []planmodifier.String{
-					//stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
@@ -157,7 +156,6 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Computed:    true,
 				Description: "性能基线（MB/s/TB），仅资源池支持性能基线时可传入该参数。可以根据data.ctyun_hpfs_clusters接口查询，也可访问网页查询：https://www.ctyun.cn/document/10088932/10510589",
 				PlanModifiers: []planmodifier.String{
-					//stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
@@ -354,7 +352,7 @@ func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*h
 		SfsType:     "hpfs_perf",
 		SfsProtocol: config.SfsProtocol.ValueString(),
 		CycleType:   config.CycleType.ValueString(),
-		SfsName:     config.SfsName.ValueString(),
+		SfsName:     config.Name.ValueString(),
 		SfsSize:     config.SfsSize.ValueInt32(),
 		Vpc:         config.VpcID.ValueString(),
 		Subnet:      config.SubnetID.ValueString(),
@@ -406,7 +404,7 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 		return err
 	}
 	hpfsDetail := hpfsResp.ReturnObj
-	config.SfsName = types.StringValue(hpfsDetail.SfsName)
+	config.Name = types.StringValue(hpfsDetail.SfsName)
 	config.SfsSize = types.Int32Value(hpfsDetail.SfsSize)
 	config.SfsStatus = types.StringValue(hpfsDetail.SfsStatus)
 	config.ClusterName = types.StringValue(hpfsDetail.ClusterName)
@@ -457,13 +455,13 @@ func (c *ctyunHpfs) updateHfps(ctx context.Context, state *CtyunHpfsConfig, plan
 }
 
 func (c *ctyunHpfs) hfpsRename(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
-	if plan.SfsName.IsNull() || state.SfsName == plan.SfsName {
+	if plan.Name.IsNull() || state.Name == plan.Name {
 		return nil
 	}
 	params := &hpfs.HpfsRenameSfsRequest{
 		RegionID: state.RegionID.ValueString(),
 		SfsUID:   state.ID.ValueString(),
-		SfsName:  plan.SfsName.ValueString(),
+		SfsName:  plan.Name.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkHpfsApis.HpfsRenameSfsApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -646,7 +644,7 @@ func (c *ctyunHpfs) renameLoop(ctx context.Context, state *CtyunHpfsConfig, plan
 				err = err2
 				return false
 			}
-			if resp.ReturnObj.SfsName == plan.SfsName.ValueString() {
+			if resp.ReturnObj.SfsName == plan.Name.ValueString() {
 				return false
 			}
 			return true
@@ -664,7 +662,7 @@ type CtyunHpfsConfig struct {
 	SfsProtocol   types.String `tfsdk:"sfs_protocol"`    // 协议类型
 	CycleType     types.String `tfsdk:"cycle_type"`      // 包周期类型
 	CycleCount    types.Int32  `tfsdk:"cycle_count"`     // 包周期数
-	SfsName       types.String `tfsdk:"sfs_name"`        // 并行文件名
+	Name          types.String `tfsdk:"name"`            // 并行文件名
 	SfsSize       types.Int32  `tfsdk:"sfs_size"`        // 文件大小（GB）
 	AzName        types.String `tfsdk:"az_name"`         // 可用区名称
 	ClusterName   types.String `tfsdk:"cluster_name"`    // 集群名称

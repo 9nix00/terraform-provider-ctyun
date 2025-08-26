@@ -28,6 +28,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
 	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
@@ -46,6 +48,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
+	scaling2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/scaling"
+	sfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/sfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpce"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/zos"
@@ -326,6 +330,8 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkMongodbApis:  mongodb2.NewApis(client),
 			SdkHpfsApis:     hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
 			CtEbsBackupApis: ctebsbackup.NewApis(fmt.Sprintf(endpointUrl, ctebsbackup.EndpointName), coreClient),
+			SdkScalingApis:  scaling.NewApis(fmt.Sprintf(endpointUrl, scaling.EndpointName), coreClient),
+			SdkSfsApi:       sfs.NewApis(fmt.Sprintf(endpointUrl, sfs.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -401,6 +407,13 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mongodb.NewCtyunMongodbInstances(),
 		hpfs.NewCtyunHpfsInstances(),
 		hpfs.NewCtyunHpfsClusters(),
+		scaling2.NewCtyunScalings(),
+		scaling2.NewCtyunScalingConfigs(),
+		scaling2.NewCtyunScalingActivities(),
+		scaling2.NewCtyunScalingEcsList(),
+		scaling2.NewCtyunScalingPolicies(),
+		sfs2.NewCtyunSfsInstances(),
+		sfs2.NewCtyunSfsPermissionRules(),
 		ccse.NewCtyunCcseTemplateMarket(),
 	)
 }
@@ -472,6 +485,13 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),
 		hpfs.NewCtyunHpfsInstance(),
+		scaling2.NewCtyunScaling(),
+		scaling2.NewCtyunScalingConfig(),
+		scaling2.NewCtyunScalingPolicy(),
+		sfs2.NewCtyunSfs(),
+		sfs2.NewCtyunSfsPermissionGroup(),
+		sfs2.NewCtyunSfsPermissionGroupAssociation(),
+		sfs2.NewCtyunSfsPermissionGroupRule(),
 		ecs.NewCtyunEcsBackupRepo(),
 		ecs.NewCtyunEcsBackup(),
 		ecs.NewCtyunEcsBackupPolicy(),
