@@ -138,6 +138,7 @@ func (c *ctyunEcsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"pay_voucher_price": schema.Float64Attribute{
 				Optional:    true,
+				Computed:    true,
 				Required:    false,
 				Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用代金券。",
 				Default:     float64default.StaticFloat64(0.00),

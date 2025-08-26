@@ -152,6 +152,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "代金券金额，支持到小数点后两位",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),

@@ -74,7 +74,6 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$`), "hostname必须以字母开头，以字母或数字结尾"),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z0-9\-\.]*$`), "hostname只能包含字母、数字、连字符和点号"),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^.*[a-zA-Z].*$`), "hostname不能仅使用数字"),
-					stringvalidator.RegexMatches(regexp.MustCompile(`^(?!.*[\-\.]{2}).*$`), "hostname不能连续使用'-'或者'.'"),
 				},
 			},
 			"display_name": schema.StringAttribute{

@@ -101,6 +101,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Computed:    true,
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 				Validators: []validator.String{
+					validator2.Desc(),
 					stringvalidator.LengthBetween(0, 128),
 				},
 			},
@@ -220,6 +221,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "代金券金额，支持到小数点后两位",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),

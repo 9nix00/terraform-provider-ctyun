@@ -57,7 +57,7 @@ func (c *ctyunSecurityGroup) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "安全组名称，字母、中文、数字，下划线，连字符，中文/英文字母开头，长度2-32",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "安全组名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}-]+$"), "安全组名称不符合规则"),
 				},
 			},
 			"description": schema.StringAttribute{

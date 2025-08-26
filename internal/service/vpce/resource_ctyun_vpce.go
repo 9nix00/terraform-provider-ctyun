@@ -90,7 +90,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
@@ -126,7 +126,7 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}fa5}-]+$"), "名称不符合规则"),
 				},
 			},
 			"status": schema.Int32Attribute{

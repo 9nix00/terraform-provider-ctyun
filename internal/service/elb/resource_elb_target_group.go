@@ -22,7 +22,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"regexp"
 	"strings"
 )
 
@@ -91,7 +90,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
-					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z0-9\u4e00-\u9fa5~!@#$%^&*()_\-+= <>?:'{},./;'[\]·~！@#￥%……&*（） ——+={}]*$`), "只能包含拉丁字母、中文、数字和指定的特殊字符"),
+					validator2.Desc(),
 				},
 			},
 			"vpc_id": schema.StringAttribute{

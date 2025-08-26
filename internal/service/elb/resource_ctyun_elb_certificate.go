@@ -80,6 +80,7 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
 				},
 			},
 			"type": schema.StringAttribute{
