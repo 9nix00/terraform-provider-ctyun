@@ -158,10 +158,13 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"base_info": schema.SingleNestedAttribute{
 				Required:    true,
@@ -175,6 +178,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							validator2.Project(),
+						},
 					},
 					"vpc_id": schema.StringAttribute{
 						Required:    true,
@@ -182,12 +188,18 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							validator2.UUID(),
+						},
 					},
 					"subnet_id": schema.StringAttribute{
 						Required:    true,
 						Description: "子网ID",
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
+						},
+						Validators: []validator.String{
+							validator2.UUID(),
 						},
 					},
 					"security_group_id": schema.StringAttribute{
@@ -197,6 +209,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							validator2.UUID(),
+						},
 					},
 					"cluster_name": schema.StringAttribute{
 						Required:    true,
@@ -204,12 +219,18 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"cluster_domain": schema.StringAttribute{
 						Required:    true,
 						Description: "集群本地域名",
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
+						},
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
 						},
 					},
 					"network_plugin": schema.StringAttribute{
@@ -279,6 +300,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							stringplanmodifier.RequiresReplace(),
 						},
 						Default: stringdefault.StaticString("10.96.0.0/16"),
+						Validators: []validator.String{
+							validator2.Cidr(),
+						},
 					},
 					"pod_subnet_id_list": schema.SetAttribute{
 						ElementType: types.StringType,
@@ -467,6 +491,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"cluster_version": schema.StringAttribute{
 						Required:    true,
@@ -534,6 +561,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"sys_disk": schema.SingleNestedAttribute{
 						Optional:    true,
@@ -600,12 +630,18 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 									PlanModifiers: []planmodifier.String{
 										stringplanmodifier.RequiresReplace(),
 									},
+									Validators: []validator.String{
+										stringvalidator.LengthAtLeast(1),
+									},
 								},
 								"size": schema.Int32Attribute{
 									Required:    true,
 									Description: "该可用区下master节点数量",
 									PlanModifiers: []planmodifier.Int32{
 										int32planmodifier.RequiresReplace(),
+									},
+									Validators: []validator.Int32{
+										int32validator.AtLeast(1),
 									},
 								},
 							},
@@ -688,6 +724,9 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						PlanModifiers: []planmodifier.String{
 							stringplanmodifier.RequiresReplace(),
 						},
+						Validators: []validator.String{
+							stringvalidator.LengthAtLeast(1),
+						},
 					},
 					"az_infos": schema.ListNestedAttribute{
 						Required:    true,
@@ -700,12 +739,18 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 									PlanModifiers: []planmodifier.String{
 										stringplanmodifier.RequiresReplace(),
 									},
+									Validators: []validator.String{
+										stringvalidator.LengthAtLeast(1),
+									},
 								},
 								"size": schema.Int32Attribute{
 									Required:    true,
 									Description: "该可用区下worker节点数量",
 									PlanModifiers: []planmodifier.Int32{
 										int32planmodifier.RequiresReplace(),
+									},
+									Validators: []validator.Int32{
+										int32validator.AtLeast(1),
 									},
 								},
 							},

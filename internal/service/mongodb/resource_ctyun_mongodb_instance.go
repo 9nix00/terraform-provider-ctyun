@@ -121,12 +121,18 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			//"host_type": schema.StringAttribute{
@@ -142,12 +148,18 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -188,6 +200,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Project(),
 				},
 			},
 			"master_order_id": schema.StringAttribute{
@@ -275,14 +290,23 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
 							Description: "资源池可用区名称",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
 							Description: "资源池可用区总数（开通集群版--nodeType为mongos时范围为[2,16]，nodeType为shard时,shard数量取值范围[2,16]，每一个shard对应3个availabilityZoneCount, 例：nodeType: shard且要开通shard数 量为3时，availabilityZoneCount:9 ；nodeType为config时节点默认为3即availabilityZoneCount: 3）",
+							Validators: []validator.Int32{
+								int32validator.Between(2, 16),
+							},
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
 							Description: "master:主节点、mongos:mongos节点、shard:shard节点 、config:config节点（存储类型storageType与shard节点一致，存储空间storageSpace为单个shard的storageSpace）、 backup:备份机(存储类型storageType与shard 节点一致，存储空间storageSpace为shard节点数量乘以单个shard的storageSpace)",
+							Validators: []validator.String{
+								stringvalidator.OneOf(business.MongodbNodeType...),
+							},
 						},
 					},
 				},
@@ -320,11 +344,17 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Optional:    true,
 				Computed:    true,
 				Description: "backup节点磁盘空间，升配时用于区分节点升配。单机版、集群版，",
+				Validators: []validator.Int32{
+					int32validator.Between(10, 6144),
+				},
 			},
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "backup节点存储类型，取值范围：SATA, SAS, SSD, OS（对象存储）。若不填写，默认为云硬盘（SSD）",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.StorageTypeSATA, business.StorageTypeSAS, business.StorageTypeSSD, business.BackupStorageTypeOS),
+				},
 			},
 			"upgrade_node_type": schema.StringAttribute{
 				Optional:    true,

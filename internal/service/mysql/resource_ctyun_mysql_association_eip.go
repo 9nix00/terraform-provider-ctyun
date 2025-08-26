@@ -8,10 +8,13 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"time"
@@ -42,14 +45,23 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 			"eip_id": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "项目id",
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -58,6 +70,9 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"eip_status": schema.Int32Attribute{

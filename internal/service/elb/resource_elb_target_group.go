@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 )
 
@@ -63,6 +64,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"protocol": schema.StringAttribute{
 				Optional:    true,
@@ -85,6 +89,10 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Optional:    true,
 				Computed:    true,
 				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z0-9\u4e00-\u9fa5~!@#$%^&*()_\-+= <>?:'{},./;'[\]·~！@#￥%……&*（） ——+={}]*$`), "只能包含拉丁字母、中文、数字和指定的特殊字符"),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -92,11 +100,17 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"health_check_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "需要关联的健康检查Id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"algorithm": schema.StringAttribute{
 				Required:    true,
@@ -211,6 +225,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 		},
 	}

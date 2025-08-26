@@ -86,10 +86,16 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
 				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_postgresql_specs查询支持的规格",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
@@ -144,12 +150,18 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
@@ -158,12 +170,18 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"appoint_vip": schema.StringAttribute{
 				Optional:    true,
 				Description: "指定VIP",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Cidr(),
 				},
 			},
 			// 实例配置
@@ -238,6 +256,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"is_mgr": schema.BoolAttribute{
 				Optional:    true,
@@ -256,14 +277,23 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
 							Description: "资源池可用区名称",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
 							Description: "资源池可用区总数",
+							Validators: []validator.Int32{
+								int32validator.Between(1, 16),
+							},
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
 							Description: "节点类型(master/readNode)",
+							Validators: []validator.String{
+								stringvalidator.OneOf("master", "readNode"),
+							},
 						},
 						//"display_name": schema.StringAttribute{
 						//	Optional:    true,

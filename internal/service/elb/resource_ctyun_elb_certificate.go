@@ -63,6 +63,9 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -108,9 +111,12 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 			},
 			"certificate": schema.StringAttribute{
 				Required:    true,
-				Description: "type为Server该字段表示服务器证书公钥Pem内容;type为Ca该字段表示Ca证书Pem内容",
+				Description: "type为Server 该字段表示服务器证书公钥Pem内容;type为Ca 该字段表示Ca证书Pem内容",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -139,6 +145,9 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -148,6 +157,9 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 		},
 	}

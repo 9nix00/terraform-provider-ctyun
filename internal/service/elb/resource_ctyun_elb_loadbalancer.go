@@ -65,6 +65,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -72,12 +75,18 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -133,6 +142,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Ip(),
+				},
 			},
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -147,6 +159,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"port_id": schema.StringAttribute{
@@ -205,6 +220,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
 				Description: "代金券金额，支持到小数点后两位",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"eip_info": schema.ListNestedAttribute{
 				Computed:    true,

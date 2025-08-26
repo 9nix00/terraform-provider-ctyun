@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -50,6 +51,10 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[^/]+/[^/]+/.+$`), "格式应为{internetEndpoint}/{bucket}/{key}"),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -74,6 +79,9 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 				Description: "操作系统版本。注意：参数值的取值应根据系统实际情况，建议参考（以下列出osDistro所列取值对应的osVersion参考取值）：anolis：7.9、centos：7.8、ctyunos：2.0.1、debian：9.0.0、fedora：36、kylin：V10_sp1、openEuler：20.03、ubuntu：18.04、UnionTech：V20_1050u1e、windows：2008",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"architecture": schema.StringAttribute{
@@ -135,6 +143,9 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

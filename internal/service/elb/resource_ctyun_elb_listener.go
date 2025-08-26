@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 )
 
@@ -65,6 +66,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"loadbalancer_id": schema.StringAttribute{
 				Required:    true,
@@ -72,15 +76,27 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 32),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z\u4e00-\u9fa5][a-zA-Z0-9_\-\u4e00-\u9fa5]*$`), "必须以拉丁字母或中文开头，只能包含拉丁字母、中文、数字、下划线和连字符"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^(?!https?:).*`), "不能以http:或https:开头"),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128\t",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 128),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^(?!https?:).*`), "不能以http:或https:开头"),
+				},
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
@@ -189,6 +205,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -198,6 +217,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"status": schema.StringAttribute{
 				Optional:    true,
@@ -292,6 +314,9 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 						"target_group_id": schema.StringAttribute{
 							Required:    true,
 							Description: "后端服务组ID",
+							Validators: []validator.String{
+								validator2.UUID(),
+							},
 						},
 						"weight": schema.Int32Attribute{
 							Optional:    true,
