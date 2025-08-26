@@ -25,6 +25,7 @@ type Dependence struct {
 	scalingGroupID   string
 	instanceUUID     string
 	instanceUUID1    string
+	instanceUUID2    string
 	scalingConfigID  string
 	scalingConfigID1 string
 }
@@ -65,6 +66,7 @@ func TestMain(m *testing.M) {
 		//instanceUUID: "fb081ebe-87e8-6d68-951b-d8c4a56cf4fe",
 		instanceUUID1: outputs["instance_uuid1"].Value,
 		//instanceUUID1:    "d8c0c1e1-3dde-9b03-b950-6bab59aa37f8",
+		instanceUUID2:    outputs["instance_uuid2"].Value,
 		scalingConfigID:  outputs["scaling_config_id"].Value,
 		scalingConfigID1: outputs["scaling_config_id1"].Value,
 	}

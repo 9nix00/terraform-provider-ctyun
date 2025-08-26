@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -63,10 +64,13 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			"group_id": schema.Int64Attribute{
 				Required:    true,
 				Description: "伸缩组ID",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "伸缩策略名称",
+				Description: "伸缩策略名称，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -83,7 +87,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"operate_unit": schema.StringAttribute{
 				Optional:    true,
-				Description: "操作单位: count-个数, percent-百分比",
+				Description: "操作单位: count-个数, percent-百分比，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OperateUnits...),
 					validator2.AlsoRequiresEqualString(
@@ -96,7 +100,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"operate_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "调整值",
+				Description: "调整值，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("policy_type"),
@@ -108,7 +112,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"action": schema.StringAttribute{
 				Optional:    true,
-				Description: "执行动作: increase-增加, decrease-减少, set-设置为",
+				Description: "执行动作: increase-增加, decrease-减少, set-设置为，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.Actions...),
 					validator2.AlsoRequiresEqualString(
@@ -119,10 +123,9 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 					),
 				},
 			},
-			// todo 当policy_type = 3必填
 			"cycle": schema.StringAttribute{
 				Optional:    true,
-				Description: "循环方式: monthly-按月循环, weekly-按周循环, daily-按天循环",
+				Description: "循环方式: monthly-按月循环, weekly-按周循环, daily-按天循环，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.Cycles...),
 					validator2.AlsoRequiresEqualString(
@@ -131,23 +134,22 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 					),
 				},
 			},
-			// todo ,做校验，当cycle=monthly，取值范围【1，31】， 当cycle=weekly，取值范围【1，7】
 			"day": schema.SetAttribute{
 				ElementType: types.Int32Type,
 				Optional:    true,
-				Description: "执行日期",
+				Description: "执行日期，当cycle=monthly时，取值范围为[1,31]，担当cycle=weekly时，取值范围为[1,7]，当status=disable时，支持更新",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("cycle"),
 						types.StringValue("monthly"),
 						types.StringValue("weekly"),
 					),
+					validator2.ScalingPolicyDayValidate(),
 				},
 			},
-			// todo 需要做校验, type=3必填
 			"effective_from": schema.StringAttribute{
 				Optional:    true,
-				Description: "周期策略生效开始时间 (格式: 2006-01-02 15:04:05)",
+				Description: "周期策略生效开始时间 (格式: 2006-01-02 15:04:05)，当status=disable时，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("policy_type"),
@@ -155,10 +157,9 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 					),
 				},
 			},
-			// todo 需要做校验, type=3必填
 			"effective_till": schema.StringAttribute{
 				Optional:    true,
-				Description: "周期策略生效截止时间 (格式: 2006-01-02 15:04:05)",
+				Description: "周期策略生效截止时间 (格式: 2006-01-02 15:04:05)，当status=disable时，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("policy_type"),
@@ -166,10 +167,9 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 					),
 				},
 			},
-			// todo 需要做校验, type=2， 3必填
 			"execution_time": schema.StringAttribute{
 				Optional:    true,
-				Description: "执行时间 (格式: 2006-01-02 15:04:05)",
+				Description: "执行时间 (格式: 2006-01-02 15:04:05)，当status=disable时，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("policy_type"),
@@ -180,7 +180,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"cooldown": schema.Int32Attribute{
 				Optional:    true,
-				Description: "冷却/预热时间 (单位: 秒)",
+				Description: "冷却/预热时间 (单位: 秒)，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("policy_type"),
@@ -191,7 +191,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "告警规则名称",
+				Description: "告警规则名称，当status=disable时，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("policy_type"),
@@ -202,7 +202,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			"trigger_metric_name": schema.StringAttribute{
 				Optional: true,
 				Description: "监控指标名称，取值范围：cpu_util-CPU使用率，mem_util-内存使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率，" +
-					"disk_read_bytes_rate-磁盘读速率，disk_write_bytes_rate-磁盘写速率，disk_read_requests_rate-磁盘读请求速率，disk_write_requests_rate-磁盘写请求速率",
+					"disk_read_bytes_rate-磁盘读速率，disk_write_bytes_rate-磁盘写速率，disk_read_requests_rate-磁盘读请求速率，disk_write_requests_rate-磁盘写请求速率，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"cpu_util",
@@ -222,7 +222,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_statistics": schema.StringAttribute{
 				Optional:    true,
-				Description: "聚合方法: avg-平均值, max-最大值, min-最小值",
+				Description: "聚合方法: avg-平均值, max-最大值, min-最小值，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("avg", "max", "min"),
 					validator2.AlsoRequiresEqualString(
@@ -233,7 +233,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_comparison_operator": schema.StringAttribute{
 				Optional:    true,
-				Description: "比较符: ge-大于等于, le-小于等于, gt-大于, lt-小于",
+				Description: "比较符: ge-大于等于, le-小于等于, gt-大于, lt-小于，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("ge", "le", "gt", "lt"),
 					validator2.AlsoRequiresEqualString(
@@ -244,7 +244,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_threshold": schema.Int32Attribute{
 				Optional:    true,
-				Description: "阈值",
+				Description: "阈值，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("policy_type"),
@@ -254,7 +254,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_period": schema.StringAttribute{
 				Optional:    true,
-				Description: "监控周期 (如: 5m)",
+				Description: "监控周期 (如: 5m)，当status=disable时，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("policy_type"),
@@ -264,7 +264,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"trigger_evaluation_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "连续出现次数",
+				Description: "连续出现次数，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					int32validator.AtLeast(1),
 					validator2.AlsoRequiresEqualInt32(
@@ -275,7 +275,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"target_metric_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "监控指标名称，取值范围：cpu_util-CPU使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率",
+				Description: "监控指标名称，取值范围：cpu_util-CPU使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"cpu_util",
@@ -290,7 +290,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"target_value": schema.Int32Attribute{
 				Optional:    true,
-				Description: "追踪目标值",
+				Description: "追踪目标值，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("policy_type"),
@@ -300,7 +300,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"target_scale_out_evaluation_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "扩容连续告警次数 (范围: 1-100)",
+				Description: "扩容连续告警次数 (范围: 1-100)，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 100),
 					validator2.AlsoRequiresEqualInt32(
@@ -311,7 +311,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"target_scale_in_evaluation_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "缩容连续告警次数 (范围: 1-100)",
+				Description: "缩容连续告警次数 (范围: 1-100)，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 100),
 					validator2.AlsoRequiresEqualInt32(
@@ -322,7 +322,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			},
 			"target_operate_range": schema.Int32Attribute{
 				Optional:    true,
-				Description: "缩容波动范围 (范围: 10-20)，支持更新",
+				Description: "缩容波动范围 (范围: 10-20)，，当status=disable时，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(10, 20),
 					validator2.AlsoRequiresEqualInt32(
@@ -335,7 +335,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
-				Description: "是否禁用缩容，支持更新。默认为false。",
+				Description: "是否禁用缩容，当status=disable时，支持更新。默认为false。",
 				Validators: []validator.Bool{
 					validator2.AlsoRequiresEqualBool(
 						path.MatchRoot("policy_type"),
@@ -460,6 +460,7 @@ func (c *ctyunScalingPolicy) Update(ctx context.Context, request resource.Update
 	if err != nil {
 		return
 	}
+
 	// 更新远端数据，并同步本地state
 	err = c.getAndMergeScalingPolicy(ctx, &state)
 	if err != nil {
@@ -746,74 +747,162 @@ func (c *ctyunScalingPolicy) updateScalingPolicy(ctx context.Context, state *Cty
 		RuleID:   state.ID.ValueInt64(),
 		Name:     plan.Name.ValueString(),
 	}
+	// 控制是否需要调用update接口
+	flag := false
 	// policy_type 不可变，policy_type
 	if state.PolicyType.ValueString() == business.ScalingPolicyAlertStr {
-		params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
-		params.OperateCount = plan.OperateCount.ValueInt32()
-		params.Action = business.ActionDict[plan.Action.ValueString()]
+		if !plan.OperateUnit.Equal(state.OperateUnit) {
+			params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
+			flag = true
+		}
+		if !plan.OperateCount.Equal(state.OperateCount) {
+			params.OperateCount = plan.OperateCount.ValueInt32()
+			flag = true
+		}
+		if !plan.Action.Equal(state.Action) {
+			params.Action = business.ActionDict[plan.Action.ValueString()]
+			flag = true
+		}
+		if !plan.Cooldown.Equal(state.Cooldown) {
+			params.Cooldown = plan.Cooldown.ValueInt32()
+		}
 
-		params.Cooldown = plan.Cooldown.ValueInt32()
-
-		triggerObj := scaling.ScalingRuleUpdateTriggerObjRequest{
-			Name:               plan.TriggerName.ValueString(),
-			MetricName:         plan.TriggerMetricName.ValueString(),
-			Statistics:         plan.TriggerStatistics.ValueString(),
-			ComparisonOperator: plan.TriggerComparisonOperator.ValueString(),
-			Threshold:          plan.TriggerThreshold.ValueInt32(),
-			Period:             plan.TriggerPeriod.ValueString(),
-			EvaluationCount:    plan.TriggerEvaluationCount.ValueInt32(),
+		triggerObj := scaling.ScalingRuleUpdateTriggerObjRequest{}
+		if !plan.TriggerName.Equal(state.TriggerName) {
+			triggerObj.Name = plan.TriggerName.ValueString()
+			flag = true
+		}
+		if !plan.TriggerMetricName.Equal(state.TriggerMetricName) {
+			triggerObj.MetricName = plan.TriggerMetricName.ValueString()
+			flag = true
+		}
+		if !plan.TriggerStatistics.Equal(state.TriggerStatistics) {
+			triggerObj.Statistics = plan.TriggerStatistics.ValueString()
+			flag = true
+		}
+		if !plan.TriggerComparisonOperator.Equal(state.TriggerComparisonOperator) {
+			triggerObj.ComparisonOperator = plan.TriggerComparisonOperator.ValueString()
+			flag = true
+		}
+		if !plan.TriggerThreshold.Equal(state.TriggerThreshold) {
+			triggerObj.Threshold = plan.TriggerThreshold.ValueInt32()
+			flag = true
+		}
+		if !plan.TriggerPeriod.Equal(state.TriggerPeriod) {
+			triggerObj.Period = plan.TriggerPeriod.ValueString()
+			flag = true
+		}
+		if !plan.TriggerEvaluationCount.Equal(state.TriggerEvaluationCount) {
+			triggerObj.EvaluationCount = plan.TriggerEvaluationCount.ValueInt32()
+			flag = true
 		}
 		params.TriggerObj = &triggerObj
-
 	} else if state.PolicyType.ValueString() == business.ScalingPolicyRegularStr {
 		// 当伸缩策略为定时策略
-		params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
-		params.OperateCount = plan.OperateCount.ValueInt32()
-		params.Action = business.ActionDict[plan.Action.ValueString()]
-		params.ExecutionTime = plan.ExecutionTime.ValueString()
+		if !plan.OperateUnit.Equal(state.OperateUnit) {
+			params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
+			flag = true
+		}
+		if !plan.OperateCount.Equal(state.OperateCount) {
+			params.OperateCount = plan.OperateCount.ValueInt32()
+			flag = true
+		}
+		if !plan.Action.Equal(state.Action) {
+			params.Action = business.ActionDict[plan.Action.ValueString()]
+			flag = true
+		}
+		if !plan.ExecutionTime.Equal(state.ExecutionTime) {
+			params.ExecutionTime = plan.ExecutionTime.ValueString()
+			flag = true
+		}
 	} else if state.PolicyType.ValueString() == business.ScalingPolicyPeriodStr {
 		// 当伸缩策略为周期策略
-		params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
-		params.OperateCount = plan.OperateCount.ValueInt32()
-		params.Action = business.ActionDict[plan.Action.ValueString()]
-		params.Cycle = business.CycleDict[plan.Cycle.ValueString()]
-		var day []int32
-		diags := plan.Day.ElementsAs(ctx, &day, true)
-		if diags.HasError() {
-			err := errors.New(diags[0].Detail())
-			return err
+		if !plan.OperateUnit.Equal(state.OperateUnit) {
+			params.OperateUnit = business.OperateUnitDict[plan.OperateUnit.ValueString()]
+			flag = true
 		}
-		params.Day = day
-		params.EffectiveFrom = plan.EffectiveFrom.ValueString()
-		params.EffectiveTill = plan.EffectiveTill.ValueString()
-		params.ExecutionTime = plan.ExecutionTime.ValueString()
-
+		if !plan.OperateCount.Equal(state.OperateCount) {
+			params.OperateCount = plan.OperateCount.ValueInt32()
+			flag = true
+		}
+		if !plan.Action.Equal(state.Action) {
+			params.Action = business.ActionDict[plan.Action.ValueString()]
+			flag = true
+		}
+		if !plan.Cycle.Equal(state.Cycle) {
+			params.Cycle = business.CycleDict[plan.Cycle.ValueString()]
+			flag = true
+		}
+		if !plan.Day.Equal(state.Day) {
+			var day []int32
+			diags := plan.Day.ElementsAs(ctx, &day, true)
+			if diags.HasError() {
+				err := errors.New(diags[0].Detail())
+				return err
+			}
+			params.Day = day
+			flag = true
+		}
+		if !plan.EffectiveFrom.Equal(state.EffectiveFrom) {
+			params.EffectiveFrom = plan.EffectiveFrom.ValueString()
+			flag = true
+		}
+		if !plan.EffectiveTill.Equal(state.EffectiveTill) {
+			params.EffectiveTill = plan.EffectiveTill.ValueString()
+			flag = true
+		}
+		if !plan.ExecutionTime.Equal(state.ExecutionTime) {
+			params.ExecutionTime = plan.ExecutionTime.ValueString()
+			flag = true
+		}
 	} else if state.PolicyType.ValueString() == business.ScalingPolicyTargetStr {
 		// 当伸缩策略为目标追踪策略
-		params.Cooldown = plan.Cooldown.ValueInt32() // 预热时间
-		targetObj := scaling.ScalingRuleUpdateTargetObjRequest{
-			MetricName:              plan.TargetMetricName.ValueString(),
-			TargetValue:             plan.TargetValue.ValueInt32(),
-			ScaleOutEvaluationCount: plan.TargetScaleOutEvaluationCount.ValueInt32(),
-			ScaleInEvaluationCount:  plan.TargetScaleInEvaluationCount.ValueInt32(),
-			OperateRange:            plan.TargetOperateRange.ValueInt32(),
-			DisableScaleIn:          plan.TargetDisableScaleIn.ValueBoolPointer(),
+		if !plan.Cooldown.Equal(state.Cooldown) {
+			params.Cooldown = plan.Cooldown.ValueInt32() // 预热时间
+			flag = true
+		}
+
+		targetObj := scaling.ScalingRuleUpdateTargetObjRequest{}
+		if !plan.TargetMetricName.Equal(state.TargetMetricName) {
+			targetObj.MetricName = plan.TargetMetricName.ValueString()
+			flag = true
+		}
+		if !plan.TargetValue.Equal(state.TargetValue) {
+			targetObj.TargetValue = plan.TargetValue.ValueInt32()
+			flag = true
+		}
+		if !plan.TargetScaleOutEvaluationCount.Equal(state.TargetScaleOutEvaluationCount) {
+			targetObj.ScaleOutEvaluationCount = plan.TargetScaleOutEvaluationCount.ValueInt32()
+			flag = true
+		}
+		if !plan.TargetScaleInEvaluationCount.Equal(state.TargetScaleInEvaluationCount) {
+			targetObj.ScaleInEvaluationCount = plan.TargetScaleInEvaluationCount.ValueInt32()
+			flag = true
+		}
+		if !plan.TargetOperateRange.Equal(state.TargetOperateRange) {
+			targetObj.OperateRange = plan.TargetOperateRange.ValueInt32()
+			flag = true
+		}
+		if !plan.TargetDisableScaleIn.Equal(state.TargetDisableScaleIn) {
+			targetObj.DisableScaleIn = plan.TargetDisableScaleIn.ValueBoolPointer()
+			flag = true
 		}
 		params.TargetObj = &targetObj
 	} else {
 		err := fmt.Errorf("创建参数policy type 输入有误，输入值为：%s", state.PolicyType.ValueString())
 		return err
 	}
-
-	resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleUpdateApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return err
-	} else if resp == nil {
-		err = fmt.Errorf("伸缩策略更新失败，id:%d", state.ID.ValueInt64())
-		return err
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+	if flag {
+		resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleUpdateApi.Do(ctx, c.meta.SdkCredential, params)
+		if err != nil {
+			return err
+		} else if resp == nil {
+			err = fmt.Errorf("伸缩策略更新失败，id:%d", state.ID.ValueInt64())
+			return err
+		} else if resp.StatusCode != common.NormalStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+			return err
+		}
 	}
 
 	return nil
@@ -824,35 +913,13 @@ func (c *ctyunScalingPolicy) updatePolicyStatus(ctx context.Context, state *Ctyu
 	if !plan.Status.IsNull() && !plan.Status.IsUnknown() && !plan.Status.Equal(state.Status) {
 		// 启用
 		if plan.Status.ValueString() == business.StatusEnabledStr {
-			params := &scaling.ScalingRuleStartRequest{
-				RegionID: state.RegionID.ValueString(),
-				GroupID:  state.GroupID.ValueInt64(),
-				RuleID:   state.ID.ValueInt64(),
-			}
-			resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleStartApi.Do(ctx, c.meta.SdkCredential, params)
+			err := c.enableScalingPolicy(ctx, state)
 			if err != nil {
-				return err
-			} else if resp == nil {
-				err = fmt.Errorf("启用弹性伸缩策略失败，其id:%d", state.ID.ValueInt64())
-				return err
-			} else if resp.StatusCode != common.NormalStatusCode {
-				err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 				return err
 			}
 		} else if plan.Status.ValueString() == business.StatusDisabledStr {
-			params := &scaling.ScalingRuleStopRequest{
-				RegionID: state.RegionID.ValueString(),
-				GroupID:  state.GroupID.ValueInt64(),
-				RuleID:   state.ID.ValueInt64(),
-			}
-			resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleStopApi.Do(ctx, c.meta.SdkCredential, params)
+			err := c.disableScalingPolicy(ctx, state)
 			if err != nil {
-				return err
-			} else if resp == nil {
-				err = fmt.Errorf("停用弹性伸缩策略失败，其id:%d", state.ID.ValueInt64())
-				return err
-			} else if resp.StatusCode != common.NormalStatusCode {
-				err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 				return err
 			}
 		}
@@ -879,6 +946,44 @@ func (c *ctyunScalingPolicy) executePolicy(ctx context.Context, state *CtyunScal
 		}
 	}
 	state.IsExecute = plan.IsExecute
+	return nil
+}
+
+func (c *ctyunScalingPolicy) enableScalingPolicy(ctx context.Context, state *CtyunScalingPolicyConfig) error {
+	params := &scaling.ScalingRuleStartRequest{
+		RegionID: state.RegionID.ValueString(),
+		GroupID:  state.GroupID.ValueInt64(),
+		RuleID:   state.ID.ValueInt64(),
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleStartApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("启用弹性伸缩策略失败，其id:%d", state.ID.ValueInt64())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return err
+	}
+	return nil
+}
+
+func (c *ctyunScalingPolicy) disableScalingPolicy(ctx context.Context, state *CtyunScalingPolicyConfig) error {
+	params := &scaling.ScalingRuleStopRequest{
+		RegionID: state.RegionID.ValueString(),
+		GroupID:  state.GroupID.ValueInt64(),
+		RuleID:   state.ID.ValueInt64(),
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingRuleStopApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("停用弹性伸缩策略失败，其id:%d", state.ID.ValueInt64())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return err
+	}
 	return nil
 }
 

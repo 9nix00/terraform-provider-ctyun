@@ -64,7 +64,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "伸缩配置名称,长度为 2～15 个字符，允许使用大小写字母、数字或连字符（-）。不能以点号（.）或连字符（-）开头或结尾，不能连续使用点号（.）或连字符（-），也不能仅使用数字。",
+				Description: "伸缩配置名称,长度为 2～15 个字符，允许使用大小写字母、数字或连字符（-）。不能以点号（.）或连字符（-）开头或结尾，不能连续使用点号（.）或连字符（-），也不能仅使用数字，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 15),
 					validator2.ScalingConfigNameValidate(),
@@ -72,7 +72,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
-				Description: "镜像ID，可以通过data.ctyun_images(datasource)获取",
+				Description: "镜像ID，可以通过data.ctyun_images(datasource)获取，支持更新",
 			},
 			//"security_group_id_list": schema.SetAttribute{
 			//	ElementType: types.StringType,
@@ -82,11 +82,11 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			// todo 描述清楚如何获取
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称",
+				Description: "规格名称，形如c7.2xlarge.4，支持更新。",
 			},
 			"volumes": schema.ListNestedAttribute{
 				Required:    true,
-				Description: "磁盘类型和大小列表，最多添加9块硬盘。系统盘仅支持1块。数据盘最多支持8块",
+				Description: "磁盘类型和大小列表，最多添加9块硬盘。系统盘仅支持1块。数据盘最多支持8块，支持更新。",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"volume_type": schema.StringAttribute{
@@ -124,7 +124,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"use_floatings": schema.StringAttribute{
 				Required:    true,
-				Description: "是否使用弹性IP: diable-不使用, auto-自动分配",
+				Description: "是否使用弹性IP: diable-不使用, auto-自动分配。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingUseFloatings...),
 				},
@@ -132,7 +132,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"bandwidth": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "弹性IP带宽(Mbps)，范围1-3000",
+				Description: "弹性IP带宽(Mbps)，范围1-3000，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 3000),
 					validator2.AlsoRequiresEqualInt32(
@@ -147,7 +147,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"login_mode": schema.StringAttribute{
 				Required:    true,
-				Description: "登录方式: password-密码, key_pair-密钥对",
+				Description: "登录方式: password-密码, key_pair-密钥对，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingLoginMode...),
 				},
@@ -163,7 +163,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
-				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator）",
+				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 30),
 					validator2.AlsoRequiresEqualString(
@@ -180,7 +180,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"key_pair_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥对ID，login_mode为key_pair时必填",
+				Description: "密钥对ID，login_mode为key_pair时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("login_mode"),
@@ -194,7 +194,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"tags": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "标签集",
+				Description: "标签集，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
@@ -211,12 +211,12 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"az_names": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
-				Description: "可用区列表，仅多可用区资源池支持",
+				Description: "可用区列表，仅多可用区资源池支持，支持更新",
 			},
 			"monitor_service": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启详细监控",
+				Description: "是否开启详细监控，支持更新",
 				Default:     booldefault.StaticBool(true),
 			},
 			"id": schema.Int64Attribute{

@@ -259,6 +259,8 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 	resourceName := "ctyun_scaling_group." + rnd
 	resourceFile := "resource_ctyun_scaling_ecs_list.tf"
 
+	resourceFile1 := "resource_ctyun_scaling_ecs_list_destroy.tf"
+
 	//datasourceName := "data.ctyun_scalings." + dnd
 	//datasourceFile := "datasource_ctyun_scalings.tf"
 
@@ -269,7 +271,7 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 	moveOutStrategy := "earlier_config"
 	vpcId := dependence.vpcID
 	minCount := 1
-	maxCount := 2
+	maxCount := 50
 
 	expectedCount := 1
 	healthPeriod := 300
@@ -290,19 +292,20 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 	updateSecurityGroupIDList := fmt.Sprintf(`["%s", "%s"]`, dependence.securityGroupID, dependence.securityGroupID1)
 	updateName := "scaling-group-" + utils.GenerateRandomString()
 	healthModeLb := "lb"
-	instanceUUIDList := fmt.Sprintf(`["%s"]`, dependence.instanceUUID)
+	instanceUUIDList := fmt.Sprintf(`["%s","%s"]`, dependence.instanceUUID, dependence.instanceUUID2)
 	protectStatus := "disable"
 
 	//updatedSubnetIDList := fmt.Sprintf(`["%s", "%s"]`, dependence.subnetID, dependence.subnetID1)
 	updateMoveOutStrategy := "earlier_vm"
 	updateMinCount := 1
-	updatedMaxCount := 3
-	updatedExpectedCount := 2
+	updatedMaxCount := 50
+	updatedExpectedCount := 1
 	updateHealthPeriod := 10080
 	updatedConfigList := fmt.Sprintf(`[%d, %d]`, scalingConfigID, scalingConfigID1)
-	updatedInstanceUUIDList := fmt.Sprintf(`["%s"]`, dependence.instanceUUID1)
-	updatedProtectStatus := "enable"
+	updatedInstanceUUIDList := fmt.Sprintf(`["%s", "%s"]`, dependence.instanceUUID1, dependence.instanceUUID)
+	updatedProtectStatus := "disable"
 	azStrategyPriorityDistribution := "priority_distribution"
+	isDestroy := false
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -333,8 +336,8 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 			// 更新name-> new; health_mode:云主机健康检查->云主机健康检查, subnet不修改，移除策略 earlier_config->earlier_vm，min_count: 1->2, max_count: 1->2， expected_count: 2->2, health_period:300->10080,
 			// configList 增加一个config配置，az_strategy : uniform_distribution-> priority_distribution
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updateSecurityGroupIDList, updateName, healthModeLb, subnetIDList, updateMoveOutStrategy, vpcId, updateMinCount, updatedMaxCount, updatedExpectedCount,
-					updateHealthPeriod, useLb, updatedConfigList, updatedInstanceUUIDList, updatedProtectStatus, azStrategyPriorityDistribution),
+				Config: utils.LoadTestCase(resourceFile1, rnd, updateSecurityGroupIDList, updateName, healthModeLb, subnetIDList, updateMoveOutStrategy, vpcId, updateMinCount, updatedMaxCount, updatedExpectedCount,
+					updateHealthPeriod, useLb, updatedConfigList, updatedInstanceUUIDList, updatedProtectStatus, azStrategyPriorityDistribution, isDestroy),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updateName),
@@ -346,7 +349,7 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "health_period", fmt.Sprintf("%d", updateHealthPeriod)),
 					resource.TestCheckResourceAttr(resourceName, "use_lb", "2"),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcId),
-					resource.TestCheckResourceAttr(resourceName, "protect_status", "enable"),
+					resource.TestCheckResourceAttr(resourceName, "protect_status", "disable"),
 				),
 			},
 
@@ -492,4 +495,74 @@ func TestAccCtyunScalingEcs1(t *testing.T) {
 			},
 		}},
 	)
+}
+
+// 不填写expected count
+func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+
+	rnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_scaling_group." + rnd
+	resourceFile := "resource_ctyun_scaling2.tf"
+
+	securityGroupIDList := fmt.Sprintf(`["%s"]`, dependence.securityGroupID)
+	name := "scaling-group-" + utils.GenerateRandomString()
+	healthMode := "lb"
+	subnetIDList := fmt.Sprintf(`["%s"]`, dependence.subnetID)
+	moveOutStrategy := "later_config"
+	vpcId := dependence.vpcID
+	minCount := 4
+	maxCount := 50
+
+	healthPeriod := 300
+	useLb := 1
+	lbList := fmt.Sprintf(`[{"port": 12306, "lb_id": "%s", "weight": 1, "host_group_id": "%s"}]`, dependence.loadbalancerID, dependence.targetGroupID)
+	scalingConfigID, err := strconv.ParseInt(dependence.scalingConfigID, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+	}
+	scalingConfigID1, err := strconv.ParseInt(dependence.scalingConfigID, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	configList := fmt.Sprintf(`[%d, %d]`, scalingConfigID, scalingConfigID1)
+	azStrategy := "uniform_distribution"
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 创建弹性组
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, securityGroupIDList, name, healthMode, subnetIDList, moveOutStrategy, vpcId, minCount, maxCount,
+					healthPeriod, useLb, lbList, configList, azStrategy),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "health_mode", healthMode),
+					resource.TestCheckResourceAttr(resourceName, "move_out_strategy", moveOutStrategy),
+					resource.TestCheckResourceAttr(resourceName, "min_count", fmt.Sprintf("%d", minCount)),
+					resource.TestCheckResourceAttr(resourceName, "max_count", fmt.Sprintf("%d", maxCount)),
+					resource.TestCheckResourceAttr(resourceName, "health_period", fmt.Sprintf("%d", healthPeriod)),
+					resource.TestCheckResourceAttr(resourceName, "use_lb", "1"),
+					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcId),
+					resource.TestCheckResourceAttr(resourceName, "az_strategy", azStrategy),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, securityGroupIDList, name, healthMode, subnetIDList, moveOutStrategy, vpcId, minCount, maxCount,
+					healthPeriod, useLb, lbList, configList, azStrategy),
+				Destroy: true,
+			},
+		}})
 }

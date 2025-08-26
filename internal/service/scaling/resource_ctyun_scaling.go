@@ -112,14 +112,15 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"move_out_strategy": schema.StringAttribute{
 				Required:    true,
-				Description: "实例移出策略：earlier_config-较早创建的配置较早创建，later_config-较晚创建的配置较晚创建，earlier_vm-较早创建的云主机，later_vm-较晚创建的云主机",
+				Description: "实例移出策略：earlier_config-较早创建的配置较早创建，later_config-较晚创建的配置较晚创建，earlier_vm-较早创建的云主机，later_vm-较晚创建的云主机。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingMoveOutStrategy...),
 				},
 			},
+			// todo 做校验
 			"use_lb": schema.Int32Attribute{
 				Required:    true,
-				Description: "是否使用负载均衡：1-是，2-否。支持修改",
+				Description: "是否使用负载均衡：1-是，2-否。status=disable时支持更新",
 				Validators: []validator.Int32{
 					int32validator.OneOf(1, 2),
 				},
@@ -128,7 +129,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
@@ -152,18 +153,19 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"expected_count": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "期望云主机数，非多可用区资源池不支持该参数。支持修改，若未填写。expected_count默认=min_count",
+				Description: "期望云主机数，非多可用区资源池不支持该参数。支持更新，若未填写。expected_count默认=min_count",
 				Validators: []validator.Int32{
 					validator2.ScalingCountValidate(),
 				},
 			},
 			"health_period": schema.Int32Attribute{
 				Required:    true,
-				Description: "健康检查时间间隔（周期），单位：秒，取值范围：[300,10080]",
+				Description: "健康检查时间间隔（周期），单位：秒，取值范围：[300,10080]。支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(300, 10080),
 				},
 			},
+			// todo status=disable时支持更新
 			"lb_list": schema.ListNestedAttribute{
 				Optional: true,
 				Computed: false,
@@ -187,7 +189,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 						},
 					},
 				},
-				Description: "负载均衡列表，use_lb=1时必填",
+				Description: "负载均衡列表，use_lb=1时必填。当status=disable时支持更新",
 				Validators: []validator.List{
 					validator2.AlsoRequiresEqualList(
 						path.MatchRoot("use_lb"),
@@ -198,14 +200,14 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"config_list": schema.SetAttribute{
 				ElementType: types.Int32Type,
 				Optional:    true,
-				Description: "伸缩配置ID列表，最大支持传入10个伸缩配置",
+				Description: "伸缩配置ID列表，最大支持传入10个伸缩配置。支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtMost(10),
 				},
 			},
 			"az_strategy": schema.StringAttribute{
 				Required:    true,
-				Description: "扩容策略类型：uniform_distribution-均衡分布，priority_distribution-优先级分布",
+				Description: "扩容策略类型：uniform_distribution-均衡分布，priority_distribution-优先级分布。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingAzStrategy...),
 				},
@@ -1158,6 +1160,9 @@ func (c *ctyunScaling) getInstanceAssocIdByUUID(ctx context.Context, state *Ctyu
 	var instanceIdList []int32
 	for _, uuid := range UUIDs {
 		ecsInfo := instanceMap[uuid]
+		if ecsInfo == nil {
+			continue
+		}
 		instanceIdList = append(instanceIdList, ecsInfo.Id)
 	}
 	return instanceIdList, nil
@@ -1247,17 +1252,32 @@ func (c *ctyunScaling) updateInstanceByUUIDList(ctx context.Context, state *Ctyu
 		return err
 	}
 	add, remove := c.getDiffInstanceList(stateInstanceList, planInstanceList)
+	// 轮询确认是否可以更新
+	err = c.updateInstanceBeforeLoop(ctx, state, 60)
+	if err != nil {
+		return err
+	}
+
 	// 处理新增
+
 	err = c.addScalingEcsList(ctx, add, state)
 	if err != nil {
 		return err
 	}
+	// 轮询确认是否可以更新
+	err = c.updateInstanceBeforeLoop(ctx, state, 60)
+	if err != nil {
+		return err
+	}
 	// 处理删除
+
 	err = c.removeEcsRequest(ctx, remove, state, plan)
 	if err != nil {
 		return err
 	}
+
 	state.InstanceUUIDList = plan.InstanceUUIDList
+	state.IsDestroy = plan.IsDestroy
 	return nil
 }
 
@@ -1335,6 +1355,106 @@ func (c *ctyunScaling) removeEcsRequest(ctx context.Context, instanceUUIDs []str
 		}
 	}
 	return nil
+}
+
+func (c *ctyunScaling) checkUpdate(ctx context.Context, state *CtyunScalingConfig) (bool, error) {
+	params := &scaling.ScalingGroupCheckRequest{
+		RegionID: state.RegionID.ValueString(),
+		GroupID:  state.ID.ValueInt64(),
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupCheckApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return false, err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return false, err
+	}
+	flag := resp.ReturnObj.Result
+	if flag == 2 {
+		return false, nil
+	} else if flag == 1 {
+		return true, nil
+	}
+	return true, nil
+}
+
+func (c *ctyunScaling) updateBeforeLoop(ctx context.Context, state *CtyunScalingConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			isUpdate, err2 := c.checkUpdate(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			if isUpdate {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，弹性文件系统仍未扩容成功！")
+	}
+	return err
+}
+
+func (c *ctyunScaling) updateInstanceBeforeLoop(ctx context.Context, state *CtyunScalingConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			activitiesList, err2 := c.getScalingActivitiesList(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			for _, activity := range activitiesList {
+				executionResult := activity.ExecutionResult
+				if executionResult == 0 {
+					return true
+				}
+			}
+			return false
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，弹性文件系统仍未扩容成功！")
+	}
+	return err
+}
+
+func (c *ctyunScaling) getScalingActivitiesList(ctx context.Context, state *CtyunScalingConfig) ([]*scaling.ScalingQueryActivitiesListReturnObjActiveListResponse, error) {
+	params := &scaling.ScalingQueryActivitiesListRequest{
+		RegionID: state.RegionID.ValueString(),
+		GroupID:  state.ID.ValueInt64(),
+		PageNo:   1,
+		PageSize: 100,
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingQueryActivitiesListApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return nil, err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return nil, err
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return nil, err
+	}
+	return resp.ReturnObj.ActiveList, nil
 }
 
 type CtyunScalingConfig struct {
