@@ -86,10 +86,13 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"nat_gateway_id": schema.StringAttribute{
@@ -97,6 +100,9 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "NAT网关Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"source_subnet_id": schema.StringAttribute{
@@ -123,12 +129,16 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(5),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "SNAT描述",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"subnet_type": schema.Int32Attribute{
 				Computed:    true,

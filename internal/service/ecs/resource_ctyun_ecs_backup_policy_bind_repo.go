@@ -52,6 +52,9 @@ func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.Sche
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

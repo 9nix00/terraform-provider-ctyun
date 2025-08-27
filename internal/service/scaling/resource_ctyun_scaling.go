@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -62,6 +63,9 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -71,11 +75,18 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"security_group_id_list": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
 				Description: "安全组ID列表。支持更新",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
+				},
 			},
 			//"recovery_mode": schema.Int64Attribute{
 			//	Required:    true,
@@ -172,18 +183,30 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 						"port": schema.Int32Attribute{
 							Required:    true,
 							Description: "端口号",
+							PlanModifiers: []planmodifier.Int32{
+								int32planmodifier.RequiresReplace(),
+							},
 						},
 						"lb_id": schema.StringAttribute{
 							Required:    true,
 							Description: "负载均衡ID",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"weight": schema.Int32Attribute{
 							Required:    true,
 							Description: "权重",
+							PlanModifiers: []planmodifier.Int32{
+								int32planmodifier.RequiresReplace(),
+							},
 						},
 						"host_group_id": schema.StringAttribute{
 							Required:    true,
 							Description: "后端主机组ID",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},
@@ -234,6 +257,10 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "云主机ID列表。,update阶段会和state阶段做对比（仅对手动添加的机器做处理），与state一致，不变；state中有，update阶段没有触发移除；state中没有，update阶段有触发新增。支持更新",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(validator2.UUID()),
+				},
 			},
 			"protect_status": schema.StringAttribute{
 				Optional:    true,

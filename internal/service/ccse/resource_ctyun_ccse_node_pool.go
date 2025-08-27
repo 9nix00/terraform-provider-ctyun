@@ -95,10 +95,13 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"cluster_id": schema.StringAttribute{
 				Required:    true,
@@ -106,10 +109,16 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "节点池名称",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -149,11 +158,17 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 				Computed:    true,
 				Description: "部署后执行自定义脚本，base64编码",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"visibility_host_script": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "部署前执行自定义脚本，base64编码",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
@@ -215,6 +230,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
@@ -261,6 +279,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"max_pod_num": schema.Int32Attribute{
 				Optional:    true,
@@ -268,6 +289,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Description: "最大pod数, 默认110",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
 				},
 			},
 			"sys_disk": schema.SingleNestedAttribute{
@@ -295,6 +319,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Computed:    true,
 				Description: "节点数，不填则默认为0，创建节点池后只能增加不能减少",
 				Default:     int32default.StaticInt32(0),
+				Validators: []validator.Int32{
+					int32validator.AtLeast(0),
+				},
 			},
 			"az_infos": schema.ListNestedAttribute{
 				Required: true,
@@ -312,6 +339,9 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 							Description: "可用区编码",
 							PlanModifiers: []planmodifier.String{
 								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
 							},
 						},
 					},

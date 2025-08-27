@@ -56,7 +56,7 @@ resource "ctyun_ebs" "ebs_test" {
 }
 
 resource "ctyun_ebs_snapshot" "ebs_snapshot_test" {
-    snapshot_name = "ebs_snapshot_test"
+  name = "ebs_snapshot_test"
   disk_id = ctyun_ebs.ebs_test.id
   retention_policy = "forever"
 }

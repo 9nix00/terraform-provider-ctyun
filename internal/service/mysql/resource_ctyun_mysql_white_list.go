@@ -7,6 +7,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -40,6 +42,9 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -50,10 +55,16 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"prod_inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"group_name": schema.StringAttribute{
 				Required:    true,
@@ -69,6 +80,10 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 				Required:    true,
 				ElementType: types.StringType,
 				Description: "白名单ip列表，举例：['192.168.0.1', '192.168.0.*'],指定IP地址192.168.0.1：表示允许192.168.0.1的IP地址访问实例。 指定IP地址192.168.0.*：表示允许从192.168.0.1到192.168.0.255的IP地址访问实例。",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
 			},
 			"group_white_list_count": schema.Int32Attribute{
 				Computed:    true,

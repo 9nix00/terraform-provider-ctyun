@@ -77,6 +77,7 @@ func (c *ctyunIamUser) Schema(_ context.Context, _ resource.SchemaRequest, respo
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"description": schema.StringAttribute{

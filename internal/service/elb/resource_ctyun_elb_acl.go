@@ -6,6 +6,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -57,6 +58,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -69,13 +73,19 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					validator2.Desc(),
+				},
 			},
 			"source_ips": schema.SetAttribute{
 				Required:    true,
 				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(10),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},
 			"id": schema.StringAttribute{
@@ -92,6 +102,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -101,6 +114,9 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,

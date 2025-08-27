@@ -72,6 +72,9 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
 				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -124,12 +127,18 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -138,12 +147,18 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -218,14 +233,23 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
 							Description: "资源池可用区名称",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
 							Description: "该AZ内存在的实例节点数量",
+							Validators: []validator.Int32{
+								int32validator.Between(1, 16),
+							},
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
 							Description: "表示分布AZ的节点类型，master/slave",
+							Validators: []validator.String{
+								stringvalidator.OneOf("master", "slave"),
+							},
 						},
 					},
 				},
@@ -246,6 +270,9 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"prod_running_status": schema.Int32Attribute{
 				Computed:    true,
@@ -262,6 +289,9 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Description: "写数据端口",
+				Validators: []validator.Int32{
+					int32validator.Between(0, 65535),
+				},
 			},
 			"read_port": schema.StringAttribute{
 				Computed:    true,

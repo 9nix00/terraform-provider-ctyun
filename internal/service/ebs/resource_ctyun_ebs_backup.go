@@ -114,6 +114,9 @@ func (c *ctyunEbsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 					stringplanmodifier.RequiresReplace(),
 				},
 				Description: "云硬盘备份描述",
+				Validators: []validator.String{
+					stringvalidator.LengthAtMost(64),
+				},
 			},
 			"repository_id": schema.StringAttribute{
 				Required:    true,
