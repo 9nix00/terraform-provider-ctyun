@@ -53,7 +53,7 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 				Required:    true,
 				Description: "实例id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"project_id": schema.StringAttribute{
