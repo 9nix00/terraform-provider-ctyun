@@ -31,7 +31,7 @@ func TestAccCtyunVpcRouteTable(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, dependenceVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, dependence.vpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -39,13 +39,13 @@ func TestAccCtyunVpcRouteTable(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependenceVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependence.vpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependenceVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependence.vpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "route_tables.#", "1"),
@@ -65,7 +65,7 @@ func TestAccCtyunVpcRouteTable(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"project_id"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependenceVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, dependence.vpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},

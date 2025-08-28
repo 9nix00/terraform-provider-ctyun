@@ -10,5 +10,8 @@ resource "ctyun_kafka_instance" "%[1]s" {
   subnet_id = "%[10]s"
   security_group_id = "%[11]s"
   retention_hours = %[12]d
-  %[13]s
+  cycle_type = "month"
+  cycle_count = 2
+  auto_renew = true
+  auto_renew_cycle_count = 1
 }

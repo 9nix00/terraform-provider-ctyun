@@ -128,7 +128,7 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 			"description": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "规则描述",
+				Description: "规则描述，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},

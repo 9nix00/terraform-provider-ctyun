@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+func AtLeastOne(value string) error {
+	if value == "0" {
+		return fmt.Errorf("列表应该至少有一个元素")
+	}
+	return nil
+}
+
 func GetSubdirectories(dirPath string) ([]string, error) {
 	entries, err := os.ReadDir(dirPath)
 	if err != nil {

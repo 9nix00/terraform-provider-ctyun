@@ -62,7 +62,7 @@ func (c *ctyunBandwidth) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "共享带宽命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾",
+				Description: "共享带宽命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 63),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}-]+$"), "共享带宽名称不符合规则"),
@@ -70,7 +70,7 @@ func (c *ctyunBandwidth) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"bandwidth": schema.Int32Attribute{
 				Required:    true,
-				Description: "共享带宽的带宽峰值（Mbit/s），取值范围5-1000",
+				Description: "共享带宽的带宽峰值（Mbit/s），取值范围5-1000，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(5, 1000),
 				},

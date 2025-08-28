@@ -83,9 +83,11 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10029727**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-				Computed:      true,
-				Description:   "ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+				Computed:    true,
+				Description: "ID",
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -192,7 +194,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"engine_version": schema.StringAttribute{
 				Required:    true,
-				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0",
+				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.RedisEngineVersion...),
 				},
@@ -321,7 +323,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"password": schema.StringAttribute{
 				Required:    true,
-				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。",
+				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。支持更新",
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 26),
@@ -364,7 +366,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"maintenance_time": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00",
+				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00，支持更新",
 				Default:     stringdefault.StaticString("00:00-02:00"),
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^([0-1][0-9]|2[0-3]):[0-5][0-9]-([0-1][0-9]|2[0-3]):[0-5][0-9]$"), "时间格式错误"),
@@ -373,7 +375,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"protection_status": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "退订保护开关，默认为不保护",
+				Description: "退订保护开关，默认为不保护，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 		},
@@ -603,9 +605,6 @@ func (c *ctyunRedisInstance) checkSpecParams(ctx context.Context, plan CtyunRedi
 	}
 	if copiesCount == 0 {
 		copiesCount = 1
-	}
-	if shardCount*copiesCount > 54 {
-		return fmt.Errorf("当前暂时不支持大分片，分片数*副本数不能大于54")
 	}
 
 	// 组装请求体

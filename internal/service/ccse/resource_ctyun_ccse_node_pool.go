@@ -115,21 +115,21 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "节点池名称",
+				Description: "节点池名称，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填",
+				Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypes...),
 				},
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年",
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年，支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -146,7 +146,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写",
+				Description: "是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，支持更新",
 				Default:     booldefault.StaticBool(false),
 				Validators: []validator.Bool{
 					validator2.ConflictsWithEqualBool(
@@ -157,7 +157,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"visibility_post_host_script": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "部署后执行自定义脚本，base64编码",
+				Description: "部署后执行自定义脚本，base64编码，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -165,7 +165,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"visibility_host_script": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "部署前执行自定义脚本，base64编码",
+				Description: "部署前执行自定义脚本，base64编码，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -300,14 +300,14 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Attributes: map[string]schema.Attribute{
 					"type": schema.StringAttribute{
 						Required:    true,
-						Description: "系统盘类型，支持SATA、SAS、SSD",
+						Description: "系统盘类型，支持SATA、SAS、SSD，支持更新",
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.CcseDiskTypes...),
 						},
 					},
 					"size": schema.Int32Attribute{
 						Required:    true,
-						Description: "系统盘大小，单位为G，支持范围40-2040",
+						Description: "系统盘大小，单位为G，支持范围40-2040，支持更新",
 						Validators: []validator.Int32{
 							int32validator.Between(40, 2040),
 						},
@@ -317,7 +317,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"node_num": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "节点数，不填则默认为0，创建节点池后只能增加不能减少",
+				Description: "节点数，不填则默认为0，支持更新，创建节点池后只能增加不能减少",
 				Default:     int32default.StaticInt32(0),
 				Validators: []validator.Int32{
 					int32validator.AtLeast(0),
@@ -354,14 +354,14 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 					Attributes: map[string]schema.Attribute{
 						"type": schema.StringAttribute{
 							Required:    true,
-							Description: "数据盘类型，支持SATA、SAS、SSD",
+							Description: "数据盘类型，支持SATA、SAS、SSD，支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.CcseDiskTypes...),
 							},
 						},
 						"size": schema.Int32Attribute{
 							Optional:    true,
-							Description: "数据盘大小，单位为G，支持范围10-20000",
+							Description: "数据盘大小，单位为G，支持范围10-20000，支持更新",
 							Validators: []validator.Int32{
 								int32validator.Between(10, 20000),
 							},
@@ -398,7 +398,6 @@ func (c *ctyunCcseNodePool) Create(ctx context.Context, request resource.CreateR
 	}
 
 	plan.ID = types.StringValue(id)
-	time.Sleep(30 * time.Second)
 	// 扩容
 	planB := plan
 	planB.NodeNum = types.Int32Value(0)

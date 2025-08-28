@@ -108,7 +108,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32",
+				Description: "支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
@@ -117,7 +117,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"instance_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时，必填",
+				Description: "服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时，必填。，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("vm", "bm", "vip", "lb"),
 					validator2.AlsoRequiresEqualString(
@@ -133,7 +133,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例ID,当type为interface时，必填",
+				Description: "服务后端实例ID,当type为interface时，必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
@@ -157,13 +157,13 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"auto_connection": schema.BoolAttribute{
 				Required:    true,
-				Description: "是否自动连接，true表示自动链接，false表示非自动链接",
+				Description: "是否自动连接，true表示自动链接，false表示非自动链接，支持更新",
 			},
 			"whitelist_email": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "白名单邮箱，最多支持10个",
+				Description: "白名单邮箱，最多支持10个，支持更新",
 				Validators: []validator.Set{
 					setvalidator.ValueStringsAre(validator2.Email()),
 					setvalidator.SizeAtMost(10),
@@ -182,26 +182,26 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						types.StringValue(business.VpceServiceTypeReverse),
 					),
 				},
-				Description: "节点服务规则,当type为interface时必填",
+				Description: "节点服务规则，当type为interface时必填",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"protocol": schema.StringAttribute{
 							Required:    true,
-							Description: "协议，TCP:TCP协议,UDP:UDP协议",
+							Description: "协议，TCP:TCP协议,UDP:UDP协议，支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf("TCP", "UDP"),
 							},
 						},
 						"server_port": schema.Int32Attribute{
 							Required:    true,
-							Description: "服务端口(用于创建backend传入)(1-65535)",
+							Description: "服务端口(用于创建backend传入)(1-65535)，支持更新",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 65535),
 							},
 						},
 						"endpoint_port": schema.Int32Attribute{
 							Required:    true,
-							Description: "节点端口(用于创建rule传入)(1-65535)",
+							Description: "节点端口(用于创建rule传入)(1-65535)，支持更新",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 65535),
 							},

@@ -31,7 +31,6 @@ import (
 
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 )
 
 var (
@@ -92,9 +91,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027724**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-				Computed:      true,
-				Description:   "ID",
+				Computed:    true,
+				Description: "ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -103,6 +104,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"instance_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "物理机UUID，值与id相同",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -147,14 +151,14 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "物理机名称，长度为2-31位",
+				Description: "物理机名称，长度为2-31位，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 31),
 				},
 			},
 			"hostname": schema.StringAttribute{
 				Required:    true,
-				Description: "hostname，linux系统2到63位长度；windows系统2-15位长度；<br/>允许使用大小写字母、数字、连字符'-'、点号'.'，不能连续使用'-'或者'.'，'-'和'.'不能用于开头或结尾，不能仅使用数字",
+				Description: "hostname，linux系统2到63位长度；windows系统2-15位长度；<br/>允许使用大小写字母、数字、连字符'-'、点号'.'，不能连续使用'-'或者'.'，'-'和'.'不能用于开头或结尾，不能仅使用数字，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$`), "hostname必须以字母开头，以字母或数字结尾"),
@@ -175,12 +179,15 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"actual_image_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "实际镜像id，重装、集群纳管等操作会导致actual_image_id与image_id不同",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"password": schema.StringAttribute{
 				Sensitive:   true,
 				Optional:    true,
 				Computed:    true,
-				Description: "密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password",
+				Description: "密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password，支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("key_pair_name"),
@@ -236,6 +243,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "弹性公网IP的ID",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
@@ -245,6 +253,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"eip_address": schema.StringAttribute{
 				Computed:    true,
 				Description: "弹性公网IP的地址",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"security_group_ids": schema.SetAttribute{
 				Optional:    true,
@@ -286,6 +297,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"system_disk_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "系统盘的id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
@@ -300,14 +314,23 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"fixed_ip": schema.StringAttribute{
 				Computed:    true,
 				Description: "加入子网后的ip地址",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"port_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "主网卡PORT UUID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"interface_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "主网卡UUID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"user_data": schema.StringAttribute{
 				Optional:    true,
@@ -329,6 +352,9 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("password"),
 					}...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"auto_renew": schema.BoolAttribute{
@@ -377,7 +403,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "物理机状态，支持running（开机）和stopped（关机），默认running",
+				Description: "物理机状态，支持running（开机）和stopped（关机），默认running，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						business.EbmStatusRunning,
@@ -554,6 +580,10 @@ func (c *ctyunEbm) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.destroy(ctx, state)
 	if err != nil {
 		return
 	}
@@ -852,14 +882,24 @@ func (c *ctyunEbm) buildSecGroupList(ctx context.Context, plan CtyunEbmConfig) (
 
 // handleInstance 操作机器，开机或关机
 func (c *ctyunEbm) handleInstance(ctx context.Context, plan CtyunEbmConfig, currentStatus string, targetStatus string) (err error) {
-	if currentStatus == targetStatus {
-		return
-	}
-	switch targetStatus {
-	case business.EbmStatusStopped:
-		return c.stopInstance(ctx, plan)
-	case business.EbmStatusRunning:
-		return c.startInstance(ctx, plan)
+	for i := 0; i < 100; i++ {
+		if currentStatus == targetStatus {
+			return
+		}
+		switch currentStatus {
+		case business.EbmStatusStopped: // 当前是关机，目标肯定是开机
+			return c.startInstance(ctx, plan)
+		case business.EbmStatusRunning: // 当前是开机，目标则是关机
+			return c.stopInstance(ctx, plan)
+		default:
+			// 查当前状态，并等待
+			time.Sleep(30 * time.Second)
+			instance, err := c.getEbm(ctx, plan)
+			if err != nil {
+				return err
+			}
+			currentStatus = strings.ToLower(utils.SecString(instance.EbmState))
+		}
 	}
 	return errors.New("操作机器状态失败，请检查实例状态")
 }
@@ -951,24 +991,12 @@ func (c *ctyunEbm) stopInstance(ctx context.Context, plan CtyunEbmConfig) (err e
 	return
 }
 
-// getAndMerge 查询ebm
+// getAndMerge 查询并何必
 func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err error) {
-	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
-		RegionID:     cfg.RegionID.ValueString(),
-		InstanceUUID: cfg.InstanceID.ValueString(),
-		AzName:       cfg.AzName.ValueString(),
-	})
+	instance, err := c.getEbm(ctx, *cfg)
 	if err != nil {
 		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-
-	instance := resp.ReturnObj
 	cfg.InstanceID = utils.SecStringValue(instance.InstanceUUID)
 	cfg.RegionID = utils.SecStringValue(instance.RegionID)
 	cfg.AzName = utils.SecStringValue(instance.AzName)
@@ -1027,20 +1055,24 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	return nil
 }
 
-// getMasterOrderIdIfOrderInProgress 获取masterOrderId
-func (c *ctyunEbm) getMasterOrderIdIfOrderInProgress(err ctyunsdk.CtyunRequestError) (string, error) {
-	resp := struct {
-		MasterOrderId string `json:"masterOrderID"`
-		MasterOrderNo string `json:"masterOrderNO"`
-	}{}
-	if err.CtyunResponse() == nil {
-		return "", err
-	}
-	_, err = err.CtyunResponse().ParseByStandardModel(&resp)
+// getEbm 查询ebm信息
+func (c *ctyunEbm) getEbm(ctx context.Context, cfg CtyunEbmConfig) (instance *ctebm.EbmDescribeInstanceV4plusReturnObjResponse, err error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmDescribeInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDescribeInstanceV4plusRequest{
+		RegionID:     cfg.RegionID.ValueString(),
+		InstanceUUID: cfg.InstanceID.ValueString(),
+		AzName:       cfg.AzName.ValueString(),
+	})
 	if err != nil {
-		return "", err
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
 	}
-	return resp.MasterOrderId, err
+	instance = resp.ReturnObj
+	return
 }
 
 // acquireIdIfOrderNotFinished 重新获取id，如果前订单状态有问题需要重新轮询
@@ -1263,6 +1295,31 @@ func (c *ctyunEbm) getInstanceStatus(ctx context.Context, state CtyunEbmConfig) 
 // delete 删除物理机
 func (c *ctyunEbm) delete(ctx context.Context, state CtyunEbmConfig) (err error) {
 	resp, err := c.meta.Apis.CtEbmApis.EbmDeleteInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDeleteInstanceRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
+		ClientToken:  uuid.NewString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// destroy 销毁包周期
+func (c *ctyunEbm) destroy(ctx context.Context, state CtyunEbmConfig) (err error) {
+	if state.CycleType.ValueString() == business.OnDemandCycleType {
+		return nil
+	}
+	resp, err := c.meta.Apis.CtEbmApis.EbmDestroyInstanceApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmDestroyInstanceRequest{
 		RegionID:     state.RegionID.ValueString(),
 		AzName:       state.AzName.ValueString(),
 		InstanceUUID: state.InstanceID.ValueString(),

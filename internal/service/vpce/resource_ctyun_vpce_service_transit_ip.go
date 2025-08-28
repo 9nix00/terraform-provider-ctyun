@@ -94,6 +94,9 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}

@@ -226,6 +226,8 @@ func (c *ctyunEbs) Create(ctx context.Context, request resource.CreateRequest, r
 			response.Diagnostics.AddError(err.Error(), err.Error())
 			return
 		}
+		masterOrderId = moi
+		plan.MasterOrderId = types.StringValue(masterOrderId)
 		response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 		// 轮询结果
 		helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
@@ -235,7 +237,6 @@ func (c *ctyunEbs) Create(ctx context.Context, request resource.CreateRequest, r
 			return
 		}
 		id = loop.Uuid[0]
-		masterOrderId = moi
 	}
 
 	plan.Id = types.StringValue(id)

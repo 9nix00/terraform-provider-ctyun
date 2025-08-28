@@ -18,7 +18,7 @@ func TestAccCtyunBandwidth(t *testing.T) {
 	datasourceName := "data.ctyun_bandwidths." + dnd
 	resourceFile := "resource_ctyun_bandwidth.tf"
 	datasourceFile := "datasource_ctyun_bandwidths.tf"
-
+	listDatasourceFile := "datasource_ctyun_bandwidths_list.tf"
 	initName := "init"
 	initBandwidth := "5"
 	updatedName := "updated"
@@ -58,6 +58,10 @@ func TestAccCtyunBandwidth(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "bandwidths.0.name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "bandwidths.0.bandwidth", updatedBandwidth),
 				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedBandwidth) +
+					utils.LoadTestCase(listDatasourceFile, dnd),
 			},
 			{
 				ResourceName: resourceName,

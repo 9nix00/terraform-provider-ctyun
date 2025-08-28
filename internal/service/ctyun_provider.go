@@ -505,7 +505,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsBackupPolicyBindInstances(),
 		ecs.NewCtyunEcsBackupPolicyBindRepo(),
 		ccse.NewCtyunCcseNodeAssociation(),
-		ccse.NewCtyunCcseTemplateInstance(),
 	)
 }
 

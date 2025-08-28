@@ -123,7 +123,8 @@ func (c *ctyunSecurityGroupRule) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "描述，长度1-128",
+				Computed:    true,
+				Description: "描述，长度1-128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtMost(128),
 				},
