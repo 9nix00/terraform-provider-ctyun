@@ -47,7 +47,7 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持字母、中文、数字，下划线以及-，中文/英文字母开头，长度 2-32",
+				Description: "子网名称，支持字母、中文、数字，下划线以及-，中文/英文字母开头，长度 2-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "子网名称不符合规则"),
@@ -55,7 +55,7 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "vpcId",
+				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -63,7 +63,7 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			"description": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "描述，长度最大为128",
+				Description: "描述，长度最大为128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtMost(128),
 				},
@@ -71,7 +71,7 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			"dns": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Description: "子网dns列表, 最多同时支持4个dns地址",
+				Description: "子网dns列表, 最多同时支持4个dns地址，支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(4),

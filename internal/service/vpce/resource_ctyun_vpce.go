@@ -108,10 +108,13 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
@@ -123,13 +126,13 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			},
 			"whitelist_flag": schema.BoolAttribute{
 				Required:    true,
-				Description: "是否开启白名单",
+				Description: "是否开启白名单，支持更新",
 			},
 			"whitelist_cidr": schema.SetAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
 				Optional:    true,
-				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个",
+				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个，支持更新",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("whitelist_flag"),
@@ -389,10 +392,10 @@ func (c *ctyunVpce) getAndMerge(ctx context.Context, plan *CtyunVpceConfig) (err
 
 // update 更新
 func (c *ctyunVpce) update(ctx context.Context, plan, state CtyunVpceConfig) (err error) {
-	if !plan.SubnetIP.IsUnknown() && !plan.SubnetIP.Equal(state.SubnetIP) {
-		err = fmt.Errorf("子网ip地址不支持修改")
-		return
-	}
+	//if !plan.SubnetIP.IsUnknown() && !plan.SubnetIP.Equal(state.SubnetIP) {
+	//	err = fmt.Errorf("子网ip地址不支持修改")
+	//	return
+	//}
 
 	endpointID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
 	params := &ctvpc.CtvpcUpdateEndpointRequest{

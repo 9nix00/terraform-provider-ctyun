@@ -49,3 +49,7 @@ func TestAccRouteRules(t *testing.T) {
 func TestAccBatchEcs(t *testing.T) {
 	runTest(t)
 }
+
+func TestAccRegion(t *testing.T) {
+	runTest(t)
+}

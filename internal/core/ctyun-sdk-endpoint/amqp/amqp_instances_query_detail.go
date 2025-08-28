@@ -83,4 +83,5 @@ type AmqpInstancesQueryDetailResponseReturnObjData struct {
 	ProdInstId    string      `json:"prodInstId"`
 	ExpireTime    string      `json:"expireTime"`
 	CreateTime    string      `json:"createTime"`
+	NodeCount     int32       `json:"nodeCount"`
 }

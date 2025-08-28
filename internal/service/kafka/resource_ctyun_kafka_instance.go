@@ -116,7 +116,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复",
+				Description: "实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(4, 40),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-][a-zA-Z0-9])+$"), "实例名称不符合规则"),
@@ -136,11 +136,11 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>",
+				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>，支持更新",
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "节点数。单机版为1个，集群版3~50个",
+				Description: "节点数。单机版为1个，集群版3~50个，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},
@@ -162,7 +162,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum",
+				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 10000),
 				},
@@ -186,7 +186,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "安全组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"enable_ipv6": schema.BoolAttribute{
@@ -200,6 +199,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"plain_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -211,6 +211,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"sasl_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -222,6 +223,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"ssl_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -233,6 +235,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"http_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "HTTP接入点端口，范围在8000到9100之间，默认为8082",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -245,7 +248,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"retention_hours": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时",
+				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10000),
 				},
@@ -258,7 +261,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringvalidator.OneOf("month", "on_demand"),
 				},
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -719,12 +721,12 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	plan.SubnetID = types.StringValue(instance.SubnetId)
 
 	plan.EnableIpv6 = types.BoolValue(map[int32]bool{1: true, 0: false}[instance.Ipv6Enable])
-	//if len(instance.NodeList) > 0 {
-	//	plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
-	//	plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
-	//	plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
-	//	plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
-	//}
+	if len(instance.NodeList) > 0 {
+		plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
+		plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
+		plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
+		plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
+	}
 
 	config, err := c.getInstanceConfig(ctx, *plan)
 	if err != nil {
@@ -809,25 +811,25 @@ func (c *ctyunKafkaInstance) updateDiskSize(ctx context.Context, plan, state Cty
 	return c.checkAfterUpdateDiskSize(ctx, plan, state)
 }
 
-// diskExtend 磁盘缩容
-func (c *ctyunKafkaInstance) diskShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
-	params := &ctgkafka.CtgkafkaDiskShrinkRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
-		DiskSize:   plan.DiskSize.String(),
-	}
-	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaDiskShrinkApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
+//// diskExtend 磁盘缩容
+//func (c *ctyunKafkaInstance) diskShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
+//	params := &ctgkafka.CtgkafkaDiskShrinkRequest{
+//		RegionId:   state.RegionID.ValueString(),
+//		ProdInstId: state.ID.ValueString(),
+//		DiskSize:   plan.DiskSize.String(),
+//	}
+//	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaDiskShrinkApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCodeString {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	} else if resp.ReturnObj == nil {
+//		err = common.InvalidReturnObjError
+//		return
+//	}
+//	return
+//}
 
 // diskExtend 磁盘扩容
 func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
@@ -854,6 +856,7 @@ func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -865,7 +868,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -896,24 +902,24 @@ func (c *ctyunKafkaInstance) updateNodeNum(ctx context.Context, plan, state Ctyu
 }
 
 // nodeShrink 节点缩容
-func (c *ctyunKafkaInstance) nodeShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
-	params := &ctgkafka.CtgkafkaNodeShrinkRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
-		NodeNum:    plan.DiskSize.String(),
-	}
-	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaNodeShrinkApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
+//func (c *ctyunKafkaInstance) nodeShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
+//	params := &ctgkafka.CtgkafkaNodeShrinkRequest{
+//		RegionId:   state.RegionID.ValueString(),
+//		ProdInstId: state.ID.ValueString(),
+//		NodeNum:    plan.DiskSize.String(),
+//	}
+//	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaNodeShrinkApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCodeString {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	} else if resp.ReturnObj == nil {
+//		err = common.InvalidReturnObjError
+//		return
+//	}
+//	return
+//}
 
 // nodeExtend 节点扩容
 func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
@@ -940,6 +946,7 @@ func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateNodeNum 检查节点数量是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -951,7 +958,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1048,6 +1058,7 @@ func (c *ctyunKafkaInstance) specExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1059,7 +1070,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1255,6 +1269,7 @@ func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKa
 // checkAfterCreate 创建后检查
 func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKafkaInstanceConfig) (id string, err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1267,7 +1282,10 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 				return true
 			}
 			// 等待订单完成
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false

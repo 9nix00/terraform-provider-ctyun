@@ -97,7 +97,7 @@ func (c *ctyunEbmInterface) Schema(_ context.Context, _ resource.SchemaRequest, 
 				},
 			},
 			"security_group_ids": schema.SetAttribute{
-				Description: "安全组ID",
+				Description: "安全组ID，支持更新",
 				Required:    true,
 				ElementType: types.StringType,
 				Validators: []validator.Set{

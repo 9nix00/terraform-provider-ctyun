@@ -9,7 +9,15 @@ import (
 
 const dependenceDir = "testdata/dependence"
 
-var dependenceVpcID string
+type Dependence struct {
+	vpcID           string
+	eipID           string
+	bandwidthID     string
+	ecsID           string
+	securityGroupID string
+}
+
+var dependence Dependence
 
 func TestMain(m *testing.M) {
 	// 初始化依赖资源
@@ -20,7 +28,13 @@ func TestMain(m *testing.M) {
 		terraform.DestroyResource(dependenceDir)
 		os.Exit(1)
 	}
-	dependenceVpcID = outputs["vpc_id"].Value
+	dependence = Dependence{
+		vpcID:           outputs["vpc_id"].Value,
+		eipID:           outputs["eip_id"].Value,
+		bandwidthID:     outputs["bandwidth_id"].Value,
+		ecsID:           outputs["ecs_id"].Value,
+		securityGroupID: outputs["security_group_id"].Value,
+	}
 	fmt.Println("依赖资源初始化完毕")
 
 	// 执行测试用例

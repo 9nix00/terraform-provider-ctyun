@@ -36,7 +36,7 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, initDescription, dependenceVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, initDescription, dependence.vpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
@@ -53,14 +53,14 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependenceVpcID),
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependence.vpcID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttr(resourceName, "destination", initDestination),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependenceVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependence.vpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					func(s *terraform.State) error {
@@ -93,7 +93,7 @@ func TestAccCtyunVpcRouteTableRule(t *testing.T) {
 				ImportStateVerifyIgnore: []string{},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependenceVpcID) +
+				Config: utils.LoadTestCase(resourceFile, rnd, initDestination, updatedDescription, dependence.vpcID) +
 					utils.LoadTestCase(datasourceFile, dnd, "ctyun_vpc_route_table.route.id"),
 				Destroy: true,
 			},

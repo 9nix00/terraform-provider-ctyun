@@ -84,7 +84,7 @@ func (c *ctyunCcsePlugin) Schema(_ context.Context, _ resource.SchemaRequest, re
 			},
 			"chart_version": schema.StringAttribute{
 				Required:    true,
-				Description: "插件版本号，可通过ctyun_ccse_plugin_market查询",
+				Description: "插件版本号，可通过ctyun_ccse_plugin_market查询，支持更新",
 			},
 			"values_yaml": schema.StringAttribute{
 				Optional:    true,
@@ -221,6 +221,10 @@ func (c *ctyunCcsePlugin) Delete(ctx context.Context, request resource.DeleteReq
 	}
 	// 删除
 	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.checkAfterDelete(ctx, state)
 	if err != nil {
 		return
 	}

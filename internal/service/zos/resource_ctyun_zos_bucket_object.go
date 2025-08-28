@@ -141,17 +141,12 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "指定缓存行为，对应S3协议Header中的Cache-Control",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"content_disposition": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
-				Description: "指定该对象的表示性信息，对应S3协议Header中的Content-Disposition",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.UseStateForUnknown(),
-				},
-				//Default: stringdefault.StaticString("attachment"),
+				Description: "该对象的表示性信息，对应S3协议Header中的Content-Disposition",
 			},
 			"content_encoding": schema.StringAttribute{
 				Optional:    true,
@@ -159,6 +154,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "指定已对该对象应用哪些内容编码方式，对应S3协议Header中的Content-Encoding",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"content_type": schema.StringAttribute{
@@ -167,6 +163,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "描述对象类型，对应S3协议Header中的Content-Type",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"storage_type": schema.StringAttribute{
@@ -174,6 +171,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认使用桶的storage_type",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
@@ -404,7 +402,6 @@ func (c *ctyunZosBucketObject) create(ctx context.Context, plan CtyunZosBucketOb
 	input.CacheControl = plan.CacheControl.ValueStringPointer()
 	input.ContentType = plan.ContentType.ValueStringPointer()
 	input.ContentEncoding = plan.ContentEncoding.ValueStringPointer()
-	input.ContentDisposition = plan.ContentDisposition.ValueStringPointer()
 	input.StorageClass = plan.StorageType.ValueStringPointer()
 
 	tags, err := utils.TypesMapToStringMap(ctx, plan.Tags)
@@ -438,7 +435,11 @@ func (c *ctyunZosBucketObject) getAndMerge(ctx context.Context, plan *CtyunZosBu
 	plan.ContentEncoding = utils.SecStringValue(output.ContentEncoding)
 	plan.ContentType = utils.SecStringValue(output.ContentType)
 	plan.CacheControl = utils.SecStringValue(output.CacheControl)
-	plan.StorageType = utils.SecStringValue(output.StorageClass)
+	sType := utils.SecString(output.StorageClass)
+	if sType == "" {
+		sType = business.ZosStorageTypeStandard
+	}
+	plan.StorageType = types.StringValue(sType)
 
 	plan.Etag = utils.SecStringValue(output.ETag)
 	plan.VersionID = utils.SecStringValue(output.VersionId)

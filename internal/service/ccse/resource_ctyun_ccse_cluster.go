@@ -12,6 +12,7 @@ import (
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -283,12 +284,13 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"pod_subnet_id_list": schema.SetAttribute{
 						ElementType: types.StringType,
 						Optional:    true,
-						Description: "pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC",
+						Description: "pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC，最多支持10个子网",
 						Validators: []validator.Set{
 							validator2.AlsoRequiresEqualSet(
 								path.MatchRoot("base_info").AtName("network_plugin"),
 								types.StringValue(business.CcsePluginCubecni),
 							),
+							setvalidator.SizeAtMost(10),
 						},
 						PlanModifiers: []planmodifier.Set{
 							setplanmodifier.RequiresReplace(),
@@ -446,6 +448,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								path.MatchRoot("base_info").AtName("cycle_type"),
 								types.StringValue(business.OrderCycleTypeOnDemand),
 							),
+							validator2.CycleCount(1, 11, 1, 3),
 						},
 						PlanModifiers: []planmodifier.Int64{
 							int64planmodifier.RequiresReplace(),
@@ -797,6 +800,10 @@ func (c *ctyunCcseCluster) Create(ctx context.Context, request resource.CreateRe
 	// 创建后检查
 	id, err := c.checkAfterCreate(ctx, plan)
 	if err != nil {
+		if strings.Contains(err.Error(), "初始节点创建时间过长") {
+			plan.ID = types.StringValue(id)
+			response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+		}
 		return
 	}
 	plan.ID = types.StringValue(id)
@@ -835,13 +842,7 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 }
 
 func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	err = fmt.Errorf("当前不支持任何修改")
+
 }
 
 func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -906,21 +907,6 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 
 // checkBeforeCreate 创建前检查
 func (c *ctyunCcseCluster) checkBeforeCreate(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
-	cycleCount := plan.BaseInfo.CycleCount.ValueInt64()
-	switch plan.BaseInfo.CycleType.ValueString() {
-	case business.MonthCycleType:
-		if cycleCount < 1 || cycleCount > 11 {
-			return fmt.Errorf("按月付费时，支持1-11个月")
-		}
-	case business.YearCycleType:
-		if cycleCount < 1 || cycleCount > 3 {
-			return fmt.Errorf("按年付费时，支持1-3年")
-		}
-	}
-	if len(plan.BaseInfo.PodSubnetIdList) > 10 {
-		return fmt.Errorf("pod_subnet_id_list最多支持10个子网")
-	}
-
 	// 确保当前虚拟私有云存在，且子网与虚拟私有云存在对应关系
 	vpc, regionID, projectID := plan.BaseInfo.VpcID.ValueString(), plan.RegionID.ValueString(), plan.BaseInfo.ProjectID.ValueString()
 	subnets, err := c.vpcService.GetVpcSubnet(ctx, vpc, regionID, projectID)
@@ -1094,8 +1080,6 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		if err != nil {
 			return "", err
 		}
-		slaveHost.Cpu = int32(flavor.FlavorCpu)
-		slaveHost.Mem = int32(flavor.FlavorRam)
 		slaveHost.ItemDefName = flavorName
 		slaveHost.ItemDefType = flavor.FlavorType
 	case business.CcseSlaveInstanceTypeEbm:
@@ -1105,8 +1089,6 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		if err != nil {
 			return "", err
 		}
-		slaveHost.Cpu = flavor.CpuAmount
-		slaveHost.Mem = flavor.MemAmount
 		slaveHost.ItemDefName = deviceType
 		slaveHost.ItemDefType = deviceType
 
