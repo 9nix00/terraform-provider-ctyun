@@ -67,10 +67,13 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"route_table_id": schema.StringAttribute{
 				Required:    true,
@@ -78,12 +81,18 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"next_hop_id": schema.StringAttribute{
 				Required:    true,
 				Description: "下一跳设备id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"next_hop_type": schema.StringAttribute{
@@ -102,6 +111,9 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"ip_version": schema.Int32Attribute{
 				Required:    true,
@@ -117,6 +129,9 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				Computed:    true,
 				Optional:    true,
 				Description: "规则描述，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 		},
 	}

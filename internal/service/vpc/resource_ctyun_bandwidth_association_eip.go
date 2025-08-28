@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -44,9 +45,11 @@ func (c *ctyunBandwidthAssociationEip) Schema(_ context.Context, _ resource.Sche
 			"bandwidth_id": schema.StringAttribute{
 				Required:    true,
 				Description: "共享带宽id",
-				Validators:  nil,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"eip_id": schema.StringAttribute{
@@ -54,6 +57,9 @@ func (c *ctyunBandwidthAssociationEip) Schema(_ context.Context, _ resource.Sche
 				Description: "弹性ip的id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.EipValidate(),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -64,6 +70,9 @@ func (c *ctyunBandwidthAssociationEip) Schema(_ context.Context, _ resource.Sche
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

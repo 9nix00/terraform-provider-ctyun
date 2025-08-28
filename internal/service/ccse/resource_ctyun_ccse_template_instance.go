@@ -70,16 +70,22 @@ package ccse
 //				Optional:    true,
 //				Computed:    true,
 //				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-//				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 //				PlanModifiers: []planmodifier.String{
 //					stringplanmodifier.RequiresReplace(),
 //				},
+//				Validators: []validator.String{
+//					stringvalidator.UTF8LengthAtLeast(1),
+//				},
+//				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 //			},
 //			"cluster_id": schema.StringAttribute{
 //				Required:    true,
 //				Description: "集群ID",
 //				PlanModifiers: []planmodifier.String{
 //					stringplanmodifier.RequiresReplace(),
+//				},
+//				Validators: []validator.String{
+//					stringvalidator.LengthAtLeast(1),
 //				},
 //			},
 //			"namespace": schema.StringAttribute{
@@ -88,12 +94,18 @@ package ccse
 //				PlanModifiers: []planmodifier.String{
 //					stringplanmodifier.RequiresReplace(),
 //				},
+//				Validators: []validator.String{
+//					stringvalidator.LengthAtLeast(1),
+//				},
 //			},
 //			"name": schema.StringAttribute{
 //				Required:    true,
 //				Description: "实例名称",
 //				PlanModifiers: []planmodifier.String{
 //					stringplanmodifier.RequiresReplace(),
+//				},
+//				Validators: []validator.String{
+//					stringvalidator.LengthAtLeast(1),
 //				},
 //			},
 //			"tpl_name": schema.StringAttribute{
@@ -102,12 +114,15 @@ package ccse
 //				PlanModifiers: []planmodifier.String{
 //					stringplanmodifier.RequiresReplace(),
 //				},
+//				Validators: []validator.String{
+//					stringvalidator.LengthAtLeast(1),
+//				},
 //			},
 //			"tpl_version": schema.StringAttribute{
 //				Required:    true,
 //				Description: "模板版本号，可通过ctyun_ccse_template_market查询",
-//				PlanModifiers: []planmodifier.String{
-//					stringplanmodifier.RequiresReplace(),
+//				Validators: []validator.String{
+//					stringvalidator.LengthAtLeast(1),
 //				},
 //			},
 //			"values_yaml": schema.StringAttribute{

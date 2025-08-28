@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -64,6 +65,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"target_group_id": schema.StringAttribute{
 				Required:    true,
@@ -71,11 +75,16 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1)},
 			},
 			"instance_type": schema.StringAttribute{
 				Required:    true,
@@ -93,12 +102,18 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"instance_ip": schema.StringAttribute{
 				Optional:    true,
 				Description: "后端实例ip",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Ip(),
 				},
 			},
 			"protocol_port": schema.Int32Attribute{
@@ -151,6 +166,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -160,6 +178,9 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 		},
 	}

@@ -37,6 +37,9 @@ func (c *ctyunImageAssociationUser) Schema(_ context.Context, _ resource.SchemaR
 			"image_id": schema.StringAttribute{
 				Required:    true,
 				Description: "要共享的私有镜像id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"type": schema.StringAttribute{
 				Required:    true,

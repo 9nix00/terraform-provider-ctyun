@@ -92,7 +92,7 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 					int64validator.Between(1, 65535),
 				},
 				PlanModifiers: []planmodifier.Int64{
-					int64planmodifier.UseStateForUnknown(),
+					int64planmodifier.RequiresReplace(),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -103,6 +103,9 @@ func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

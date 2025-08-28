@@ -9,12 +9,16 @@ import (
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -91,6 +95,9 @@ func (c *ctyunEcsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -131,8 +138,16 @@ func (c *ctyunEcsBackupRepo) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"pay_voucher_price": schema.Float64Attribute{
 				Optional:    true,
+				Computed:    true,
 				Required:    false,
 				Description: "代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用代金券。",
+				Default:     float64default.StaticFloat64(0.00),
+				PlanModifiers: []planmodifier.Float64{
+					float64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Float64{
+					float64validator.AtLeast(0.0),
+				},
 			},
 
 			// 返回字段

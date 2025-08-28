@@ -6,6 +6,9 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -43,18 +46,27 @@ func (c *ctyunEnterpriseProjectAssociationUserGroup) Schema(_ context.Context, _
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"user_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "用户组id",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"policy_ids": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "策略id列表",
 				ElementType: types.StringType,
-				Validators:  []validator.Set{},
-				Default:     setdefault.StaticValue(types.SetValueMust(basetypes.StringType{}, []attr.Value{})),
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
+				Default: setdefault.StaticValue(types.SetValueMust(basetypes.StringType{}, []attr.Value{})),
 			},
 		},
 	}

@@ -10,6 +10,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -76,10 +77,13 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"bucket": schema.StringAttribute{
 				Required:    true,
@@ -143,10 +147,16 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"content_disposition": schema.StringAttribute{
 				Computed:    true,
 				Description: "该对象的表示性信息，对应S3协议Header中的Content-Disposition",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"content_encoding": schema.StringAttribute{
 				Optional:    true,
@@ -156,6 +166,9 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"content_type": schema.StringAttribute{
 				Optional:    true,
@@ -164,6 +177,9 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"storage_type": schema.StringAttribute{
@@ -183,6 +199,9 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Description: "标签，支持更新",
+				Validators: []validator.Map{
+					mapvalidator.SizeAtMost(10),
+				},
 			},
 			"etag": schema.StringAttribute{
 				Computed:    true,
