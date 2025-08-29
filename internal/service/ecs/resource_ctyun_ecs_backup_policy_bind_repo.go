@@ -6,6 +6,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -37,6 +38,7 @@ func (c *ctyunEcsBackupPolicyBindRepo) Metadata(_ context.Context, request resou
 }
 
 type CtyunEcsBackupPolicyBindRepoConfig struct {
+	ID           types.String `tfsdk:"id"`
 	PolicyID     types.String `tfsdk:"policy_id"`
 	RegionID     types.String `tfsdk:"region_id"`
 	RepositoryID types.String `tfsdk:"repository_id"`
@@ -46,6 +48,11 @@ func (c *ctyunEcsBackupPolicyBindRepo) Schema(_ context.Context, _ resource.Sche
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10235038**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
 			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份策略id",
@@ -401,5 +408,33 @@ func (c *ctyunEcsBackupPolicyBindRepo) getAndMerge(ctx context.Context, plan *Ct
 		err = fmt.Errorf("云主机备份策略 %s 和存储库 %s 未关联  regionID： %s", policyId, repositoryID, regionID)
 		return
 	}
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", policyId, repositoryID, regionID))
 	return
+}
+
+// 导入命令：terraform import [配置标识].[导入配置名称] [policyID],[repositoryID],[regionID]
+func (c *ctyunEcsBackupPolicyBindRepo) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunEcsBackupPolicyBindRepoConfig
+	var repositoryID, policyID, regionID string
+	err = terraform_extend.Split(request.ID, &policyID, &repositoryID, &regionID)
+	if err != nil {
+		return
+	}
+
+	cfg.RepositoryID = types.StringValue(repositoryID)
+	cfg.PolicyID = types.StringValue(policyID)
+	cfg.RegionID = types.StringValue(regionID)
+
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }

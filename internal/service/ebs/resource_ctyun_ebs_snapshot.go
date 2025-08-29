@@ -33,8 +33,6 @@ type ctyunEbsSnapshot struct {
 }
 
 func (c *ctyunEbsSnapshot) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	//无此接口 不用实现
-	return
 }
 
 func (c *ctyunEbsSnapshot) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -199,6 +197,7 @@ func (c *ctyunEbsSnapshot) getAndMerge(ctx context.Context, cfg *CtyunEbsSnapsho
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEbsApis.EbsListEbsSnapApi.Do(ctx, c.meta.SdkCredential, params)
+
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
@@ -235,6 +234,10 @@ func (c *ctyunEbsSnapshot) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "no snapshot details found") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 

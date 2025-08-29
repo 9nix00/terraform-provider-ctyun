@@ -30,8 +30,7 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 
 	diskId := dependence.ebsID
 
-	activated := true
-	nonactivated := false
+	associationResourceName := "ctyun_ebs_snapshot_policy_association." + dnd
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -45,7 +44,7 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1.创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, activated),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -53,7 +52,7 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 			},
 			// 2.更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -61,7 +60,7 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 			},
 			// 3.停用
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, nonactivated),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, false),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -69,32 +68,38 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 			},
 			// 4.启用
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
-			// 3.查询
+			// 5.查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "snapshot_policies.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "snapshot_policies.0.name", updatedName),
 				),
 			},
-			// 4.绑定云硬盘
+			// 6.绑定云硬盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true) +
 					utils.LoadTestCase(bindFile, dnd, resourceName+".id", diskId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
+			{
+				ResourceName:            associationResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
 			// 5.解绑云硬盘
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated),
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
@@ -114,7 +119,7 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, activated) +
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Destroy: true,
 			},
