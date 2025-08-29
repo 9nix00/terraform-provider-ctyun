@@ -3,6 +3,3 @@ ctyun_ebm
 
 release-note:new-data-source
 ctyun_ebm_device_types
-
-release-note:enhancement
-provider: import ebm sdk

@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	EipError = "不满足Eip格式"
+	EipError = "不满足EipID格式"
 )
 
 type validatorEip struct {

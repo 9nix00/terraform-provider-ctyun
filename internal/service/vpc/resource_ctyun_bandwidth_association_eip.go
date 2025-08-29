@@ -49,7 +49,7 @@ func (c *ctyunBandwidthAssociationEip) Schema(_ context.Context, _ resource.Sche
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"eip_id": schema.StringAttribute{
