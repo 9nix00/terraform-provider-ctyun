@@ -309,20 +309,10 @@ func (c *ctyunSnatResource) Delete(ctx context.Context, request resource.DeleteR
 		return
 	}
 
-	// todo 轮询查询
-
 	err = c.DeleteLoop(ctx, state)
 	if err != nil {
 		return
 	}
-
-	//err = c.getAndMergeSnat(ctx, &state)
-	//if err == nil {
-	//	return
-	//}
-	//if state.SNatID.ValueString() != "" {
-	//	return
-	//}
 }
 
 func (c *ctyunSnatResource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
