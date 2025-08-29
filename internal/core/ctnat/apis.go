@@ -1,6 +1,5 @@
 package ctnat
 
-import 
 import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 )
