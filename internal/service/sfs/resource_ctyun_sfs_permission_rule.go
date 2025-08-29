@@ -74,6 +74,9 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -82,6 +85,9 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"auth_addr": schema.StringAttribute{

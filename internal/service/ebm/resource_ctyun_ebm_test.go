@@ -121,12 +121,26 @@ func TestAccCtyunEbm(t *testing.T) {
 					"project_id",
 					"user_data",
 					"cycle_type",
+					"image_uuid",
 				},
 			},
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
-					updatedName, updatedHostname, updatedPassword, updatedStatus,
+					updatedName, updatedHostname, updatedPassword, initStatus,
+					dependence.deviceType,
+					dependence.imageUUID,
+					dependence.securityGroupID,
+					dependence.vpcID,
+					dependence.systemRaid,
+					dependence.dataRaid,
+					dependence.subnetID,
+				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					updatedName, updatedHostname, updatedPassword, initStatus,
 					dependence.deviceType,
 					dependence.imageUUID,
 					dependence.securityGroupID,

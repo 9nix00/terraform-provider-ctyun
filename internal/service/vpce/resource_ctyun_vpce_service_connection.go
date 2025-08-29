@@ -58,16 +58,22 @@ func (c *ctyunVpceServiceConnection) Schema(_ context.Context, _ resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"endpoint_id": schema.StringAttribute{
@@ -76,10 +82,13 @@ func (c *ctyunVpceServiceConnection) Schema(_ context.Context, _ resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"status": schema.StringAttribute{
 				Required:    true,
-				Description: "连接状态，up表示申请连接，down表示断开连接",
+				Description: "连接状态，up表示申请连接，down表示断开连接，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.VpceServiceConnectionUp, business.VpceServiceConnectionDown),
 				},

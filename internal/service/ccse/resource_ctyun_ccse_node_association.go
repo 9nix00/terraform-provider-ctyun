@@ -71,10 +71,13 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -84,12 +87,18 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"cluster_id": schema.StringAttribute{
 				Required:    true,
 				Description: "集群ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"instance_id": schema.StringAttribute{
@@ -111,12 +120,18 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"visibility_host_script": schema.StringAttribute{
 				Optional:    true,
 				Description: "部署前执行自定义脚本，base64编码",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"instance_type": schema.StringAttribute{
@@ -132,7 +147,9 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 			"mirror_id": schema.StringAttribute{
 				Required:    true,
 				Description: "镜像id，可查看<a href=\"https://www.ctyun.cn/document/10083472/11004475\">节点规格和节点镜像</a>",
-				Validators:  []validator.String{},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

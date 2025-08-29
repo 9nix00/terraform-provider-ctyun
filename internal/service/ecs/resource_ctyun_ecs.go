@@ -11,7 +11,9 @@ import (
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -67,23 +69,35 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 64),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$`), "hostname必须以字母开头，以字母或数字结尾"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z0-9\-\.]*$`), "hostname只能包含字母、数字、连字符和点号"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^.*[a-zA-Z].*$`), "hostname不能仅使用数字"),
+				},
 			},
 			"display_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称，长度为2-63字符",
+				Description: "实例名称，长度为2-63字符 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
 			},
 			"flavor_id": schema.StringAttribute{
 				Required:    true,
-				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机",
+				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机 支持更新",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
 				Description: "镜像id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"actual_image_id": schema.StringAttribute{
@@ -102,7 +116,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"system_disk_size": schema.Int64Attribute{
 				Required:    true,
-				Description: "系统盘大小，单位为G，取值范围：[40, 32768]，只支持扩容，需要先关机",
+				Description: "系统盘大小，单位为G，取值范围：[40, 32768]，只支持扩容，需要先关机 支持更新",
 				Validators: []validator.Int64{
 					int64validator.Between(40, 32768),
 				},
@@ -113,12 +127,18 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "主网卡的子网id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"fixed_ip": schema.StringAttribute{
@@ -132,12 +152,16 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "安全组id列表，在多可用区类型资源池下，安全组ID通常以“sg-”开头，非多可用区类型资源池安全组ID为uuid格式；默认使用默认安全组，无默认安全组情况下请填写该参数",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
+				},
+				Description: "安全组id列表，在多可用区类型资源池下，安全组ID通常以“sg-”开头，非多可用区类型资源池安全组ID为uuid格式；默认使用默认安全组，无默认安全组情况下请填写该参数 支持更新",
 			},
 			"key_pair_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥对名称",
+				Description: "密钥对名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("password"),
@@ -149,7 +173,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"password": schema.StringAttribute{
 				Optional:    true,
-				Description: "用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
+				Description: "用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头 支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("key_pair_name"),
@@ -161,14 +185,14 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填",
+				Description: "订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填 支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypes...),
 				},
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年",
+				Description: "订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年 支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -247,6 +271,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -267,6 +294,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraAzName, false),
 			},
 			"is_destroy_instance": schema.BoolAttribute{
@@ -282,6 +312,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Default:     float64default.StaticFloat64(0.00),
 				PlanModifiers: []planmodifier.Float64{
 					float64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Float64{
+					float64validator.AtLeast(0.0),
 				},
 			},
 		},
@@ -995,26 +1028,26 @@ func (c *ctyunEcs) getAndRemoveSecurityGroups(ctx context.Context, plan CtyunEcs
 	return defaultSecurityGroupId
 }
 
-// joinSecurityGroups 加入安全组
-func (c *ctyunEcs) joinSecurityGroups(ctx context.Context, plan CtyunEcsConfig) error {
-	var securityGroupIds []types.String
-	plan.SecurityGroupIds.ElementsAs(ctx, &securityGroupIds, true)
-	if len(securityGroupIds) == 0 {
-		return nil
-	}
-	for _, id := range securityGroupIds {
-		_, err := c.meta.Apis.CtEcsApis.EcsJoinSecurityGroupApi.Do(ctx, c.meta.Credential, &ctecs.EcsJoinSecurityGroupRequest{
-			RegionId:        plan.RegionId.ValueString(),
-			SecurityGroupId: id.ValueString(),
-			InstanceId:      plan.Id.ValueString(),
-			Action:          "joinSecurityGroup",
-		})
-		if err != nil {
-			return errors.New("加入安全组：" + id.ValueString() + "失败：" + err.Error())
-		}
-	}
-	return nil
-}
+//// joinSecurityGroups 加入安全组
+//func (c *ctyunEcs) joinSecurityGroups(ctx context.Context, plan CtyunEcsConfig) error {
+//	var securityGroupIds []types.String
+//	plan.SecurityGroupIds.ElementsAs(ctx, &securityGroupIds, true)
+//	if len(securityGroupIds) == 0 {
+//		return nil
+//	}
+//	for _, id := range securityGroupIds {
+//		_, err := c.meta.Apis.CtEcsApis.EcsJoinSecurityGroupApi.Do(ctx, c.meta.Credential, &ctecs.EcsJoinSecurityGroupRequest{
+//			RegionId:        plan.RegionId.ValueString(),
+//			SecurityGroupId: id.ValueString(),
+//			InstanceId:      plan.Id.ValueString(),
+//			Action:          "joinSecurityGroup",
+//		})
+//		if err != nil {
+//			return errors.New("加入安全组：" + id.ValueString() + "失败：" + err.Error())
+//		}
+//	}
+//	return nil
+//}
 
 // leaveSecurityGroups 离开安全组
 func (c *ctyunEcs) leaveSecurityGroups(ctx context.Context, state CtyunEcsConfig) error {

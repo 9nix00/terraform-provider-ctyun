@@ -175,51 +175,51 @@ resource "ctyun_ecs" "ecs_test" {
   subnet_id           = local.real_subnet_id
   is_destroy_instance = false
 }
-#
-# locals {
-#   device_type1 = "physical.s5.2xlarge4"      // az1、有本地盘、弹性、不支持云硬盘
-# }
-#
-# data "ctyun_ebm_device_raids" "system_raid" {
-#   device_type = local.device_type1
-#   volume_type = "system"
-# }
-#
-# data "ctyun_ebm_device_raids" "data_raid" {
-#   device_type = local.device_type1
-#   volume_type = "data"
-# }
-#
-# data "ctyun_ebm_device_images" "test" {
-#   device_type = local.device_type1
-#   os_type = "linux"
-#   image_type = "standard"
-# }
-#
-# locals {
-#   system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
-#   system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : ""
-#
-#   data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
-#   data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : ""
-# }
-#
-# data "ctyun_ebm_device_images" "dependence" {
-#   device_type = local.device_type1
-#   os_type = "linux"
-#   image_type = "standard"
-# }
 
-# resource "ctyun_ebm" "ebm_test" {
-#   instance_name = "tf-ebm-for-ccsedisplay"
-#   hostname = "tf-ebm-for-ccse"
-#   password = "P@2s2sxcv"
-#   cycle_type = "on_demand"
-#   device_type = local.device_type1
-#   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
-#   security_group_ids = [ctyun_ccse_cluster.test.base_info.security_group_id]
-#   system_volume_raid_uuid = local.system_raid_id
-#   data_volume_raid_uuid = local.data_raid_id
-#   vpc_id = local.real_vpc_id
-#   subnet_id = local.real_subnet_id
-# }
+locals {
+  device_type1 = "physical.s5.2xlarge4"      // az1、有本地盘、弹性、不支持云硬盘
+}
+
+data "ctyun_ebm_device_raids" "system_raid" {
+  device_type = local.device_type1
+  volume_type = "system"
+}
+
+data "ctyun_ebm_device_raids" "data_raid" {
+  device_type = local.device_type1
+  volume_type = "data"
+}
+
+data "ctyun_ebm_device_images" "test" {
+  device_type = local.device_type1
+  os_type = "linux"
+  image_type = "standard"
+}
+
+locals {
+  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
+  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : null
+
+  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
+  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : null
+}
+
+data "ctyun_ebm_device_images" "dependence" {
+  device_type = local.device_type1
+  os_type = "linux"
+  image_type = "standard"
+}
+
+resource "ctyun_ebm" "ebm_test" {
+  instance_name = "tf-ebm-for-ccsedisplay"
+  hostname = "tf-ebm-for-ccse"
+  password = "P@2s2sxcv"
+  cycle_type = "on_demand"
+  device_type = local.device_type1
+  image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
+  security_group_ids = [ctyun_ccse_cluster.test.base_info.security_group_id]
+  system_volume_raid_uuid = local.system_raid_id
+  data_volume_raid_uuid = local.data_raid_id
+  vpc_id = local.real_vpc_id
+  subnet_id = local.real_subnet_id
+}

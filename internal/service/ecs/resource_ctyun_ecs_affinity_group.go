@@ -57,10 +57,13 @@ func (c *ctyunEcsAffinityGroup) Schema(_ context.Context, _ resource.SchemaReque
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"affinity_group_id": schema.StringAttribute{
 				Computed:    true,
@@ -68,7 +71,7 @@ func (c *ctyunEcsAffinityGroup) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"affinity_group_name": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机组名称，满足以下规则：长度在1-64个字符，只能由中文、英文字母、数字、下划线_、中划线-、点.组成",
+				Description: "云主机组名称，满足以下规则：长度在1-64个字符，只能由中文、英文字母、数字、下划线_、中划线-、点.组成 支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 64),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[\p{Han}a-zA-Z0-9_.-]+$`), "不满足云主机组名称要求"),

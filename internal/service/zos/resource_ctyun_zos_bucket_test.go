@@ -12,6 +12,7 @@ import (
 )
 
 func TestAccCtyunZosBucket(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -104,6 +105,7 @@ func TestAccCtyunZosBucket(t *testing.T) {
 }
 
 func TestAccCtyunZosBucketAllField(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -113,6 +115,7 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 	datasourceFile := "datasource_ctyun_zos_buckets_b.tf"
 
 	baseResourceFile := "resource_ctyun_zos_bucket_encrypted.tf"
+	nologResourceFile := "resource_ctyun_zos_bucket_no_log.tf"
 
 	bucket := "tf-bucket-all-field"
 	azPolicy := "multi-az"
@@ -186,6 +189,28 @@ func TestAccCtyunZosBucketAllField(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "log_enabled", "true"),
 					resource.TestCheckResourceAttr(resourceName, "log_prefix", updatedLogPrefix),
 					resource.TestCheckResourceAttr(resourceName, "log_bucket", updatedLogBucket),
+					resource.TestCheckResourceAttr(resourceName, "retention_day", "10"),
+					func(s *terraform.State) error {
+						obj, _ := s.RootModule().Resources[resourceName]
+						a := obj.Primary.Attributes["tags.a"]
+						if a != "b" {
+							return fmt.Errorf("expected tag 'a' to be 'b'")
+						}
+						return nil
+					},
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(nologResourceFile, rnd, bucket, updatedAcl, azPolicy, storageType, updatedTagStr, updatedRetention),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "bucket", bucket),
+					resource.TestCheckResourceAttr(resourceName, "acl", updatedAcl),
+					resource.TestCheckResourceAttr(resourceName, "az_policy", azPolicy),
+					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
+					resource.TestCheckResourceAttr(resourceName, "is_encrypted", "true"),
+					resource.TestCheckResourceAttr(resourceName, "version_enabled", "true"),
+					resource.TestCheckResourceAttr(resourceName, "log_enabled", "false"),
 					resource.TestCheckResourceAttr(resourceName, "retention_day", "10"),
 					func(s *terraform.State) error {
 						obj, _ := s.RootModule().Resources[resourceName]

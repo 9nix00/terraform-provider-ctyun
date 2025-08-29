@@ -43,10 +43,10 @@ func (c *ctyunVpc) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "虚拟私有云名称。取值范围：2-32，支持数字、字母、中文、_(下划线)、-（中划线）。约束：同一个租户下的名称不能重复。(中文/英文字母开头)",
+				Description: "虚拟私有云名称。取值范围：2-32，支持数字、字母、中文、_(下划线)、-（中划线）。约束：同一个租户下的名称不能重复。(中文/英文字母开头)，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "虚拟私有云名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}-]+$"), "虚拟私有云名称不符合规则"),
 				},
 			},
 			"cidr": schema.StringAttribute{
@@ -71,7 +71,7 @@ func (c *ctyunVpc) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述，长度最大为128",
+				Description: "描述，长度最大为128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtMost(128),
 				},
@@ -84,6 +84,9 @@ func (c *ctyunVpc) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

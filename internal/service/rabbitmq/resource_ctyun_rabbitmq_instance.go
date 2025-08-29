@@ -3,7 +3,9 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -89,6 +91,12 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				Computed:    true,
 				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -98,27 +106,32 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称",
+				Description: "实例名称，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型，建议使用ctyun_rabbitmq_specs查看",
+				Description: "实例的规格类型，建议使用ctyun_rabbitmq_specs查看，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "节点数。支持1、3、5、7、9",
+				Description: "节点数。支持1、3、5、7、9，支持更新",
 				Validators: []validator.Int32{
 					int32validator.OneOf(1, 3, 5, 7, 9),
-				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"disk_type": schema.StringAttribute{
@@ -133,10 +146,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum",
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
-				},
+				Description: "单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 10000),
 				},
@@ -148,12 +158,20 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.SizeAtMost(3),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -162,13 +180,18 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					validator2.SecurityGroupValidate(),
 				},
 			},
 
@@ -179,7 +202,6 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					stringvalidator.OneOf("month", "on_demand"),
 				},
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -587,6 +609,8 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 		plan.ZoneList = types.SetNull(types.StringType)
 	}
 
+	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
+	plan.NodeNum = types.Int32Value(instance.NodeCount)
 	plan.SpecName = types.StringValue(instance.Prod)
 	return
 }
@@ -609,15 +633,14 @@ func (c *ctyunRabbitmqInstance) update(ctx context.Context, plan, state CtyunRab
 	if err != nil {
 		return
 	}
-	// openapi bug 暂不支持
-	//err = c.updateDiskSize(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
-	//err = c.updateNodeNum(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
+	err = c.updateDiskSize(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateNodeNum(ctx, plan, state)
+	if err != nil {
+		return
+	}
 	err = c.updateSpec(ctx, plan, state)
 	if err != nil {
 		return
@@ -634,7 +657,6 @@ func (c *ctyunRabbitmqInstance) updateDiskSize(ctx context.Context, plan, state 
 		err = c.diskExtend(ctx, plan, state)
 	} else {
 		err = fmt.Errorf("目前不支持磁盘缩容")
-		//err = c.diskShrink(ctx, plan, state)
 	}
 	if err != nil {
 		return
@@ -666,6 +688,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -674,11 +697,13 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, pl
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != 1 || utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32()*instance.NodeCount {
 				return true
 			}
-
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -731,6 +756,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateNodeNum 检查节点数量是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -739,10 +765,13 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, pla
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != 1 || instance.NodeCount != plan.NodeNum.ValueInt32() {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -797,6 +826,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -808,7 +838,10 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, 
 			if instance.Status != 1 || instance.Prod != plan.SpecName.ValueString() {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -858,7 +891,7 @@ func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbi
 	return
 }
 
-// destroy 退订
+// destroy 销毁
 func (c *ctyunRabbitmqInstance) destroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
 	params := &amqp.AmqpInstanceDeleteRequest{
 		RegionId:   plan.RegionID.ValueString(),

@@ -75,16 +75,22 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"endpoint_service_id": schema.StringAttribute{
 				Required:    true,
 				Description: "终端节点服务ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"vpc_id": schema.StringAttribute{
@@ -93,12 +99,18 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"subnet_ip": schema.StringAttribute{
@@ -108,13 +120,16 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 				Validators: []validator.String{
 					validator2.Ip(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32",
+				Description: "支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}fa5}-]+$"), "名称不符合规则"),
 				},
 			},
 			"status": schema.Int32Attribute{
@@ -123,13 +138,13 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 			},
 			"whitelist_flag": schema.BoolAttribute{
 				Required:    true,
-				Description: "是否开启白名单",
+				Description: "是否开启白名单，支持更新",
 			},
 			"whitelist_cidr": schema.SetAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
 				Optional:    true,
-				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个",
+				Description: "白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个，支持更新",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("whitelist_flag"),
@@ -389,10 +404,10 @@ func (c *ctyunVpce) getAndMerge(ctx context.Context, plan *CtyunVpceConfig) (err
 
 // update 更新
 func (c *ctyunVpce) update(ctx context.Context, plan, state CtyunVpceConfig) (err error) {
-	if !plan.SubnetIP.IsUnknown() && !plan.SubnetIP.Equal(state.SubnetIP) {
-		err = fmt.Errorf("子网ip地址不支持修改")
-		return
-	}
+	//if !plan.SubnetIP.IsUnknown() && !plan.SubnetIP.Equal(state.SubnetIP) {
+	//	err = fmt.Errorf("子网ip地址不支持修改")
+	//	return
+	//}
 
 	endpointID, regionID := state.ID.ValueString(), state.RegionID.ValueString()
 	params := &ctvpc.CtvpcUpdateEndpointRequest{
