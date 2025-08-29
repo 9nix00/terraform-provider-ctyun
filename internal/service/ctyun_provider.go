@@ -14,6 +14,7 @@ import (
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	sdkctimage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
@@ -311,26 +312,9 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-			CtEbsApis:      ctebs.NewApis(client),
-			CtEcsApis:      ctecs.NewApis(client),
-			CtIamApis:      ctiam.NewApis(client),
-			CtImageApis:    ctimage.NewApis(client),
-			CtVpcApis:      ctvpc.NewApis(client),
-			CtEbmApis:      ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
-			SdkCtEbsApis:   ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
-			SdkCtEcsApis:   ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
-			SdkCtVpcApis:   ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
-			SdkCtZosApis:   ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
-			SdkCcseApis:    ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
-			SdkDcs2Apis:    dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
-			SdkCtElbApis:   ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
-			SdkCtImageApis: sdkctimage.NewApis(fmt.Sprintf(endpointUrl, sdkctimage.EndpointName), coreClient),
-			SdkCtMysqlApis: mysql.NewApis(client),
-			SdkKafkaApis:   ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
-			SdkAmqpApis:    amqp.NewApis(client),
-			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
-			SdkCtPgsqlApis: pgsql2.NewApis(client),
-			SdkMongodbApis: mongodb2.NewApis(client),
+
+			SdkCtImageApis:  sdkctimage.NewApis(fmt.Sprintf(endpointUrl, sdkctimage.EndpointName), coreClient),
+			SdkCtNatApis:    ctnat.NewApis(fmt.Sprintf(endpointUrl, ctnat.EndpointName), coreClient),
 			CtEbsApis:       ctebs.NewApis(client),
 			CtEcsApis:       ctecs.NewApis(client),
 			CtIamApis:       ctiam.NewApis(client),
@@ -377,9 +361,12 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebm.NewCtyunEbmDeviceRaids(),
 		ebm.NewCtyunEbmDeviceImages(),
 		nat.NewCtyunNats(),
+		nat.NewCtyunPrivateNats(),
 		elb.NewElbLoadBalancers(),
 		nat.NewCtyunSNats(),
 		nat.NewCtyunDNats(),
+		nat.NewCtyunPrivateDnats(),
+		nat.NewCtyunPrivateNatTransitIps(),
 		ebs.NewCtyunEbsVolumes(),
 		ebs.NewCtyunEbsSnapshots(),
 		ebs.NewCtyunEbsBackups(),
@@ -440,6 +427,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		sfs2.NewCtyunSfsPermissionRules(),
 		ccse.NewCtyunCcseTemplateMarket(),
 		ports.NewCtyunNetworkInterfaces(),
+		nat.NewCtyunPrivateNatCidrs(),
 	)
 }
 
@@ -477,8 +465,11 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunEnterpriseProject(),
 		iam.NewCtyunEnterpriseProjectAssociationUserGroup(),
 		nat.NewCtyunNatResource(),
+		nat.NewCtyunPrivateNatResource(),
 		nat.NewCtyunSnatResource(),
 		nat.NewCtyunDnatResource(),
+		nat.NewCtyunPrivateDnatResource(),
+		nat.NewCtyunPrivateNatTransitIpResource(),
 		ebm.NewCtyunEbm(),
 		ebm.NewCtyunEbmInterface(),
 		ebm.NewCtyunEbmAssociationEbs(),

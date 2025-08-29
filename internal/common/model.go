@@ -10,6 +10,7 @@ import (
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	sdkCtImage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
@@ -67,26 +68,8 @@ func (c CtyunMetadata) GetExtraIfEmpty(target, extraKey string) string {
 }
 
 type Apis struct {
-	CtEbsApis      *ctebs.Apis
-	CtEcsApis      *ctecs.Apis
-	CtIamApis      *ctiam.Apis
-	CtImageApis    *ctimage.Apis
-	CtVpcApis      *ctvpc.Apis
-	CtEbmApis      *ctebm.Apis
-	SdkCtEbsApis   *ctebs2.Apis
-	SdkCtEcsApis   *ctecs2.Apis
-	SdkCtVpcApis   *ctvpc2.Apis
-	SdkCtZosApis   *ctzos.Apis
-	SdkCcseApis    *ccse2.Apis
-	SdkDcs2Apis    *dcs2.Apis
-	SdkCtElbApis   *sdkCtelb.Apis
-	SdkCtMysqlApis *mysql.Apis
-	SdkCtPgsqlApis *pgsql.Apis
-	SdkKafkaApis   *ctgkafka.Apis
-	SdkMongodbApis *mongodb.Apis
-	SdkAmqpApis    *amqp.Apis
-	SdkCrsApis     *crs.Apis
-	SdkCtImageApis *sdkCtImage.Apis
+	SdkCtImageApis  *sdkCtImage.Apis
+	SdkCtNatApis    *ctnat.Apis
 	CtEbsApis       *ctebs.Apis
 	CtEbsBackupApis *ctebsbackup.Apis
 	CtEcsApis       *ctecs.Apis

@@ -466,26 +466,6 @@ func (c *ctyunNetworkInterface) Update(ctx context.Context, request resource.Upd
 			description := plan.Description.ValueString()
 			updateReq.Description = &description
 		}
-
-		// 调用API更新网卡属性
-		_, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePortApi.Do(ctx, c.meta.SdkCredential, updateReq)
-		if err != nil {
-			response.Diagnostics.AddError(
-				"更新弹性网卡属性失败",
-				fmt.Sprintf("更新弹性网卡属性时发生错误: %s", err.Error()),
-			)
-			return
-		}
-	}
-
-	// 检查是否需要更新安全组
-	if !plan.SecurityGroupIds.Equal(state.SecurityGroupIds) {
-		updateReq := &ctvpc.CtvpcUpdatePortRequest{
-			ClientToken:        uuid.NewString(),
-			RegionID:           plan.RegionId.ValueString(),
-			NetworkInterfaceID: networkInterfaceId,
-		}
-
 		// 处理安全组ID列表
 		if !plan.SecurityGroupIds.IsNull() && len(plan.SecurityGroupIds.Elements()) > 0 {
 			var sgIds []string
@@ -499,17 +479,49 @@ func (c *ctyunNetworkInterface) Update(ctx context.Context, request resource.Upd
 			// 如果安全组为空，则传递空数组
 			updateReq.SecurityGroupIDs = []*string{}
 		}
-
 		// 调用API更新网卡属性
 		_, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePortApi.Do(ctx, c.meta.SdkCredential, updateReq)
 		if err != nil {
 			response.Diagnostics.AddError(
-				"更新弹性网卡安全组失败",
-				fmt.Sprintf("更新弹性网卡安全组时发生错误: %s", err.Error()),
+				"更新弹性网卡属性失败",
+				fmt.Sprintf("更新弹性网卡属性时发生错误: %s", err.Error()),
 			)
 			return
 		}
 	}
+
+	//// 检查是否需要更新安全组
+	//if !plan.SecurityGroupIds.Equal(state.SecurityGroupIds) {
+	//	updateReq := &ctvpc.CtvpcUpdatePortRequest{
+	//		ClientToken:        uuid.NewString(),
+	//		RegionID:           plan.RegionId.ValueString(),
+	//		NetworkInterfaceID: networkInterfaceId,
+	//	}
+	//
+	//	// 处理安全组ID列表
+	//	if !plan.SecurityGroupIds.IsNull() && len(plan.SecurityGroupIds.Elements()) > 0 {
+	//		var sgIds []string
+	//		plan.SecurityGroupIds.ElementsAs(ctx, &sgIds, false)
+	//		sgIdPtrs := make([]*string, len(sgIds))
+	//		for i, sgId := range sgIds {
+	//			sgIdPtrs[i] = &sgId
+	//		}
+	//		updateReq.SecurityGroupIDs = sgIdPtrs
+	//	} else {
+	//		// 如果安全组为空，则传递空数组
+	//		updateReq.SecurityGroupIDs = []*string{}
+	//	}
+	//
+	//	// 调用API更新网卡属性
+	//	_, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePortApi.Do(ctx, c.meta.SdkCredential, updateReq)
+	//	if err != nil {
+	//		response.Diagnostics.AddError(
+	//			"更新弹性网卡安全组失败",
+	//			fmt.Sprintf("更新弹性网卡安全组时发生错误: %s", err.Error()),
+	//		)
+	//		return
+	//	}
+	//}
 
 	// 查询网卡详细信息并更新状态
 	networkInterface, err := c.getNetworkInterface(ctx, plan.RegionId.ValueString(), networkInterfaceId)
