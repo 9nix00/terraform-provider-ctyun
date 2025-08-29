@@ -21,7 +21,7 @@ func TestAccCtyunMongodbClusterInstance(t *testing.T) {
 	resourceName := "ctyun_mongodb_instance." + rnd
 	datasourceName := "data.ctyun_mongodb_instances." + dnd
 
-	resourceFile := "resource_ctyun_mongodb_instance.tf"
+	resourceFile := "resource_ctyun_mongodb_instance_single_on_demand.tf"
 	datasourceFile := "datasource_ctyun_mongodb_instances.tf"
 	cycleType := "on_demand"
 	//cycleCount := 1

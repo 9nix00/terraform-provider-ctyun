@@ -202,6 +202,21 @@ resource "ctyun_ecs" "ecs_test1" {
   is_destroy_instance = true
 }
 
+resource "ctyun_ecs" "ecs_test2" {
+  instance_name       = "tf-ecs-for-scaling-ecs3"
+  display_name        = "tf-ecs-for-scaling-ecs3"
+  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
+  image_id            = data.ctyun_images.image_test.images[0].id
+  system_disk_type    = "sata"
+  system_disk_size    = 40
+  vpc_id =  local.real_vpc_id
+  password            = "P@ssW0rd_1"
+  cycle_type          = "on_demand"
+  subnet_id = local.real_subnet_id
+  security_group_ids = [local.real_security_group_id]
+  is_destroy_instance = true
+}
+
 #
 resource "ctyun_elb_loadbalancer" "elb_test" {
   subnet_id     = local.real_subnet_id

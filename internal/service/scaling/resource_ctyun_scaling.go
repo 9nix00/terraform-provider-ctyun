@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -18,12 +19,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -51,6 +51,42 @@ func NewCtyunScaling() resource.Resource {
 	return &ctyunScaling{}
 }
 
+// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
+func (c *ctyunScaling) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	var cfg CtyunScalingConfig
+	var ID, regionId, projectId, vpcId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	id, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return
+	}
+	cfg.ID = types.Int64Value(id)
+	cfg.RegionID = types.StringValue(regionId)
+	cfg.ProjectID = types.StringValue(projectId)
+	cfg.VpcID = types.StringValue(vpcId)
+
+	cfg.AddInstanceUUIDList = types.SetNull(types.StringType)
+	cfg.RemoveInstanceUUIDList = types.SetNull(types.StringType)
+
+	err = c.getAndMergeScaling(ctx, &cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
 func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "弹性伸缩组管理、弹性伸缩组云主机管理，支持弹性伸缩组的创建、更新和删除。组内云主机的插入删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725",
@@ -63,9 +99,6 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
-				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -75,18 +108,11 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
-				Validators: []validator.String{
-					validator2.Project(),
-				},
 			},
 			"security_group_id_list": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
 				Description: "安全组ID列表。支持更新",
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
-				},
 			},
 			//"recovery_mode": schema.Int64Attribute{
 			//	Required:    true,
@@ -123,14 +149,15 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"move_out_strategy": schema.StringAttribute{
 				Required:    true,
-				Description: "实例移出策略：earlier_config-较早创建的配置较早创建，later_config-较晚创建的配置较晚创建，earlier_vm-较早创建的云主机，later_vm-较晚创建的云主机",
+				Description: "实例移出策略：earlier_config-较早创建的配置较早创建，later_config-较晚创建的配置较晚创建，earlier_vm-较早创建的云主机，later_vm-较晚创建的云主机。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingMoveOutStrategy...),
 				},
 			},
+			// todo 做校验
 			"use_lb": schema.Int32Attribute{
 				Required:    true,
-				Description: "是否使用负载均衡：1-是，2-否。支持修改",
+				Description: "是否使用负载均衡：1-是，2-否。status=disable时支持更新",
 				Validators: []validator.Int32{
 					int32validator.OneOf(1, 2),
 				},
@@ -139,7 +166,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
@@ -163,18 +190,19 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"expected_count": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "期望云主机数，非多可用区资源池不支持该参数。支持修改，若未填写。expected_count默认=min_count",
+				Description: "期望云主机数，非多可用区资源池不支持该参数。支持更新，若未填写。expected_count默认=min_count",
 				Validators: []validator.Int32{
 					validator2.ScalingCountValidate(),
 				},
 			},
 			"health_period": schema.Int32Attribute{
 				Required:    true,
-				Description: "健康检查时间间隔（周期），单位：秒，取值范围：[300,10080]",
+				Description: "健康检查时间间隔（周期），单位：秒，取值范围：[300,10080]。支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(300, 10080),
 				},
 			},
+			// todo status=disable时支持更新
 			"lb_list": schema.ListNestedAttribute{
 				Optional: true,
 				Computed: false,
@@ -183,34 +211,22 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 						"port": schema.Int32Attribute{
 							Required:    true,
 							Description: "端口号",
-							PlanModifiers: []planmodifier.Int32{
-								int32planmodifier.RequiresReplace(),
-							},
 						},
 						"lb_id": schema.StringAttribute{
 							Required:    true,
 							Description: "负载均衡ID",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
 						},
 						"weight": schema.Int32Attribute{
 							Required:    true,
 							Description: "权重",
-							PlanModifiers: []planmodifier.Int32{
-								int32planmodifier.RequiresReplace(),
-							},
 						},
 						"host_group_id": schema.StringAttribute{
 							Required:    true,
 							Description: "后端主机组ID",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
 						},
 					},
 				},
-				Description: "负载均衡列表，use_lb=1时必填",
+				Description: "负载均衡列表，use_lb=1时必填。当status=disable时支持更新",
 				Validators: []validator.List{
 					validator2.AlsoRequiresEqualList(
 						path.MatchRoot("use_lb"),
@@ -221,14 +237,14 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"config_list": schema.SetAttribute{
 				ElementType: types.Int32Type,
 				Optional:    true,
-				Description: "伸缩配置ID列表，最大支持传入10个伸缩配置",
+				Description: "伸缩配置ID列表，最大支持传入10个伸缩配置。支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtMost(10),
 				},
 			},
 			"az_strategy": schema.StringAttribute{
 				Required:    true,
-				Description: "扩容策略类型：uniform_distribution-均衡分布，priority_distribution-优先级分布",
+				Description: "扩容策略类型：uniform_distribution-均衡分布，priority_distribution-优先级分布。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingAzStrategy...),
 				},
@@ -240,7 +256,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "伸缩组状态。取值范围：enable 或 disable。可以用于控制伸缩组的状态更新",
+				Description: "伸缩组状态。取值范围：enable 或 disable，支持更新。可以用于控制伸缩组的状态更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingControlStatus...),
 				},
@@ -248,29 +264,30 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			"delete_protection": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "控制伸缩组保护，取值范围：enable 或 disable。可以用于控制伸缩组保护的开启/关闭",
+				Description: "控制伸缩组保护，开启伸缩组保护，不可删除该伸缩组。取值范围：enable 或 disable，支持更新。可以用于控制伸缩组保护的开启/关闭",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingControlProtectionStatus...),
 				},
 			},
-			"instance_uuid_list": schema.SetAttribute{
+			"add_instance_uuid_list": schema.SetAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "云主机ID列表。,update阶段会和state阶段做对比（仅对手动添加的机器做处理），与state一致，不变；state中有，update阶段没有触发移除；state中没有，update阶段有触发新增。支持更新",
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(validator2.UUID()),
-				},
+				Description: "需要手动添加的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。",
 			},
-			"protect_status": schema.StringAttribute{
+			"remove_instance_uuid_list": schema.SetAttribute{
 				Optional:    true,
-				Computed:    true,
-				Default:     stringdefault.StaticString(business.ProtectStatusUnprotectedStr),
-				Description: "云主机保护状态（仅对手动添加的机器做处理），设置了保护状态的云主机实例，在伸缩组进行缩容活动时将不会被移出。disable-关闭云主机保护，enable-开启云主机保护。支持更新",
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.ScalingPolicyStatuses...),
-				},
+				ElementType: types.StringType,
+				Description: "需要删除手动/自动加入伸缩组的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。",
 			},
+			//"protect_status": schema.StringAttribute{
+			//	Optional:    true,
+			//	Computed:    true,
+			//	Default:     stringdefault.StaticString(business.ProtectStatusUnprotectedStr),
+			//	Description: "云主机保护状态（仅对手动添加的机器做处理），设置了保护状态的云主机实例，在伸缩组进行缩容活动时将不会被移出。disable-关闭云主机保护，enable-开启云主机保护。支持更新",
+			//	Validators: []validator.String{
+			//		stringvalidator.OneOf(business.ScalingPolicyStatuses...),
+			//	},
+			//},
 			"is_destroy": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -324,10 +341,10 @@ func (c *ctyunScaling) Create(ctx context.Context, request resource.CreateReques
 	}
 	// 开启云主机保护
 	// 若创建时候，就需要开启/关闭云主机保护
-	err = c.updateProtectStatus(ctx, &plan, &plan)
-	if err != nil {
-		return
-	}
+	//err = c.updateProtectStatus(ctx, &plan, &plan)
+	//if err != nil {
+	//	return
+	//}
 	// 创建后反查创建后的证书信息
 	err = c.getAndMergeScaling(ctx, &plan)
 	if err != nil {
@@ -410,10 +427,10 @@ func (c *ctyunScaling) Update(ctx context.Context, request resource.UpdateReques
 	}
 
 	// 控制云主机保护开关
-	err = c.updateProtectStatus(ctx, &state, &plan)
-	if err != nil {
-		return
-	}
+	//err = c.updateProtectStatus(ctx, &state, &plan)
+	//if err != nil {
+	//	return
+	//}
 	// 更新远端数据，并同步本地state
 	err = c.getAndMergeScaling(ctx, &state)
 	if err != nil {
@@ -954,6 +971,7 @@ func (c *ctyunScaling) createLoop(ctx context.Context, config *CtyunScalingConfi
 	return err
 }
 
+// 根据弹性伸缩组id获取云主机全量列表
 func (c *ctyunScaling) getInstanceListByGroupID(ctx context.Context, config *CtyunScalingConfig) ([]*scaling.ScalingGroupQueryInstanceListReturnObjInstanceListResponse, error) {
 	var pageSize, pageNo int32
 	pageSize = 100
@@ -1010,15 +1028,18 @@ func (c *ctyunScaling) requestInstanceListByGroup(ctx context.Context, config *C
 }
 
 func (c *ctyunScaling) manualAddInstance(ctx context.Context, config *CtyunScalingConfig) error {
-	if config.InstanceUUIDList.IsNull() || config.InstanceUUIDList.IsUnknown() {
+	if config.AddInstanceUUIDList.IsNull() || config.AddInstanceUUIDList.IsUnknown() {
 		return nil
 	}
 	var instanceUUIDList []string
-	diags := config.InstanceUUIDList.ElementsAs(ctx, &instanceUUIDList, true)
+	diags := config.AddInstanceUUIDList.ElementsAs(ctx, &instanceUUIDList, true)
 	if diags.HasError() {
 		err := errors.New(diags[0].Detail())
 		return err
 	}
+	// 添加云主机前进行合法校验，校验两个方面：
+	// 1）expected_count + 手动添加云主机个数 <= max_count
+	// 2）添加的机器是否已经存在于弹性伸缩机器组内
 	isValid, err := c.checkBeforeManualAddEcs(ctx, config)
 	if err != nil {
 		return err
@@ -1033,7 +1054,14 @@ func (c *ctyunScaling) manualAddInstance(ctx context.Context, config *CtyunScali
 	return nil
 }
 
+/*
+checkBeforeManualAddEcs
+// 添加云主机前进行合法校验，校验两个方面：
+// 1）expected_count + 手动添加云主机个数 <= max_count
+// 2）添加的机器是否已经存在于弹性伸缩机器组内
+*/
 func (c *ctyunScaling) checkBeforeManualAddEcs(ctx context.Context, config *CtyunScalingConfig) (bool, error) {
+	// check 1: expected_count + 手动添加云主机个数 <= max_count
 	// 校验最大实例数量
 	// 获取scaling group 详情
 	params := &scaling.ScalingGroupListRequest{
@@ -1067,13 +1095,23 @@ func (c *ctyunScaling) checkBeforeManualAddEcs(ctx context.Context, config *Ctyu
 		return false, err
 	}
 	var instanceUUIDList []string
-	diags := config.InstanceUUIDList.ElementsAs(ctx, &instanceUUIDList, true)
+	diags := config.AddInstanceUUIDList.ElementsAs(ctx, &instanceUUIDList, true)
 	if diags.HasError() {
 		err = errors.New(diags[0].Detail())
 		return false, err
 	}
 	if len(instanceList)+len(instanceUUIDList) > int(maxCount) {
 		err = fmt.Errorf("弹性伸缩组（id：%d）的max_count=%d。当前伸缩组下有云主机%d台，若手动移入%d台，将移入失败！", config.ID.ValueInt64(), maxCount, len(instanceList), len(instanceUUIDList))
+		return false, err
+	}
+
+	// check 2:
+	// 确认待添加云主机列表不在弹性组云主机清单内
+	// params : 待添加的机器列表， 伸缩组机器列表
+	intersection := c.FindIntersection(instanceUUIDList, instanceList)
+	// 不能有并集
+	if len(intersection) > 0 {
+		err = fmt.Errorf("待添加机器列表与弹性组内云主机重叠，待添加的列表中已被添加至弹性组的云主机：%s", strings.Join(intersection, ","))
 		return false, err
 	}
 	return true, nil
@@ -1089,6 +1127,12 @@ func (c *ctyunScaling) addScalingEcsList(ctx context.Context, instanceUUIDList [
 	}
 
 	params.InstanceUUIDList = instanceUUIDList
+	// 轮询确认伸缩组无伸缩动作后再进行操作
+	err := c.updateInstanceBeforeLoop(ctx, config, 60)
+	if err != nil {
+		return err
+	}
+
 	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupInstanceMoveInApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err
@@ -1114,7 +1158,7 @@ func (c *ctyunScaling) checkAfterAddEcs(ctx context.Context, config *CtyunScalin
 			instanceUUIDList = append(instanceUUIDList, instance.InstanceID)
 		}
 	}
-	diags := config.InstanceUUIDList.ElementsAs(ctx, &planInstanceUUIDList, true)
+	diags := config.AddInstanceUUIDList.ElementsAs(ctx, &planInstanceUUIDList, true)
 	if diags.HasError() {
 		err = errors.New(diags[0].Detail())
 		return err
@@ -1127,55 +1171,36 @@ func (c *ctyunScaling) checkAfterAddEcs(ctx context.Context, config *CtyunScalin
 	}
 }
 
-func (c *ctyunScaling) updateProtectStatus(ctx context.Context, state *CtyunScalingConfig, plan *CtyunScalingConfig) error {
-	if !plan.ProtectStatus.IsNull() && !plan.InstanceUUIDList.IsNull() && !plan.InstanceUUIDList.IsUnknown() {
-		var instanceUUIDs []string
-		diags := plan.InstanceUUIDList.ElementsAs(ctx, &instanceUUIDs, true)
-		if diags.HasError() {
-			err := errors.New(diags[0].Detail())
-			return err
-		}
-
-		instanceIds, err := c.getInstanceAssocIdByUUID(ctx, state, instanceUUIDs)
-		if err != nil {
-			return err
-		}
-		// 关闭云主机保护
-		if plan.ProtectStatus.ValueString() == business.StatusDisabledStr {
-			err = c.disableProtectEcs(ctx, state, instanceIds, instanceUUIDs)
-			if err != nil {
-				return err
-			}
-		} else if plan.ProtectStatus.ValueString() == business.StatusEnabledStr {
-			// 开启云主机保护
-			err = c.enableProtectEcs(ctx, state, instanceIds, instanceUUIDs)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	state.ProtectStatus = plan.ProtectStatus
-	return nil
-}
-
-func (c *ctyunScaling) enableProtectEcs(ctx context.Context, state *CtyunScalingConfig, instanceIds []int32, instanceUUIDs []string) error {
-	params := scaling.ScalingGroupProtectEnableRequest{
-		RegionID:       state.RegionID.ValueString(),
-		GroupID:        state.ID.ValueInt64(),
-		InstanceIDList: instanceIds,
-	}
-	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupProtectEnableApi.Do(ctx, c.meta.SdkCredential, &params)
-	if err != nil {
-		return err
-	} else if resp == nil {
-		err = fmt.Errorf("开启云主机保护失败，接口返回nil。ecs列表：%s", strings.Join(instanceUUIDs, ", "))
-		return err
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
-	}
-	return nil
-}
+//func (c *ctyunScaling) updateProtectStatus(ctx context.Context, state *CtyunScalingConfig, plan *CtyunScalingConfig) error {
+//	if !plan.ProtectStatus.IsNull() && !plan.InstanceUUIDList.IsNull() && !plan.InstanceUUIDList.IsUnknown() {
+//		var instanceUUIDs []string
+//		diags := plan.InstanceUUIDList.ElementsAs(ctx, &instanceUUIDs, true)
+//		if diags.HasError() {
+//			err := errors.New(diags[0].Detail())
+//			return err
+//		}
+//
+//		instanceIds, err := c.getInstanceAssocIdByUUID(ctx, state, instanceUUIDs)
+//		if err != nil {
+//			return err
+//		}
+//		// 关闭云主机保护
+//		if plan.ProtectStatus.ValueString() == business.StatusDisabledStr {
+//			err = c.disableProtectEcs(ctx, state, instanceIds, instanceUUIDs)
+//			if err != nil {
+//				return err
+//			}
+//		} else if plan.ProtectStatus.ValueString() == business.StatusEnabledStr {
+//			// 开启云主机保护
+//			err = c.enableProtectEcs(ctx, state, instanceIds, instanceUUIDs)
+//			if err != nil {
+//				return err
+//			}
+//		}
+//	}
+//	state.ProtectStatus = plan.ProtectStatus
+//	return nil
+//}
 
 func (c *ctyunScaling) getInstanceAssocIdByUUID(ctx context.Context, state *CtyunScalingConfig, UUIDs []string) ([]int32, error) {
 	instanceMap, err := c.getInstanceMap(ctx, state)
@@ -1185,29 +1210,12 @@ func (c *ctyunScaling) getInstanceAssocIdByUUID(ctx context.Context, state *Ctyu
 	var instanceIdList []int32
 	for _, uuid := range UUIDs {
 		ecsInfo := instanceMap[uuid]
+		if ecsInfo == nil {
+			continue
+		}
 		instanceIdList = append(instanceIdList, ecsInfo.Id)
 	}
 	return instanceIdList, nil
-}
-
-func (c *ctyunScaling) disableProtectEcs(ctx context.Context, state *CtyunScalingConfig, instanceIDs []int32, instanceUUIDs []string) error {
-
-	params := &scaling.ScalingGroupProtectDisableRequest{
-		RegionID:       state.RegionID.ValueString(),
-		GroupID:        state.ID.ValueInt64(),
-		InstanceIDList: instanceIDs,
-	}
-	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupProtectDisableApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return err
-	} else if resp == nil {
-		err = fmt.Errorf("关闭云主机保护失败，接口返回nil，ecs列表：%s", strings.Join(instanceUUIDs, ", "))
-		return err
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
-	}
-	return nil
 }
 
 func (c *ctyunScaling) getInstanceMap(ctx context.Context, config *CtyunScalingConfig) (map[string]*scaling.ScalingGroupQueryInstanceListReturnObjInstanceListResponse, error) {
@@ -1247,121 +1255,299 @@ func (c *ctyunScaling) getInstanceMap(ctx context.Context, config *CtyunScalingC
 }
 
 func (c *ctyunScaling) updateInstanceByUUIDList(ctx context.Context, state *CtyunScalingConfig, plan *CtyunScalingConfig) error {
-	if plan.InstanceUUIDList.IsNull() || plan.InstanceUUIDList.IsUnknown() {
-		return nil
-	}
 
 	// 比对list， 挑出需要删除/新增的机器
-	var stateInstanceList []string
+	//var stateInstanceList []string
 	instanceList, err := c.getInstanceListByGroupID(ctx, state)
 	if err != nil {
 		return err
 	}
-	for _, instance := range instanceList {
-		if instance.ExecutionMode == business.ExecutionModeManualAddInstances {
-			stateInstanceList = append(stateInstanceList, instance.InstanceID)
+	if !plan.AddInstanceUUIDList.IsNull() && !state.AddInstanceUUIDList.Equal(plan.AddInstanceUUIDList) {
+		var addInstanceUUIDList []string
+		diags := plan.AddInstanceUUIDList.ElementsAs(ctx, &addInstanceUUIDList, true)
+		if diags.HasError() {
+			err = errors.New(diags[0].Detail())
+			return err
+		}
+		// 确认待添加云主机未在伸缩组内
+		addIntersection := c.FindIntersection(addInstanceUUIDList, instanceList)
+		if len(addIntersection) > 0 {
+			err = fmt.Errorf("待添加的云主机中有部分已加入伸缩组，列表为：%s", strings.Join(addInstanceUUIDList, ", "))
+			return err
+		}
+
+		// 轮询确认是否可以更新
+		err = c.updateInstanceBeforeLoop(ctx, state, 60)
+		if err != nil {
+			return err
+		}
+
+		// 处理新增
+		err = c.addScalingEcsList(ctx, addInstanceUUIDList, state)
+		if err != nil {
+			return err
 		}
 	}
-
-	//diags := plan.InstanceUUIDList.ElementsAs(ctx, &stateInstanceList, true)
-	//if diags.HasError() {
-	//	err = errors.New(diags[0].Detail())
-	//	return err
-	var planInstanceList []string
-	diags := plan.InstanceUUIDList.ElementsAs(ctx, &planInstanceList, true)
-	if diags.HasError() {
-		err = errors.New(diags[0].Detail())
-		return err
+	// 处理删除列表
+	// 1. 确认待移除的云主机都包含在此伸缩组内
+	// 2. 区分是否存在自动伸缩的机器？是否需要销毁
+	if !plan.RemoveInstanceUUIDList.IsNull() && !state.RemoveInstanceUUIDList.Equal(plan.RemoveInstanceUUIDList) {
+		var removeInstanceUUIDList []string
+		diags := plan.RemoveInstanceUUIDList.ElementsAs(ctx, &removeInstanceUUIDList, true)
+		if diags.HasError() {
+			err = errors.New(diags[0].Detail())
+			return err
+		}
+		// 确认待添加云主机未在伸缩组内
+		removeIntersection := c.FindIntersection(removeInstanceUUIDList, instanceList)
+		if len(removeIntersection) != len(removeInstanceUUIDList) {
+			err = fmt.Errorf("待删除的云主机中有部分未加入伸缩组，符合删除条件列表为：%s", strings.Join(removeIntersection, ", "))
+			return err
+		}
+		// 轮询确认是否可以更新
+		err = c.updateInstanceBeforeLoop(ctx, state, 60)
+		if err != nil {
+			return err
+		}
+		// 处理删除
+		// 查看is_destroy是否为true。若为true挑选出自动伸缩的列表
+		if plan.IsDestroy.ValueBool() {
+			// 挑出自动伸缩云主机列表
+			autoAddEcs, manualAddEcs := c.getAutoAndManualEcs(removeInstanceUUIDList, instanceList)
+			err = c.destroyAutoEcsRequest(ctx, autoAddEcs, state)
+			if err != nil {
+				return err
+			}
+			err = c.removeEcsRequest(ctx, manualAddEcs, state, plan)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = c.removeEcsRequest(ctx, removeInstanceUUIDList, state, plan)
+			if err != nil {
+				return err
+			}
+		}
 	}
-	add, remove := c.getDiffInstanceList(stateInstanceList, planInstanceList)
-	// 处理新增
-	err = c.addScalingEcsList(ctx, add, state)
-	if err != nil {
-		return err
-	}
-	// 处理删除
-	err = c.removeEcsRequest(ctx, remove, state, plan)
-	if err != nil {
-		return err
-	}
-	state.InstanceUUIDList = plan.InstanceUUIDList
+	state.AddInstanceUUIDList = plan.AddInstanceUUIDList
+	state.RemoveInstanceUUIDList = plan.RemoveInstanceUUIDList
+	state.IsDestroy = plan.IsDestroy
 	return nil
 }
 
-func (c *ctyunScaling) getDiffInstanceList(state, plan []string) (toAdd, toRemove []string) {
-	// 使用 map 快速查找差异
-	planSet := make(map[string]bool)
-	stateSet := make(map[string]bool)
-
-	// 填充计划集
-	for _, item := range plan {
-		planSet[item] = true
-	}
-
-	// 填充状态集
-	for _, item := range state {
-		stateSet[item] = true
-	}
-
-	// 找出需要新增的项目（在 plan 中但不在 state 中）
-	for _, item := range plan {
-		if !stateSet[item] {
-			toAdd = append(toAdd, item)
-		}
-	}
-
-	// 找出需要删除的项目（在 state 中但不在 plan 中）
-	for _, item := range state {
-		if !planSet[item] {
-			toRemove = append(toRemove, item)
-		}
-	}
-	return toAdd, toRemove
-}
+//func (c *ctyunScaling) getDiffInstanceList(state, plan []string) (toAdd, toRemove []string) {
+//	// 使用 map 快速查找差异
+//	planSet := make(map[string]bool)
+//	stateSet := make(map[string]bool)
+//
+//	// 填充计划集
+//	for _, item := range plan {
+//		planSet[item] = true
+//	}
+//
+//	// 填充状态集
+//	for _, item := range state {
+//		stateSet[item] = true
+//	}
+//
+//	// 找出需要新增的项目（在 plan 中但不在 state 中）
+//	for _, item := range plan {
+//		if !stateSet[item] {
+//			toAdd = append(toAdd, item)
+//		}
+//	}
+//
+//	// 找出需要删除的项目（在 state 中但不在 plan 中）
+//	for _, item := range state {
+//		if !planSet[item] {
+//			toRemove = append(toRemove, item)
+//		}
+//	}
+//	return toAdd, toRemove
+//}
 
 func (c *ctyunScaling) removeEcsRequest(ctx context.Context, instanceUUIDs []string, config *CtyunScalingConfig, plan *CtyunScalingConfig) error {
 	if instanceUUIDs == nil || len(instanceUUIDs) <= 0 {
 		return nil
 	}
-	if plan.IsDestroy.ValueBool() {
-		// 移除并释放
-		instanceIds, err := c.getInstanceAssocIdByUUID(ctx, config, instanceUUIDs)
-		if err != nil {
-			return err
-		}
-		params := &scaling.ScalingGroupInstanceMoveOutReleaseRequest{
-			RegionID:       config.RegionID.ValueString(),
-			GroupID:        config.ID.ValueInt64(),
-			InstanceIDList: instanceIds,
-		}
-		resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupInstanceMoveOutReleaseApi.Do(ctx, c.meta.SdkCredential, params)
+	// 移除不释放
+	params := &scaling.ScalingGroupInstanceMoveOutRequest{
+		RegionID:       config.RegionID.ValueString(),
+		GroupID:        config.ID.ValueInt64(),
+		InstanceIDList: instanceUUIDs,
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupInstanceMoveOutApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("ecs移除失败，接口返回nil。ecs uuid 列表：%s", strings.Join(instanceUUIDs, ", "))
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return err
+	}
+	//}
+	return nil
+}
 
-		if err != nil {
-			return err
-		} else if resp == nil {
-			err = fmt.Errorf("ecs移除并释放失败，接口返回nil。ecs uuid 列表：%s", strings.Join(instanceUUIDs, ", "))
-		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
-		}
-	} else {
-		// 移除不释放
-		params := &scaling.ScalingGroupInstanceMoveOutRequest{
-			RegionID:       config.RegionID.ValueString(),
-			GroupID:        config.ID.ValueInt64(),
-			InstanceIDList: instanceUUIDs,
-		}
-		resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupInstanceMoveOutApi.Do(ctx, c.meta.SdkCredential, params)
-		if err != nil {
-			return err
-		} else if resp == nil {
-			err = fmt.Errorf("ecs移除失败，接口返回nil。ecs uuid 列表：%s", strings.Join(instanceUUIDs, ", "))
-		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
-		}
+func (c *ctyunScaling) destroyAutoEcsRequest(ctx context.Context, instanceUUIDs []string, config *CtyunScalingConfig) error {
+	// 移除并释放
+	instanceIds, err := c.getInstanceAssocIdByUUID(ctx, config, instanceUUIDs)
+	if err != nil {
+		return err
+	}
+	params := &scaling.ScalingGroupInstanceMoveOutReleaseRequest{
+		RegionID:       config.RegionID.ValueString(),
+		GroupID:        config.ID.ValueInt64(),
+		InstanceIDList: instanceIds,
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupInstanceMoveOutReleaseApi.Do(ctx, c.meta.SdkCredential, params)
+
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("ecs移除并释放失败，接口返回nil。ecs uuid 列表：%s", strings.Join(instanceUUIDs, ", "))
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return err
 	}
 	return nil
+}
+
+//func (c *ctyunScaling) checkUpdate(ctx context.Context, state *CtyunScalingConfig) (bool, error) {
+//	params := &scaling.ScalingGroupCheckRequest{
+//		RegionID: state.RegionID.ValueString(),
+//		GroupID:  state.ID.ValueInt64(),
+//	}
+//	resp, err := c.meta.Apis.SdkScalingApis.ScalingGroupCheckApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return false, err
+//	} else if resp.StatusCode != common.NormalStatusCode {
+//		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+//		return false, err
+//	}
+//	flag := resp.ReturnObj.Result
+//	if flag == 2 {
+//		return false, nil
+//	} else if flag == 1 {
+//		return true, nil
+//	}
+//	return true, nil
+//}
+
+//func (c *ctyunScaling) updateBeforeLoop(ctx context.Context, state *CtyunScalingConfig, loopCount ...int) error {
+//	var err error
+//	count := 60
+//	if len(loopCount) > 0 {
+//		count = loopCount[0]
+//	}
+//	retryer, err := business.NewRetryer(time.Second*30, count)
+//	if err != nil {
+//		return err
+//	}
+//	result := retryer.Start(
+//		func(currentTime int) bool {
+//			isUpdate, err2 := c.checkUpdate(ctx, state)
+//			if err2 != nil {
+//				err = err2
+//				return false
+//			}
+//			if isUpdate {
+//				return false
+//			}
+//			return true
+//		})
+//	if result.ReturnReason == business.ReachMaxLoopTime {
+//		return errors.New("轮询已达最大次数，弹性文件系统仍未扩容成功！")
+//	}
+//	return err
+//}
+
+func (c *ctyunScaling) updateInstanceBeforeLoop(ctx context.Context, state *CtyunScalingConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			activitiesList, err2 := c.getScalingActivitiesList(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			for _, activity := range activitiesList {
+				executionResult := activity.ExecutionResult
+				if executionResult == 0 {
+					return true
+				}
+			}
+			return false
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，弹性文件系统仍未扩容成功！")
+	}
+	return err
+}
+
+func (c *ctyunScaling) getScalingActivitiesList(ctx context.Context, state *CtyunScalingConfig) ([]*scaling.ScalingQueryActivitiesListReturnObjActiveListResponse, error) {
+	params := &scaling.ScalingQueryActivitiesListRequest{
+		RegionID: state.RegionID.ValueString(),
+		GroupID:  state.ID.ValueInt64(),
+		PageNo:   1,
+		PageSize: 100,
+	}
+	resp, err := c.meta.Apis.SdkScalingApis.ScalingQueryActivitiesListApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return nil, err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return nil, err
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return nil, err
+	}
+	return resp.ReturnObj.ActiveList, nil
+}
+
+func (c *ctyunScaling) FindIntersection(instanceUUIDList []string, scalingInstanceList []*scaling.ScalingGroupQueryInstanceListReturnObjInstanceListResponse) []string {
+	// 使用map记录第一个数组的元素
+	set := make(map[string]bool)
+	for _, item := range instanceUUIDList {
+		set[item] = true
+	}
+
+	var intersection []string
+	// 遍历第二个数组，检查元素是否在第一个数组中存在
+	for _, item := range scalingInstanceList {
+		instanceID := item.InstanceID
+		if set[instanceID] {
+			intersection = append(intersection, instanceID)
+			set[instanceID] = false // 标记已添加，避免重复
+		}
+	}
+	return intersection
+}
+
+func (c *ctyunScaling) getAutoAndManualEcs(removeEcsList []string, scalingEcsList []*scaling.ScalingGroupQueryInstanceListReturnObjInstanceListResponse) ([]string, []string) {
+	ecsMap := make(map[string]int32)
+	for _, ecs := range scalingEcsList {
+		ecsMap[ecs.InstanceID] = ecs.ExecutionMode
+	}
+
+	var autoInstanceID, manualInstanceID []string
+	for _, ecs := range removeEcsList {
+		executionMode := ecsMap[ecs]
+		if executionMode == business.ExecutionModeAutoStrategy || executionMode == business.ExecutionModeManualStrategy {
+			autoInstanceID = append(autoInstanceID, ecs)
+		} else if executionMode == business.ExecutionModeManualAddInstances {
+			manualInstanceID = append(manualInstanceID, ecs)
+		}
+	}
+	return autoInstanceID, manualInstanceID
 }
 
 type CtyunScalingConfig struct {
@@ -1385,9 +1571,11 @@ type CtyunScalingConfig struct {
 	ID                  types.Int64  `tfsdk:"id"`                     // 伸缩组ID
 	Status              types.String `tfsdk:"status"`                 // 伸缩组状态
 	DeleteProtection    types.String `tfsdk:"delete_protection"`      // 控制伸缩组保护开关
-	InstanceUUIDList    types.Set    `tfsdk:"instance_uuid_list"`     // 云主机ID列表
-	ProtectStatus       types.String `tfsdk:"protect_status"`         // 保护状态。1：已保护。2：未保护。
-	IsDestroy           types.Bool   `tfsdk:"is_destroy"`             // 移除时是否销毁
+	//InstanceUUIDList       types.Set    `tfsdk:"instance_uuid_list"`        // 云主机ID列表
+	AddInstanceUUIDList    types.Set `tfsdk:"add_instance_uuid_list"`    // 需要手动添加的云主机列表
+	RemoveInstanceUUIDList types.Set `tfsdk:"remove_instance_uuid_list"` // 需要手动移除的云主机列表
+	//ProtectStatus          types.String `tfsdk:"protect_status"`            // 保护状态。1：已保护。2：未保护。
+	IsDestroy types.Bool `tfsdk:"is_destroy"` // 移除时是否销毁
 }
 
 // LbInfo 负载均衡信息
