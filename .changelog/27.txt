@@ -1,4 +1,4 @@
-release-note:bug
+rrafrelease-note:bug
 resource/ctyun_bandwidth fix create
 
 release-note:new-resource

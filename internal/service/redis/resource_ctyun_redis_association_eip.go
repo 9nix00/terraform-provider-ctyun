@@ -83,7 +83,7 @@ func (c *ctyunRedisAssociationEip) Schema(_ context.Context, _ resource.SchemaRe
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 		},

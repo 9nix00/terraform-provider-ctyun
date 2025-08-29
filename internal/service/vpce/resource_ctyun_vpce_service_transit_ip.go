@@ -74,7 +74,7 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"subnet_id": schema.StringAttribute{

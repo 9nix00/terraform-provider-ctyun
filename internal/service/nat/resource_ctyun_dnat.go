@@ -75,7 +75,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"external_id": schema.StringAttribute{
@@ -358,16 +358,14 @@ func (c *ctyunDnatResource) ImportState(ctx context.Context, request resource.Im
 	}()
 
 	var cfg CtyunDnatConfig
-	var id string
-	err = terraform_extend.Split(request.ID, &id)
+	var id, ngID, regionID string
+	err = terraform_extend.Split(request.ID, &id, &ngID, &regionID)
 	if err != nil {
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
-	cfg.RegionID = types.StringValue(regionId)
-
-	natGatewayId := cfg.NatGatewayID.ValueString()
-	cfg.NatGatewayID = types.StringValue(natGatewayId)
+	cfg.RegionID = types.StringValue(regionID)
+	cfg.NatGatewayID = types.StringValue(ngID)
+	cfg.DNatID = types.StringValue(id)
 	err = c.getAndMergeDnat(ctx, &cfg)
 	if err != nil {
 		return
@@ -410,22 +408,6 @@ func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatC
 	}
 
 	return nil
-}
-
-func (c *ctyunDnatResource) isPort(port types.Int32, flag string) bool {
-	if port.IsNull() {
-		return false
-	}
-	if flag == "internal" {
-		if port.ValueInt32() > 0 && port.ValueInt32() <= 65535 {
-			return true
-		}
-	} else if flag == "external" {
-		if port.ValueInt32() > 0 && port.ValueInt32() <= 1024 {
-		}
-		return true
-	}
-	return false
 }
 
 // checkBeforeCreateDnat 创建dnat之前进行检查
