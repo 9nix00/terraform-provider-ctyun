@@ -93,6 +93,22 @@ func TestAccCtyunScalingConfig(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "monitor_service", fmt.Sprintf("%t", updatedMonitorService)),
 				),
 			},
+			//  资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"key_pair_id"},
+			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, name, imageID, flavorName, useFloating, bandwidth, loginMode, password, monitorService, azNames, tags, volumes),
 				Destroy: true,

@@ -62,3 +62,7 @@ output "instance_uuid" {
 output "instance_uuid1" {
   value = ctyun_ecs.ecs_test1.id
 }
+
+output "instance_uuid2" {
+  value = ctyun_ecs.ecs_test2.id
+}

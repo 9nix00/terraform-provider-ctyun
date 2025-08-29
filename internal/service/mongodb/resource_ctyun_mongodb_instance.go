@@ -38,9 +38,9 @@ var (
 )
 
 type CtyunMongodbInstance struct {
-	meta         *common.CtyunMetadata
-	ecsService   *business.EcsService
-	mysqlService *business.MysqlService
+	meta           *common.CtyunMetadata
+	ecsService     *business.EcsService
+	mongodbService *business.MongodbService
 }
 
 func (c *CtyunMongodbInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -55,7 +55,7 @@ func (c *CtyunMongodbInstance) Configure(ctx context.Context, request resource.C
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.ecsService = business.NewEcsService(c.meta)
-	c.mysqlService = business.NewMysqlService(c.meta)
+	c.mongodbService = business.NewMongodbService(c.meta)
 }
 
 func NewCtyunMongodbInstance() resource.Resource {
@@ -129,11 +129,15 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "虚拟私有云Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
 				},
+			},
+			"flavor_name": schema.StringAttribute{
+				Required:    true,
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mongodb_specs查询支持的规格",
 			},
 			//"host_type": schema.StringAttribute{
 			//	Required:    true,
@@ -146,7 +150,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "子网Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					validator2.SubnetValidate(),
@@ -156,7 +160,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "安全组Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
@@ -188,9 +192,6 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbProdIDs...),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -244,8 +245,8 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"is_upgrade_back_up": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Default:     booldefault.StaticBool(true),
-				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容。默认true(主备一起扩容)",
+				Default:     booldefault.StaticBool(false),
+				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容，该参数仅在升配主存储空间时生效，且需要注意is_upgrade_back_up=ture时，待升配的磁盘空间必须大于现磁盘空间（包括备份空间）。取值范围：true-主备同时扩容； false-主备不同时扩容。默认为false",
 			},
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -331,15 +332,15 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					int32validator.Between(2, 32),
 				},
 			},
-			"replica_num": schema.Int32Attribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "副本集数量，mongodb为副本集需填写，默认为3，取值范围：[3, 5, 7]",
-				Default:     int32default.StaticInt32(3),
-				Validators: []validator.Int32{
-					int32validator.OneOf(3, 5, 7),
-				},
-			},
+			//"replica_num": schema.Int32Attribute{
+			//	Optional:    true,
+			//	Computed:    true,
+			//	Description: "副本集数量，mongodb为副本集需填写，默认为3，取值范围：[3, 5, 7]",
+			//	Default:     int32default.StaticInt32(3),
+			//	Validators: []validator.Int32{
+			//		int32validator.OneOf(3, 5, 7),
+			//	},
+			//},
 			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
@@ -358,7 +359,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"upgrade_node_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "当实例为集群版，若升配mongos、shard节点规格时可填写。取值范围：shard, mongos",
+				Description: "当实例为集群版，若升配mongos、shard节点se规格时可填写。取值范围：shard, mongos",
 				Validators: []validator.String{
 					stringvalidator.OneOf("shard", "mongos"),
 				},
@@ -390,11 +391,17 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 	if err != nil {
 		return
 	}
+	// 如果ReadPort不为空，需要暂存下来，否则merge操作后会被默认端口覆盖
+	var updatedReadPort int32
+	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
+		updatedReadPort = plan.ReadPort.ValueInt32()
+	}
 	// 创建完成后，同步云端信息
 	err = c.getAndMergeMongodbInstance(ctx, &plan)
 	if err != nil {
 		return
 	}
+	plan.ReadPort = types.Int32Value(updatedReadPort)
 	// 确保实例创建成功后，判断port是否需要指定
 	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
 		err = c.updateReadPort(ctx, &plan, &plan)
@@ -403,6 +410,10 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 		}
 	}
 
+	err = c.getAndMergeMongodbInstance(ctx, &plan)
+	if err != nil {
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -530,7 +541,10 @@ func (c *CtyunMongodbInstance) CreateMongodbInstance(ctx context.Context, config
 		ProdId:            business.MongodbProdIDDict[config.ProdID.ValueString()],
 		MysqlNodeInfoList: nil,
 	}
-
+	if config.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
+		osStr := strings.ToLower(config.BackupStorageType.ValueString())
+		params.BackupStorageType = &osStr
+	}
 	password := business.Encode(config.Password.ValueString())
 	params.Password = password
 	//config.Password = types.StringValue(password)
@@ -676,6 +690,18 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	}
 	config.ProdID = types.StringValue(business.MongodbProdIDRevDict[prodID])
 	config.HostIp = types.StringValue(detailReturnObj.Host)
+	config.StorageSpace = types.Int32Value(detailReturnObj.DiskSize)
+	if detailReturnObj.Backup != nil {
+		backupSize := strings.TrimSuffix(detailReturnObj.Backup.Size, "G")
+		backupStorageSpace, err2 := strconv.ParseInt(backupSize, 10, 32)
+		if err2 != nil {
+			err = err2
+			return
+		}
+		config.BackupStorageSpace = types.Int32Value(int32(backupStorageSpace))
+	} else {
+		config.BackupStorageSpace = types.Int32Value(0)
+	}
 	return
 }
 
@@ -684,6 +710,18 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 		err = errors.New("在变配实例过程中， 实例id为空")
 		return
 	}
+	mongodbType := c.getMongodbType(state)
+	// prod_id（节点） 和 flavor不可同时升级
+	if plan.FlavorName.Equal(state.FlavorName) && plan.ProdID.Equal(state.ProdID) {
+		err = fmt.Errorf("mongodb flavor_name（cpu 内存规格） 和 prod id（节点） 不可同时更新")
+		return err
+	}
+	// 单机版mongodb不支持prod_id更新
+	if mongodbType == business.MongodbProdTypeSingle {
+		err = fmt.Errorf("单机版 mongodb不支持prod id 更新操作")
+		return err
+	}
+
 	// 修改实例名称
 	if plan.Name.ValueString() != "" && state.Name.ValueString() != plan.Name.ValueString() {
 		// 修改实例前，确定实例状态为running
@@ -769,6 +807,8 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 	if err != nil {
 		return
 	}
+	state.AvailabilityZoneInfo = plan.AvailabilityZoneInfo
+	state.FlavorName = plan.FlavorName
 	return
 }
 
@@ -795,7 +835,6 @@ func (c *CtyunMongodbInstance) isDiskUpgrade(ctx context.Context, nodeInfoList N
 
 	}
 	return
-
 }
 
 // 查询详情，确认spec是否更改
@@ -827,7 +866,7 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
-	syncCount := 2
+	syncCount := 3
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return nil, err
@@ -1079,6 +1118,7 @@ func (c *CtyunMongodbInstance) UpdatePortLoop(ctx context.Context, state *CtyunM
 					return false
 				}
 				tolerateCount--
+				return true
 			}
 			// 若云端port信息与预期相符，退出轮询
 			if detailResp.Port == fmt.Sprintf("%d", plan.ReadPort.ValueInt32()) {
@@ -1148,18 +1188,21 @@ func (c *CtyunMongodbInstance) UpgradeLoop(ctx context.Context, state *CtyunMong
 					return false
 				}
 				tolerateCount--
+				return true
 			} else if detailResp.StatusCode != 800 {
 				if tolerateCount <= 0 {
 					err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
 					return false
 				}
 				tolerateCount--
+				return true
 			} else if detailResp.ReturnObj == nil {
 				if tolerateCount <= 0 {
 					err = common.InvalidReturnObjError
 					return false
 				}
 				tolerateCount--
+				return true
 			}
 			// 验证配置
 			specFlag := true
@@ -1384,8 +1427,9 @@ func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *Ctyun
 		AzInfoList = append(AzInfoList, azInfo)
 		return
 	} else if prodType == "replica" {
+		config.replicaNum = business.MongodbReplicaNodeNum[config.ProdID.ValueString()]
 		if azNum >= 3 {
-			nodeDist := business.MongodbReplicaNodeDistMap[config.ReplicaNum.ValueInt32()]
+			nodeDist := business.MongodbReplicaNodeDistMap[config.replicaNum]
 			// 有3个az，节点可以平均分摊在各个az下
 			for _, azItem := range azList {
 				if len(AzInfoList) >= 3 {
@@ -1402,7 +1446,7 @@ func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *Ctyun
 			var azInfo mongodb.AvailabilityZoneInfoRequest
 			azInfo.NodeType = nodeType
 			azInfo.AvailabilityZoneName = azList[0].AvailabilityZoneName
-			azInfo.AvailabilityZoneCount = config.ReplicaNum.ValueInt32()
+			azInfo.AvailabilityZoneCount = business.MongodbReplicaNodeDistMap[config.replicaNum]
 			AzInfoList = append(AzInfoList, azInfo)
 		}
 		return
@@ -1457,11 +1501,11 @@ func (c *CtyunMongodbInstance) getSingleNodeInfo(ctx context.Context, config *Ct
 	mongoMasterNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
 	var mongoBackupNodeInfo mongodb.MongodbNodeInfoListRequest
 
-	if config.BackupStorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 		mongoBackupNodeInfo.NodeType = "backup"
 		mongoBackupNodeInfo.InstSpec = "1"
 		mongoBackupNodeInfo.StorageType = config.BackupStorageType.ValueString()
-		mongoBackupNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
+		mongoBackupNodeInfo.StorageSpace = config.BackupStorageSpace.ValueInt32()
 	}
 
 	// 处理azInfo，若azInfo不为空，用用户输入的azInfo
@@ -1480,14 +1524,15 @@ func (c *CtyunMongodbInstance) getSingleNodeInfo(ctx context.Context, config *Ct
 				AvailabilityZoneCount: azInfoItem.AvailabilityZoneCount.ValueInt32(),
 				NodeType:              azInfoItem.NodeType.ValueString(),
 			}
-			if azZone.NodeType == strings.ToLower(business.MongodbBackupStorageTypeOS) {
+			if azZone.NodeType == "backup" {
 				backupAzZoneInfo = append(backupAzZoneInfo, azZone)
-			} else {
+			} else if azZone.NodeType == "master" {
 				azZoneInfo = append(azZoneInfo, azZone)
 			}
 		}
 		mongoMasterNodeInfo.AvailabilityZoneInfo = azZoneInfo
-		if config.StorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+
+		if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 			mongoBackupNodeInfo.AvailabilityZoneInfo = backupAzZoneInfo
 		}
 	} else {
@@ -1510,7 +1555,7 @@ func (c *CtyunMongodbInstance) getSingleNodeInfo(ctx context.Context, config *Ct
 
 	*mongoNodeInfoList = append(*mongoNodeInfoList, mongoMasterNodeInfo)
 
-	if config.BackupStorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 		*mongoNodeInfoList = append(*mongoNodeInfoList, mongoBackupNodeInfo)
 	}
 	return
@@ -1522,18 +1567,18 @@ func (c *CtyunMongodbInstance) getReplicaNodeInfo(ctx context.Context, config *C
 	var mongoMasterNodeInfo mongodb.MongodbNodeInfoListRequest
 	mongoMasterNodeInfo.NodeType = "ms"
 	mongoMasterNodeInfo.InstSpec = "1"
+	mongoMasterNodeInfo.Disks = 1
 	mongoMasterNodeInfo.StorageType = config.StorageType.ValueString()
 	mongoMasterNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mongoMasterNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
 
 	// backup节点
 	var mongoBackupNodeInfo mongodb.MongodbNodeInfoListRequest
-	if config.BackupStorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 		mongoBackupNodeInfo.NodeType = "backup"
 		mongoBackupNodeInfo.InstSpec = "1"
-		mongoBackupNodeInfo.StorageType = config.StorageType.ValueString()
-		mongoBackupNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
-
+		mongoBackupNodeInfo.StorageType = config.BackupStorageType.ValueString()
+		mongoBackupNodeInfo.StorageSpace = config.BackupStorageSpace.ValueInt32()
 	}
 
 	// 处理azInfo，若azInfo不为空，用用户输入的azInfo
@@ -1559,8 +1604,9 @@ func (c *CtyunMongodbInstance) getReplicaNodeInfo(ctx context.Context, config *C
 			}
 		}
 		mongoMasterNodeInfo.AvailabilityZoneInfo = masterAzZoneInfo
-		mongoBackupNodeInfo.AvailabilityZoneInfo = backupAzZoneInfo
-
+		if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
+			mongoBackupNodeInfo.AvailabilityZoneInfo = backupAzZoneInfo
+		}
 	} else {
 		// 若azInfo为空，则生成az信息
 		// master节点
@@ -1580,7 +1626,7 @@ func (c *CtyunMongodbInstance) getReplicaNodeInfo(ctx context.Context, config *C
 		mongoBackupNodeInfo.AvailabilityZoneInfo = azInfo
 	}
 	*mongoNodeInfoList = append(*mongoNodeInfoList, mongoMasterNodeInfo)
-	if config.BackupStorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 		*mongoNodeInfoList = append(*mongoNodeInfoList, mongoBackupNodeInfo)
 	}
 	return
@@ -1592,6 +1638,7 @@ func (c *CtyunMongodbInstance) getClusterNodeInfo(ctx context.Context, config *C
 	var mongoMongosNodeInfo mongodb.MongodbNodeInfoListRequest
 	mongoMongosNodeInfo.NodeType = "mongos"
 	mongoMongosNodeInfo.InstSpec = "1"
+	mongoMongosNodeInfo.Disks = 1
 	mongoMongosNodeInfo.StorageType = config.StorageType.ValueString()
 	mongoMongosNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mongoMongosNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
@@ -1599,6 +1646,7 @@ func (c *CtyunMongodbInstance) getClusterNodeInfo(ctx context.Context, config *C
 	var mongoShardNodeInfo mongodb.MongodbNodeInfoListRequest
 	mongoShardNodeInfo.NodeType = "shard"
 	mongoShardNodeInfo.InstSpec = "1"
+	mongoShardNodeInfo.Disks = 1
 	mongoShardNodeInfo.StorageType = config.StorageType.ValueString()
 	mongoShardNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
 	mongoShardNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
@@ -1606,17 +1654,20 @@ func (c *CtyunMongodbInstance) getClusterNodeInfo(ctx context.Context, config *C
 	var mongoConfigNodeInfo mongodb.MongodbNodeInfoListRequest
 	mongoConfigNodeInfo.NodeType = "config"
 	mongoConfigNodeInfo.InstSpec = "1"
+	mongoConfigNodeInfo.Disks = 1
 	mongoConfigNodeInfo.StorageType = "SSD"
 	mongoConfigNodeInfo.StorageSpace = 100
 	mongoConfigNodeInfo.ProdPerformanceSpec = "2C4G"
 	// backup节点
 	var mongoBackupNodeInfo mongodb.MongodbNodeInfoListRequest
-	mongoBackupNodeInfo.NodeType = "backup"
-	mongoBackupNodeInfo.InstSpec = "1"
-	mongoBackupNodeInfo.StorageType = config.StorageType.ValueString()
-	// backup节点磁盘空间 = shard数量*每个shard磁盘空间
-	mongoBackupNodeInfo.StorageSpace = config.StorageSpace.ValueInt32() * config.ShardNum.ValueInt32()
 
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
+		mongoBackupNodeInfo.NodeType = "backup"
+		mongoBackupNodeInfo.InstSpec = "1"
+		mongoBackupNodeInfo.StorageType = config.BackupStorageType.ValueString()
+		// backup节点磁盘空间 = shard数量*每个shard磁盘空间
+		mongoBackupNodeInfo.StorageSpace = config.BackupStorageSpace.ValueInt32() * config.ShardNum.ValueInt32()
+	}
 	// 处理azInfo，若azInfo不为空，用用户输入的azInfo
 	if !config.AvailabilityZoneInfo.IsNull() && !config.AvailabilityZoneInfo.IsUnknown() {
 		var azZoneInfoList []AvailabilityZoneModel
@@ -1648,7 +1699,9 @@ func (c *CtyunMongodbInstance) getClusterNodeInfo(ctx context.Context, config *C
 		mongoMongosNodeInfo.AvailabilityZoneInfo = mongosAzZoneInfo
 		mongoShardNodeInfo.AvailabilityZoneInfo = shardAzZoneInfo
 		mongoConfigNodeInfo.AvailabilityZoneInfo = configAzZoneInfo
-		mongoBackupNodeInfo.AvailabilityZoneInfo = backupAzZoneInfo
+		if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
+			mongoBackupNodeInfo.AvailabilityZoneInfo = backupAzZoneInfo
+		}
 	} else {
 		// 若azInfo为空，则生成az信息
 		// mongos节点
@@ -1686,7 +1739,7 @@ func (c *CtyunMongodbInstance) getClusterNodeInfo(ctx context.Context, config *C
 	*mongoNodeInfoList = append(*mongoNodeInfoList, mongoMongosNodeInfo)
 	*mongoNodeInfoList = append(*mongoNodeInfoList, mongoShardNodeInfo)
 	*mongoNodeInfoList = append(*mongoNodeInfoList, mongoConfigNodeInfo)
-	if config.BackupStorageType.ValueString() != strings.ToLower(business.MongodbBackupStorageTypeOS) {
+	if config.BackupStorageType.ValueString() != business.MongodbBackupStorageTypeOS {
 		*mongoNodeInfoList = append(*mongoNodeInfoList, mongoBackupNodeInfo)
 	}
 	return
@@ -1732,15 +1785,18 @@ func (c *CtyunMongodbInstance) upgradeStorage(ctx context.Context, state *CtyunM
 	}
 	// 若plan阶段存储空间与state阶段不一致，触发更新
 	//flag, err := c.isBackupDiskUpgrade(ctx, state, plan)
-	if !plan.BackupStorageSpace.IsNull() && !plan.BackupStorageSpace.Equal(state.BackupStorageSpace) {
+	if !plan.BackupStorageSpace.IsNull() && !plan.BackupStorageSpace.IsUnknown() && !plan.BackupStorageSpace.Equal(state.BackupStorageSpace) {
+		// 若backupStorageType = os直接返回
+		if plan.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
+			return
+		}
 		// 确定实例处于running状态
 		_, err = c.PreCheckUpdateLoop(ctx, state, 60)
 		nodeType := "backup"
 		updateParams := &mongodb.MongodbUpgradeRequest{
-			InstId:          state.ID.ValueString(),
-			DiskVolume:      plan.BackupStorageSpace.ValueInt32Pointer(),
-			IsUpgradeBackup: plan.IsUpgradeBackUp.ValueBoolPointer(),
-			NodeType:        &nodeType,
+			InstId:     state.ID.ValueString(),
+			DiskVolume: plan.BackupStorageSpace.ValueInt32Pointer(),
+			NodeType:   &nodeType,
 		}
 		updateHeader := &mongodb.MongodbUpgradeRequestHeader{}
 		if state.ProjectID.ValueString() != "" {
@@ -1851,7 +1907,7 @@ func (c *CtyunMongodbInstance) checkSpec(ctx context.Context, plan *CtyunMongodb
 		plan.instanceSeries = hostType
 	}
 	// 再调用数据库规格接口
-	mysqlFlavor, err := c.mysqlService.GetFlavorByProdIdAndFlavorName(
+	mysqlFlavor, err := c.mongodbService.GetMongodbFlavorByProdIdAndFlavorName(
 		ctx,
 		plan.ProdID.ValueString(),
 		plan.FlavorName.ValueString(),
@@ -1879,6 +1935,10 @@ func (c *CtyunMongodbInstance) checkSpec(ctx context.Context, plan *CtyunMongodb
 }
 
 func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) error {
+	if plan.FlavorName.Equal(state.FlavorName) || plan.FlavorName.ValueString() == state.FlavorName.ValueString() {
+		return nil
+	}
+
 	// 获取mongodb类型
 	mongodbType := c.getMongodbType(state)
 	if mongodbType == "" {
@@ -1888,7 +1948,7 @@ func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMong
 	updateParams := &mongodb.MongodbUpgradeRequest{
 		InstId: state.ID.ValueString(),
 	}
-	fmt.Println(updateParams)
+	//fmt.Println(updateParams)
 	updateHeader := &mongodb.MongodbUpgradeRequestHeader{}
 	if state.ProjectID.ValueString() != "" {
 		updateHeader.ProjectID = state.ProjectID.ValueStringPointer()
@@ -1942,6 +2002,7 @@ func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMong
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return err
 	}
+	// 轮询确保接口执行后进入升配状态
 	return nil
 }
 
@@ -1960,15 +2021,15 @@ func (c *CtyunMongodbInstance) getMongodbType(state *CtyunMongodbInstanceConfig)
 // 通过mongo类型，获取mongo各个节点的信息
 func (c *CtyunMongodbInstance) getNodeInfo(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig, mongodbType string, azInfo *[]mongodb.AvailabilityZoneInfo, nodeType string) error {
 	var err error
-	// 若az info为空，则自己生成
-	if plan.AvailabilityZoneInfo.IsNull() {
+	// 若az info为空，或者产品类型也需要更新的时候则
+	//
+	if plan.AvailabilityZoneInfo.IsNull() || !plan.AvailabilityZoneInfo.IsNull() && !plan.ProdID.Equal(state.ProdID) {
 		nodeDist := make(map[string]int32)
 		// 获取节点AZ分布
 		nodeDist, err = c.getNodeDist(ctx, state, mongodbType, nodeType)
 		if err != nil {
 			return err
 		}
-
 		for az, nodeNum := range nodeDist {
 			var azItem mongodb.AvailabilityZoneInfo
 			azItem.AvailabilityZoneCount = nodeNum
@@ -1983,7 +2044,6 @@ func (c *CtyunMongodbInstance) getNodeInfo(ctx context.Context, state *CtyunMong
 			err = errors.New(diag[0].Detail())
 			return err
 		}
-
 		for _, azModelItem := range azModelList {
 			var azItem mongodb.AvailabilityZoneInfo
 			azItem.AvailabilityZoneCount = azModelItem.AvailabilityZoneCount.ValueInt32()
@@ -2024,7 +2084,7 @@ func (c *CtyunMongodbInstance) getNodeDist(ctx context.Context, state *CtyunMong
 		if azNum <= 0 {
 			return nil, errors.New("获取az信息失败，接口返回长度为0")
 		}
-		// 集群班直接重新生成一个az分布
+		// 集群版直接重新生成一个az分布
 		var nodeNum int32
 		nodeNum = 3
 		nodeNum = business.MongodbClusterNodeBaseNumMap[nodeType] * state.MongosNum.ValueInt32()
@@ -2133,12 +2193,20 @@ func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMong
 	// 单集群不支持扩容，cluster集群支持扩容
 	// 集群版支持扩容shard数量和mongos数量
 	var err error
+	// 如果plan和state阶段的prod id一致，无需变化
+	if state.ProdID.Equal(plan.ProdID) || state.ProdID.ValueString() == plan.ProdID.ValueString() {
+		return nil
+	}
+
 	mongodbType := c.getMongodbType(state)
 	var azInfo []mongodb.AvailabilityZoneInfo
-
+	nodeType := plan.UpgradeNodeType.ValueString()
+	if mongodbType == business.MongodbProdTypeReplica {
+		nodeType = "master"
+	}
 	upgradeParams := mongodb.MongodbUpgradeRequest{
 		InstId:   state.ID.ValueString(),
-		NodeType: plan.UpgradeNodeType.ValueStringPointer(),
+		NodeType: &nodeType,
 	}
 
 	upgradeHeader := mongodb.MongodbUpgradeRequestHeader{}
@@ -2194,89 +2262,123 @@ func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMong
 }
 
 func (c *CtyunMongodbInstance) getUpgradeReplicaAzList(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig, azInfoList *[]mongodb.AvailabilityZoneInfo) error {
-	// 定义一个map，用于存放新增的节点，和az分布
-	addNodeMap := make(map[string]int32)
-	// 计算需要升配的节点数量
-	stateNodeNum := business.MongodbReplicaNodeNum[state.ProdID.ValueString()]
-	planNodeNum := business.MongodbReplicaNodeNum[plan.ProdID.ValueString()]
-	addNum := planNodeNum - stateNodeNum
-	if addNum <= 0 {
-		return errors.New("plan阶段 prodID有误")
-	}
-	// 获取原节点分布
-	nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeReplica, "ms")
-	if err != nil {
-		return err
-	}
-	if len(nodeDist) <= 0 {
-		return errors.New("原各个副本-az信息获取为空")
-	}
-	i := int32(0)
-	for ; i < addNum; i++ {
-		// 遍历寻找最少node节点的az
-		minNodeNum := int32(math.MaxInt32)
-		minAzId := ""
-		for az, count := range nodeDist {
-			if count < minNodeNum {
-				minNodeNum = count
-				minAzId = az
-			}
+	if plan.AvailabilityZoneInfo.IsNull() {
+		// 定义一个map，用于存放新增的节点，和az分布
+		addNodeMap := make(map[string]int32)
+		// 计算需要升配的节点数量
+		stateNodeNum := business.MongodbReplicaNodeNum[state.ProdID.ValueString()]
+		planNodeNum := business.MongodbReplicaNodeNum[plan.ProdID.ValueString()]
+		addNum := planNodeNum - stateNodeNum
+		if addNum <= 0 {
+			return errors.New("plan阶段 prodID有误")
 		}
-		if minAzId == "" {
+		// 获取原节点分布
+		nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeReplica, "ms")
+		if err != nil {
+			return err
+		}
+		if len(nodeDist) <= 0 {
 			return errors.New("原各个副本-az信息获取为空")
 		}
-		if _, exist := addNodeMap[minAzId]; !exist {
-			addNodeMap[minAzId] = 1
-		} else {
-			addNodeMap[minAzId] += 1
+		i := int32(0)
+		for ; i < addNum; i++ {
+			// 遍历寻找最少node节点的az
+			minNodeNum := int32(math.MaxInt32)
+			minAzId := ""
+			for az, count := range nodeDist {
+				if count < minNodeNum {
+					minNodeNum = count
+					minAzId = az
+				}
+			}
+			if minAzId == "" {
+				return errors.New("原各个副本-az信息获取为空")
+			}
+			if _, exist := addNodeMap[minAzId]; !exist {
+				addNodeMap[minAzId] = 1
+			} else {
+				addNodeMap[minAzId] += 1
+			}
+			nodeDist[minAzId] += 1
 		}
-	}
 
-	// 生成azInfoList
-	for az, count := range addNodeMap {
-		var azInfoItem mongodb.AvailabilityZoneInfo
-		nodeType := "ms"
-		azInfoItem.NodeType = &nodeType
-		azInfoItem.AvailabilityZoneCount = count
-		azInfoItem.AvailabilityZoneName = az
-		*azInfoList = append(*azInfoList, azInfoItem)
-	}
-
-	return nil
-}
-
-func (c *CtyunMongodbInstance) getUpgradeClusterAzList(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig, azInfoList *[]mongodb.AvailabilityZoneInfo) error {
-	// 确定升级的节点类型
-	if plan.UpgradeNodeType.ValueString() == business.MongodbNodeTypeShard {
-		state.ShardNum = plan.ShardNum
-		nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeCluster, business.MongodbNodeTypeShard)
-		if err != nil {
-			return err
-		}
-		for az, count := range nodeDist {
+		// 生成azInfoList
+		for az, count := range addNodeMap {
 			var azInfoItem mongodb.AvailabilityZoneInfo
-			nodeType := business.MongodbNodeTypeShard
-			azInfoItem.NodeType = &nodeType
-			azInfoItem.AvailabilityZoneCount = count
-			azInfoItem.AvailabilityZoneName = az
-			*azInfoList = append(*azInfoList, azInfoItem)
-		}
-	} else if plan.UpgradeNodeType.ValueString() == business.MongodbNodeTypeMongos {
-		state.MongosNum = plan.MongosNum
-		nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeCluster, business.MongodbNodeTypeMongos)
-		if err != nil {
-			return err
-		}
-		for az, count := range nodeDist {
-			var azInfoItem mongodb.AvailabilityZoneInfo
-			nodeType := business.MongodbNodeTypeShard
+			nodeType := "ms"
 			azInfoItem.NodeType = &nodeType
 			azInfoItem.AvailabilityZoneCount = count
 			azInfoItem.AvailabilityZoneName = az
 			*azInfoList = append(*azInfoList, azInfoItem)
 		}
 	} else {
-		return errors.New("输入的升级节点类型有误，仅支持mongos节点和shard节点升级")
+		// 如果用户自行输入，使用用户输入的az 信息
+		var azZoneInfoList []AvailabilityZoneModel
+		diags := plan.AvailabilityZoneInfo.ElementsAs(ctx, &azZoneInfoList, true)
+		if diags.HasError() {
+			err := errors.New(diags[0].Detail())
+			return err
+		}
+		for _, azItem := range azZoneInfoList {
+			var az mongodb.AvailabilityZoneInfo
+			az.AvailabilityZoneName = azItem.AvailabilityZoneName.ValueString()
+			az.AvailabilityZoneCount = azItem.AvailabilityZoneCount.ValueInt32()
+			az.NodeType = azItem.NodeType.ValueStringPointer()
+			*azInfoList = append(*azInfoList, az)
+		}
+	}
+	return nil
+}
+
+func (c *CtyunMongodbInstance) getUpgradeClusterAzList(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig, azInfoList *[]mongodb.AvailabilityZoneInfo) error {
+	if plan.AvailabilityZoneInfo.IsNull() {
+		// 确定升级的节点类型
+		if plan.UpgradeNodeType.ValueString() == business.MongodbNodeTypeShard {
+			state.ShardNum = plan.ShardNum
+			nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeCluster, business.MongodbNodeTypeShard)
+			if err != nil {
+				return err
+			}
+			for az, count := range nodeDist {
+				var azInfoItem mongodb.AvailabilityZoneInfo
+				nodeType := business.MongodbNodeTypeShard
+				azInfoItem.NodeType = &nodeType
+				azInfoItem.AvailabilityZoneCount = count
+				azInfoItem.AvailabilityZoneName = az
+				*azInfoList = append(*azInfoList, azInfoItem)
+			}
+		} else if plan.UpgradeNodeType.ValueString() == business.MongodbNodeTypeMongos {
+			state.MongosNum = plan.MongosNum
+			nodeDist, err := c.getNodeDist(ctx, state, business.MongodbProdTypeCluster, business.MongodbNodeTypeMongos)
+			if err != nil {
+				return err
+			}
+			for az, count := range nodeDist {
+				var azInfoItem mongodb.AvailabilityZoneInfo
+				nodeType := business.MongodbNodeTypeShard
+				azInfoItem.NodeType = &nodeType
+				azInfoItem.AvailabilityZoneCount = count
+				azInfoItem.AvailabilityZoneName = az
+				*azInfoList = append(*azInfoList, azInfoItem)
+			}
+		} else {
+			return errors.New("输入的升级节点类型有误，仅支持mongos节点和shard节点升级")
+		}
+	} else {
+		// 如果用户自行输入，使用用户输入的az 信息
+		var azZoneInfoList []AvailabilityZoneModel
+		diags := plan.AvailabilityZoneInfo.ElementsAs(ctx, &azZoneInfoList, true)
+		if diags.HasError() {
+			err := errors.New(diags[0].Detail())
+			return err
+		}
+		for _, azItem := range azZoneInfoList {
+			var az mongodb.AvailabilityZoneInfo
+			az.AvailabilityZoneName = azItem.AvailabilityZoneName.ValueString()
+			az.AvailabilityZoneCount = azItem.AvailabilityZoneCount.ValueInt32()
+			az.NodeType = azItem.NodeType.ValueStringPointer()
+			*azInfoList = append(*azInfoList, az)
+		}
 	}
 	return nil
 }
@@ -2312,7 +2414,7 @@ type CtyunMongodbInstanceConfig struct {
 	ShardNum             types.Int32  `tfsdk:"shard_num"`              // 当实例为集群版，shard数量
 	MongosNum            types.Int32  `tfsdk:"mongos_num"`             // 当实例为集群版，mongos节点数量
 	//InstanceSeries          types.String `tfsdk:"instance_series"`           // 实例规格（实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到））
-	ReplicaNum         types.Int32  `tfsdk:"replica_num"`          // 副本集数量
+	//ReplicaNum         types.Int32  `tfsdk:"replica_num"`          // 副本集数量
 	BackupStorageSpace types.Int32  `tfsdk:"backup_storage_space"` // 备用节点磁盘空间，升配时使用
 	BackupStorageType  types.String `tfsdk:"backup_storage_type"`  // 备份节点存储类型
 	UpgradeNodeType    types.String `tfsdk:"upgrade_node_type"`    // 集群版mongodb升配规格时，
@@ -2322,6 +2424,7 @@ type CtyunMongodbInstanceConfig struct {
 	hostType            string
 	osType              string
 	cpuType             string
+	replicaNum          int32
 }
 
 type NodeInfoListModel struct {
