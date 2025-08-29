@@ -220,14 +220,7 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-	// 根据订单编号轮询查询资源的uuid
-	/*
-		helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-		loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId, 600)
-		if err != nil {
-			return
-		}*/
+	
 	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
 
 	if err != nil {

@@ -245,3 +245,40 @@ func TestAccCtyunEbs(t *testing.T) {
 	},
 	)
 }
+
+func TestAccCtyunEbsMonth(t *testing.T) {
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_ebs." + rnd
+	resourceFile := "resource_ctyun_ebs_month.tf"
+	initName := "init-ebs"
+	initSize := 60
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+
+			// 创建
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, initSize),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
+					resource.TestCheckResourceAttr(resourceName, "size", strconv.Itoa(initSize)),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
+				),
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, initName, initSize),
+				Destroy: true,
+			},
+		},
+	},
+	)
+}
