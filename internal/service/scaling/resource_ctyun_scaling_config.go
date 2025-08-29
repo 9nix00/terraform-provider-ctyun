@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -22,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 )
 
@@ -47,6 +49,37 @@ func (c *ctyunScalingConfig) Configure(_ context.Context, request resource.Confi
 
 func NewCtyunScalingConfig() resource.Resource {
 	return &ctyunScalingConfig{}
+}
+
+// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
+func (c *ctyunScalingConfig) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	var cfg CtyunScalingConfigModel
+	var ID, regionId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	id, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return
+	}
+	cfg.ID = types.Int64Value(id)
+	cfg.RegionID = types.StringValue(regionId)
+
+	err = c.getAndMergeScalingConfig(ctx, &cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

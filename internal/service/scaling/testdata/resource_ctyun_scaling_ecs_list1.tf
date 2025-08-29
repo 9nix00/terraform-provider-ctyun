@@ -11,8 +11,7 @@ resource "ctyun_scaling_group" "%[1]s" {
   use_lb                 = %[11]d
   lb_list                = %[12]s
   config_list            = %[13]s
-  instance_uuid_list     = %[14]s
-  protect_status         = "%[15]s"
-  az_strategy            = "%[16]s"
+  add_instance_uuid_list = %[14]s
+  az_strategy            = "%[15]s"
 }
 

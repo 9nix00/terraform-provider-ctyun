@@ -499,6 +499,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsBackupPolicyBindRepo(),
 		ccse.NewCtyunCcseNodeAssociation(),
 		ccse.NewCtyunCcseTemplateInstance(),
+		scaling2.NewCtyunScalingEcsProtection(),
 	)
 }
 

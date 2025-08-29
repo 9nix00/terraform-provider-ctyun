@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -21,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 )
 
@@ -46,6 +48,42 @@ func (c *ctyunScalingPolicy) Configure(_ context.Context, request resource.Confi
 
 func NewCtyunScalingPolicy() resource.Resource {
 	return &ctyunScalingPolicy{}
+}
+
+func (c *ctyunScalingPolicy) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	var cfg CtyunScalingPolicyConfig
+	var ID, regionId, groupId, policyType string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &groupId, &policyType)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	id, err := strconv.ParseInt(ID, 10, 64)
+
+	if err != nil {
+		return
+	}
+	groupID, err := strconv.ParseInt(groupId, 10, 64)
+	if err != nil {
+		return
+	}
+	cfg.ID = types.Int64Value(id)
+	cfg.RegionID = types.StringValue(regionId)
+	cfg.GroupID = types.Int64Value(groupID)
+	cfg.PolicyType = types.StringValue(policyType)
+	err = c.getAndMergeScalingPolicy(ctx, &cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -626,6 +664,7 @@ func (c *ctyunScalingPolicy) getAndMergeScalingPolicy(ctx context.Context, confi
 		config.Action = types.StringValue(business.ActionDictRev[rule.Action])
 		config.OperateCount = types.Int32Value(rule.OperateCount)
 		config.OperateUnit = types.StringValue(business.OperateUnitDictRev[rule.OperateUnit])
+		config.Day = types.SetNull(types.Int32Type)
 	} else if config.PolicyType.ValueString() == business.ScalingPolicyRegularStr {
 		// 定时策略
 		// 触发时间
@@ -634,6 +673,7 @@ func (c *ctyunScalingPolicy) getAndMergeScalingPolicy(ctx context.Context, confi
 		config.Action = types.StringValue(business.ActionDictRev[rule.Action])
 		config.OperateCount = types.Int32Value(rule.OperateCount)
 		config.OperateUnit = types.StringValue(business.OperateUnitDictRev[rule.OperateUnit])
+		config.Day = types.SetNull(types.Int32Type)
 	} else if config.PolicyType.ValueString() == business.ScalingPolicyPeriodStr {
 		// 周期策略
 		config.Cycle = types.StringValue(business.CycleDictRev[rule.Cycle])
@@ -669,6 +709,7 @@ func (c *ctyunScalingPolicy) getAndMergeScalingPolicy(ctx context.Context, confi
 		config.TargetScaleInEvaluationCount = types.Int32Value(rule.TargetObj.ScaleInEvaluationCount)
 		//缩容波动范围
 		config.TargetDisableScaleIn = types.BoolValue(*rule.TargetObj.DisableScaleIn)
+		config.Day = types.SetNull(types.Int32Type)
 	}
 	return nil
 }

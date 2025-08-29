@@ -125,6 +125,23 @@ func TestAccCtyunScalingPolicyAlert(t *testing.T) {
 					resource.TestCheckResourceAttrSet(datasourceName, "scaling_policies.#"),
 				),
 			},
+			//  资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					groupId := ds.Attributes["group_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s,%s,%s", id, regionId, groupId, policyType), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"is_execute", "target_disable_scale_in"},
+			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, groupID, updatedName, policyType, operateUnit, operateCount, action, updatedCooldown, triggerName,
 					triggerMetricName, triggerStatistics, triggerComparisonOperator, updatedTriggerThreshold, triggerPeriod, updatedTriggerEvaluationCount),
