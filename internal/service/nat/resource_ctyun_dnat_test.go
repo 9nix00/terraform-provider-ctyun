@@ -82,6 +82,22 @@ func TestAccCtyunDNat(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					ngID := ds.Attributes["nat_gateway_id"]
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s", id, ngID, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"dnat_type",
+					"internal_ip",
+				},
+			},
+			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayId, dependence.eipID1, updatedProtocol, updatedExternalPort, updatedInternalPort, dnatType, updatedInternalIp),
 				Destroy: true,
 			},

@@ -81,6 +81,23 @@ func TestAccNewCtyunNatResource(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "nats.0.description", updatedDescription),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"az_name",
+					"cycle_type",
+					"master_order_id",
+					"project_id",
+				},
+			},
 			// 1.5  销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, updatedName, updatedDescription, onDemandCycleType, ""),

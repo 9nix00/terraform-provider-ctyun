@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -229,6 +230,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleStatus...),
 				},
+				Default: stringdefault.StaticString(business.ElbRuleStatusACTIVE),
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -364,7 +366,7 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	err = c.setNat64(ctx, &plan, &plan)
 	if err != nil {
 		return
@@ -394,7 +396,12 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-
+	if plan.Status.ValueString() == business.ElbRuleStatusDOWN {
+		err = c.stopListener(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
 	// 创建后反查创建后的nat信息
 	err = c.getAndMergeListener(ctx, &plan)
 	if err != nil {
@@ -460,14 +467,14 @@ func (c *CtyunElbListener) Update(ctx context.Context, request resource.UpdateRe
 	}
 	//停止监听器,若plan.status=DOWN，并且state.status=ACTIVE则触发停止监听器
 	if plan.Status.ValueString() == business.ElbRuleStatusDOWN && state.Status.ValueString() == business.ElbRuleStatusACTIVE {
-		err = c.stopListener(ctx, &state, &plan)
+		err = c.stopListener(ctx, plan)
 		if err != nil {
 			return
 		}
 	}
 	//启动监听器
 	if plan.Status.ValueString() == business.ElbRuleStatusACTIVE && state.Status.ValueString() == business.ElbRuleStatusDOWN {
-		err = c.startListener(ctx, &state, &plan)
+		err = c.startListener(ctx, state)
 		if err != nil {
 			return
 		}
@@ -807,20 +814,12 @@ func (c *CtyunElbListener) getAndMergeListener(ctx context.Context, plan *CtyunE
 	return
 }
 
-func (c *CtyunElbListener) CheckBeforeCreateElbListener(ctx context.Context, plan CtyunElbListenerConfig) (err error) {
-	return nil
-}
-
 // 启动监听器
-func (c *CtyunElbListener) startListener(ctx context.Context, state *CtyunElbListenerConfig, _ *CtyunElbListenerConfig) (err error) {
-	// 若state状态为active，则无需调用接口
-	if state.Status.ValueString() == business.ElbRuleStatusACTIVE {
-		return
-	}
+func (c *CtyunElbListener) startListener(ctx context.Context, state CtyunElbListenerConfig) (err error) {
 	params := &ctelb.CtelbStartListenerRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    state.RegionID.ValueString(),
-		ListenerID:  state.RegionID.ValueString(),
+		ListenerID:  state.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbStartListenerApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -835,15 +834,11 @@ func (c *CtyunElbListener) startListener(ctx context.Context, state *CtyunElbLis
 	return
 }
 
-func (c *CtyunElbListener) stopListener(ctx context.Context, state *CtyunElbListenerConfig, _ *CtyunElbListenerConfig) (err error) {
-	// 若state状态为DOWN，无须调用接口
-	if state.Status.ValueString() == business.ElbRuleStatusDOWN {
-		return
-	}
+func (c *CtyunElbListener) stopListener(ctx context.Context, state CtyunElbListenerConfig) (err error) {
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbStopListenerApi.Do(ctx, c.meta.SdkCredential, &ctelb.CtelbStopListenerRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    state.RegionID.ValueString(),
-		ListenerID:  state.RegionID.ValueString(),
+		ListenerID:  state.ID.ValueString(),
 	})
 	if err != nil {
 		return
