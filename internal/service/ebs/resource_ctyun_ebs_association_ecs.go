@@ -2,6 +2,7 @@ package ebs
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
@@ -35,6 +36,11 @@ func (c *ctyunEbsAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10169293**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
 			"ebs_id": schema.StringAttribute{
 				Required:    true,
 				Description: "磁盘id",
@@ -219,10 +225,12 @@ func (c *ctyunEbsAssociation) getAndMergeEbsAssociationEcs(ctx context.Context, 
 			break
 		}
 	}
+	cfg.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", cfg.EbsId.ValueString(), cfg.InstanceId.ValueString(), cfg.RegionId.ValueString()))
 	return &cfg, err
 }
 
 type CtyunEbsAssociationConfig struct {
+	ID         types.String `tfsdk:"id"`
 	EbsId      types.String `tfsdk:"ebs_id"`
 	InstanceId types.String `tfsdk:"instance_id"`
 	RegionId   types.String `tfsdk:"region_id"`

@@ -38,6 +38,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) Metadata(_ context.Context, request 
 }
 
 type CtyunEcsBackupPolicyBindInstancesConfig struct {
+	ID             types.String `tfsdk:"id"`
 	PolicyID       types.String `tfsdk:"policy_id"`
 	RegionID       types.String `tfsdk:"region_id"`
 	InstanceIDList types.String `tfsdk:"instance_id_list"`
@@ -47,11 +48,19 @@ func (c *ctyunEcsBackupPolicyBindInstances) Schema(_ context.Context, _ resource
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026751/10033775**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
 			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份策略id",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -143,7 +152,6 @@ func (c *ctyunEcsBackupPolicyBindInstances) Read(ctx context.Context, request re
 		}
 		return
 	}
-
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
@@ -404,10 +412,11 @@ func (c *ctyunEcsBackupPolicyBindInstances) getAndMerge(ctx context.Context, pla
 		err = fmt.Errorf("云主机策略 %s 和云主机 %s 未关联  regionID： %s", policyId, instanceIDList, regionID)
 		return
 	}
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", policyId, instanceIDList, regionID))
 	return
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[groupID],[regionID]
+// 导入命令：terraform import [配置标识].[导入配置名称] [policyID],[instanceIDList],[regionID]
 func (c *ctyunEcsBackupPolicyBindInstances) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -417,7 +426,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) ImportState(ctx context.Context, req
 	}()
 	var cfg CtyunEcsBackupPolicyBindInstancesConfig
 	var instanceIDList, policyID, regionID string
-	err = terraform_extend.Split(request.ID, &instanceIDList, &policyID, &regionID)
+	err = terraform_extend.Split(request.ID, &policyID, &instanceIDList, &regionID)
 	if err != nil {
 		return
 	}

@@ -207,28 +207,28 @@ func (c *ctyunEcsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 				Attributes: map[string]schema.Attribute{
 					"adv_day": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0",
+						Description: "保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_week": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0",
+						Description: "保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_month": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0",
+						Description: "保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_year": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0",
+						Description: "保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},

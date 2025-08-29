@@ -38,6 +38,7 @@ func (c *ctyunEcsBackupPolicyBindDisks) Metadata(_ context.Context, request reso
 }
 
 type CtyunEcsBackupPolicyBindDisksConfig struct {
+	ID         types.String `tfsdk:"id"`
 	PolicyID   types.String `tfsdk:"policy_id"`
 	RegionID   types.String `tfsdk:"region_id"`
 	DiskIDList types.String `tfsdk:"disk_id_list"`
@@ -47,6 +48,11 @@ func (c *ctyunEcsBackupPolicyBindDisks) Schema(_ context.Context, _ resource.Sch
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026752/10037452**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
 			"policy_id": schema.StringAttribute{
 				Required:    true,
 				Description: "云硬盘备份策略id",
@@ -381,19 +387,20 @@ func (c *ctyunEcsBackupPolicyBindDisks) getBindingDisks(ctx context.Context, pla
 
 // getAndMerge 查询绑定关系
 func (c *ctyunEcsBackupPolicyBindDisks) getAndMerge(ctx context.Context, plan *CtyunEcsBackupPolicyBindDisksConfig) (err error) {
-	policyId, instanceIDList, regionID := plan.PolicyID.ValueString(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString()
+	policyId, diskIDList, regionID := plan.PolicyID.ValueString(), plan.DiskIDList.ValueString(), plan.RegionID.ValueString()
 	bindID, err := c.getBindingDisks(ctx, *plan)
 	if err != nil {
 		return
 	}
-	if bindID != instanceIDList {
-		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联  regionID： %s", policyId, instanceIDList, regionID)
+	if bindID != diskIDList {
+		err = fmt.Errorf("云硬盘策略 %s 和云硬盘 %s 未关联  regionID： %s", policyId, diskIDList, regionID)
 		return
 	}
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", policyId, diskIDList, regionID))
 	return
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[groupID],[regionID]
+// 导入命令：terraform import [配置标识].[导入配置名称] [policyID],[diskIDList],[regionID]
 func (c *ctyunEcsBackupPolicyBindDisks) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -402,13 +409,13 @@ func (c *ctyunEcsBackupPolicyBindDisks) ImportState(ctx context.Context, request
 		}
 	}()
 	var cfg CtyunEcsBackupPolicyBindDisksConfig
-	var instanceIDList, policyID, regionID string
-	err = terraform_extend.Split(request.ID, &instanceIDList, &policyID, &regionID)
+	var diskIDList, policyID, regionID string
+	err = terraform_extend.Split(request.ID, &policyID, &diskIDList, &regionID)
 	if err != nil {
 		return
 	}
 
-	cfg.DiskIDList = types.StringValue(instanceIDList)
+	cfg.DiskIDList = types.StringValue(diskIDList)
 	cfg.PolicyID = types.StringValue(policyID)
 	cfg.RegionID = types.StringValue(regionID)
 
