@@ -54,17 +54,14 @@ func (c *ctyunEcsAffinityGroups) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 			"affinity_group_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "云主机组ID",
 			},
 			"page_no": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "页码，取值范围：正整数（≥1），注：默认值为1",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "每页记录数目，取值范围：[1,50]，注：默认值为10",
 			},
 			"groups": schema.ListNestedAttribute{

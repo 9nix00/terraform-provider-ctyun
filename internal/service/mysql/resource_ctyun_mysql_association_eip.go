@@ -8,7 +8,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -26,7 +27,8 @@ var (
 )
 
 type CtyunMysqlAssociationEip struct {
-	meta *common.CtyunMetadata
+	meta       *common.CtyunMetadata
+	eipService *business.EipService
 }
 
 func (c *CtyunMysqlAssociationEip) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -43,19 +45,23 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 			"eip_id": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性id",
-			},
-			"eip": schema.StringAttribute{
-				Required:    true,
-				Description: "弹性ip",
+				Validators: []validator.String{
+					validator2.EipValidate(),
+				},
 			},
 			"inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
-				Computed:    true,
 				Description: "项目id",
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -65,13 +71,17 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"eip_status": schema.Int32Attribute{
 				Computed:    true,
 				Description: " 弹性ip状态 0->unbind，1->bind,2->binding",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 2),
-				},
+			},
+			"status": schema.StringAttribute{
+				Computed:    true,
+				Description: "eip绑定状态，与eip_status一致",
 			},
 		},
 	}
@@ -90,13 +100,18 @@ func (c *CtyunMysqlAssociationEip) Create(ctx context.Context, request resource.
 	if response.Diagnostics.HasError() {
 		return
 	}
+	// 绑定eip之前，轮询确认eip未被绑定
+	err = c.preCheckEipUnbound(ctx, &plan)
+	if err != nil {
+		return
+	}
 	// 实例绑定弹性IP
 	err = c.MysqlBindEip(ctx, &plan)
 	if err != nil {
 		return
 	}
 	// 轮询查看绑定状态
-	err = c.BindLoop(ctx, &plan, business.EipStatusBind, business.EipStatusUnbind)
+	err = c.BindLoop(ctx, &plan, business.EipStatusBind, business.MysqlBindEipStatusACTIVE)
 	if err != nil {
 		return
 	}
@@ -155,9 +170,14 @@ func (c *CtyunMysqlAssociationEip) Delete(ctx context.Context, request resource.
 	if response.Diagnostics.HasError() {
 		return
 	}
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+
 	unbindParams := &mysql.TeledbUnbindEipRequest{
 		EipID:  state.EipID.ValueString(),
-		Eip:    state.Eip.ValueString(),
+		Eip:    *eip.EipAddress,
 		InstID: state.InstID.ValueString(),
 	}
 	unbindHeader := &mysql.TeledbUnbindEipRequestHeader{}
@@ -172,7 +192,7 @@ func (c *CtyunMysqlAssociationEip) Delete(ctx context.Context, request resource.
 		return
 	}
 	// 轮询确定解绑成功
-	err = c.BindLoop(ctx, &state, business.EipStatusUnbind, business.EipStatusBind)
+	err = c.BindLoop(ctx, &state, business.EipStatusUnbind, business.MysqlBindEipStatusDOWN)
 	if err != nil {
 		return
 	}
@@ -189,12 +209,19 @@ func (c *CtyunMysqlAssociationEip) Configure(ctx context.Context, request resour
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.eipService = business.NewEipService(c.meta)
 }
 
 func (c *CtyunMysqlAssociationEip) MysqlBindEip(ctx context.Context, config *CtyunAssociationEipConfig) (err error) {
+	// 绑定前，确定实例状态为running
+	err = c.StartedLoop(ctx, config, 60)
+	if err != nil {
+		return err
+	}
+
 	params := &mysql.TeledbBindEipRequest{
 		EipID:  config.EipID.ValueString(),
-		Eip:    config.Eip.ValueString(),
+		Eip:    config.eipAddress,
 		InstID: config.InstID.ValueString(),
 	}
 	header := &mysql.TeledbBindEipRequestHeader{}
@@ -212,35 +239,56 @@ func (c *CtyunMysqlAssociationEip) MysqlBindEip(ctx context.Context, config *Cty
 }
 
 func (c *CtyunMysqlAssociationEip) getAndMergeBindEip(ctx context.Context, config *CtyunAssociationEipConfig) (err error) {
-	detailParams := &mysql.TeledbQueryDetailRequest{
-		OuterProdInstId: config.InstID.ValueString(),
-	}
-	header := &mysql.TeledbQueryDetailRequestHeaders{
-		InstID:   config.InstID.ValueString(),
+	//detailParams := &mysql.TeledbQueryDetailRequest{
+	//	OuterProdInstId: config.InstID.ValueString(),
+	//}
+	//header := &mysql.TeledbQueryDetailRequestHeaders{
+	//	InstID:   config.InstID.ValueString(),
+	//	RegionID: config.RegionID.ValueString(),
+	//}
+	//if config.ProjectID.ValueString() != "" {
+	//	header.ProjectID = config.ProjectID.ValueStringPointer()
+	//}
+	//
+	//resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, header)
+	//if err != nil {
+	//	return err
+	//} else if resp.StatusCode != 0 {
+	//	err = fmt.Errorf("API return error. Message: %s", resp.Message)
+	//	return
+	//} else if resp.ReturnObj == nil {
+	//	err = common.InvalidReturnObjError
+	//	return
+	//}
+	//returnObj := resp.ReturnObj
+
+	params := &mysql.TeledbBoundEipListRequest{
 		RegionID: config.RegionID.ValueString(),
-	}
-	if config.ProjectID.ValueString() != "" {
-		header.ProjectID = config.ProjectID.ValueStringPointer()
+		EipID:    config.EipID.ValueStringPointer(),
 	}
 
-	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, header)
-	if err != nil {
-		return err
-	} else if resp.StatusCode != 0 {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+	headers := &mysql.TeledbBoundEipListRequestHeader{}
+	if config.ProjectID.ValueString() != "" {
+		headers.ProjectID = config.ProjectID.ValueStringPointer()
+	}
+	resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbBoundEipListApi.Do(ctx, c.meta.Credential, params, headers)
+	if err2 != nil {
+		err = err2
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s ", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return
 	}
-	returnObj := resp.ReturnObj
-	config.Eip = types.StringValue(returnObj.EIP)
-	config.EipStatus = types.Int32Value(returnObj.EIPStatus)
-	config.ProjectID = types.StringValue(returnObj.ProjectId)
+	eipInfo := resp.ReturnObj.Data[0]
+	config.EipStatus = types.Int32Value(eipInfo.BindStatus)
+	config.Status = types.StringValue(eipInfo.Status)
 	return
 }
 
-func (c *CtyunMysqlAssociationEip) BindLoop(ctx context.Context, config *CtyunAssociationEipConfig, finalStatus int32, initStatus int32, loopCount ...int) (err error) {
+func (c *CtyunMysqlAssociationEip) BindLoop(ctx context.Context, config *CtyunAssociationEipConfig, finalBindStatus int32, finalStatus string, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -251,18 +299,70 @@ func (c *CtyunMysqlAssociationEip) BindLoop(ctx context.Context, config *CtyunAs
 	}
 	result := retryer.Start(
 		func(currentTime int) bool {
-			detailParams := &mysql.TeledbQueryDetailRequest{
-				OuterProdInstId: config.InstID.ValueString(),
-			}
-			header := &mysql.TeledbQueryDetailRequestHeaders{
-				InstID:   config.InstID.ValueString(),
+			params := &mysql.TeledbBoundEipListRequest{
 				RegionID: config.RegionID.ValueString(),
-			}
-			if config.ProjectID.ValueString() != "" {
-				header.ProjectID = config.ProjectID.ValueStringPointer()
+				EipID:    config.EipID.ValueStringPointer(),
 			}
 
-			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, header)
+			headers := &mysql.TeledbBoundEipListRequestHeader{}
+			if config.ProjectID.ValueString() != "" {
+				headers.ProjectID = config.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbBoundEipListApi.Do(ctx, c.meta.Credential, params, headers)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 200 {
+				err = fmt.Errorf("API return error. Message: %s ", resp.Message)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			// 解析返回的绑定eip列表
+			returnObj := resp.ReturnObj.Data
+			if len(returnObj) > 1 {
+				err = errors.New("根据eip id 查询到多个eip详情，返回有误！")
+				return false
+			} else if len(returnObj) < 1 {
+				err = errors.New("eip 有误，未查询到该eip绑定信息")
+				return false
+			}
+			if returnObj[0].Status == finalStatus && returnObj[0].BindStatus == finalBindStatus {
+				return false
+			}
+			return true
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，eip仍未绑定/解绑成功！")
+	}
+	return
+}
+
+func (c *CtyunMysqlAssociationEip) StartedLoop(ctx context.Context, state *CtyunAssociationEipConfig, loopCount ...int) (err error) {
+	count := 30
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 获取实例详情
+			detailParams := &mysql.TeledbQueryDetailRequest{
+				OuterProdInstId: state.InstID.ValueString(),
+			}
+			detailHeaders := &mysql.TeledbQueryDetailRequestHeaders{
+				InstID:   state.InstID.ValueString(),
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
 			if err2 != nil {
 				err = err2
 				return false
@@ -273,31 +373,53 @@ func (c *CtyunMysqlAssociationEip) BindLoop(ctx context.Context, config *CtyunAs
 				err = common.InvalidReturnObjError
 				return false
 			}
-			status := resp.ReturnObj.EIPStatus
-			switch status {
-			case business.EipStatusBinding:
-				return true
-			case initStatus:
-				return true
-			case finalStatus:
-				return false
-			default:
-				err = errors.New("mysql绑定解绑eip时出现异常状态：" + fmt.Sprintf("%d", status))
+			runningStatus := resp.ReturnObj.ProdRunningStatus
+			orderStatus := resp.ReturnObj.ProdOrderStatus
+			// 若变配前，发现数据库已冻结，将其恢复
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = errors.New("当前数据库状态为暂停状态，请启用后再进行绑定")
 				return false
 			}
+			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
+				return false
+			}
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = errors.New("订单处于暂停状态，不可进行变更操作")
+				return false
+			}
+			if runningStatus == business.MysqlRunningStatusStopping || runningStatus == business.MysqlRunningStatusStopped {
+				err = errors.New("主机处于关机状态，不可进行变更操作")
+				return false
+			}
+
+			return true
 		},
 	)
 	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，eip仍未绑定/解绑成功！")
+		return errors.New("轮询已达最大次数，资源仍未到达启动状态！")
 	}
+	return
+}
+
+func (c *CtyunMysqlAssociationEip) preCheckEipUnbound(ctx context.Context, state *CtyunAssociationEipConfig) (err error) {
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+	if *eip.Status != "DOWN" {
+		return errors.New("eip 已经被绑定，无法再次绑定")
+	}
+	state.eipAddress = *eip.EipAddress
 	return
 }
 
 type CtyunAssociationEipConfig struct {
 	EipID     types.String `tfsdk:"eip_id"`     //弹性id
-	Eip       types.String `tfsdk:"eip"`        //弹性ip
 	InstID    types.String `tfsdk:"inst_id"`    //实例id
 	ProjectID types.String `tfsdk:"project_id"` //项目id
 	RegionID  types.String `tfsdk:"region_id"`  //区域Id
 	EipStatus types.Int32  `tfsdk:"eip_status"` //弹性ip状态 0->unbind，1->bind,2->binding
+	Status    types.String `tfsdk:"status"`     //弹性ip可读状态
+
+	eipAddress string
 }

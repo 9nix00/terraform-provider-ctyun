@@ -34,8 +34,8 @@ resource "ctyun_ebs" "ebs_test" {
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `mode` (String) 磁盘模式，vbd，iscsi，fcsan
-- `name` (String) 磁盘命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾
-- `size` (Number) 磁盘大小，单位GB，取值范围[10, 32768]，不支持缩容
+- `name` (String) 磁盘命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾，支持更新
+- `size` (Number) 磁盘大小，单位GB，取值范围[10, 32768]，支持更新（不支持缩容）
 - `type` (String) 磁盘类型，sata：普通IO，sas：高IO，ssd：超高IO，ssd-genric：通用型SSD，fast-ssd：极速型SSD
 
 ### Optional

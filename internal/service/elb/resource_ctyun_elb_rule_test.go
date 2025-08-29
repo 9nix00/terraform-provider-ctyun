@@ -29,7 +29,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 	updatedConditions := fmt.Sprintf(`{"condition_type": "%s", "condition_server_name": "%s"}`, "server_name", "terraform-test-new.com")
 	pathConditions := fmt.Sprintf(`{"condition_type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test", "PREFIX")
 	//updatedPathConditions := fmt.Sprintf(`{"type": "%s","condition_url_paths":"%s","condition_match_type":"%s"}`, "url_path", "test-new", "PREFIX")
-	actionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID2)
+	actionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID4)
 	//updatedActionTargetGroups := fmt.Sprintf(`{target_group_id="%s"}`, dependence.targetGroupID)
 
 	resource.Test(t, resource.TestCase{
@@ -53,7 +53,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_server_name", "terraform-test.com"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),
-					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID2),
+					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 			// 1.2 update
@@ -67,7 +67,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_server_name", "terraform-test-new.com"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test_new"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),
-					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID2),
+					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 			// 1.3 datasource验证
@@ -80,7 +80,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.condition_type", "server_name"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.server_name", "terraform-test-new.com"),
 					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_type", actionType),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID2),
+					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 			//1.4 destroy
@@ -100,7 +100,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
 					//resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),
-					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID2),
+					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 
@@ -113,7 +113,7 @@ func TestAccCtyunElbRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "action_type", actionType),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_url_paths", "test"),
 					resource.TestCheckResourceAttr(resourceName, "conditions.0.condition_match_type", "PREFIX"),
-					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID2),
+					resource.TestCheckResourceAttr(resourceName, "action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 			{

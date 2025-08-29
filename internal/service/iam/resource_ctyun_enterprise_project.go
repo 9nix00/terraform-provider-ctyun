@@ -2,13 +2,16 @@ package iam
 
 import (
 	"context"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
@@ -30,8 +33,9 @@ func (c *ctyunEnterpriseProject) Schema(_ context.Context, _ resource.SchemaRequ
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10345725/10358242**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -162,17 +166,17 @@ func (c *ctyunEnterpriseProject) Update(ctx context.Context, request resource.Up
 }
 
 func (c *ctyunEnterpriseProject) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	// var state CtyunEnterpriseProjectConfig
-	// response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	// if response.Diagnostics.HasError() {
-	// 	return
-	// }
-	//
-	// err := c.changeStatus(ctx, state.Id.ValueString(), business.EnterpriseProjectStatusDisable)
-	// if err != nil {
-	// 	response.Diagnostics.AddError(err.Error(), err.Error())
-	// 	return
-	// }
+	var state CtyunEnterpriseProjectConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err := c.changeStatus(ctx, state.Id.ValueString(), business.EnterpriseProjectStatusDisable)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [enterpriseProjectId]
@@ -226,21 +230,21 @@ func (c *ctyunEnterpriseProject) getAndMergeEnterpriseProject(ctx context.Contex
 	return &cfg, nil
 }
 
-// // changeStatus 改变状态
-// func (c *ctyunEnterpriseProject) changeStatus(ctx context.Context, projectId string, statusTo string) error {
-// 	status, err := business.EnterpriseProjectStatusMap.FromOriginalScene(statusTo, business.EnterpriseProjectSceneRequest)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	_, err = c.meta.Apis.CtIamApis.EnterpriseProjectStatusUpdateApi.Do(ctx, c.meta.Credential, &ctiam.EnterpriseProjectStatusUpdateRequest{
-// 		ProjectId: projectId,
-// 		Status:    status.(int),
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+// changeStatus 改变状态
+func (c *ctyunEnterpriseProject) changeStatus(ctx context.Context, projectId string, statusTo string) error {
+	//status, err := business.EnterpriseProjectStatusMap.FromOriginalScene(statusTo, business.EnterpriseProjectSceneRequest)
+	//if err != nil {
+	//	return err
+	//}
+	_, err := c.meta.Apis.CtIamApis.EnterpriseProjectStatusUpdateApi.Do(ctx, c.meta.Credential, &ctiam.EnterpriseProjectStatusUpdateRequest{
+		ProjectId: projectId,
+		Status:    3,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 type CtyunEnterpriseProjectConfig struct {
 	Id          types.String `tfsdk:"id"`

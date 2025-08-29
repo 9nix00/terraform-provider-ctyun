@@ -10,6 +10,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -21,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -66,18 +68,22 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026735/10181324**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"bucket": schema.StringAttribute{
 				Required:    true,
@@ -85,12 +91,19 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(3, 63),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-][a-zA-Z0-9])+$"), "桶名称不符合规则"),
+				},
 			},
 			"key": schema.StringAttribute{
 				Required:    true,
-				Description: "对象名称",
+				Description: "对象名称，长度1-1024",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(1, 1024),
 				},
 			},
 			"source": schema.StringAttribute{
@@ -120,7 +133,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 			"acl": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'",
+				Description: "权限，可选值为'private'、'public-read'、'public-read-write'，分别表示私有、公共读、公共读写，默认为'private'，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ZosAclPrivate, business.ZosAclPublicRead, business.ZosAclPublicReadWrite),
 				},
@@ -132,17 +145,18 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "指定缓存行为，对应S3协议Header中的Cache-Control",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"content_disposition": schema.StringAttribute{
-				Optional:    true,
 				Computed:    true,
-				Description: "指定该对象的表示性信息，对应S3协议Header中的Content-Disposition",
+				Description: "该对象的表示性信息，对应S3协议Header中的Content-Disposition",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.UseStateForUnknown(),
 				},
-				//Default: stringdefault.StaticString("attachment"),
 			},
 			"content_encoding": schema.StringAttribute{
 				Optional:    true,
@@ -150,6 +164,10 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "指定已对该对象应用哪些内容编码方式，对应S3协议Header中的Content-Encoding",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"content_type": schema.StringAttribute{
@@ -158,6 +176,10 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Description: "描述对象类型，对应S3协议Header中的Content-Type",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"storage_type": schema.StringAttribute{
@@ -165,6 +187,7 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				Computed:    true,
 				Description: "存储类型，可选的值STANDARD、STANDARD_IA、GLACIER，分别表示标准、低频、归档，默认使用桶的storage_type",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
@@ -175,7 +198,10 @@ func (c *ctyunZosBucketObject) Schema(_ context.Context, _ resource.SchemaReques
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "标签",
+				Description: "标签，支持更新",
+				Validators: []validator.Map{
+					mapvalidator.SizeAtMost(10),
+				},
 			},
 			"etag": schema.StringAttribute{
 				Computed:    true,
@@ -395,7 +421,6 @@ func (c *ctyunZosBucketObject) create(ctx context.Context, plan CtyunZosBucketOb
 	input.CacheControl = plan.CacheControl.ValueStringPointer()
 	input.ContentType = plan.ContentType.ValueStringPointer()
 	input.ContentEncoding = plan.ContentEncoding.ValueStringPointer()
-	input.ContentDisposition = plan.ContentDisposition.ValueStringPointer()
 	input.StorageClass = plan.StorageType.ValueStringPointer()
 
 	tags, err := utils.TypesMapToStringMap(ctx, plan.Tags)
@@ -429,7 +454,11 @@ func (c *ctyunZosBucketObject) getAndMerge(ctx context.Context, plan *CtyunZosBu
 	plan.ContentEncoding = utils.SecStringValue(output.ContentEncoding)
 	plan.ContentType = utils.SecStringValue(output.ContentType)
 	plan.CacheControl = utils.SecStringValue(output.CacheControl)
-	plan.StorageType = utils.SecStringValue(output.StorageClass)
+	sType := utils.SecString(output.StorageClass)
+	if sType == "" {
+		sType = business.ZosStorageTypeStandard
+	}
+	plan.StorageType = types.StringValue(sType)
 
 	plan.Etag = utils.SecStringValue(output.ETag)
 	plan.VersionID = utils.SecStringValue(output.VersionId)

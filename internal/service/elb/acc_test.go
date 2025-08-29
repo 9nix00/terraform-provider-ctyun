@@ -18,6 +18,7 @@ type Dependence struct {
 	targetGroupID  string
 	targetGroupID2 string
 	targetGroupID3 string
+	targetGroupID4 string
 	listenerID     string
 	instanceID     string
 }
@@ -43,6 +44,7 @@ func TestMain(m *testing.M) {
 		targetGroupID:  outputs["target_group_id"].Value,
 		targetGroupID2: outputs["target_group_id2"].Value,
 		targetGroupID3: outputs["target_group_id3"].Value,
+		targetGroupID4: outputs["target_group_id4"].Value,
 		listenerID:     outputs["listener_id"].Value,
 		//listenerID: "",
 		instanceID: outputs["instance_id"].Value,

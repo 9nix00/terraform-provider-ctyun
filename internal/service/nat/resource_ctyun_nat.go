@@ -48,16 +48,20 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID，值与nat_gateway_id相同",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID，值与nat_gateway_id相同",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id，默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池Id，默认使用provider ctyun总region_id 或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -68,6 +72,9 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Optional:    true,
@@ -75,6 +82,9 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Description: "需要创建 NAT 网关的 VPC 的 ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
 				},
 			},
 			"spec": schema.Int32Attribute{
@@ -136,10 +146,17 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "代金券金额，支持到小数点后两位",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,

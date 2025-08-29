@@ -13,6 +13,7 @@ import (
 )
 
 func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -23,10 +24,6 @@ func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
 
 	engineVersion := "3.6"
 	zone := os.Getenv("CTYUN_AZ_NAME")
-	extra := `cycle_type = "month"
-cycle_count = 2
-auto_renew = false
-`
 
 	initName := "tf-kafka-init-" + utils.GenerateRandomString()
 	initNodeNum := 3
@@ -34,7 +31,7 @@ auto_renew = false
 	initRetentionHours := 80
 
 	updatedName := "tf-kafka-updated-" + utils.GenerateRandomString()
-	updatedNodeNum := 4
+	updatedNodeNum := 5
 	updatedDiskSize := 200
 	updatedRetentionHours := 60
 
@@ -63,7 +60,6 @@ auto_renew = false
 					dependence.subnetID,
 					dependence.securityGroupID,
 					initRetentionHours,
-					extra,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
@@ -96,7 +92,6 @@ auto_renew = false
 					dependence.subnetID,
 					dependence.securityGroupID,
 					updatedRetentionHours,
-					extra,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", updatedName),
@@ -130,7 +125,6 @@ auto_renew = false
 					dependence.subnetID,
 					dependence.securityGroupID,
 					updatedRetentionHours,
-					extra,
 				) + utils.LoadTestCase(
 					datasourceFile, dnd,
 					resourceName+".id",
@@ -189,10 +183,118 @@ auto_renew = false
 					dependence.subnetID,
 					dependence.securityGroupID,
 					updatedRetentionHours,
-					extra,
 				) + utils.LoadTestCase(
 					datasourceFile, dnd,
 					resourceName+".id",
+				),
+				Destroy: true,
+			},
+		},
+	})
+}
+
+func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
+	t.Parallel()
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_kafka_instance." + rnd
+	resourceFile := "resource_ctyun_kafka_instance_on_demand.tf"
+
+	engineVersion := "3.6"
+	zone := os.Getenv("CTYUN_AZ_NAME")
+
+	initName := "tf-kafka-init-" + utils.GenerateRandomString()
+	initNodeNum := 1
+	initDiskSize := 100
+	initRetentionHours := 80
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			{
+				// 创建
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					initName,
+					engineVersion,
+					dependence.kafkaSingleSpecName,
+					initNodeNum,
+					zone,
+					dependence.kafkaSingleDiskType,
+					initDiskSize,
+					dependence.vpcID,
+					dependence.subnetID,
+					dependence.securityGroupID,
+					initRetentionHours,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "engine_version", engineVersion),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaSingleSpecName),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(initNodeNum)),
+					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
+					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaClusterDiskType),
+					resource.TestCheckResourceAttr(resourceName, "disk_size", strconv.Itoa(initDiskSize)),
+					resource.TestCheckResourceAttr(resourceName, "vpc_id", dependence.vpcID),
+					resource.TestCheckResourceAttr(resourceName, "subnet_id", dependence.subnetID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", dependence.securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "retention_hours", strconv.Itoa(initRetentionHours)),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
+				),
+			},
+			// 更新属性
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					initName,
+					engineVersion,
+					dependence.kafkaSingleSpecName2,
+					initNodeNum,
+					zone,
+					dependence.kafkaSingleDiskType,
+					initDiskSize,
+					dependence.vpcID,
+					dependence.subnetID,
+					dependence.securityGroupID,
+					initRetentionHours,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "engine_version", engineVersion),
+					resource.TestCheckResourceAttr(resourceName, "spec_name", dependence.kafkaSingleSpecName2),
+					resource.TestCheckResourceAttr(resourceName, "node_num", strconv.Itoa(initNodeNum)),
+					resource.TestCheckTypeSetElemAttr(resourceName, "zone_list.*", zone),
+					resource.TestCheckResourceAttr(resourceName, "disk_type", dependence.kafkaClusterDiskType),
+					resource.TestCheckResourceAttr(resourceName, "disk_size", strconv.Itoa(initDiskSize)),
+					resource.TestCheckResourceAttr(resourceName, "vpc_id", dependence.vpcID),
+					resource.TestCheckResourceAttr(resourceName, "subnet_id", dependence.subnetID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", dependence.securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "retention_hours", strconv.Itoa(initRetentionHours)),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					initName,
+					engineVersion,
+					dependence.kafkaSingleSpecName2,
+					initNodeNum,
+					zone,
+					dependence.kafkaSingleDiskType,
+					initDiskSize,
+					dependence.vpcID,
+					dependence.subnetID,
+					dependence.securityGroupID,
+					initRetentionHours,
 				),
 				Destroy: true,
 			},

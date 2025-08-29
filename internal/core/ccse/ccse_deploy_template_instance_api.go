@@ -60,11 +60,12 @@ type CcseDeployTemplateInstanceRequest struct {
 	CrNamespaceId int64  `json:"crNamespaceId,omitempty"` /*  模板存放在镜像服务实例中的命名空间的ID，获取方法参见<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=10629&data=127&isNormal=1&vid=120" target="_blank">查询HelmChart命名空间列表</a>
 
 	 */
-	InstanceName  string `json:"instanceName,omitempty"`  /*  实例名  */
-	InstanceValue string `json:"instanceValue,omitempty"` /*  实例参数  */
-	RepositoryId  int64  `json:"repositoryId,omitempty"`  /*  镜像服务实例仓库ID，获取方法参见<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=10621&data=127&isNormal=1&vid=120" target="_blank">查询镜像仓库列表</a>  */
-	Timeout       string `json:"timeout,omitempty"`       /*  实例安装超时时间  */
-	IsSyncMode    *bool  `json:"isSyncMode"`              /*  是否同步调用  */
+	InstanceName      string `json:"instanceName,omitempty"`      /*  实例名  */
+	InstanceValue     string `json:"instanceValue,omitempty"`     /*  实例参数  */
+	InstanceValueType string `json:"instanceValueType,omitempty"` /*  实例参数  */
+	RepositoryId      int64  `json:"repositoryId,omitempty"`      /*  镜像服务实例仓库ID，获取方法参见<a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=44&api=10621&data=127&isNormal=1&vid=120" target="_blank">查询镜像仓库列表</a>  */
+	Timeout           string `json:"timeout,omitempty"`           /*  实例安装超时时间  */
+	IsSyncMode        *bool  `json:"isSyncMode"`                  /*  是否同步调用  */
 }
 
 type CcseDeployTemplateInstanceResponse struct {

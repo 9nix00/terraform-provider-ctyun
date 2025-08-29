@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -53,13 +54,13 @@ func (c *ctyunRabbitmqInstance) Metadata(_ context.Context, request resource.Met
 
 type CtyunRabbitmqInstanceConfig struct {
 	ID              types.String `tfsdk:"id"`
+	Name            types.String `tfsdk:"name"`
 	MasterOrderID   types.String `tfsdk:"master_order_id"`
 	ProjectID       types.String `tfsdk:"project_id"`
 	RegionID        types.String `tfsdk:"region_id"`
 	ZoneList        types.Set    `tfsdk:"zone_list"`
 	InstanceName    types.String `tfsdk:"instance_name"`
-	CpuNum          types.Int32  `tfsdk:"cpu_num"`
-	MemSize         types.Int32  `tfsdk:"mem_size"`
+	SpecName        types.String `tfsdk:"spec_name"`
 	DiskType        types.String `tfsdk:"disk_type"`
 	DiskSize        types.Int32  `tfsdk:"disk_size"`
 	NodeNum         types.Int32  `tfsdk:"node_num"`
@@ -69,7 +70,7 @@ type CtyunRabbitmqInstanceConfig struct {
 	CycleType       types.String `tfsdk:"cycle_type"`
 	CycleCount      types.Int32  `tfsdk:"cycle_count"`
 
-	azInfo string
+	zoneList []string
 }
 
 func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -77,14 +78,25 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10000118/10001967**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
+			"name": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID",
+				Description: "名称",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -94,37 +106,32 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称",
-			},
-			"cpu_num": schema.Int32Attribute{
-				Required:    true,
-				Description: "cpu数量，支持2、4、8、16、32、64，您可查看<a href=\"https://www.ctyun.cn/document/10029625/10032819\">产品规格说明</a>",
-				Validators: []validator.Int32{
-					int32validator.OneOf(2, 4, 8, 16, 32, 64),
+				Description: "实例名称，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"mem_size": schema.Int32Attribute{
+			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "内存大小，是cpu的2倍，支持4、8、16、32、64、128",
-				Validators: []validator.Int32{
-					int32validator.OneOf(4, 8, 16, 32, 64, 128),
+				Description: "实例的规格类型，建议使用ctyun_rabbitmq_specs查看，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "节点数。支持1、3、5、7、9",
+				Description: "节点数。支持1、3、5、7、9，支持更新",
 				Validators: []validator.Int32{
 					int32validator.OneOf(1, 3, 5, 7, 9),
-				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"disk_type": schema.StringAttribute{
@@ -139,10 +146,7 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum",
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
-				},
+				Description: "单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 10000),
 				},
@@ -154,12 +158,20 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.SizeAtMost(3),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
 				},
 			},
 			"subnet_id": schema.StringAttribute{
@@ -168,13 +180,18 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					validator2.SecurityGroupValidate(),
 				},
 			},
 
@@ -185,7 +202,6 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					stringvalidator.OneOf("month", "on_demand"),
 				},
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -265,6 +281,10 @@ func (c *ctyunRabbitmqInstance) Read(ctx context.Context, request resource.ReadR
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
 		return
 	}
 
@@ -320,8 +340,29 @@ func (c *ctyunRabbitmqInstance) Delete(ctx context.Context, request resource.Del
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+	instance, err := c.getByID(ctx, state)
+	if err != nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.RabbitMqStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		time.Sleep(60 * time.Second)
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.checkAfterDestroy(ctx, state)
 	if err != nil {
 		return
 	}
@@ -379,8 +420,93 @@ func (c *ctyunRabbitmqInstance) checkBeforeCreate(ctx context.Context, plan *Cty
 	if err != nil {
 		return err
 	}
+	err = c.checkZoneList(ctx, plan)
+	if err != nil {
+		return err
+	}
+	err = c.checkSpecParams(ctx, *plan)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
-	zones, err := business.NewRegionService(c.meta).GetZonesByRegionID(ctx, regionID)
+// checkSpecParams 检查规格参数
+func (c *ctyunRabbitmqInstance) checkSpecParams(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	nodeNum := plan.NodeNum.ValueInt32()
+	specName := plan.SpecName.ValueString()
+	diskType := plan.DiskType.ValueString()
+
+	if strings.HasSuffix(specName, "single") && nodeNum != 1 {
+		return fmt.Errorf("单机版实例节点数必须为1")
+	} else if strings.HasSuffix(specName, "cluster") && nodeNum < 3 {
+		return fmt.Errorf("集群版实例节点数必须大于等于3")
+	}
+	// 组装请求体
+	params := &amqp.AmqpProdDetailRequest{
+		RegionId: plan.RegionID.ValueString(),
+	}
+	// 调用API
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+
+	var skuRes amqp.AmqpProdDetailReturnObjDataSeriesSkuResItemResponse
+	var skuDisk amqp.AmqpProdDetailReturnObjDataSeriesSkuDiskItemResponse
+	for _, s := range resp.ReturnObj.Data.Series {
+		for _, p := range s.Sku {
+			if p.ProdName == "集群版" && plan.NodeNum.ValueInt32() >= 3 {
+				skuRes = p.ResItem
+				skuDisk = p.DiskItem
+				break
+			} else if p.ProdName == "单机版" && plan.NodeNum.ValueInt32() == 1 {
+				skuRes = p.ResItem
+				skuDisk = p.DiskItem
+				break
+			}
+		}
+	}
+
+	var specAvailable bool
+	for _, r := range skuRes.ResItems {
+		for _, s := range r.Spec {
+			if s.SpecName == specName {
+				specAvailable = true
+				break
+			}
+		}
+		if specAvailable {
+			break
+		}
+	}
+	if !specAvailable {
+		return fmt.Errorf("本资源池不支持 %s", specName)
+	}
+
+	var diskAvailable bool
+	for _, d := range skuDisk.ResItems {
+		if d == diskType {
+			diskAvailable = true
+			break
+		}
+	}
+	if !diskAvailable {
+		return fmt.Errorf("本资源池不支持 %s", diskType)
+	}
+
+	return
+}
+
+// checkZoneList 检查zoneList
+func (c *ctyunRabbitmqInstance) checkZoneList(ctx context.Context, plan *CtyunRabbitmqInstanceConfig) (err error) {
+	zones, err := business.NewRegionService(c.meta).GetZonesByRegionID(ctx, plan.RegionID.ValueString())
 	if err != nil {
 		return err
 	}
@@ -395,15 +521,7 @@ func (c *ctyunRabbitmqInstance) checkBeforeCreate(ctx context.Context, plan *Cty
 	for _, s := range str {
 		zoneList = append(zoneList, s.ValueString())
 	}
-	var list []map[string]string
-	for _, az := range zoneList {
-		if !z[az] {
-			err = fmt.Errorf("可用区 %s 不属于资源池 %s", az, regionID)
-		}
-		azInfo := map[string]string{"az_name": az}
-		list = append(list, azInfo)
-	}
-	plan.azInfo = utils.JsonString(list)
+	plan.zoneList = zoneList
 	return
 }
 
@@ -425,17 +543,14 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		RegionId:        plan.RegionID.ValueString(),
 		ClusterName:     plan.InstanceName.ValueString(),
 		ProjectId:       plan.ProjectID.ValueString(),
-		HostType:        "S7",
-		EngineType:      "rabbitmq",
-		CpuNum:          plan.CpuNum.ValueInt32(),
-		MemSize:         plan.MemSize.ValueInt32(),
+		SpecName:        plan.SpecName.ValueString(),
 		NodeNum:         plan.NodeNum.ValueInt32(),
 		DiskType:        plan.DiskType.ValueString(),
-		DiskSize:        fmt.Sprintf("%d", plan.DiskSize.ValueInt32()),
+		DiskSize:        plan.DiskSize.ValueInt32(),
 		VpcId:           plan.VpcID.ValueString(),
 		SubnetId:        plan.SubnetID.ValueString(),
 		SecurityGroupId: plan.SecurityGroupID.ValueString(),
-		AzInfo:          plan.azInfo,
+		ZoneList:        plan.zoneList,
 	}
 
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
@@ -458,17 +573,14 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		RegionId:        plan.RegionID.ValueString(),
 		ClusterName:     plan.InstanceName.ValueString(),
 		ProjectId:       plan.ProjectID.ValueString(),
-		HostType:        "S7",
-		EngineType:      "rabbitmq",
-		CpuNum:          plan.CpuNum.ValueInt32(),
-		MemSize:         plan.MemSize.ValueInt32(),
+		SpecName:        plan.SpecName.ValueString(),
 		NodeNum:         plan.NodeNum.ValueInt32(),
 		DiskType:        plan.DiskType.ValueString(),
-		DiskSize:        fmt.Sprintf("%d", plan.DiskSize.ValueInt32()),
+		DiskSize:        plan.DiskSize.ValueInt32(),
 		VpcId:           plan.VpcID.ValueString(),
 		SubnetId:        plan.SubnetID.ValueString(),
 		SecurityGroupId: plan.SecurityGroupID.ValueString(),
-		AzInfo:          plan.azInfo,
+		ZoneList:        plan.zoneList,
 	}
 
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
@@ -492,16 +604,14 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 		return
 	}
 	plan.InstanceName = types.StringValue(instance.ClusterName)
+	plan.Name = plan.InstanceName
 	if plan.ZoneList.IsNull() {
 		plan.ZoneList = types.SetNull(types.StringType)
 	}
-	u, m, err := c.parseSpec(instance.Prod)
-	if err != nil {
-		return
-	}
 
-	plan.CpuNum = types.Int32Value(int32(u))
-	plan.MemSize = types.Int32Value(int32(m))
+	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
+	plan.NodeNum = types.Int32Value(instance.NodeCount)
+	plan.SpecName = types.StringValue(instance.Prod)
 	return
 }
 
@@ -523,15 +633,14 @@ func (c *ctyunRabbitmqInstance) update(ctx context.Context, plan, state CtyunRab
 	if err != nil {
 		return
 	}
-	// openapi bug 暂不支持
-	//err = c.updateDiskSize(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
-	//err = c.updateNodeNum(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
+	err = c.updateDiskSize(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateNodeNum(ctx, plan, state)
+	if err != nil {
+		return
+	}
 	err = c.updateSpec(ctx, plan, state)
 	if err != nil {
 		return
@@ -548,7 +657,6 @@ func (c *ctyunRabbitmqInstance) updateDiskSize(ctx context.Context, plan, state 
 		err = c.diskExtend(ctx, plan, state)
 	} else {
 		err = fmt.Errorf("目前不支持磁盘缩容")
-		//err = c.diskShrink(ctx, plan, state)
 	}
 	if err != nil {
 		return
@@ -580,6 +688,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -588,11 +697,13 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, pl
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != 1 || utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32()*instance.NodeCount {
 				return true
 			}
-
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -645,6 +756,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateNodeNum 检查节点数量是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -653,10 +765,13 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, pla
 			if err != nil {
 				return false
 			}
-			if instance.Status != 1 {
+			if instance.Status != 1 || instance.NodeCount != plan.NodeNum.ValueInt32() {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -671,14 +786,15 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, pla
 
 // updateSpec 更新规格
 func (c *ctyunRabbitmqInstance) updateSpec(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
-	if plan.CpuNum.Equal(state.CpuNum) && plan.MemSize.Equal(state.MemSize) {
+	if plan.SpecName.Equal(state.SpecName) {
 		return
 	}
-	if plan.CpuNum.ValueInt32() < state.CpuNum.ValueInt32() || plan.MemSize.ValueInt32() < state.MemSize.ValueInt32() {
+	ou, om, _ := c.parseSpec(state.SpecName.ValueString())
+	u, m, _ := c.parseSpec(plan.SpecName.ValueString())
+	if u <= ou && m <= om {
 		err = fmt.Errorf("只支持规格扩容")
 		return
 	}
-
 	err = c.specExtend(ctx, plan, state)
 	if err != nil {
 		return
@@ -691,8 +807,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 	params := &amqp.AmqpInstancesSpecExtendRequest{
 		RegionId:   state.RegionID.ValueString(),
 		ProdInstId: state.ID.ValueString(),
-		CpuNum:     plan.CpuNum.ValueInt32(),
-		MemSize:    plan.MemSize.ValueInt32(),
+		SpecName:   plan.SpecName.ValueString(),
 		AutoPay:    true,
 	}
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
@@ -711,7 +826,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var u int
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -720,14 +835,13 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, 
 			if err != nil {
 				return false
 			}
-			u, _, err = c.parseSpec(instance.Prod)
-			if err != nil {
-				return false
-			}
-			if instance.Status != 1 || plan.CpuNum.ValueInt32() != int32(u) {
+			if instance.Status != 1 || instance.Prod != plan.SpecName.ValueString() {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -761,13 +875,29 @@ func (c *ctyunRabbitmqInstance) updateName(ctx context.Context, plan, state Ctyu
 	return
 }
 
-// delete 删除
-func (c *ctyunRabbitmqInstance) delete(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+// unsubscribe 退订
+func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
 	params := &amqp.AmqpInstancesUnsubscribeInstRequest{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	}
+	return
+}
+
+// destroy 销毁
+func (c *ctyunRabbitmqInstance) destroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	params := &amqp.AmqpInstanceDeleteRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -786,9 +916,6 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
 			instance, err = c.getByName(ctx, plan)
 			if err != nil {
-				if strings.Contains(err.Error(), "not found") {
-					return true
-				}
 				return false
 			}
 			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
@@ -808,8 +935,8 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+// checkAfterUnsubscribe 退订后检查
+func (c *ctyunRabbitmqInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -819,7 +946,7 @@ func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan Ctyun
 			if err != nil {
 				return false
 			}
-			if instance != nil && instance.Status != 5 {
+			if instance != nil && instance.Status != business.RabbitMqStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true
@@ -829,7 +956,33 @@ func (c *ctyunRabbitmqInstance) checkAfterDelete(ctx context.Context, plan Ctyun
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
+		err = fmt.Errorf("退订时间过长")
+	}
+	return
+}
+
+// checkAfterDestroy 销毁后检查
+func (c *ctyunRabbitmqInstance) checkAfterDestroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
+			instance, err = c.getByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance != nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }
@@ -857,7 +1010,6 @@ func (c *ctyunRabbitmqInstance) getByName(ctx context.Context, plan CtyunRabbitm
 			return
 		}
 	}
-	err = fmt.Errorf("not found %s", plan.InstanceName.ValueString())
 	return
 }
 

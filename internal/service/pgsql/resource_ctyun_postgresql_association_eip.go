@@ -27,7 +27,8 @@ var (
 )
 
 type CtyunPgsqlAssociationEip struct {
-	meta *common.CtyunMetadata
+	meta       *common.CtyunMetadata
+	eipService *business.EipService
 }
 
 func (c *CtyunPgsqlAssociationEip) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -46,8 +47,8 @@ func (c *CtyunPgsqlAssociationEip) Schema(ctx context.Context, request resource.
 				Description: "弹性id",
 			},
 			"eip": schema.StringAttribute{
-				Required:    true,
-				Description: "弹性ip",
+				Computed:    true,
+				Description: "弹性ip地址",
 			},
 			"inst_id": schema.StringAttribute{
 				Required:    true,
@@ -184,6 +185,7 @@ func (c *CtyunPgsqlAssociationEip) Configure(ctx context.Context, request resour
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.eipService = business.NewEipService(c.meta)
 }
 func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	//TODO implement me
@@ -191,9 +193,14 @@ func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request reso
 }
 
 func (c *CtyunPgsqlAssociationEip) PgsqlBindEip(ctx context.Context, config *CtyunPgsqlAssociationEipConfig) (err error) {
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, config.EipID.ValueString(), config.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+	config.Eip = types.StringValue(*eip.EipAddress)
 	params := &pgsql.PgsqlBindEipRequest{
 		EipID:  config.EipID.ValueString(),
-		Eip:    config.Eip.ValueString(),
+		Eip:    *eip.EipAddress,
 		InstID: config.InstID.ValueString(),
 	}
 	header := &pgsql.PgsqlBindEipRequestHeader{}

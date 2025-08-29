@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var (
@@ -54,8 +55,9 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026755/10171000**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
 			},
 			"rule_id": schema.StringAttribute{
 				Computed:    true,
@@ -65,10 +67,13 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"route_table_id": schema.StringAttribute{
 				Required:    true,
@@ -76,12 +81,18 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"next_hop_id": schema.StringAttribute{
 				Required:    true,
 				Description: "下一跳设备id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"next_hop_type": schema.StringAttribute{
@@ -100,6 +111,9 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"ip_version": schema.Int32Attribute{
 				Required:    true,
@@ -114,7 +128,10 @@ func (c *ctyunVpcRouteTableRule) Schema(_ context.Context, _ resource.SchemaRequ
 			"description": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "规则描述",
+				Description: "规则描述，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 		},
 	}
@@ -138,6 +155,7 @@ func (c *ctyunVpcRouteTableRule) Create(ctx context.Context, request resource.Cr
 		return
 	}
 	plan.RuleID = types.StringValue(ruleID)
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
@@ -162,6 +180,10 @@ func (c *ctyunVpcRouteTableRule) Read(ctx context.Context, request resource.Read
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if strings.Contains(err.Error(), "未找到") {
+			response.State.RemoveResource(ctx)
+			err = nil
+		}
 		return
 	}
 
@@ -284,29 +306,38 @@ func (c *ctyunVpcRouteTableRule) create(ctx context.Context, plan CtyunVpcRouteT
 // getAndMerge 从远端查询
 func (c *ctyunVpcRouteTableRule) getAndMerge(ctx context.Context, plan *CtyunVpcRouteTableRuleConfig) (err error) {
 	ruleID, routeTableID, regionID := plan.RuleID.ValueString(), plan.RouteTableID.ValueString(), plan.RegionID.ValueString()
-	params := &ctvpc.CtvpcNewRouteRulesListRequest{
-		RegionID:     regionID,
-		RouteTableID: routeTableID,
-		PageSize:     50,
+	var rules []*ctvpc.CtvpcNewRouteRulesListReturnObjRouteRulesResponse
+	pageNo := 1
+	for {
+		params := &ctvpc.CtvpcNewRouteRulesListRequest{
+			RegionID:     regionID,
+			RouteTableID: routeTableID,
+			PageSize:     50,
+			PageNo:       int32(pageNo),
+		}
+		var resp *ctvpc.CtvpcNewRouteRulesListResponse
+		resp, err = c.meta.Apis.SdkCtVpcApis.CtvpcNewRouteRulesListApi.Do(ctx, c.meta.SdkCredential, params)
+		if err != nil {
+			return
+		} else if resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
+			return
+		}
+		rules = append(rules, resp.ReturnObj.RouteRules...)
+		if int32(pageNo) >= resp.ReturnObj.TotalPage {
+			break
+		}
+		pageNo++
 	}
-	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcNewRouteRulesListApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-
-	rules := resp.ReturnObj.RouteRules
 	if len(rules) == 0 {
 		err = common.InvalidReturnObjResultsError
 		return
 	}
 	var exist bool
-	for _, r := range resp.ReturnObj.RouteRules {
+	for _, r := range rules {
 		if utils.SecString(r.RouteRuleID) == ruleID {
 			exist = true
 			plan.NextHopID = utils.SecStringValue(r.NextHopID)

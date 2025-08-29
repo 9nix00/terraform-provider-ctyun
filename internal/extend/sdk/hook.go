@@ -21,7 +21,7 @@ func (d LogHttpHook) BeforeRequest(ctx context.Context, request *http.Request) {
 		return
 	}
 	requestContent := string(dumpRequest)
-	tflog.Info(ctx, "实际请求内容：\n", map[string]interface{}{"request": requestContent})
+	tflog.Info(ctx, "实际请求内容：", map[string]interface{}{"request": requestContent})
 }
 
 func (d LogHttpHook) AfterResponse(ctx context.Context, response *http.Response) {

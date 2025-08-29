@@ -18,6 +18,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 
 	resourceName := "ctyun_redis_instance." + rnd
 	datasourceName := "data.ctyun_redis_instances." + dnd
+	associationName := "ctyun_redis_association_eip." + and
 	resourceFile := "resource_ctyun_redis_instance.tf"
 	datasourceFile := "datasource_ctyun_redis_instances.tf"
 	associationFile := "resource_ctyun_redis_association_eip.tf"
@@ -108,6 +109,13 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "protection_status", updatedProtectionStatus),
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
+			},
+			// 验证绑定关系导入
+			{
+				ResourceName:            associationName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
 			},
 			// 通过查询进行检查
 			{

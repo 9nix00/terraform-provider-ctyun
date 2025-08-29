@@ -63,12 +63,18 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"protocol": schema.StringAttribute{
 				Optional:    true,
 				Description: "支持 TCP / UDP / HTTP / HTTPS, 该字段不支持更新。当protocol=HTTP/HTTPS时，target_group.session_sticky_mode仅支持INSERT/REWRITE",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerProtocols...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -82,6 +88,10 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				Optional:    true,
 				Computed:    true,
 				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					validator2.Desc(),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -89,11 +99,17 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"health_check_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "需要关联的健康检查Id",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"algorithm": schema.StringAttribute{
 				Required:    true,
@@ -184,8 +200,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "后端服务组ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "后端服务组ID",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -207,6 +224,9 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 		},
 	}

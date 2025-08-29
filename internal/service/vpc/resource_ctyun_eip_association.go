@@ -2,11 +2,13 @@ package vpc
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -36,11 +38,19 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026753/10219975**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
+			},
 			"eip_id": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性ip的id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.EipValidate(),
 				},
 			},
 			"association_type": schema.StringAttribute{
@@ -61,6 +71,9 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -70,6 +83,9 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -240,10 +256,12 @@ func (c *ctyunEipAssociation) getAndMergeEipAssociation(ctx context.Context, cfg
 	}
 	cfg.AssociationType = types.StringValue(associationType.(string))
 	cfg.InstanceId = types.StringValue(resp.AssociationId)
+	cfg.ID = types.StringValue(fmt.Sprintf("%s,%s", cfg.EipId.ValueString(), cfg.RegionId.ValueString()))
 	return &cfg, nil
 }
 
 type CtyunEipAssociationConfig struct {
+	ID              types.String `tfsdk:"id"`
 	EipId           types.String `tfsdk:"eip_id"`
 	AssociationType types.String `tfsdk:"association_type"`
 	InstanceId      types.String `tfsdk:"instance_id"`

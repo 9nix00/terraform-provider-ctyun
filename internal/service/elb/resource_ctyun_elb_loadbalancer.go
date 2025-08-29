@@ -65,6 +65,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -72,12 +75,18 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -92,6 +101,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Computed:    true,
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 				Validators: []validator.String{
+					validator2.Desc(),
 					stringvalidator.LengthBetween(0, 128),
 				},
 			},
@@ -103,6 +113,7 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 						path.MatchRoot("resource_type"),
 						types.StringValue(business.LbResourceTypeExternal),
 					),
+					validator2.EipValidate(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -133,10 +144,14 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Ip(),
+				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "负载均衡Id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "负载均衡Id",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -146,6 +161,9 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"port_id": schema.StringAttribute{
@@ -203,7 +221,11 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "代金券金额，支持到小数点后两位",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"eip_info": schema.ListNestedAttribute{
 				Computed:    true,
@@ -690,7 +712,7 @@ func (c *CtyunElbLoadBalancerResource) deleteLoop(ctx context.Context, params *c
 			}
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {
-		return nil, errors.New("轮询已达最大次数，资源仍未创建成功！")
+		return nil, errors.New("轮询已达最大次数，资源仍未退订成功！")
 	}
 
 	return

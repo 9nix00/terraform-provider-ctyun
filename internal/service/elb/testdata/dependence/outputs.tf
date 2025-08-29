@@ -25,6 +25,9 @@ output "target_group_id2" {
 output "target_group_id3" {
   value = ctyun_elb_target_group.test3.id
 }
+output "target_group_id4" {
+  value = ctyun_elb_target_group.test4.id
+}
 output "listener_id" {
   value = ctyun_elb_listener.test.id
 }

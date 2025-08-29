@@ -11,7 +11,9 @@ import (
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -53,14 +55,25 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026730**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
+			},
+			"name": schema.StringAttribute{
 				Computed:    true,
-				Description: "id",
+				Description: "名称",
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
 				Description: "主机名称（hostname），不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(2, 64),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9\-\.]*[a-zA-Z0-9]$`), "hostname必须以字母开头，以字母或数字结尾"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[a-zA-Z0-9\-\.]*$`), "hostname只能包含字母、数字、连字符和点号"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^.*[a-zA-Z].*$`), "hostname不能仅使用数字"),
 				},
 			},
 			"display_name": schema.StringAttribute{
@@ -73,6 +86,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"flavor_id": schema.StringAttribute{
 				Required:    true,
 				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
@@ -80,6 +96,13 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
+			},
+			"actual_image_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "实际镜像id，重装、集群纳管等操作会导致actual_image_id与image_id不同",
 			},
 			"system_disk_type": schema.StringAttribute{
 				Required:    true,
@@ -104,12 +127,18 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "主网卡的子网id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"fixed_ip": schema.StringAttribute{
@@ -123,6 +152,10 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
+				},
 				Description: "安全组id列表，在多可用区类型资源池下，安全组ID通常以“sg-”开头，非多可用区类型资源池安全组ID为uuid格式；默认使用默认安全组，无默认安全组情况下请填写该参数",
 			},
 			"key_pair_name": schema.StringAttribute{
@@ -238,6 +271,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -258,6 +294,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraAzName, false),
 			},
 			"is_destroy_instance": schema.BoolAttribute{
@@ -273,6 +312,9 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Default:     float64default.StaticFloat64(0.00),
 				PlanModifiers: []planmodifier.Float64{
 					float64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Float64{
+					float64validator.AtLeast(0.0),
 				},
 			},
 		},
@@ -1227,8 +1269,9 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	cfg.Id = types.StringValue(instance_details_resp.InstanceId)
 	cfg.InstanceName = types.StringValue(instance_details_resp.InstanceName)
 	cfg.DisplayName = types.StringValue(instance_details_resp.DisplayName)
+	cfg.Name = cfg.DisplayName
 	cfg.FlavorId = types.StringValue(instance_details_resp.Flavor.FlavorId)
-	cfg.ImageId = types.StringValue(instance_details_resp.Image.ImageId)
+	cfg.ActualImageID = types.StringValue(instance_details_resp.Image.ImageId)
 	cfg.VpcId = types.StringValue(instance_details_resp.VpcId)
 	cfg.Status = types.StringValue(instance_details_resp.InstanceStatus)
 	cfg.ExpireTime = types.StringValue(utils.FromRFC3339ToLocal(instance_details_resp.ExpiredTime))
@@ -1384,10 +1427,12 @@ func (c *ctyunEcs) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 
 type CtyunEcsConfig struct {
 	Id                     types.String  `tfsdk:"id"`
+	Name                   types.String  `tfsdk:"name"`
 	InstanceName           types.String  `tfsdk:"instance_name"`
 	DisplayName            types.String  `tfsdk:"display_name"`
 	FlavorId               types.String  `tfsdk:"flavor_id"`
 	ImageId                types.String  `tfsdk:"image_id"`
+	ActualImageID          types.String  `tfsdk:"actual_image_id"`
 	SystemDiskType         types.String  `tfsdk:"system_disk_type"`
 	SystemDiskSize         types.Int64   `tfsdk:"system_disk_size"`
 	VpcId                  types.String  `tfsdk:"vpc_id"`

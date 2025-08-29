@@ -67,6 +67,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"listener_id": schema.StringAttribute{
 				Required:    true,
@@ -74,10 +77,17 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					validator2.Desc(),
+				},
 			},
 			"conditions": schema.ListNestedAttribute{
 				Required:    true,
@@ -155,6 +165,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"target_group_id": schema.StringAttribute{
 							Required:    true,
 							Description: "后端服务组ID",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"weight": schema.Int32Attribute{
 							Optional:    true,
@@ -180,8 +193,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				},
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "转发规则 ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "转发规则 ID",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -192,6 +206,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -201,6 +218,9 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"load_balancer_id": schema.StringAttribute{
 				Computed:    true,

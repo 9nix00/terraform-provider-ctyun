@@ -174,6 +174,7 @@ type Apis struct {
 	Dcs2ListInstanceExperimentsApi              *Dcs2ListInstanceExperimentsApi
 	Dcs2EnableRWSepApi                          *Dcs2EnableRWSepApi
 	Dcs2QueryRWSepApi                           *Dcs2QueryRWSepApi
+	Dcs2DestroyInstanceApi                      *Dcs2DestroyInstanceApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -349,5 +350,6 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		Dcs2ListInstanceExperimentsApi:              NewDcs2ListInstanceExperimentsApi(client),
 		Dcs2EnableRWSepApi:                          NewDcs2EnableRWSepApi(client),
 		Dcs2QueryRWSepApi:                           NewDcs2QueryRWSepApi(client),
+		Dcs2DestroyInstanceApi:                      NewDcs2DestroyInstanceApi(client),
 	}
 }

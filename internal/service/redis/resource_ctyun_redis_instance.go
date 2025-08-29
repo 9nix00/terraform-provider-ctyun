@@ -51,6 +51,7 @@ func (c *ctyunRedisInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunRedisInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
@@ -82,8 +83,15 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10029727**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 				Computed:    true,
 				Description: "ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "名称",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -93,9 +101,11 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -105,6 +115,9 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Project(),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
@@ -143,6 +156,9 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"secondary_az_name": schema.StringAttribute{
 				Optional:    true,
@@ -150,17 +166,21 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"version": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS",
+				Description: "版本类型，SeriesInfo中的version值，支持BASIC和PLUS，默认BASIC",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.RedisVersionBasic, business.RedisVersionPlus),
 				},
+				Default: stringdefault.StaticString(business.RedisVersionBasic),
 			},
 			"edition": schema.StringAttribute{
 				Required:    true,
@@ -168,10 +188,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.RedisEdition...),
+				},
 			},
 			"engine_version": schema.StringAttribute{
 				Required:    true,
-				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0",
+				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.RedisEngineVersion...),
 				},
@@ -213,7 +236,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"shard_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "分片数量，当edition取值为DirectClusterSingle时: 3~256。当 edition 取值为 DirectCluster时: 3~256。当 edition 取值为 ClusterOriginalProxy时: 3~64。当 edition 取其他值时无需填写",
+				Description: "分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
@@ -236,7 +259,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"copies_count": schema.Int32Attribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "副本数量，当 edition取值为 OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填，当 edition 取其他值时无需填写",
+				Description: "副本数量，当edition取值为OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填（取值范围2-6），当edition取其他值时不填。",
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.UseStateForUnknown(),
 					int32planmodifier.RequiresReplace(),
@@ -274,12 +297,18 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"security_group_id": schema.StringAttribute{
@@ -288,10 +317,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SecurityGroupValidate(),
+				},
 			},
 			"password": schema.StringAttribute{
 				Required:    true,
-				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。",
+				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。支持更新",
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 26),
@@ -334,13 +366,16 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"maintenance_time": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00",
+				Description: "实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00，支持更新",
 				Default:     stringdefault.StaticString("00:00-02:00"),
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(regexp.MustCompile("^([0-1][0-9]|2[0-3]):[0-5][0-9]-([0-1][0-9]|2[0-3]):[0-5][0-9]$"), "时间格式错误"),
+				},
 			},
 			"protection_status": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "退订保护开关，默认为不保护",
+				Description: "退订保护开关，默认为不保护，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 		},
@@ -406,7 +441,7 @@ func (c *ctyunRedisInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "can't find") || strings.Contains(err.Error(), "已退订") {
+		if strings.Contains(err.Error(), "can't find") {
 			err = nil
 			response.State.RemoveResource(ctx)
 		}
@@ -462,15 +497,33 @@ func (c *ctyunRedisInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+	instance, err := c.getByName(ctx, state)
+	if err != nil || instance == nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.RedisStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		time.Sleep(60 * time.Second)
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
 	if err != nil {
 		return
 	}
-	err = c.checkAfterDelete(ctx, state)
+	err = c.checkAfterDestroy(ctx, state)
 	if err != nil {
 		return
 	}
+
 	response.Diagnostics.AddWarning("删除Redis集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -552,9 +605,6 @@ func (c *ctyunRedisInstance) checkSpecParams(ctx context.Context, plan CtyunRedi
 	}
 	if copiesCount == 0 {
 		copiesCount = 1
-	}
-	if shardCount*copiesCount > 54 {
-		return fmt.Errorf("当前暂时不支持大分片，分片数*副本数不能大于54")
 	}
 
 	// 组装请求体
@@ -731,6 +781,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 	copiesCount, _ := strconv.Atoi(instance.CopiesCount)
 	plan.CopiesCount = types.Int32Value(int32(copiesCount))
 	plan.InstanceName = types.StringValue(instance.InstanceName)
+	plan.Name = plan.InstanceName
 	for _, p := range instance.PaasInstAttrs {
 		switch p.AttrKey {
 		case "vpcUuid":
@@ -770,14 +821,34 @@ func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisI
 	return
 }
 
-// delete 删除
-func (c *ctyunRedisInstance) delete(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
-	ID, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+// unsubscribe 退订
+func (c *ctyunRedisInstance) unsubscribe(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
 	params := &dcs2.Dcs2DeleteInstanceRequest{
 		RegionId:   regionID,
-		ProdInstId: ID,
+		ProdInstId: id,
 	}
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DeleteInstanceApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// destroy 销毁
+func (c *ctyunRedisInstance) destroy(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+	params := &dcs2.Dcs2DestroyInstanceRequest{
+		RegionId:   regionID,
+		ProdInstId: id,
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DestroyInstanceApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
@@ -809,6 +880,9 @@ func (c *ctyunRedisInstance) getByName(ctx context.Context, plan CtyunRedisInsta
 	}
 	if len(resp.ReturnObj.Rows) > 0 {
 		instance = resp.ReturnObj.Rows[0]
+		if instance == nil {
+			err = common.InvalidReturnObjResultsError
+		}
 	}
 	return
 }
@@ -824,7 +898,7 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil || instance.Status != 0 || instance.ProdInstId == "" {
+			if instance == nil || instance.Status != business.RedisStatusRunning || instance.ProdInstId == "" {
 				return true
 			}
 
@@ -841,8 +915,8 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+// checkAfterUnsubscribe 退订后检查
+func (c *ctyunRedisInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -852,7 +926,7 @@ func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRed
 			if err != nil {
 				return false
 			}
-			if instance == nil && instance.Status != 8 {
+			if instance != nil && instance.Status != business.RedisStatusUnsubscribed {
 				return true
 			}
 			executeSuccessFlag = true
@@ -863,6 +937,32 @@ func (c *ctyunRedisInstance) checkAfterDelete(ctx context.Context, plan CtyunRed
 	}
 	if !executeSuccessFlag {
 		err = fmt.Errorf("删除时间过长")
+	}
+	return
+}
+
+// checkAfterDestroy 销毁后检查
+func (c *ctyunRedisInstance) checkAfterDestroy(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *dcs2.Dcs2DescribeInstancesReturnObjRowsResponse
+			instance, err = c.getByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance == nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }

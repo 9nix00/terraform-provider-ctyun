@@ -17,9 +17,7 @@ output "eip_id" {
   value = ctyun_eip.eip_test.id
 }
 
-output "eip_address" {
-  value = ctyun_eip.eip_test.address
-}
+
 
 output "pgsql_id" {
   value = ctyun_postgresql_instance.test.id

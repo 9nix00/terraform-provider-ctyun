@@ -60,20 +60,21 @@ func (c *ctyunEip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026753**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "id",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性ip名称。长度2-32，字母、数字，下划线，连字符，中文/英文字母开头，不能以http:或https:开头",
+				Description: "弹性ip名称。长度2-32，字母、数字，下划线，连字符，中文/英文字母开头，不能以http:或https:开头，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\u4e00-\u9fa5][0-9a-zA-Z_\u4e00-\u9fa5-]+$"), "弹性IP名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}-]+$"), "弹性IP名称不符合规则"),
 				},
 			},
 			"bandwidth": schema.Int32Attribute{
 				Required:    true,
-				Description: "原始弹性ip的带宽峰值，1-1024Mbps",
+				Description: "原始弹性ip的带宽峰值，1-1024Mbps，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1024),
 				},
@@ -153,6 +154,9 @@ func (c *ctyunEip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

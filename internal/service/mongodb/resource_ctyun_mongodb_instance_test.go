@@ -6,11 +6,15 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"os"
 	"testing"
 )
 
 func TestAccCtyunMongodbInstance(t *testing.T) {
-
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -118,6 +122,53 @@ func TestAccCtyunMongodbInstance(t *testing.T) {
 			// destroy
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, updateSpecUpgradeNodeInfoList, updatedPort, ""),
+				Destroy: true,
+			},
+		},
+	})
+}
+
+func TestAccCtyunMongodbNoNodeInfoInstance(t *testing.T) {
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_mongodb_instance." + rnd
+
+	resourceFile := "resource_ctyun_mongodb_instance.tf"
+	cycleType := "on_demand"
+	//cycleCount := 1
+	//autoRenew := false
+	vpcID := dependence.vpcID
+	hostType := "S7"
+	subnetID := dependence.subnetID
+	securityGroupID := dependence.securityGroupID
+	name := "tf-mongodb" + utils.GenerateRandomString()
+	password := "Kqjwyk123="
+	prodId := "Single34"
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 创建mongodb实例
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, "", "", "", "S", "2C4G"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "prod_id", prodId),
+				),
+			},
+			// destroy
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, "", "", vpcID, hostType, subnetID, securityGroupID, name, password, prodId, "", "", "", "S", "2C4G"),
 				Destroy: true,
 			},
 		},

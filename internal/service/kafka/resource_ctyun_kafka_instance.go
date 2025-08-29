@@ -11,6 +11,7 @@ import (
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -52,6 +53,7 @@ func (c *ctyunKafkaInstance) Metadata(_ context.Context, request resource.Metada
 
 type CtyunKafkaInstanceConfig struct {
 	ID                  types.String `tfsdk:"id"`
+	Name                types.String `tfsdk:"name"`
 	MasterOrderID       types.String `tfsdk:"master_order_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`             /*  企业项目ID(默认值：0)。您可以通过 <a href="https://www.ctyun.cn/document/10017248/10017965">查看企业项目资源</a> 获取企业项目ID。  */
@@ -82,8 +84,13 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
+			"name": schema.StringAttribute{
 				Computed:    true,
-				Description: "ID",
+				Description: "名称",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -93,10 +100,13 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Optional:    true,
 				Computed:    true,
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
-				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -107,10 +117,13 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringplanmodifier.RequiresReplace(),
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 			},
 			"instance_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复",
+				Description: "实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(4, 40),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z0-9](?:[a-zA-Z0-9]|[-][a-zA-Z0-9])+$"), "实例名称不符合规则"),
@@ -130,11 +143,14 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"spec_name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>",
+				Description: "实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href=\"https://www.ctyun.cn/document/10029624/10030704\">产品规格说明</a>，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "节点数。单机版为1个，集群版3~50个",
+				Description: "节点数。单机版为1个，集群版3~50个，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},
@@ -146,6 +162,10 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.Set{
 					setplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
+				},
 			},
 			"disk_type": schema.StringAttribute{
 				Required:    true,
@@ -153,10 +173,13 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum",
+				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 10000),
 				},
@@ -167,6 +190,9 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
@@ -174,13 +200,18 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					validator2.SecurityGroupValidate(),
 				},
 			},
 			"enable_ipv6": schema.BoolAttribute{
@@ -194,6 +225,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"plain_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -205,6 +237,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"sasl_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -216,6 +249,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"ssl_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -227,6 +261,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"http_port": schema.Int32Attribute{
 				Computed:    true,
+				Optional:    true,
 				Description: "HTTP接入点端口，范围在8000到9100之间，默认为8082",
 				Validators: []validator.Int32{
 					int32validator.Between(8000, 9100),
@@ -239,7 +274,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"retention_hours": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时",
+				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10000),
 				},
@@ -252,7 +287,6 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					stringvalidator.OneOf("month", "on_demand"),
 				},
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -366,7 +400,7 @@ func (c *ctyunKafkaInstance) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "退订状态") {
+		if strings.Contains(err.Error(), "已经销毁") {
 			err = nil
 			response.State.RemoveResource(ctx)
 		}
@@ -425,11 +459,34 @@ func (c *ctyunKafkaInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+
+	instance, err := c.getByNameOrID(ctx, state)
+	if err != nil || instance == nil {
+		return
+	}
+	// 如果状态不是已退订状态，则执行退订
+	if instance.Status != business.KafkaStatusUnsubscribed {
+		// 退订
+		err = c.unsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterUnsubscribe(ctx, state)
+		if err != nil {
+			return
+		}
+		time.Sleep(120 * time.Second)
+	}
+	// 销毁
+	err = c.destroy(ctx, state)
 	if err != nil {
 		return
 	}
+	err = c.checkAfterDestroy(ctx, state)
+	if err != nil {
+		return
+	}
+
 	response.Diagnostics.AddWarning("删除Kakfa集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -672,11 +729,12 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	if err != nil {
 		return
 	}
-	switch instance.Status {
-	case business.KafkaStatusExpired, business.KafkaStatusDeregister, business.KafkaStatusUnsubscribed:
-		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
+	if instance == nil {
+		return fmt.Errorf("%s 已经销毁", plan.ID.ValueString())
 	}
+
 	plan.InstanceName = types.StringValue(instance.InstanceName)
+	plan.Name = plan.InstanceName
 	if len(instance.Version) >= 3 {
 		plan.EngineVersion = types.StringValue(instance.Version[:3])
 	}
@@ -689,12 +747,12 @@ func (c *ctyunKafkaInstance) getAndMerge(ctx context.Context, plan *CtyunKafkaIn
 	plan.SubnetID = types.StringValue(instance.SubnetId)
 
 	plan.EnableIpv6 = types.BoolValue(map[int32]bool{1: true, 0: false}[instance.Ipv6Enable])
-	//if len(instance.NodeList) > 0 {
-	//	plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
-	//	plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
-	//	plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
-	//	plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
-	//}
+	if len(instance.NodeList) > 0 {
+		plan.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
+		plan.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
+		plan.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
+		plan.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
+	}
 
 	config, err := c.getInstanceConfig(ctx, *plan)
 	if err != nil {
@@ -779,25 +837,25 @@ func (c *ctyunKafkaInstance) updateDiskSize(ctx context.Context, plan, state Cty
 	return c.checkAfterUpdateDiskSize(ctx, plan, state)
 }
 
-// diskExtend 磁盘缩容
-func (c *ctyunKafkaInstance) diskShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
-	params := &ctgkafka.CtgkafkaDiskShrinkRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
-		DiskSize:   plan.DiskSize.String(),
-	}
-	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaDiskShrinkApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
+//// diskExtend 磁盘缩容
+//func (c *ctyunKafkaInstance) diskShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
+//	params := &ctgkafka.CtgkafkaDiskShrinkRequest{
+//		RegionId:   state.RegionID.ValueString(),
+//		ProdInstId: state.ID.ValueString(),
+//		DiskSize:   plan.DiskSize.String(),
+//	}
+//	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaDiskShrinkApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCodeString {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	} else if resp.ReturnObj == nil {
+//		err = common.InvalidReturnObjError
+//		return
+//	}
+//	return
+//}
 
 // diskExtend 磁盘扩容
 func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
@@ -824,6 +882,7 @@ func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -835,7 +894,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -866,24 +928,24 @@ func (c *ctyunKafkaInstance) updateNodeNum(ctx context.Context, plan, state Ctyu
 }
 
 // nodeShrink 节点缩容
-func (c *ctyunKafkaInstance) nodeShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
-	params := &ctgkafka.CtgkafkaNodeShrinkRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
-		NodeNum:    plan.DiskSize.String(),
-	}
-	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaNodeShrinkApi.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	return
-}
+//func (c *ctyunKafkaInstance) nodeShrink(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
+//	params := &ctgkafka.CtgkafkaNodeShrinkRequest{
+//		RegionId:   state.RegionID.ValueString(),
+//		ProdInstId: state.ID.ValueString(),
+//		NodeNum:    plan.DiskSize.String(),
+//	}
+//	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaNodeShrinkApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCodeString {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	} else if resp.ReturnObj == nil {
+//		err = common.InvalidReturnObjError
+//		return
+//	}
+//	return
+//}
 
 // nodeExtend 节点扩容
 func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
@@ -910,6 +972,7 @@ func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateNodeNum 检查节点数量是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -921,7 +984,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1018,6 +1084,7 @@ func (c *ctyunKafkaInstance) specExtend(ctx context.Context, plan, state CtyunKa
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1029,7 +1096,10 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1132,8 +1202,8 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 	return
 }
 
-// delete 删除
-func (c *ctyunKafkaInstance) delete(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+// unsubscribe 退订
+func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
 	params := &ctgkafka.CtgkafkaUnsubscribeInstV3Request{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
@@ -1151,9 +1221,81 @@ func (c *ctyunKafkaInstance) delete(ctx context.Context, plan CtyunKafkaInstance
 	return
 }
 
+// unsubscribe 退订后检查
+func (c *ctyunKafkaInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
+			instance, err = c.getByNameOrID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance.Status != business.KafkaStatusUnsubscribed {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("退订时间过长")
+	}
+	return
+}
+
+// destroy 销毁
+func (c *ctyunKafkaInstance) destroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	params := &ctgkafka.CtgkafkaInstanceDeleteV3Request{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaInstanceDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// unsubscribe 销毁后检查
+func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
+			instance, err = c.getByNameOrID(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance != nil {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
+	}
+	return
+}
+
 // checkAfterCreate 创建后检查
 func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKafkaInstanceConfig) (id string, err error) {
 	var executeSuccessFlag bool
+	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1166,7 +1308,10 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 				return true
 			}
 			// 等待订单完成
-			time.Sleep(30 * time.Second)
+			successCnt++
+			if successCnt < 3 {
+				return true
+			}
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false
@@ -1176,32 +1321,6 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 	}
 	if !executeSuccessFlag {
 		err = fmt.Errorf("创建时间过长")
-	}
-	return
-}
-
-// checkAfterDelete 删除后检查
-func (c *ctyunKafkaInstance) checkAfterDelete(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 180)
-	retryer.Start(
-		func(currentTime int) bool {
-			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
-			if err != nil {
-				return false
-			}
-			if instance != nil && instance.Status != business.KafkaStatusUnsubscribed {
-				return true
-			}
-			executeSuccessFlag = true
-			return false
-		})
-	if err != nil {
-		return
-	}
-	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
 	}
 	return
 }

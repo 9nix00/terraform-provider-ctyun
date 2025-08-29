@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strconv"
 )
 
@@ -44,14 +45,24 @@ func (c *ctyunIdp) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"file": schema.StringAttribute{
 				Required:    true,
 				Description: "联邦登录文件",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"file_name": schema.StringAttribute{
 				Required:    true,
 				Description: "文件名称（需携带后缀）",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^.+\..+$`), "文件名需要携带后缀"),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "身份提供商名称",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"type": schema.StringAttribute{
 				Computed:    true,
@@ -80,6 +91,9 @@ func (c *ctyunIdp) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Description: "描述",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 		},
 	}

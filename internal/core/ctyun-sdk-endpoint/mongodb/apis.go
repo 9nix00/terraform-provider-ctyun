@@ -1,10 +1,9 @@
 package mongodb
 
-import (
-	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-)
+import ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 type Apis struct {
+	MongodbDestroyApi             *TeledbDestroyApi
 	MongodbCreateApi              *MongodbCreateApi
 	MongodbGetListApi             *MongodbGetListApi
 	MongodbQueryDetailApi         *MongodbQueryDetailApi
@@ -16,6 +15,7 @@ type Apis struct {
 	MongodbUpdateInstanceNameApi  *MongodbUpdateInstanceNameApi
 	MongodbUpdatePortApi          *MongodbUpdatePortApi
 	MongodbBoundEipListApi        *MongodbBoundEipListApi
+	TeledbGetAvailabilityZone     *TeledbGetAvailabilityZone
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -28,6 +28,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 	client.RegisterEndpoint(ctyunsdk.EnvironmentDev, EndpointMongodbTest)
 	client.RegisterEndpoint(ctyunsdk.EnvironmentProd, EndPointMongodbProd)
 	return &Apis{
+		MongodbDestroyApi:             NewTeledbDestroyApi(client),
 		MongodbCreateApi:              NewMongodbCreateApi(client),
 		MongodbGetListApi:             NewMongodbGetListApi(client),
 		MongodbQueryDetailApi:         NewMongodbQueryDetailApi(client),
@@ -39,5 +40,6 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		MongodbUpdateInstanceNameApi:  NewMongodbUpdateInstanceNameApi(client),
 		MongodbUpdatePortApi:          NewMongodbUpdatePortApi(client),
 		MongodbBoundEipListApi:        NewMongodbBoundEipListApi(client),
+		TeledbGetAvailabilityZone:     NewTeledbGetAvailabilityZone(client),
 	}
 }

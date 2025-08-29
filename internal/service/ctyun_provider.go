@@ -10,6 +10,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	sdkctimage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
@@ -26,7 +27,10 @@ import (
 	pgsql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
@@ -35,6 +39,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/elb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/hpfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/iam"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/image"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/kafka"
@@ -45,6 +50,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ports"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
+	scaling2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/scaling"
+	sfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/sfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpce"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/zos"
@@ -324,6 +331,29 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCrsApis:     crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis: pgsql2.NewApis(client),
 			SdkMongodbApis: mongodb2.NewApis(client),
+			CtEbsApis:       ctebs.NewApis(client),
+			CtEcsApis:       ctecs.NewApis(client),
+			CtIamApis:       ctiam.NewApis(client),
+			CtImageApis:     ctimage.NewApis(client),
+			CtVpcApis:       ctvpc.NewApis(client),
+			CtEbmApis:       ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtEbsApis:    ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
+			SdkCtEcsApis:    ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
+			SdkCtVpcApis:    ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
+			SdkCtZosApis:    ctzos.NewApis(fmt.Sprintf(endpointUrl, ctzos.EndpointName), coreClient),
+			SdkCcseApis:     ccse2.NewApis(fmt.Sprintf(endpointUrl, ccse2.EndpointName), coreClient),
+			SdkDcs2Apis:     dcs2.NewApis(fmt.Sprintf(endpointUrl, dcs2.EndpointName), coreClient),
+			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
+			SdkCtMysqlApis:  mysql.NewApis(client),
+			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
+			SdkAmqpApis:     amqp.NewApis(client),
+			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
+			SdkCtPgsqlApis:  pgsql2.NewApis(client),
+			SdkMongodbApis:  mongodb2.NewApis(client),
+			SdkHpfsApis:     hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
+			CtEbsBackupApis: ctebsbackup.NewApis(fmt.Sprintf(endpointUrl, ctebsbackup.EndpointName), coreClient),
+			SdkScalingApis:  scaling.NewApis(fmt.Sprintf(endpointUrl, scaling.EndpointName), coreClient),
+			SdkSfsApi:       sfs.NewApis(fmt.Sprintf(endpointUrl, sfs.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -351,8 +381,17 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		nat.NewCtyunSNats(),
 		nat.NewCtyunDNats(),
 		ebs.NewCtyunEbsVolumes(),
+		ebs.NewCtyunEbsSnapshots(),
+		ebs.NewCtyunEbsBackups(),
+		ebs.NewCtyunEbsBackupRepos(),
+		ebs.NewCtyunEbsBackupPolicies(),
+		ebs.NewCtyunEbsSnapshotPolicies(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
+		ecs.NewCtyunEcsSnapshots(),
+		ecs.NewCtyunEcsBackupRepos(),
+		ecs.NewCtyunEcsBackups(),
+		ecs.NewCtyunEcsBackupPolicies(),
 		vpc.NewCtyunVpcs(),
 		vpc.NewCtyunSubnets(),
 		vpc.NewCtyunSecurityGroups(),
@@ -383,10 +422,23 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		kafka.NewCtyunKafkaInstances(),
 		kafka.NewCtyunKafkaSpecs(),
 		rabbitmq.NewCtyunRabbitmqInstances(),
+		rabbitmq.NewCtyunRabbitmqSpecs(),
 		ccse.NewCtyunCcsePluginMarket(),
 		pgsql.NewCtyunPgsqlInstances(),
 		pgsql.NewCtyunPgsqlSpecs(),
 		common2.NewCtyunZones(),
+		mysql2.NewCtyunMysqlWhiteLists(),
+		mongodb.NewCtyunMongodbInstances(),
+		hpfs.NewCtyunHpfsInstances(),
+		hpfs.NewCtyunHpfsClusters(),
+		scaling2.NewCtyunScalings(),
+		scaling2.NewCtyunScalingConfigs(),
+		scaling2.NewCtyunScalingActivities(),
+		scaling2.NewCtyunScalingEcsList(),
+		scaling2.NewCtyunScalingPolicies(),
+		sfs2.NewCtyunSfsInstances(),
+		sfs2.NewCtyunSfsPermissionRules(),
+		ccse.NewCtyunCcseTemplateMarket(),
 		ports.NewCtyunNetworkInterfaces(),
 	)
 }
@@ -406,6 +458,14 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		iam.NewCtyunIdp(),
 		ebs.NewCtyunEbs(),
 		ebs.NewCtyunEbsAssociation(),
+		ebs.NewCtyunEbsSnapshot(),
+		ebs.NewCtyunEbsBackup(),
+		ebs.NewCtyunEbsBackupRepo(),
+		ebs.NewCtyunEbsBackupPolicy(),
+		ebs.NewCtyunEcsBackupPolicyBindDisks(),
+		ebs.NewCtyunEbsBackupPolicyBindRepo(),
+		ebs.NewCtyunEbsSnapshotPolicy(),
+		ebs.NewCtyunEbsSnapshotPolicyAssociation(),
 		image.NewCtyunImage(),
 		image.NewCtyunImageAssociationUser(),
 		image.NewCtyunImageFromEcs(),
@@ -453,6 +513,22 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
 		mongodb.NewCtyunMongodbInstance(),
+		mysql2.NewCtyunMysqlWhiteList(),
+		ecs.NewCtyunEcsSnapshot(),
+		hpfs.NewCtyunHpfsInstance(),
+		scaling2.NewCtyunScaling(),
+		scaling2.NewCtyunScalingConfig(),
+		scaling2.NewCtyunScalingPolicy(),
+		sfs2.NewCtyunSfs(),
+		sfs2.NewCtyunSfsPermissionGroup(),
+		sfs2.NewCtyunSfsPermissionGroupAssociation(),
+		sfs2.NewCtyunSfsPermissionGroupRule(),
+		ecs.NewCtyunEcsBackupRepo(),
+		ecs.NewCtyunEcsBackup(),
+		ecs.NewCtyunEcsBackupPolicy(),
+		ecs.NewCtyunEcsBackupPolicyBindInstances(),
+		ecs.NewCtyunEcsBackupPolicyBindRepo(),
+		ccse.NewCtyunCcseNodeAssociation(),
 		ports.NewCtyunNetworkInterface(),
 		ports.NewCtyunEcsPortAssociation(),
 	)

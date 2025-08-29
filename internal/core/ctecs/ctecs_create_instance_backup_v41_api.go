@@ -51,6 +51,8 @@ type CtecsCreateInstanceBackupV41Request struct {
 	InstanceBackupName        string `json:"instanceBackupName,omitempty"`        /*  云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格  */
 	InstanceBackupDescription string `json:"instanceBackupDescription,omitempty"` /*  云主机备份描述，字符长度不超过256字符  */
 	RepositoryID              string `json:"repositoryID,omitempty"`              /*  云主机备份存储库ID，您可以查看<a href="https://www.ctyun.cn/document/10026751/10033742">产品定义-存储库</a>来了解存储库<br /> 获取：<br /><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a  href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=6909&data=87&isNormal=1&vid=81">查询存储库列表</a><br /><span style="background-color: rgb(97, 175, 254);color: rgb(255,255,255);padding: 2px; margin:2px">创</span> <a  href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=6910&data=87&isNormal=1&vid=81">创建存储库</a>  */
+	FullBackup                bool   `json:"fullBackup,omitempty"`                /*  是否启用全量备份，取值范围：●true：是●false：否若启用该参数，则此次备份的类型为全量备份。注：只有4.0资源池支持该参数。  */
+
 }
 
 type CtecsCreateInstanceBackupV41Response struct {

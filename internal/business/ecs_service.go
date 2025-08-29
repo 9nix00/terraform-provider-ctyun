@@ -44,6 +44,8 @@ func (u EcsService) GetFlavorByName(ctx context.Context, flavorName, regionId st
 		return
 	}
 	flavor = resp.FlavorList[0]
+	// 因为没传azName，所以flavor_id是不准确的
+	flavor.FlavorId = "invalid"
 	return
 }
 

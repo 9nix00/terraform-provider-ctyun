@@ -24,7 +24,7 @@ variable "password" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-nat"
+  name        = "tf-vpc-for-pgsql"
   cidr        = "192.168.0.0/16"
   description = "terraform-kafka测试使用"
   enable_ipv6 = true
@@ -32,7 +32,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-nat1"
+  name        = "tf-subnet-for-pgsql"
   cidr        = "192.168.1.0/24"
   description = "terraform-kafka测试使用"
   dns = [
@@ -180,15 +180,10 @@ resource "ctyun_postgresql_instance" "test" {
 
 ### Required
 
-- `availability_zone_info` (Attributes List) (see [below for nested schema](#nestedatt--availability_zone_info))
-- `cpu_type` (String) cpu类型：KunPeng(鲲鹏)，Hygon(海光)，Intel(intel)，AMD(amd),Phytium(飞腾)，Loongson(龙芯)
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `host_type` (String) 主机类型 host type: S6 or S7等。可根据data.ctyun_postgresql_specs查询
-- `instance_series` (String) 实例规格，取值范围:S(通用型)， C(计算增强型)，M(内存增强型)
+- `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_postgresql_specs查询支持的规格
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
-- `os_type` (String) 系统类型：nil(裸机)，windows，centos，ubuntu，android，redhat，kylin，uos，suse，asianux，open_euler，ctyunos，euler
 - `prod_id` (String) 产品ID。Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘、规格和实例扩容同时进行
-- `prod_performance_spec` (String) 实例规格(例: 4C8G)。可根据data.ctyun_postgresql_specs获取。不支持规格和实例扩容同时进行：prod_id和prod_performance_spec不能同时与原配置不一致
 - `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 主存储空间(单位:G，范围100-32768)。扩容过程中不支持磁盘、规格和实例扩容同时进行
 - `storage_type` (String) 主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
@@ -197,16 +192,14 @@ resource "ctyun_postgresql_instance" "test" {
 
 ### Optional
 
-- `active_scale_rate` (Number) 触发扩容百分比(1-100)
 - `appoint_vip` (String) 指定VIP
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `auto_scale` (Boolean) 存储自动扩容: false=关闭, true=开启。默认关闭
+- `availability_zone_info` (Attributes List) pgsql实例节点指定字段，选填，若未填写根据实例节点数分配至各个az (see [below for nested schema](#nestedatt--availability_zone_info))
 - `backup_storage_space` (Number) 备份存储空间大小
-- `backup_storage_type` (String) 备份存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
+- `backup_storage_type` (String) 备份存储类型: OS=对象存储, SSD=超高IO, SATA=普通IO, SAS=高IO。注：当填写OS时，无需填写backup_storage_size
 - `case_sensitive` (Boolean) 是否区分大小写: true=区分, false=不区分。默认不区分
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `is_mgr` (Boolean) 是否开启MRG，默认false
-- `max_scale` (Number) 存储扩容上限(单位G)
 - `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
@@ -217,6 +210,7 @@ resource "ctyun_postgresql_instance" "test" {
 - `alive` (Number) 实例是否存活,0:存活，-1:异常
 - `disk_rated` (Number) 磁盘使用率
 - `id` (String) pgsql 实例id
+- `master_order_id` (String) 订单id
 - `outer_prod_inst_id` (String) 对外的实例ID，对应PaaS平台
 - `prod_db_engine` (String) 数据库实例引擎
 - `prod_order_status` (Number) 订单状态，0：正常，1：冻结，2：删除，3：操作中，4：失败,2005:扩容中

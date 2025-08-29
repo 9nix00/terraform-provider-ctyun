@@ -6,11 +6,11 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "tf-subnet-for-ecs"
   cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
-  dns         = [
+  dns = [
     "114.114.114.114",
     "8.8.8.8",
     "8.8.4.4"
@@ -19,13 +19,13 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_security_group" "security_group_test" {
-  vpc_id = ctyun_vpc.vpc_test.id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "tf-sg-for-ecs"
   description = "terraform测试使用"
 }
 
 resource "ctyun_ecs_affinity_group" "affinity_group_test" {
-  affinity_group_name = "tf-affinity-group-for-ecs"
+  affinity_group_name   = "tf-affinity-group-for-ecs"
   affinity_group_policy = "anti-affinity"
 }
 
@@ -42,8 +42,8 @@ resource "ctyun_keypair" "keypair_test2" {
 data "ctyun_images" "image_test" {
   name       = "CentOS Linux 8.4"
   visibility = "public"
-  page_no = 1
-  page_size = 10
+  page_no    = 1
+  page_size  = 10
 }
 
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
@@ -61,3 +61,18 @@ data "ctyun_ecs_flavors" "ecs_flavor_test2" {
   series = "C"
   type   = "CPU_C7"
 }
+
+resource "ctyun_ecs" "ecs_test" {
+  instance_name       = "tf-ecs-for-snapshot"
+  display_name        = "tf-ecs-for-snapshot"
+  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
+  image_id            = data.ctyun_images.image_test.images[0].id
+  system_disk_type    = "sata"
+  system_disk_size    = 40
+  vpc_id              = ctyun_vpc.vpc_test.id
+  password            = "P@ssW0rd_1"
+  cycle_type          = "on_demand"
+  subnet_id           = ctyun_subnet.subnet_test.id
+  is_destroy_instance = false
+}
+

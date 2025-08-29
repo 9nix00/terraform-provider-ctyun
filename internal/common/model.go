@@ -6,6 +6,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	sdkCtImage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
@@ -22,7 +23,10 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	"sync"
 )
 
@@ -83,4 +87,27 @@ type Apis struct {
 	SdkAmqpApis    *amqp.Apis
 	SdkCrsApis     *crs.Apis
 	SdkCtImageApis *sdkCtImage.Apis
+	CtEbsApis       *ctebs.Apis
+	CtEbsBackupApis *ctebsbackup.Apis
+	CtEcsApis       *ctecs.Apis
+	CtIamApis       *ctiam.Apis
+	CtImageApis     *ctimage.Apis
+	CtVpcApis       *ctvpc.Apis
+	CtEbmApis       *ctebm.Apis
+	SdkCtEbsApis    *ctebs2.Apis
+	SdkCtEcsApis    *ctecs2.Apis
+	SdkCtVpcApis    *ctvpc2.Apis
+	SdkCtZosApis    *ctzos.Apis
+	SdkCcseApis     *ccse2.Apis
+	SdkDcs2Apis     *dcs2.Apis
+	SdkCtElbApis    *sdkCtelb.Apis
+	SdkCtMysqlApis  *mysql.Apis
+	SdkCtPgsqlApis  *pgsql.Apis
+	SdkKafkaApis    *ctgkafka.Apis
+	SdkMongodbApis  *mongodb.Apis
+	SdkAmqpApis     *amqp.Apis
+	SdkCrsApis      *crs.Apis
+	SdkHpfsApis     *hpfs.Apis
+	SdkScalingApis  *scaling.Apis
+	SdkSfsApi       *sfs.Apis
 }

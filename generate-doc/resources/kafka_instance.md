@@ -66,6 +66,7 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 - `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
+- `name` (String) 名称
 - `plain_port` (Number) 公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090
 - `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
 - `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。

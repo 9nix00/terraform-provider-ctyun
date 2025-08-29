@@ -20,7 +20,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
 
 resource "ctyun_ccse_node_pool" "example" {
   cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
-  node_pool_name           = "default-pool"
+  name           = "default-pool"
   cycle_type              = "month"
   cycle_count = 1
   auto_renew = true
@@ -53,7 +53,7 @@ resource "ctyun_ccse_node_pool" "example" {
 # 裸金属节点池（physical.s5.2xlarge4不支持云硬盘）
 # resource "ctyun_ccse_node_pool" "example" {
 #   cluster_id               = "dd92f3a6b034431bb7dceb849aed1220"
-#   node_pool_name           = "default-pool1"
+#   name           = "default-pool1"
 #   cycle_type              = "month"
 #   cycle_count = 1
 #   auto_renew = true

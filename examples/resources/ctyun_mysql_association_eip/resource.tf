@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-nat"
+  name        = "tf-vpc-for-mysql"
   cidr        = "192.168.0.0/16"
   description = "terraform-kafka测试使用"
   enable_ipv6 = true
@@ -20,7 +20,7 @@ resource "ctyun_vpc" "vpc_test" {
 
 resource "ctyun_subnet" "subnet_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-nat1"
+  name        = "tf-subnet-for-mysql1"
   cidr        = "192.168.1.0/24"
   description = "terraform-kafka测试使用"
   dns = [
@@ -41,24 +41,14 @@ resource "ctyun_security_group" "sg_mysql_test" {
 resource "ctyun_mysql_instance" "mysql_test" {
   cycle_type            = "on_demand"
   vpc_id                = ctyun_vpc.vpc_test.id
-  host_type             = "S7"
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_mysql_test.id
   name                  = "mysql-test-web-2"
   prod_id               = "Master2Slave80"
-  instance_series       = "S"
   storage_type          = "SATA"
-  password              = "Kqjwyk123."
   storage_space         = 100
-  prod_performance_spec = "2C4G"
-  availability_zone_info = [
-    {
-      "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master"
-    },
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 2, "node_type" : "slave" },
-  ]
-  cpu_type = "Intel"
-  os_type  = "ctyunos"
+  password              = "Kqjwyk123."
+  flavor_name           = "c7.2xlarge.4"
 }
 
 resource "ctyun_eip" "eip_test" {
@@ -70,7 +60,6 @@ resource "ctyun_eip" "eip_test" {
 
 resource "ctyun_mysql_association_eip" "association_eip" {
   eip_id = ctyun_eip.eip_test.id
-  eip = ctyun_eip.eip_test.address
   inst_id = ctyun_mysql_instance.mysql_test.id
 }
 

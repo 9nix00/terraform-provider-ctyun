@@ -142,11 +142,12 @@ resource "ctyun_ecs" "ecs_test" {
 
 - PaaS产品实例在terraform destroy时可以删除，但相关联的底层资源不能马上释放，所以删除子网和安全组时会报错。涉及CCSE、Redis、Kafka、RabbitMq、Mysql、PostgreSql、MogoDB。预计完善时间8月底。
 - 如果您想要将state文件保存到对象存储，可参考https://developer.hashicorp.com/terraform/language/v1.11.x/backend/s3，示例如下，endpoints中的s3是控制台页面上桶的终端节点：
+- 需要配置对象存储的AK和SK到环境变量：AWS_ACCESS_KEY_ID 和 AWS_SECRET_ACCESS_KEY
 
 ```
 terraform {
   backend "s3" {
-    bucket         = "state"
+    bucket         = "bucket-xxs"
     key            = "bc6a-ce8f8fb792db"
     region         = "jiangsu-10"
     skip_region_validation      = true
@@ -282,14 +283,14 @@ resource "ctyun_vpc" "vpc_test" {
 
 ### Optional
 
-- `ak` (String) 身份信息AK
+- `ak` (String, Sensitive) 身份信息AK
 - `az_name` (String) 可用区英文，填写选用资源池的az_name
 - `console_url` (String) 请求分发地址，仅供测试使用，需配合inspect_url_keywords一起使用
 - `env` (String) 环境类型env，可选值为：dev：开发环境、test：测试环境、prod：生产环境，默认为生产环境prod
 - `inspect_url_keywords` (Set of String) 请求拦截的地址，仅供测试使用，如果填入*则表示拦截所有请求，需配合console_url一起使用
 - `project_id` (String) 企业项目ID，不填则使用用户默认的企业项目
 - `region_id` (String) 资源池ID
-- `sk` (String) 身份信息SK
+- `sk` (String, Sensitive) 身份信息SK
 
 ## 开发调试指南（开发者阅读）
 

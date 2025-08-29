@@ -35,9 +35,9 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	updateNodeNum := 2
 	updatedVisibilityPostHostScript := "MTIz"
 	updatedVisibilityHostScript := "YWJj"
-	updatedSysDiskType := "SSD"
+	updatedSysDiskType := "SAS"
 	updatedSysDiskSize := 200
-	updatedDataDiskType := "SSD"
+	updatedDataDiskType := "SAS"
 	updatedDataDiskSize := 400
 	updatedCycleType := "month"
 	updatedExtra := `cycle_count             = 1
@@ -71,7 +71,7 @@ auto_renew = true
 					initNodeNum,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "node_pool_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "auto_renew", map[bool]string{true: "true", false: "false"}[false]),
 					resource.TestCheckResourceAttr(resourceName, "visibility_post_host_script", initVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(resourceName, "visibility_host_script", initVisibilityHostScript),
@@ -100,7 +100,7 @@ auto_renew = true
 					updateNodeNum,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "node_pool_name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "auto_renew", map[bool]string{true: "true", false: "false"}[true]),
 					resource.TestCheckResourceAttr(resourceName, "visibility_post_host_script", updatedVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(resourceName, "visibility_host_script", updatedVisibilityHostScript),
@@ -128,10 +128,10 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					updateNodeNum,
-				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".node_pool_name"),
+				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "records.0.node_pool_name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "records.0.name", updatedName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.auto_renew", map[bool]string{true: "true", false: "false"}[true]),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.visibility_post_host_script", updatedVisibilityPostHostScript),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.visibility_host_script", updatedVisibilityHostScript),
@@ -175,7 +175,7 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					updateNodeNum,
-				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".node_pool_name"),
+				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".name"),
 				Destroy: true,
 			},
 		},

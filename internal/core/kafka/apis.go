@@ -96,6 +96,7 @@ type Apis struct {
 	CtgkafkaChaosInjectApi                 *CtgkafkaChaosInjectApi
 	CtgkafkaChaosListApi                   *CtgkafkaChaosListApi
 	CtgkafkaDeleteAuthorityApi             *CtgkafkaDeleteAuthorityApi
+	CtgkafkaInstanceDeleteV3Api            *CtgkafkaInstanceDeleteV3Api
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -193,5 +194,6 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		CtgkafkaChaosInjectApi:                 NewCtgkafkaChaosInjectApi(client),
 		CtgkafkaChaosListApi:                   NewCtgkafkaChaosListApi(client),
 		CtgkafkaDeleteAuthorityApi:             NewCtgkafkaDeleteAuthorityApi(client),
+		CtgkafkaInstanceDeleteV3Api:            NewCtgkafkaInstanceDeleteV3Api(client),
 	}
 }

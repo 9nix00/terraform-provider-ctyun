@@ -3,6 +3,7 @@ package pgsql
 import ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 type Apis struct {
+	PgsqlDestroyApi             *TeledbDestroyApi
 	PgsqlCreateApi              *PgsqlCreateApi
 	PgsqlDetailApi              *PgsqlDetailApi
 	PgsqlListApi                *PgsqlListApi
@@ -19,6 +20,7 @@ type Apis struct {
 	PgsqlUnBindEipApi           *PgsqlUnBindEipApi
 	PgsqlBoundEipListApi        *PgsqlBoundEipListApi
 	PgsqlDeleteSecurityGroupApi *PgsqlDeleteSecurityGroupApi
+	PgsqlGetNodeListApi         *PgsqlGetNodeListApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -31,6 +33,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 	client.RegisterEndpoint(ctyunsdk.EnvironmentDev, EndpointPgSqlTest)
 	client.RegisterEndpoint(ctyunsdk.EnvironmentProd, EndPointPgSqlProd)
 	return &Apis{
+		PgsqlDestroyApi:             NewTeledbDestroyApi(client),
 		PgsqlCreateApi:              NewPgsqlCreateApi(client),
 		PgsqlDetailApi:              NewPgsqlDetailApi(client),
 		PgsqlListApi:                NewPgsqlListApi(client),
@@ -47,6 +50,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		PgsqlUnBindEipApi:           NewPgsqlUnBindEipApi(client),
 		PgsqlBoundEipListApi:        NewPgsqlBoundEipListApi(client),
 		PgsqlDeleteSecurityGroupApi: NewPgsqlDeleteSecurityGroupApi(client),
+		PgsqlGetNodeListApi:         NewPgsqlGetNodeListApi(client),
 	}
 
 }

@@ -39,8 +39,7 @@ func TestMain(m *testing.M) {
 		eipID:           outputs["eip_id"].Value,
 		eipAddress:      outputs["eip_address"].Value,
 		mysqlID:         outputs["mysql_id"].Value,
-		//mysqlID: "",
-		azName: outputs["az_name"].Value,
+		azName:          outputs["az_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

@@ -1,5 +1,5 @@
 resource "ctyun_ccse_node_pool" "%[1]s" {
-  node_pool_name           = "%[2]s"
+  name           = "%[2]s"
   cycle_type              = "%[9]s"
   %[10]s
   visibility_post_host_script = "%[3]s"

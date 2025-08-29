@@ -33,7 +33,7 @@ func (c *ctyunCcseNodePools) Metadata(_ context.Context, request datasource.Meta
 
 type CtyunCcseNodePoolsModel struct {
 	ID                       types.String            `tfsdk:"id"`
-	NodePoolName             types.String            `tfsdk:"node_pool_name"`
+	NodePoolName             types.String            `tfsdk:"name"`
 	CycleCount               types.Int64             `tfsdk:"cycle_count"`
 	CycleType                types.String            `tfsdk:"cycle_type"`
 	AutoRenew                types.Bool              `tfsdk:"auto_renew"`
@@ -53,7 +53,7 @@ type CtyunCcseNodePoolsConfig struct {
 	RegionID     types.String              `tfsdk:"region_id"`
 	PageNo       types.Int32               `tfsdk:"page_no"`
 	PageSize     types.Int32               `tfsdk:"page_size"`
-	NodePoolName types.String              `tfsdk:"node_pool_name"`
+	NodePoolName types.String              `tfsdk:"name"`
 	Records      []CtyunCcseNodePoolsModel `tfsdk:"records"`
 }
 
@@ -70,7 +70,7 @@ func (c *ctyunCcseNodePools) Schema(_ context.Context, _ datasource.SchemaReques
 				Required:    true,
 				Description: "集群ID",
 			},
-			"node_pool_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
 				Description: "节点池名称",
 			},
@@ -94,7 +94,7 @@ func (c *ctyunCcseNodePools) Schema(_ context.Context, _ datasource.SchemaReques
 							Computed:    true,
 							Description: "节点池id",
 						},
-						"node_pool_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "节点池名称",
 						},
