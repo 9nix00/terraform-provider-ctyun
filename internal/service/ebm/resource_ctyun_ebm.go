@@ -210,7 +210,6 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Description: "本地系统盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
@@ -221,7 +220,6 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				Description: "本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
