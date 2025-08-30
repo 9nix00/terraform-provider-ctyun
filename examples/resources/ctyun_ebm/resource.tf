@@ -66,10 +66,10 @@ data "ctyun_ebm_device_images" "test" {
 }
 
 locals {
-  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
+  system_raids = data.ctyun_ebm_device_raids.system_raid.raids
   system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : null
 
-  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
+  data_raids = data.ctyun_ebm_device_raids.data_raid.raids
   data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : null
 }
 
@@ -117,6 +117,7 @@ resource "ctyun_ebm" "ebm_test2" {
   security_group_ids = [ctyun_security_group.security_group_test.id]
   vpc_id = ctyun_vpc.vpc_test.id
   system_volume_raid_uuid = local.system_raid_id
+  data_volume_raid_uuid = local.data_raid_id
   status = "running"
   subnet_id = ctyun_subnet.subnet_test.id
 }
