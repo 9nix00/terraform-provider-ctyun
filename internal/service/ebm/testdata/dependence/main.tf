@@ -81,20 +81,20 @@ resource "ctyun_eip" "eip_test" {
   cycle_type          = "on_demand"
   demand_billing_type = "upflowc"
 }
-#
-# resource "ctyun_ebm" "ebm_test" {
-#   az_name   = local.az2
-#   instance_name = "tf-ebm-for-ebm"
-#   hostname = "tf-ebm-for-ebm"
-#   password = "P@2s2sxcv"
-#   eip_id = ctyun_eip.eip_test.id
-#   cycle_type = "month"
-#   cycle_count = 1
-#   device_type = local.device_type2
-#   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
-#   security_group_ids = [ctyun_security_group.security_group_test.id]
-#   vpc_id = ctyun_vpc.vpc_test.id
-#   system_disk_size = 100
-#   system_disk_type = "sata"
-#   subnet_id = ctyun_subnet.subnet_test.id
-# }
+
+resource "ctyun_ebm" "ebm_test" {
+  az_name   = local.az2
+  instance_name = "tf-ebm-for-ebm"
+  hostname = "tf-ebm-for-ebm"
+  password = "P@2s2sxcv"
+  eip_id = ctyun_eip.eip_test.id
+  cycle_type = "month"
+  cycle_count = 1
+  device_type = local.device_type2
+  image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
+  security_group_ids = [ctyun_security_group.security_group_test.id]
+  vpc_id = ctyun_vpc.vpc_test.id
+  system_disk_size = 100
+  system_disk_type = "sata"
+  subnet_id = ctyun_subnet.subnet_test.id
+}
