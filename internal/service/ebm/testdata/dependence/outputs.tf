@@ -34,9 +34,9 @@ output "ebs_id" {
   value = ctyun_ebs.ebs_test.id
 }
 
-output "ebm_id" {
-  value = ctyun_ebm.ebm_test.id
-}
+# output "ebm_id" {
+#   value = ctyun_ebm.ebm_test.id
+# }
 
 output "az2" {
   value = local.az2
