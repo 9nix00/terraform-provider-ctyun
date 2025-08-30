@@ -36,13 +36,17 @@ func testAccCtyunEcsFlavorsConfig_basic(file, name string) string {
 
 func TestAccCtyunEcsFlavors_byType(t *testing.T) {
 	dnd := utils.GenerateRandomString()
-	datasourceFile := "datasource_ctyun_ecs_flavors.tf"
-
+	datasourceFile := "datasource_ctyun_ecs_flavors_type.tf"
+	cpu := 2
+	ram := 4
+	arch := "x86"
+	series := "C"
+	cpuType := "CPU_C7"
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(datasourceFile, dnd, "CPU"),
+				Config: utils.LoadTestCase(datasourceFile, dnd, cpu, ram, arch, series, cpuType),
 			},
 		},
 	})
