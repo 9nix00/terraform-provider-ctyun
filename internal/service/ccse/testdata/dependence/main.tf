@@ -197,10 +197,10 @@ data "ctyun_ebm_device_images" "test" {
 }
 
 locals {
-  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
+  system_raids = data.ctyun_ebm_device_raids.system_raid.raids
   system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : null
 
-  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
+  data_raids = data.ctyun_ebm_device_raids.data_raid.raids
   data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : null
 }
 
