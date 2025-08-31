@@ -58,7 +58,7 @@ Read-Only:
 - `finished_time` (String) 完成时间
 - `instance_backup_description` (String) 云主机备份描述
 - `instance_backup_id` (String) 云主机备份ID
-- `instance_backup_name` (String) 云主机备份名称
+- `name` (String) 云主机备份名称
 - `instance_backup_status` (String) 云主机备份状态，取值范围：CREATING: 备份创建中, ACTIVE: 可用， RESTORING: 备份恢复中，DELETING: 删除中，EXPIRED：到期，ERROR：错误
 - `instance_id` (String) 云主机ID
 - `instance_name` (String) 云主机名称

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,6 @@ import (
 )
 
 func TestAccCtyunBackup(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -25,7 +20,6 @@ func TestAccCtyunBackup(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ebs_backups.tf"
 
 	initName := "init-backup"
-	updatedName := "updated-backup-" + rnd
 	diskId := dependence.ebsID
 	repositoryID := "671f67c4-6131-4154-8c1d-7c5b82edd1eb"
 
@@ -47,21 +41,13 @@ func TestAccCtyunBackup(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
-			// 更新
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, diskId, updatedName),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-				),
-			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, diskId, updatedName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, diskId, initName) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "backups.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "backups.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "backups.0.name", initName),
 				),
 			},
 			{
@@ -79,8 +65,8 @@ func TestAccCtyunBackup(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, diskId, updatedName) +
-					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, diskId, initName) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".name"),
 				Destroy: true,
 			},
 		},

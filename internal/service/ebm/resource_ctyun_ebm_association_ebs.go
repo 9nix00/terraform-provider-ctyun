@@ -245,22 +245,18 @@ func (c *ctyunEbmAssociationEbs) checkBeforeAssociation(ctx context.Context, pla
 	id := utils.SecString(instance.InstanceUUID)
 	support := utils.SecBool(instance.DeviceDetail.SupportCloud)
 	if !support {
-		err = fmt.Errorf("物理机 %s 不支持挂载云硬盘", id)
-		return
+		return fmt.Errorf("物理机 %s 不支持挂载云硬盘", id)
 	}
 	status := utils.SecLowerStringValue(instance.EbmState).ValueString()
 	if status != business.EbmStatusRunning && status != business.EbmStatusStopping {
-		err = fmt.Errorf("物理机 %s 状态必须是运行或开机状态，当前状态 %s", id, status)
-		return
+		return fmt.Errorf("物理机 %s 状态必须是运行或开机状态，当前状态 %s", id, status)
 	}
 	if len(instance.AttachedVolumes) > 9 {
-		err = fmt.Errorf("物理机 %s 不能挂载更多云硬盘", id)
-		return
+		return fmt.Errorf("物理机 %s 不能挂载更多云硬盘", id)
 	}
 	for _, ebsID := range instance.AttachedVolumes {
 		if plan.EbsID.ValueString() == utils.SecString(ebsID) {
-			err = fmt.Errorf("物理机 %s 和云硬盘 %s 已关联", id, plan.EbsID.ValueString())
-			return
+			return fmt.Errorf("物理机 %s 和云硬盘 %s 已关联", id, plan.EbsID.ValueString())
 		}
 	}
 
@@ -313,10 +309,8 @@ func (c *ctyunEbmAssociationEbs) associate(ctx context.Context, plan CtyunEbmAss
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
-
 	return
 }
 
@@ -353,8 +347,7 @@ func (c *ctyunEbmAssociationEbs) dissociate(ctx context.Context, plan CtyunEbmAs
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
 	return
 }
@@ -410,6 +403,5 @@ func (c *ctyunEbmAssociationEbs) getAndMerge(ctx context.Context, plan *CtyunEbm
 			return
 		}
 	}
-	err = fmt.Errorf("物理机 %s 和云硬盘 %s 未关联", instanceID, ebsID)
-	return
+	return fmt.Errorf("物理机 %s 和云硬盘 %s 未关联", instanceID, ebsID)
 }
