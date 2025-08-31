@@ -43,7 +43,7 @@ func TestAccCtyunBackup(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, instanceId, initName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "instance_backup_name", initName),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -51,7 +51,7 @@ func TestAccCtyunBackup(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, repositoryID, instanceId, updatedName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "instance_backup_name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -61,7 +61,7 @@ func TestAccCtyunBackup(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "backups.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "backups.0.instance_backup_name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "backups.0.name", updatedName),
 				),
 			},
 			{

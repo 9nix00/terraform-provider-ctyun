@@ -88,8 +88,7 @@ resource "ctyun_ebm" "ebm_test" {
   hostname = "tf-ebm-for-ebm"
   password = "P@2s2sxcv"
   eip_id = ctyun_eip.eip_test.id
-  cycle_type = "month"
-  cycle_count = 1
+  cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
   security_group_ids = [ctyun_security_group.security_group_test.id]

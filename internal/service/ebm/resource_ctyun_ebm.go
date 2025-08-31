@@ -19,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -76,7 +77,7 @@ type CtyunEbmConfig struct {
 	UserData             types.String `tfsdk:"user_data"`
 	KeyPairName          types.String `tfsdk:"key_pair_name"`
 	AutoRenew            types.Bool   `tfsdk:"auto_renew"`
-	CycleCount           types.Int32  `tfsdk:"cycle_count"`
+	CycleCount           types.Int64  `tfsdk:"cycle_count"`
 	CycleType            types.String `tfsdk:"cycle_type"`
 	MasterOrderID        types.String `tfsdk:"master_order_id"`
 	Status               types.String `tfsdk:"status"`
@@ -380,22 +381,23 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"cycle_count": schema.Int32Attribute{
+			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
 				Description: "订购时长，最长订购周期为60个月（5年）；非按需时必填",
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
 				},
-				Validators: []validator.Int32{
-					validator2.AlsoRequiresEqualInt32(
+				Validators: []validator.Int64{
+					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
 						types.StringValue(business.OrderCycleTypeYear),
 						types.StringValue(business.OrderCycleTypeMonth),
 					),
-					validator2.ConflictsWithEqualInt32(
+					validator2.ConflictsWithEqualInt64(
 						path.MatchRoot("cycle_type"),
 						types.StringValue(business.OrderCycleTypeOnDemand),
 					),
+					validator2.CycleCount(1, 11, 1, 5),
 				},
 			},
 			"status": schema.StringAttribute{
@@ -691,7 +693,7 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 	case business.OrderCycleTypeMonth, business.OrderCycleTypeYear:
 		params.InstanceChargeType = business.EbmOrderOnCycle
 		params.CycleType = strings.ToUpper(plan.CycleType.ValueString())
-		params.CycleCount = plan.CycleCount.ValueInt32()
+		params.CycleCount = int32(plan.CycleCount.ValueInt64())
 	}
 
 	resp, err := c.meta.Apis.CtEbmApis.EbmCreateInstanceV4plusApi.Do(ctx, c.meta.SdkCredential, params)
@@ -710,13 +712,6 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 
 // checkBeforeCreateInstance 创建前检查
 func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmConfig) error {
-	cycleCount := plan.CycleCount.ValueInt32()
-	cycleType := plan.CycleType.ValueString()
-	if cycleType == business.OrderCycleTypeMonth && cycleCount > 11 ||
-		cycleType == business.OrderCycleTypeYear && cycleCount > 5 {
-		return fmt.Errorf("创建包周期物理机时，以月为单位，最长支持11月；以年为单位，最长支持5年")
-	}
-
 	// 确保当前虚拟私有云存在，且子网与虚拟私有云存在对应关系
 	vpc := plan.VpcID.ValueString()
 	subnets, err := business.NewVpcService(c.meta).GetVpcSubnet(ctx, vpc, plan.RegionID.ValueString(), plan.ProjectID.ValueString())

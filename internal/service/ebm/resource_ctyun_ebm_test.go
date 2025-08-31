@@ -122,6 +122,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"user_data",
 					"cycle_type",
 					"image_uuid",
+					"cycle_count",
 				},
 			},
 			{

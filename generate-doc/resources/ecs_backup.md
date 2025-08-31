@@ -21,7 +21,7 @@ provider "ctyun" {
 resource "ctyun_ecs_backup" "test" {
   repository_id = "0cd13a89-5ada-42a7-95e8-60fb9705eecc"
   instance_id = "f16dfc3f-7375-4831-af16-a4cbd060ec89"
-  instance_backup_name  = "test"
+  name  = "test"
   full_backup = false
 }
 ```
@@ -31,7 +31,7 @@ resource "ctyun_ecs_backup" "test" {
 
 ### Required
 
-- `instance_backup_name` (String) 云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格。支持更新
+- `name` (String) 云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格。支持更新
 - `instance_id` (String) 云主机ID
 - `repository_id` (String) 云主机备份存储库ID
 

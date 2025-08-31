@@ -43,7 +43,7 @@ type CtyunEcsBackupConfig struct {
 	Id                        types.String `tfsdk:"id"`
 	RegionID                  types.String `tfsdk:"region_id"`
 	InstanceID                types.String `tfsdk:"instance_id"`
-	InstanceBackupName        types.String `tfsdk:"instance_backup_name"`
+	InstanceBackupName        types.String `tfsdk:"name"`
 	InstanceBackupDescription types.String `tfsdk:"instance_backup_description"`
 	RepositoryID              types.String `tfsdk:"repository_id"`
 
@@ -90,7 +90,7 @@ func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 					validator2.UUID(),
 				},
 			},
-			"instance_backup_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格。支持更新",
 				Validators: []validator.String{
