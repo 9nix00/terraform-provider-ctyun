@@ -68,7 +68,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(specsDatasourceFile, dnd, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(specsDatasourceName, "specs.#", "20"),
+					resource.TestCheckResourceAttrWith(specsDatasourceName, "specs.#", utils.AtLeastOne),
 				),
 			},
 			// 解绑

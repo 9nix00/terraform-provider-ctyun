@@ -21,9 +21,9 @@ type Dependence struct {
 var dependence Dependence
 
 func TestMain(m *testing.M) {
-	//if skip := os.Getenv("SKIP_PGSQL_TEST"); skip != "" {
-	//	return
-	//}
+	if skip := os.Getenv("SKIP_PGSQL_TEST"); skip != "" {
+		return
+	}
 	fmt.Println("开始初始化依赖资源")
 	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {
