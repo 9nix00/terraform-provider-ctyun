@@ -170,7 +170,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
@@ -180,7 +180,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.SubnetValidate(),

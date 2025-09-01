@@ -85,7 +85,7 @@ func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request
 				Required:    true,
 				Description: "权限组ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
@@ -95,7 +95,7 @@ func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request
 				Required:    true,
 				Description: "弹性文件功能系统唯一 ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
@@ -105,7 +105,7 @@ func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request
 				Required:    true,
 				Description: "vpcID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),

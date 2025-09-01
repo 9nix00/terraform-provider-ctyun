@@ -166,7 +166,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
