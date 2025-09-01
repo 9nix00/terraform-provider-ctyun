@@ -40,7 +40,7 @@ func (c *CtyunSfsInstances) Metadata(ctx context.Context, request datasource.Met
 
 func (c *CtyunSfsInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "弹性文件服务创建/更新/删除。具体文档可参考：https://www.ctyun.cn/document/10027350",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
