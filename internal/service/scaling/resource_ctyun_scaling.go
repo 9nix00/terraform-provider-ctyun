@@ -575,14 +575,11 @@ func (c *ctyunScaling) createScaling(ctx context.Context, config *CtyunScalingCo
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = errors.New("创建弹性伸缩服务组时，返回为nil。请稍微重试")
-		return err
+		return errors.New("创建弹性伸缩服务组时，返回为nil。请稍微重试")
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return err
+		return common.InvalidReturnObjError
 	}
 	config.ID = types.Int64Value(resp.ReturnObj.GroupID)
 	return nil
@@ -606,8 +603,7 @@ func (c *ctyunScaling) getAndMergeScaling(ctx context.Context, config *CtyunScal
 	var diags diag.Diagnostics
 	config.SecurityGroupIDList, diags = types.SetValueFrom(ctx, types.StringType, scalingDetail.SecurityGroupIDList)
 	if diags.HasError() {
-		err = errors.New(diags[0].Detail())
-		return err
+		return errors.New(diags[0].Detail())
 	}
 	// 处理lb列表
 	if scalingDetail.UseLb == 1 {
@@ -629,16 +625,14 @@ func (c *ctyunScaling) getAndMergeScaling(ctx context.Context, config *CtyunScal
 		lbObj := utils.StructToTFObjectTypes(CtyunLbInfoModel{})
 		config.LbList, diags = types.ListValueFrom(ctx, lbObj, lbList)
 		if diags.HasError() {
-			err = errors.New(diags[0].Detail())
-			return err
+			return errors.New(diags[0].Detail())
 		}
 	}
 
 	// 处理subnetIDList
 	config.SubnetIDList, diags = types.SetValueFrom(ctx, types.StringType, scalingDetail.SubnetIDList)
 	if diags.HasError() {
-		err = errors.New(diags[0].Detail())
-		return err
+		return errors.New(diags[0].Detail())
 	}
 	config.MoveOutStrategy = types.StringValue(business.ScalingMoveOutStrategyDictRev[scalingDetail.MoveOutStrategy])
 	config.HealthMode = types.StringValue(business.ScalingHealthModeDictRev[scalingDetail.HealthMode])
@@ -732,8 +726,7 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 		}
 		status := detail.ReturnObj.ScalingGroups[0].Status
 		if status == business.ScalingControlStatusStart {
-			err = errors.New("伸缩组状态为启用状态，暂不支持修改lb列表")
-			return err
+			return errors.New("伸缩组状态为启用状态，暂不支持修改lb列表")
 		}
 		params.UseLb = plan.UseLb.ValueInt32Pointer()
 		// 必须启用lb
@@ -742,8 +735,7 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 			var paramLbList []*scaling.ScalingGroupUpdateLbListRequest
 			diags := plan.LbList.ElementsAs(ctx, &lbList, true)
 			if diags.HasError() {
-				err := errors.New(diags[0].Detail())
-				return err
+				return errors.New(diags[0].Detail())
 			}
 			for _, lbItem := range lbList {
 				var lbInfo scaling.ScalingGroupUpdateLbListRequest
@@ -762,8 +754,7 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 		var securityGroupIDList []string
 		diags := plan.SecurityGroupIDList.ElementsAs(ctx, &securityGroupIDList, true)
 		if diags.HasError() {
-			err := errors.New(diags[0].Detail())
-			return err
+			return errors.New(diags[0].Detail())
 		}
 		params.SecurityGroupIDList = securityGroupIDList
 	}
@@ -776,14 +767,12 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 		}
 		status := detail.ReturnObj.ScalingGroups[0].Status
 		if status == business.ScalingControlStatusStart {
-			err = errors.New("伸缩组状态为启用状态，暂不支持修改子网列表")
-			return err
+			return errors.New("伸缩组状态为启用状态，暂不支持修改子网列表")
 		}
 		var subnetIDList []string
 		diags := plan.SubnetIDList.ElementsAs(ctx, &subnetIDList, true)
 		if diags.HasError() {
-			err = errors.New(diags[0].Detail())
-			return err
+			return errors.New(diags[0].Detail())
 		}
 		params.SubnetIDList = subnetIDList
 	}
@@ -792,8 +781,7 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 		var configList []int32
 		diags := plan.ConfigList.ElementsAs(ctx, &configList, true)
 		if diags.HasError() {
-			err := errors.New(diags[0].Detail())
-			return err
+			return errors.New(diags[0].Detail())
 		}
 		params.ConfigList = configList
 	}
@@ -807,14 +795,11 @@ func (c *ctyunScaling) updateScaling(ctx context.Context, state *CtyunScalingCon
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = errors.New("更新弹性伸缩配置失败，接口返回nil。请稍后重试！")
-		return err
+		return errors.New("更新弹性伸缩配置失败，接口返回nil。请稍后重试！")
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return err
+		return common.InvalidReturnObjError
 	}
 	return nil
 }
@@ -834,11 +819,9 @@ func (c *ctyunScaling) controlScaling(ctx context.Context, state *CtyunScalingCo
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = errors.New("启用伸缩组失败，接口返回nil。请稍后重试！")
-			return err
+			return errors.New("启用伸缩组失败，接口返回nil。请稍后重试！")
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	} else if plan.Status.ValueString() == business.ScalingControlStatusStopStr {
 		stopParams := &scaling.ScalingGroupDisableRequest{
@@ -849,11 +832,9 @@ func (c *ctyunScaling) controlScaling(ctx context.Context, state *CtyunScalingCo
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = errors.New("停用伸缩组失败，接口返回nil。请稍后重试！")
-			return err
+			return errors.New("停用伸缩组失败，接口返回nil。请稍后重试！")
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	}
 	// 确认伸缩组状态是否变更成功
@@ -862,8 +843,7 @@ func (c *ctyunScaling) controlScaling(ctx context.Context, state *CtyunScalingCo
 		return err
 	}
 	if !flag {
-		err = errors.New("更新伸缩组状态失败！")
-		return err
+		return errors.New("更新伸缩组状态失败！")
 	}
 	return nil
 }
@@ -894,11 +874,9 @@ func (c *ctyunScaling) controlScalingProtection(ctx context.Context, state *Ctyu
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = errors.New("开启伸缩组保护失败，接口返回nil。请稍后再试！")
-			return err
+			return errors.New("开启伸缩组保护失败，接口返回nil。请稍后再试！")
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	} else if state.DeleteProtection.ValueString() == business.ScalingControlProtectionDisableStr {
 		disableParams := &scaling.ScalingGroupDisableProtectionRequest{
@@ -909,11 +887,9 @@ func (c *ctyunScaling) controlScalingProtection(ctx context.Context, state *Ctyu
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = errors.New("关闭伸缩组保护失败，接口返回nil。请稍后再试！")
-			return err
+			return errors.New("关闭伸缩组保护失败，接口返回nil。请稍后再试！")
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	}
 
@@ -923,8 +899,7 @@ func (c *ctyunScaling) controlScalingProtection(ctx context.Context, state *Ctyu
 		return err
 	}
 	if !flag {
-		err = errors.New("伸缩组保护状态更新失败！")
-		return err
+		return errors.New("伸缩组保护状态更新失败！")
 	}
 	return nil
 }
@@ -1142,11 +1117,9 @@ func (c *ctyunScaling) addScalingEcsList(ctx context.Context, instanceUUIDList [
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = fmt.Errorf("手动添加云主机失败，接口返回nil，伸缩组id：%d。需添加的云主机id列表为：%s", config.ID.ValueInt64(), strings.Join(instanceUUIDList, ", "))
-		return err
+		return fmt.Errorf("手动添加云主机失败，接口返回nil，伸缩组id：%d。需添加的云主机id列表为：%s", config.ID.ValueInt64(), strings.Join(instanceUUIDList, ", "))
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 	}
 	return nil
 }

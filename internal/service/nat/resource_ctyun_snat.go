@@ -196,7 +196,7 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 		return
 	}
 	plan.SNatID = loopResp.SNatID
-
+	time.Sleep(5 * time.Second)
 	// 添加description
 	err = c.updateDescription(ctx, plan)
 	if err != nil {
