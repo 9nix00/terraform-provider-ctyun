@@ -1,24 +1,17 @@
 package hpfs_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestAccCtyunHpfs(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -71,6 +64,12 @@ func TestAccCtyunHpfs(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "hpfs_instances.0.sfs_protocol", sfsProtocol),
 					resource.TestCheckResourceAttr(datasourceName, "hpfs_instances.0.sfs_status", "available"),
 					resource.TestCheckResourceAttr(datasourceName, "hpfs_instances.0.az_name", "cn-huadong1-jsnj1A-public-ctcloud"),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -81,24 +80,8 @@ func TestAccCtyunHpfs(t *testing.T) {
 	})
 }
 
-func parseInstances(jsonData string) ([]CtyunHpfsInstancesModel, error) {
-	var data struct {
-		Instances []CtyunHpfsInstancesModel `json:"hpfs_instances"`
-	}
-	if err := json.Unmarshal([]byte(jsonData), &data); err != nil {
-		return nil, err
-	}
-	return data.Instances, nil
-}
-
 // 指定AZ，指定集群和baseline
 func TestAccCtyunHpfs1(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_hpfs." + rnd
 	resourceFile := "resource_ctyun_hpfs1.tf"
@@ -143,6 +126,12 @@ func TestAccCtyunHpfs1(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", strconv.Itoa(updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "cluster_name", cluster),
 					resource.TestCheckResourceAttr(resourceName, "baseline", baseline),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
