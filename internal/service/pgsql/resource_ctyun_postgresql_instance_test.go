@@ -11,10 +11,7 @@ import (
 )
 
 func TestAccCtyunPgsqlInstance(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
@@ -37,13 +34,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
+	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
 
 	updatedName := "pgsql-new" + utils.GenerateRandomString()
 	updatedSecurityGroupID := dependence.securityGroupID2
 	updatedProdID := "MasterSlave1222"
 	updatedStorageSpace := 120
-	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
+	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
 	updatedBackupStorageSpace := fmt.Sprintf(`backup_storage_space="%d"`, updatedStorageSpace)
 
 	resource.Test(t, resource.TestCase{

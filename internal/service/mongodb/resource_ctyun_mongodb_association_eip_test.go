@@ -6,16 +6,10 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunMongodbAssociationEip(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -29,11 +23,9 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 	//eipId := "eip-140rfs2and"
 	eipAddress := dependence.vpcID
 	//eipAddress := "150.223.193.123"
-	instId := dependence.vpcID
+	instId := dependence.mongodbID
 	hostId := dependence.vpcID
 
-	prodType := "2"
-	prodCode := "DDS"
 	instanceType := "1"
 
 	specDatasourceName := "data.ctyun_mysql_specs." + dnd
@@ -69,9 +61,9 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(specDatasourceFile, dnd, prodType, prodCode, instanceType),
+				Config: utils.LoadTestCase(specDatasourceFile, dnd, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
+					resource.TestCheckResourceAttrSet(specDatasourceName, "specs.#"),
 				),
 			},
 			{

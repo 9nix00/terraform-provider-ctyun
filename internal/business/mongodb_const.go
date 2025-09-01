@@ -50,6 +50,7 @@ const (
 	MongodbNodeTypeMs     = "ms"     // 副本集
 	MongodbNodeTypeS      = "s"      // 单机版
 	MongodbNodeBackup     = "backup" // 备份节点
+	MongodbNodeMaster     = "master" // 备份节点
 
 	MongodbStorageTypeSSD        = "SSD"        // 超高IO
 	MongodbStorageTypeSAS        = "SAS"        // 高IO
@@ -311,6 +312,7 @@ var MongodbNodeType = []string{
 	MongodbNodeTypeMs,
 	MongodbNodeTypeS,
 	MongodbNodeBackup,
+	MongodbNodeMaster,
 }
 
 var MongodbStatusDescDict = map[int32]string{

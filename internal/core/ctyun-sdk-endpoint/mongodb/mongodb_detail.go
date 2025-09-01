@@ -75,7 +75,7 @@ type DetailRespReturnObjVOSInfo struct {
 	RealIp           *string `json:"realIp,omitempty"`          // 实际IP
 	AllowBeMaster    bool    `json:"allowBeMaster"`             // 是否允许成为主节点
 	OuterElasticIpId string  `json:"outerElasticIpId"`          // 弹性IP ID
-	Memory           int32   `json:"memory"`                    // 内存
+	Memory           string  `json:"memory"`                    // 内存
 	Role             string  `json:"role"`                      // 节点角色
 	Alive            int32   `json:"alive"`                     // 存活状态
 	UsedSpace        *string `json:"usedSpace,omitempty"`       // 已使用空间
@@ -84,7 +84,7 @@ type DetailRespReturnObjVOSInfo struct {
 	ResId            int     `json:"resId"`                     // 资源ID
 	ElasticIp        string  `json:"elasticIp"`                 // 弹性IP
 	Node             string  `json:"node"`                      // 节点名称
-	DiskSize         *int    `json:"diskSize,omitempty"`        // 磁盘大小
+	DiskSize         *string `json:"diskSize,omitempty"`        // 磁盘大小
 	AzDisplayName    string  `json:"azDisplayName"`             // 可用区显示名
 	Host             string  `json:"host"`                      // 主机地址
 	ProdInstSetName  *string `json:"prodInstSetName,omitempty"` // 产品实例集名

@@ -200,8 +200,8 @@ func (c *CtyunMongodbSpecs) Read(ctx context.Context, request datasource.ReadReq
 		return
 	}
 	params := &mysql.TeledbMysqlSpecsRequest{
-		ProdType:     config.ProdType.ValueString(),
-		ProdCode:     config.ProdCode.ValueString(),
+		ProdType:     "2",
+		ProdCode:     "DDS",
 		RegionID:     regionId,
 		InstanceType: config.InstanceType.ValueString(),
 	}
