@@ -1,40 +1,17 @@
-data "ctyun_vpcs" "vpc_test" {
-  page_size = 50
-}
-
-locals {
-  vpcs        = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-iaas"]
-  data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
-}
-
 resource "ctyun_vpc" "vpc_test" {
-  count       = local.data_vpc_id == "" ? 1 : 0
-  name        = "tf-vpc-for-iaas"
+  name        = "tf-vpc-for-scaling"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
 }
 
 locals {
-  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test[0].id, "") : local.data_vpc_id
-}
-
-
-data "ctyun_subnets" "subnet_test" {
-  vpc_id = local.real_vpc_id
-}
-
-locals {
-  subnets = [
-    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-iaas"
-  ]
-  data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
+  real_vpc_id = ctyun_vpc.vpc_test.id
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-iaas"
+  name        = "tf-subnet-for-scaling"
   cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
   dns = [
@@ -44,13 +21,12 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 locals {
-  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
+  real_subnet_id = ctyun_subnet.subnet_test.id
 }
-
 
 resource "ctyun_subnet" "subnet_test1" {
   vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-iaas1"
+  name        = "tf-subnet-for-scaling1"
   cidr        = "192.168.2.0/24"
   description = "terraform测试使用"
   dns = [
@@ -59,30 +35,14 @@ resource "ctyun_subnet" "subnet_test1" {
   ]
 }
 
-
-data "ctyun_security_groups" "security_group_test" {
-  vpc_id = local.real_vpc_id
-}
-
-locals {
-  security_groups = [
-    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-iaas"
-  ]
-  data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
-}
-
 resource "ctyun_security_group" "security_group_test" {
-  count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-sg-for-iaas"
+  name        = "tf-sg-for-scaling"
   description = "terraform测试使用"
-  lifecycle {
-    prevent_destroy = false
-  }
 }
 
 locals {
-  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
+  real_security_group_id = ctyun_security_group.security_group_test.id
 }
 
 
@@ -90,9 +50,6 @@ resource "ctyun_security_group" "security_group_test1" {
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-scaling1"
   description = "terraform测试使用"
-  lifecycle {
-    prevent_destroy = false
-  }
 }
 
 
@@ -103,17 +60,10 @@ data "ctyun_images" "image_test" {
   page_size = 10
 }
 
-# data "ctyun_images" "image_test1" {
-#   name       = "CentOS Linux 8.2"
-#   visibility = "public"
-#   page_no = 1
-#   page_size = 10
-# }
 
 
 locals {
   image_id = data.ctyun_images.image_test.images[0].id
-  # image_id1 = data.ctyun_images.image_test.images[0].id
 }
 
 resource "ctyun_keypair" "scaling_test" {
@@ -159,6 +109,7 @@ resource "ctyun_scaling_group" "group_test" {
   config_list            = [ctyun_scaling_config.config_test.id]
   az_strategy            = "uniform_distribution"
   delete_protection      = "disable"
+  add_instance_uuid_list = [ctyun_ecs.ecs_test3.id]
 }
 
 
@@ -169,8 +120,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test" {
   series = "C"
   type   = "CPU_C7"
 }
-#
-# #
+
 resource "ctyun_ecs" "ecs_test" {
   instance_name       = "tf-ecs-for-scaling-ecs1"
   display_name        = "tf-ecs-for-scaling-ecs1"
@@ -185,8 +135,7 @@ resource "ctyun_ecs" "ecs_test" {
   security_group_ids = [local.real_security_group_id]
   is_destroy_instance = true
 }
-#
-#
+
 resource "ctyun_ecs" "ecs_test1" {
   instance_name       = "tf-ecs-for-scaling-ecs2"
   display_name        = "tf-ecs-for-scaling-ecs2"
@@ -205,6 +154,21 @@ resource "ctyun_ecs" "ecs_test1" {
 resource "ctyun_ecs" "ecs_test2" {
   instance_name       = "tf-ecs-for-scaling-ecs3"
   display_name        = "tf-ecs-for-scaling-ecs3"
+  flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
+  image_id            = data.ctyun_images.image_test.images[0].id
+  system_disk_type    = "sata"
+  system_disk_size    = 40
+  vpc_id =  local.real_vpc_id
+  password            = "P@ssW0rd_1"
+  cycle_type          = "on_demand"
+  subnet_id = local.real_subnet_id
+  security_group_ids = [local.real_security_group_id]
+  is_destroy_instance = true
+}
+
+resource "ctyun_ecs" "ecs_test3" {
+  instance_name       = "tf-ecs-for-scaling-ecs4"
+  display_name        = "tf-ecs-for-scaling-ecs4"
   flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
   image_id            = data.ctyun_images.image_test.images[0].id
   system_disk_type    = "sata"

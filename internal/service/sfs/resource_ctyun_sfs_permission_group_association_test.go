@@ -10,22 +10,14 @@ import (
 )
 
 func TestAccCtyunSfsPermissionGroupAssociation(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs_permission_group_association." + rnd
 	resourceFile := "resource_ctyun_sfs_permission_group_association.tf"
 
-	// 从环境变量获取测试依赖资源
 	sfsUID := dependence.SfsUID
-	vpcID := dependence.vpcID
 	vpcID1 := dependence.vpcID1
 	permissionGroupFuid1 := dependence.sfsPermissionGroupID
 	permissionGroupFuid2 := dependence.sfsPermissionGroupID1
-
-	// 验证环境变量是否设置
-	if sfsUID == "" || vpcID == "" || permissionGroupFuid1 == "" || permissionGroupFuid2 == "" {
-		t.Skip("Skipping test: required environment variables not set")
-	}
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -68,28 +60,14 @@ func TestAccCtyunSfsPermissionGroupAssociation(t *testing.T) {
 			},
 			// 3. 资源导入测试
 			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources[resourceName]
-					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
-					}
-
-					// 构造导入ID: "id,region_id"
-					return fmt.Sprintf("%s,%s,%s,%s",
-						rs.Primary.Attributes["region_id"],
-						rs.Primary.Attributes["vpc_id"],
-						rs.Primary.Attributes["permission_group_fuid"],
-						rs.Primary.Attributes["sfs_uid"],
-					), nil
-				},
+				ResourceName:            resourceName,
+				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{},
 			},
 			// 4. 清理资源
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, permissionGroupFuid2, sfsUID, vpcID),
+				Config:  utils.LoadTestCase(resourceFile, rnd, permissionGroupFuid2, sfsUID, vpcID1),
 				Destroy: true,
 			},
 		},

@@ -10,14 +10,13 @@ import (
 )
 
 func TestAccCtyunScalingEcsProtection(t *testing.T) {
-	//t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_scaling_ecs_protection." + rnd
 	resourceFile := "resource_ctyun_scaling_ecs_protection.tf"
 
 	// 从环境变量获取测试依赖资源
-	scalingGroupID := 117717
-	instanceIDList := fmt.Sprintf(`["%s","%s","%s"]`, "c8b8b345-fb9a-e9dd-c5b4-530263dcd74f", "dbe4e282-d38a-bcae-9a4d-38a6bc09171e", "bbe2c671-5fc1-610c-4560-30fd7e2bda14")
+	scalingGroupID := dependence.scalingGroupID
+	instanceIDList := fmt.Sprintf(`["%s"]`, dependence.instanceUUID3)
 
 	protectStatus := true
 

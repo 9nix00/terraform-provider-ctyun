@@ -47,7 +47,7 @@ func NewCtyunHpfsInstance() resource.Resource {
 
 func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "**详细说明请见文档：https://www.ctyun.cn/document/10088932/10090437**",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -587,7 +587,11 @@ func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loo
 		func(currentTime int) bool {
 			resp, err2 := c.getHpfsDetail(ctx, config)
 			if err2 != nil {
-				err = err2
+				if strings.Contains(err2.Error(), "资源不存在") {
+					err = nil
+				} else {
+					err = err2
+				}
 				return false
 			} else if resp == nil {
 				return false

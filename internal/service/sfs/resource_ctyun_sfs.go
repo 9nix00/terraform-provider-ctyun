@@ -189,6 +189,9 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "弹性文件系统id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -225,11 +228,6 @@ func (c *ctyunSfs) Create(ctx context.Context, request resource.CreateRequest, r
 	var plan CtyunSfsConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
-		return
-	}
-	//创建前检查,验证参数有效性
-	isValid, err := c.checkBeforeSfs(ctx, plan)
-	if !isValid || err != nil {
 		return
 	}
 	err = c.createSfs(ctx, &plan)
@@ -345,11 +343,8 @@ func (c *ctyunSfs) Delete(ctx context.Context, request resource.DeleteRequest, r
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
 	}
+	time.Sleep(30 * time.Second)
 	return
-}
-
-func (c *ctyunSfs) checkBeforeSfs(ctx context.Context, plan CtyunSfsConfig) (bool, error) {
-	return true, nil
 }
 
 func (c *ctyunSfs) createSfs(ctx context.Context, config *CtyunSfsConfig) error {
@@ -466,7 +461,6 @@ func (c *ctyunSfs) createLoop(ctx context.Context, config *CtyunSfsConfig, param
 }
 
 func (c *ctyunSfs) getAndMergeSfs(ctx context.Context, config *CtyunSfsConfig) error {
-
 	resp, err := c.getSfsDetail(ctx, config)
 	if err != nil {
 		return err
@@ -572,23 +566,44 @@ func (c *ctyunSfs) updateSfsName(ctx context.Context, state *CtyunSfsConfig, pla
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = fmt.Errorf("修改id为%s的弹性文件系统名称失败，接口返回nil。请与研发联系确认问题原因。", state.ID.ValueString())
-		return err
+		return fmt.Errorf("修改id为%s的弹性文件系统名称失败，接口返回nil。请与研发联系确认问题原因。", state.ID.ValueString())
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return err
+		return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 	}
 
 	// 复核sfs name是否修改成功
-	sfsResp, err := c.getSfsDetail(ctx, state)
+	err = c.renameLoop(ctx, *plan)
 	if err != nil {
 		return err
 	}
-	if sfsResp.ReturnObj.SfsName != plan.Name.ValueString() {
-		err = fmt.Errorf("修改id为%s的弹性文件系统名称失败，当前名称为：%s，预期修改的名称为：%s", state.ID.ValueString(), sfsResp.ReturnObj.SfsName, plan.Name.ValueString())
+	return nil
+}
+
+func (c *ctyunSfs) renameLoop(ctx context.Context, plan CtyunSfsConfig) error {
+	var err error
+	retryer, err := business.NewRetryer(time.Second*10, 60)
+	if err != nil {
 		return err
 	}
-	return nil
+	result := retryer.Start(
+		func(currentTime int) bool {
+			var resp *sfs.SfsSfsCreateSfsResponse
+			resp, err = c.getSfsDetail(ctx, &plan)
+			if err != nil {
+				return false
+			}
+			if resp.ReturnObj.SfsName != plan.Name.ValueString() {
+				return true
+			}
+			return false
+		})
+	if err != nil {
+		return err
+	}
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，弹性文件系统名称未修改成功！")
+	}
+	return err
 }
 
 func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig) error {
@@ -607,12 +622,10 @@ func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *C
 			return err
 		}
 	} else if resp == nil {
-		err = fmt.Errorf("扩容id为%s的弹性文件系统失败，接口返回nil。请与研发联系确认问题原因", state.ID.ValueString())
-		return err
+		return fmt.Errorf("扩容id为%s的弹性文件系统失败，接口返回nil。请与研发联系确认问题原因", state.ID.ValueString())
 	} else if resp.StatusCode != common.NormalStatusCode {
 		if !strings.Contains(resp.Error, "Sfs.Order.InProgress") {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	}
 	// 轮询确认是否扩容成功
@@ -671,11 +684,9 @@ func (c *ctyunSfs) setSfsRw(ctx context.Context, state *CtyunSfsConfig, plan *Ct
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = fmt.Errorf("设置id为%s的弹性文件服务为只读实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
-			return err
+			return fmt.Errorf("设置id为%s的弹性文件服务为只读实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	} else {
 		params := &sfs.SfsSfsSetReadWriteSfsRequest{
@@ -686,35 +697,61 @@ func (c *ctyunSfs) setSfsRw(ctx context.Context, state *CtyunSfsConfig, plan *Ct
 		if err != nil {
 			return err
 		} else if resp == nil {
-			err = fmt.Errorf("设置id为%s的弹性文件服务为读写实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
-			return err
+			return fmt.Errorf("设置id为%s的弹性文件服务为读写实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
 		} else if resp.StatusCode != common.NormalStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-			return err
+			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	}
 
 	// 确认是否更新成功
-	rwResp, err := c.getSfsRwDetail(ctx, state)
+	err := c.rwLoop(ctx, *plan)
 	if err != nil {
-		return err
-	}
-	readOnly := rwResp.ReturnObj.List[0].ReadOnly.Value
-	//if readOnly != fmt.Sprintf("%t", plan.ReadOnly.ValueBool()) {
-	if *readOnly != plan.ReadOnly.ValueBool() {
-		err = fmt.Errorf("设置id为%s的弹性文件服务为读写实例失败", state.ID.ValueString())
 		return err
 	}
 	return nil
 }
 
+func (c *ctyunSfs) rwLoop(ctx context.Context, plan CtyunSfsConfig) error {
+	var err error
+	retryer, err := business.NewRetryer(time.Second*10, 60)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			var rwResp *sfs.SfsSfsListReadWriteSfs1Response
+			rwResp, err = c.getSfsRwDetail(ctx, &plan)
+			if err != nil {
+				return false
+			}
+			readOnly := rwResp.ReturnObj.List[0].ReadOnly.Value
+			//if readOnly != fmt.Sprintf("%t", plan.ReadOnly.ValueBool()) {
+			if *readOnly != plan.ReadOnly.ValueBool() {
+				return true
+			}
+			return false
+		})
+	if err != nil {
+		return err
+	}
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，弹性文件系统名称未修改成功！")
+	}
+	return err
+}
+
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
 func (c *ctyunSfs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var cfg CtyunSfsConfig
 	var ID, regionId, projectId string
-	err := terraform_extend.Split(request.ID, &ID, &regionId, &projectId)
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -724,7 +761,6 @@ func (c *ctyunSfs) ImportState(ctx context.Context, request resource.ImportState
 
 	err = c.getAndMergeSfs(ctx, &cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
