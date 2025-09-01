@@ -117,3 +117,5 @@ resource "ctyun_postgresql_instance" "test" {
   backup_storage_type  = "OS"
 }
 
+
+

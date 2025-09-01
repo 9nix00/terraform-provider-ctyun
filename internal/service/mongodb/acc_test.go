@@ -13,6 +13,7 @@ type Dependence struct {
 	vpcID           string
 	subnetID        string
 	securityGroupID string
+	mongodbID       string
 }
 
 var dependence Dependence
@@ -32,6 +33,7 @@ func TestMain(m *testing.M) {
 		vpcID:           outputs["vpc_id"].Value,
 		subnetID:        outputs["subnet_id"].Value,
 		securityGroupID: outputs["security_group_id"].Value,
+		mongodbID:       outputs["mongodb_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

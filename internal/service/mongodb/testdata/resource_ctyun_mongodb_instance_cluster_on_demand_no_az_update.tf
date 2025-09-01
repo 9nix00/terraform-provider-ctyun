@@ -11,7 +11,7 @@ resource "ctyun_mongodb_instance" "%[1]s" {
   storage_type           = "%[11]s"
   storage_space          = %[12]d
   backup_storage_type    = "%[13]s"
-  shard_num              = %[15]d
-  mongos_num             = %[16]d
-  upgrade_node_type      = "%[17]s"
+  shard_num              = %[14]d
+  mongos_num             = %[15]d
+  upgrade_node_type      = "%[16]s"
 }

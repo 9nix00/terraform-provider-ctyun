@@ -9,3 +9,6 @@ output "subnet_id" {
 output "security_group_id" {
   value = local.real_security_group_id
 }
+output "mongodb_id"{
+  value = ctyun_mongodb_instance.mongodb_eip.id
+}

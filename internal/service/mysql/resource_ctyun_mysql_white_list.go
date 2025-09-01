@@ -62,9 +62,6 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			"prod_inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
-				Validators: []validator.String{
-					validator2.UUID(),
-				},
 			},
 			"group_name": schema.StringAttribute{
 				Required:    true,
