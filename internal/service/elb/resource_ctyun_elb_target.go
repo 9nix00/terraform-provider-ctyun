@@ -82,7 +82,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},",
+				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1)},
 			},
@@ -118,7 +118,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			},
 			"protocol_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "协议端口。取值范围：1-65535",
+				Description: "协议端口。取值范围：1-65535，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
@@ -126,7 +126,7 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 			"weight": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "后端实例权重。取值范围：1-256，默认为100",
+				Description: "后端实例权重。取值范围：1-256，默认为100，支持更新",
 				Default:     int32default.StaticInt32(100),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 256),

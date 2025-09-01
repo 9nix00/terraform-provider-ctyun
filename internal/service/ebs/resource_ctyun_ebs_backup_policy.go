@@ -177,7 +177,7 @@ func (c *ctyunEbsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
-				Description: "是否保留每个月第一个备份，在retentionType为num时可设置，默认false",
+				Description: "是否保留每个月第一个备份，在retentionType为num时可设置，默认false，支持更新",
 			},
 			"retention_num": schema.Int64Attribute{
 				Optional:    true,

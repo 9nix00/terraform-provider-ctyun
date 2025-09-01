@@ -81,7 +81,7 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "权限组名称。名称不能重复，长度为2-63字符，只能由数字、字母(区分大小写)、-组成，不能以数字和-开头、且不能以-结尾",
+				Description: "权限组名称。名称不能重复，长度为2-63字符，只能由数字、字母(区分大小写)、-组成，不能以数字和-开头、且不能以-结尾，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 					stringvalidator.RegexMatches(
@@ -97,7 +97,7 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述信息。长度为0-128字符",
+				Description: "描述信息。长度为0-128字符，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
 				},
@@ -105,6 +105,9 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "权限组Fuid",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"sfs_count": schema.Int32Attribute{
 				Computed:    true,

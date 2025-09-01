@@ -124,16 +124,16 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 					Attributes: map[string]schema.Attribute{
 						"volume_type": schema.StringAttribute{
 							Required:    true,
-							Description: "磁盘类型: SATA/SAS/SSD/SATA-KUNPENG/SATA-HAIGUANG/SAS-KUNPENG/SAS-HAIGUANG/SSD-genric",
+							Description: "磁盘类型: SATA/SAS/SSD/SATA-KUNPENG/SATA-HAIGUANG/SAS-KUNPENG/SAS-HAIGUANG/SSD-genric，支持更新",
 						},
 						"volume_size": schema.Int32Attribute{
 							Required:    true,
-							Description: "磁盘大小(GB)",
+							Description: "磁盘大小(GB)，支持更新",
 						},
 						"disk_mode": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "磁盘模式: VBD（虚拟块存储设备）/ISCSI（小型计算机系统接口）。当flag=OS情况下，不可填写。数据盘磁盘模式，默认为VBD",
+							Description: "磁盘模式: VBD（虚拟块存储设备）/ISCSI（小型计算机系统接口）。当flag=OS情况下，不可填写。数据盘磁盘模式，默认为VBD，支持更新",
 							Validators: []validator.String{
 								validator2.ConflictsWithEqualString(
 									path.MatchRoot("flag"),
@@ -143,7 +143,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 						},
 						"flag": schema.StringAttribute{
 							Required:    true,
-							Description: "磁盘类型: OS-系统盘, DATA-数据盘，系统盘限制1块。",
+							Description: "磁盘类型: OS-系统盘, DATA-数据盘，系统盘限制1块。，支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ScalingVolumeFlag...),
 							},
@@ -232,11 +232,11 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
 							Required:    true,
-							Description: "标签键",
+							Description: "标签键，支持更新",
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
-							Description: "标签值",
+							Description: "标签值，支持更新",
 						},
 					},
 				},

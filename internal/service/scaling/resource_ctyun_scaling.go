@@ -175,7 +175,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"min_count": schema.Int32Attribute{
 				Required:    true,
-				Description: "最小云主机数，取值范围：[0,50]。支持修改",
+				Description: "最小云主机数，取值范围：[0,50]。支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(0, 50),
 					validator2.ScalingCountValidate(),
@@ -183,7 +183,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"max_count": schema.Int32Attribute{
 				Required:    true,
-				Description: "最大云主机数，取值范围：[min_count,2147483647]。支持修改",
+				Description: "最大云主机数，取值范围：[min_count,2147483647]。支持更新",
 				Validators: []validator.Int32{
 					validator2.ScalingCountValidate(),
 				},
@@ -211,19 +211,19 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 					Attributes: map[string]schema.Attribute{
 						"port": schema.Int32Attribute{
 							Required:    true,
-							Description: "端口号",
+							Description: "端口号，当status=disable时支持更新",
 						},
 						"lb_id": schema.StringAttribute{
 							Required:    true,
-							Description: "负载均衡ID",
+							Description: "负载均衡ID，当status=disable时支持更新",
 						},
 						"weight": schema.Int32Attribute{
 							Required:    true,
-							Description: "权重",
+							Description: "权重，当status=disable时支持更新",
 						},
 						"host_group_id": schema.StringAttribute{
 							Required:    true,
-							Description: "后端主机组ID",
+							Description: "后端主机组ID，当status=disable时支持更新",
 						},
 					},
 				},
@@ -296,7 +296,7 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
-				Description: "移除时是否销毁，仅当移除云主机时生效（对手动添加的机器做处理），true-ecs移出伸缩组时销毁， false-ecs移出伸缩组时不销毁",
+				Description: "移除时是否销毁，仅当移除云主机时生效（对手动添加的机器做处理），true-ecs移出伸缩组时销毁， false-ecs移出伸缩组时不销毁，支持更新",
 			},
 			"real_count": schema.Int32Attribute{
 				Computed:    true,

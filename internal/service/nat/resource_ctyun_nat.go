@@ -91,7 +91,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"spec": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型",
+				Description: "规格 1~4, 1-表示小型, 2-表示中型, 3-表示大型, 4-表示超大型，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 4),
 				},
@@ -99,7 +99,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 				},
@@ -107,7 +107,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
+				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}，支持更新",
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -156,6 +156,9 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Description: "代金券金额，支持到小数点后两位",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"master_order_id": schema.StringAttribute{
@@ -220,7 +223,7 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
-	
+
 	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
 
 	if err != nil {
