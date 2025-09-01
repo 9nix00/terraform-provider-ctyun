@@ -68,12 +68,12 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"is_encrypt": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否加密盘，默认false。 目前仅少量资源池支持加密。具体可查看产品能力地图：https://www.ctyun.cn/document/10027350/10693922",
+				Description: "是否加密盘，默认false，支持更新。目前仅少量资源池支持加密。具体可查看产品能力地图：https://www.ctyun.cn/document/10027350/10693922",
 				Default:     booldefault.StaticBool(false),
 			},
 			"kms_uuid": schema.StringAttribute{
 				Optional:    true,
-				Description: "如果是加密盘，需要提供kms的uuid",
+				Description: "如果是加密盘，需要提供kms的uuid，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("is_encrypt"),
@@ -115,7 +115,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "文件系统名称；单账户单资源池下，命名需唯一",
+				Description: "文件系统名称；单账户单资源池下，命名需唯一，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
@@ -170,7 +170,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Required:    true,
 				Description: "虚拟私有云ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
@@ -180,7 +180,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Required:    true,
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.SubnetValidate(),

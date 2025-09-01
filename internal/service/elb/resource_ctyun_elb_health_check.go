@@ -67,7 +67,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 				},
@@ -75,7 +75,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
+				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
 					validator2.Desc(),
@@ -94,7 +94,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒",
+				Description: "健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒，支持更新",
 				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(2, 60),
@@ -103,7 +103,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"interval": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒",
+				Description: "负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒，支持更新",
 				Default:     int32default.StaticInt32(5),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 20940),
@@ -112,7 +112,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"max_retry": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "最大重试次数，取值范围：1-10次，默认为2次",
+				Description: "最大重试次数，取值范围：1-10次，默认为2次，支持更新",
 				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10),
@@ -121,7 +121,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"http_method": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "仅当protocol为HTTP时必填且生效,HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}",
+				Description: "仅当protocol为HTTP时必填且生效，HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.HttpMethods...),
 					validator2.AlsoRequiresEqualString(
@@ -138,7 +138,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"http_url_path": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "仅当protocol为HTTP时必填且生效,支持的最大字符长度：80",
+				Description: "仅当protocol为HTTP时必填且生效,支持的最大字符长度：80，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(80),
 					validator2.AlsoRequiresEqualString(
@@ -156,7 +156,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 				Optional:    true,
 				Computed:    true,
 				ElementType: types.StringType,
-				Description: "利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx",
+				Description: "利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx，支持更新",
 				Validators: []validator.Set{
 					validator2.AlsoRequiresEqualSet(
 						path.MatchRoot("protocol"),
@@ -172,7 +172,7 @@ func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest
 			"protocol_port": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "健康检查端口 1 - 65535",
+				Description: "健康检查端口 1 - 65535，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},

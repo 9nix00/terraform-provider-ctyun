@@ -104,7 +104,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"source_subnet_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个",
+				Description: "子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个，支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("source_cidr")),
 				},
@@ -112,7 +112,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"source_cidr": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "自定义网段，与source_subnet_id有且只能填写一个",
+				Description: "自定义网段，与source_subnet_id有且只能填写一个，支持更新",
 				Validators: []validator.String{
 					validator2.Cidr(),
 					stringvalidator.ConflictsWith(path.MatchRoot("source_subnet_id")),
@@ -121,7 +121,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"snat_ips": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个",
+				Description: "弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个，支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(5),
@@ -131,7 +131,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "SNAT描述",
+				Description: "SNAT描述，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},

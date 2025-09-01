@@ -99,7 +99,7 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 			},
 			"rw_permission": schema.StringAttribute{
 				Required:    true,
-				Description: "读写权限，可选值: 'rw' (读写), 'ro' (只读)",
+				Description: "读写权限，可选值: 'rw' (读写), 'ro' (只读)，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf([]string{"rw", "ro"}...),
 				},
@@ -113,7 +113,7 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 			//},
 			"permission_rule_priority": schema.Int32Attribute{
 				Required:    true,
-				Description: "规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复",
+				Description: "规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 400),
 				},
@@ -121,6 +121,9 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "权限组规则唯一标识",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"update_time": schema.StringAttribute{
 				Computed:    true,

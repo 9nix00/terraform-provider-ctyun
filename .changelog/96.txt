@@ -1,8 +1,8 @@
 release-note:new-resource
-ctyun_mysql_white_list
+ctyun_hpfs
 
 release-note:new-data-source
-ctyun_mysql_white_lists
+ctyun_hpfs_instances
 
 release-note:new-data-source
-ctyun_mysql_association_eips
+ctyun_hpfs_clusters

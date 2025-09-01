@@ -182,7 +182,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 						types.StringValue(business.VpceServiceTypeReverse),
 					),
 				},
-				Description: "节点服务规则，当type为interface时必填",
+				Description: "节点服务规则，当type为interface时必填，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"protocol": schema.StringAttribute{

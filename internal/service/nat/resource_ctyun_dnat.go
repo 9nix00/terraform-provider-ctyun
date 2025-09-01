@@ -80,28 +80,28 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"external_id": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性IP的ID，形如eip-xxxxx",
+				Description: "弹性IP的ID，形如eip-xxxxx，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"external_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "弹性IP公网端口，1 - 1024",
+				Description: "弹性IP公网端口，1 - 1024，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1024),
 				},
 			},
 			"internal_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "主机内网端口，1 - 65535",
+				Description: "主机内网端口，1 - 65535，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
-				Description: "协议：tcp/udp",
+				Description: "协议：tcp/udp，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.DNatProtocols...),
 				},
@@ -109,21 +109,21 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述",
+				Description: "描述，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"dnat_type": schema.StringAttribute{
 				Required:    true,
-				Description: "dnat规则类型，支持传递instance或custom",
+				Description: "dnat规则类型，支持传递instance或custom，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("instance", "custom"),
 				},
 			},
 			"server_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM",
+				Description: "服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("dnat_type"),
@@ -138,7 +138,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "云主机或物理机实例ID，当且仅当dnat_type为instance时必填",
+				Description: "云主机或物理机实例ID，当且仅当dnat_type为instance时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("dnat_type"),
@@ -152,7 +152,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"internal_ip": schema.StringAttribute{
 				Optional:    true,
-				Description: "内部IP，当且仅当dnat_type为custom时必填",
+				Description: "内部IP，当且仅当dnat_type为custom时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("dnat_type"),

@@ -238,9 +238,8 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 				},
 			},
 			"trigger_metric_name": schema.StringAttribute{
-				Optional: true,
-				Description: "监控指标名称，取值范围：cpu_util-CPU使用率，mem_util-内存使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率，" +
-					"disk_read_bytes_rate-磁盘读速率，disk_write_bytes_rate-磁盘写速率，disk_read_requests_rate-磁盘读请求速率，disk_write_requests_rate-磁盘写请求速率，当status=disable时，支持更新",
+				Optional:    true,
+				Description: "监控指标名称，取值范围：cpu_util-CPU使用率，mem_util-内存使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率，disk_read_bytes_rate-磁盘读速率，disk_write_bytes_rate-磁盘写速率，disk_read_requests_rate-磁盘读请求速率，disk_write_requests_rate-磁盘写请求速率，当status=disable时，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(
 						"cpu_util",
@@ -384,7 +383,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			"is_execute": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "控制是否需要执行弹性伸缩策略，true表示执行，false表示不执行。默认为false",
+				Description: "控制是否需要执行弹性伸缩策略，true表示执行，false表示不执行。默认为false，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 			"id": schema.Int64Attribute{
@@ -394,7 +393,7 @@ func (c *ctyunScalingPolicy) Schema(ctx context.Context, request resource.Schema
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "告警规则状态：enable：启用。disable：停用",
+				Description: "告警规则状态：enable：启用。disable：停用，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingPolicyStatuses...),
 				},

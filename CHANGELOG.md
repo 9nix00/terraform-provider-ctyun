@@ -38,7 +38,34 @@
 * ctyun_rabbitmq_instance
 * ctyun_postgresql_association_eip
 * ctyun_postgresql_instance
-* ctyun_mysql_white_lists
+* ctyun_ccse_plugin
+* ctyun_mongodb_association_eip
+* ctyun_mongodb_instance
+* ctyun_mysql_white_list
+* ctyun_ccse_node_association
+* ctyun_ecs_backup
+* ctyun_ecs_backup_policy
+* ctyun_ecs_backup_policy_bind_instances
+* ctyun_ecs_backup_policy_bind_repo
+* ctyun_ecs_snapshot
+* ctyun_ecs_snapshot_policy
+* ctyun_ecs_snapshot_policy_association
+* ctyun_hpfs
+* ctyun_sfs
+* ctyun_sfs_permission_group
+* ctyun_sfs_permission_rule
+* ctyun_sfs_permission_group_association
+* ctyun_scaling
+* ctyun_scaling_ecs_protection
+* ctyun_scaling_policy
+* ctyun_scaling_config
+* ctyun_ebs_backup
+* ctyun_ebs_backup_policy
+* ctyun_ebs_backup_policy_bind_disks
+* ctyun_ebs_backup_policy_bind_repo
+* ctyun_ebs_snapshot
+* ctyun_ebs_snapshot_policy
+* ctyun_ebs_snapshot_policy_association
 
 ## New Data Sources
 
@@ -47,8 +74,8 @@
 * ctyun_ebm_device_images
 * ctyun_ebm_device_raids
 * ctyun_ebs_volumes
-* ctyun_eecs_instances
-* ctyun_eecs_affinity_groups
+* ctyun_ecs_instances
+* ctyun_ecs_affinity_groups
 * ctyun_vpcs
 * ctyun_subnets
 * ctyun_security_groups
@@ -86,8 +113,31 @@
 * ctyun_postgresql_instances
 * ctyun_postgresql_security_groups
 * ctyun_postgresql_specs
+* ctyun_zones
+* ctyun_ccse_plugin_market
+* ctyun_mongodb_instances
+* ctyun_mongodb_association_eips
+* ctyun_mongodb_specs
 * ctyun_mysql_white_lists
 * ctyun_mysql_association_eips
+* ctyun_ccse_template_market
+* ctyun_ecs_snapshots
+* ctyun_ecs_snapshot_policies
+* ctyun_ecs_backups
+* ctyun_ecs_backup_policies
+* ctyun_hpfs_instances
+* ctyun_hpfs_clusters
+* ctyun_sfs_permission_rules
+* ctyun_sfs_instances
+* ctyun_scaling_configs
+* ctyun_scaling_policies
+* ctyun_scalings
+* ctyun_scaling_activities
+* ctyun_scaling_ecs_list
+* ctyun_ebs_snapshots
+* ctyun_ebs_snapshot_policies
+* ctyun_ebs_backups
+* ctyun_ebs_backup_policies
 
 ## Enhancements
 
