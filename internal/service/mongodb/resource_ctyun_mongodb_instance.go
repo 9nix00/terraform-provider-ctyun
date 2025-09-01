@@ -129,7 +129,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "虚拟私有云Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.VpcValidate(),
@@ -150,7 +150,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "子网Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.SubnetValidate(),
@@ -160,7 +160,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Required:    true,
 				Description: "安全组Id",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
@@ -998,6 +998,11 @@ func (c *CtyunMongodbInstance) RunningLoop(ctx context.Context, params *mongodb.
 				err = common.InvalidReturnObjError
 				return false
 			}
+			if len(resp.ReturnObj.List) <= 0 {
+				err = common.InvalidReturnObjError
+				return false
+			}
+
 			runningStatus := resp.ReturnObj.List[0].ProdRunningStatus
 			// 若实例状态已经运行正常，跳出轮询
 			if runningStatus == business.MongodbRunningStatusStarted {

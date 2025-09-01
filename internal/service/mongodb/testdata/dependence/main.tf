@@ -72,18 +72,23 @@ locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
-
-
-resource "ctyun_mongodb_instance" "mongodb_eip" {
-  cycle_type             = "on_demand"
-  vpc_id                 = local.real_vpc_id
-  flavor_name            = "s7.large.2"
-  subnet_id              = local.real_subnet_id
-  security_group_id      =  local.real_security_group_id
-  name                   = "mongodb-for-eip"
-  prod_id                = "Single34"
-  storage_type           = "SATA"
-  storage_space          = 100
-  backup_storage_type    = "OS"
+resource "ctyun_eip" "eip_test" {
+  name                = "tf-eip-for-mongodb"
+  bandwidth           = 1
+  cycle_type          = "on_demand"
+  demand_billing_type = "upflowc"
 }
+#
+# resource "ctyun_mongodb_instance" "mongodb_eip" {
+#   cycle_type             = "on_demand"
+#   vpc_id                 = local.real_vpc_id
+#   flavor_name            = "s7.large.2"
+#   subnet_id              = local.real_subnet_id
+#   security_group_id      =  local.real_security_group_id
+#   name                   = "mongodb-for-eip"
+#   prod_id                = "Single34"
+#   storage_type           = "SATA"
+#   storage_space          = 100
+#   backup_storage_type    = "OS"
+# }
 

@@ -6,7 +6,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"testing"
 )
@@ -14,12 +13,14 @@ import (
 func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
-	//dnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
 	//datasourceName := "data.ctyun_mongodb_instances." + dnd
 
 	resourceFile := "resource_ctyun_mongodb_instance_single_on_demand.tf"
 	//datasourceFile := "datasource_ctyun_mongodb_instances.tf"
+	datasourceName := "data.ctyun_mongodb_instances." + dnd
+	datasourceFile := "datasource_ctyun_mongodb_instances.tf"
 	// 创建参数
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
@@ -88,6 +89,15 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+				),
+			},
+			// datasource验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, updatedFlavorName, subnetID, securityGroupID, updatedName, password, prodId, updatedReadPort,
+					storageType, updatedStorageSpace, backupStorageType, updatedAzInfo) +
+					utils.LoadTestCase(datasourceFile, dnd, ""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(datasourceName, "mongodb_instances.#"),
 				),
 			},
 			{
