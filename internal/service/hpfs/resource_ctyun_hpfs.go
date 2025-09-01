@@ -587,7 +587,7 @@ func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loo
 		func(currentTime int) bool {
 			resp, err2 := c.getHpfsDetail(ctx, config)
 			if err2 != nil {
-				err = err
+				err = err2
 				return false
 			} else if resp == nil {
 				return false

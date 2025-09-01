@@ -578,17 +578,44 @@ func (c *ctyunSfs) updateSfsName(ctx context.Context, state *CtyunSfsConfig, pla
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return err
 	}
-
+	// 轮询确认sfs name是否修改成功
+	err = c.updateSfsNameLoop(ctx, state, plan, 5)
 	// 复核sfs name是否修改成功
-	sfsResp, err := c.getSfsDetail(ctx, state)
 	if err != nil {
 		return err
 	}
-	if sfsResp.ReturnObj.SfsName != plan.Name.ValueString() {
-		err = fmt.Errorf("修改id为%s的弹性文件系统名称失败，当前名称为：%s，预期修改的名称为：%s", state.ID.ValueString(), sfsResp.ReturnObj.SfsName, plan.Name.ValueString())
+	return nil
+}
+
+func (c *ctyunSfs) updateSfsNameLoop(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig, loopCount ...int) error {
+	var err error
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	currentName := ""
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
 		return err
 	}
-	return nil
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 轮询详情接口，确认sfs size是否与plan.sfsSize对应
+			sfsResp, err2 := c.getSfsDetail(ctx, state)
+			if err2 != nil {
+				err = err2
+				return false
+			}
+			currentName = sfsResp.ReturnObj.SfsName
+			if sfsResp.ReturnObj.SfsName == plan.Name.ValueString() {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return fmt.Errorf("轮询已达最大次数，弹性文件系统仍更名成功！当前名称为：%s，预期修改的名称为：%s", currentName, plan.Name.ValueString())
+	}
+	return err
 }
 
 func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig) error {
