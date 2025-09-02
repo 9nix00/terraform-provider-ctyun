@@ -19,6 +19,6 @@ output "eip_id" {
 
 
 
-# output "pgsql_id" {
-#   value = ctyun_postgresql_instance.test.id
-# }
+output "pgsql_id" {
+  value = ctyun_postgresql_instance.test.id
+}

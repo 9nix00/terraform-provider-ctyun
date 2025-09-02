@@ -181,7 +181,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.Cidr(),
+					validator2.Ip(),
 				},
 			},
 			// 实例配置

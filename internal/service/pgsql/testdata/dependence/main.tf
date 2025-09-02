@@ -38,7 +38,7 @@ locals {
 }
 
 resource "ctyun_subnet" "subnet_test" {
-  count       = local.data_subnet_id=="" ? 1 : 0
+  count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-subnet-for-pgsql"
   cidr        = "192.168.1.0/24"
@@ -70,7 +70,7 @@ locals {
 }
 
 resource "ctyun_security_group" "security_group_test1" {
-  count = local.data_security_group_id=="" ? 1 : 0
+  count = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-pgsql"
   description = "terraform测试使用"
@@ -79,7 +79,7 @@ resource "ctyun_security_group" "security_group_test1" {
   }
 }
 resource "ctyun_security_group" "security_group_test2" {
-  count = local.data_security_group_id2=="" ? 1 : 0
+  count = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-pgsql2"
   description = "terraform测试使用2"
@@ -102,20 +102,20 @@ resource "ctyun_eip" "eip_test" {
 
 
 
-# resource "ctyun_postgresql_instance" "test" {
-#   cycle_type            = "on_demand"
-#   prod_id               = "Single1222"
-#   flavor_name           = "s7.large.2"
-#   storage_type          = "SATA"
-#   storage_space         = 100
-#   name                  = "pgsql-test-1"
-#   password              = "Kqjwyk123="
-#   case_sensitive        = true
-#   vpc_id                = local.real_vpc_id
-#   subnet_id             = local.real_subnet_id
-#   security_group_id     = local.real_security_group_id1
-#   backup_storage_type  = "OS"
-# }
+resource "ctyun_postgresql_instance" "test" {
+  cycle_type            = "on_demand"
+  prod_id               = "Single1222"
+  flavor_name           = "s7.large.2"
+  storage_type          = "SATA"
+  storage_space         = 100
+  name                  = "pgsql-test-1"
+  password              = "Kqjwyk123="
+  case_sensitive        = true
+  vpc_id                = local.real_vpc_id
+  subnet_id             = local.real_subnet_id
+  security_group_id     = local.real_security_group_id1
+  backup_storage_type  = "OS"
+}
 
 
 
