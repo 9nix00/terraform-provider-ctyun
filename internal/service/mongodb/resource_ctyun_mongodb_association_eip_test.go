@@ -21,9 +21,10 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 	eipId := dependence.eipID
 	//eipId := "eip-140rfs2and"
 	//eipAddress := "150.223.193.123"
-	//instId := dependence.mongodbID
-	instId := "c1ef217509294dc6a4d6b6ec24a46586"
-	hostIp := "192.168.128.3"
+	instId := dependence.mongodbID
+	hostIp := dependence.hostIP
+	//instId := "c1ef217509294dc6a4d6b6ec24a46586"
+	//hostIp := "192.168.128.3"
 
 	instanceType := "1"
 
