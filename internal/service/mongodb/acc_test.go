@@ -16,6 +16,7 @@ type Dependence struct {
 	mongodbID       string
 	eipID           string
 	hostIP          string
+	azName          string
 }
 
 var dependence Dependence
@@ -38,6 +39,7 @@ func TestMain(m *testing.M) {
 		mongodbID:       outputs["mongodb_id"].Value,
 		eipID:           outputs["eip_id"].Value,
 		hostIP:          outputs["mongodb_host_ip"].Value,
+		azName:          outputs["az_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

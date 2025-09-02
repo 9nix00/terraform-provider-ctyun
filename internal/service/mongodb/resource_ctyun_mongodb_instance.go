@@ -369,8 +369,10 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 	}
 	// 如果ReadPort不为空，需要暂存下来，否则merge操作后会被默认端口覆盖
 	var updatedReadPort int32
+	var needUpatePort bool
 	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
 		updatedReadPort = plan.ReadPort.ValueInt32()
+		needUpatePort = true
 	}
 	// 创建完成后，同步云端信息
 	err = c.getAndMergeMongodbInstance(ctx, &plan)
@@ -378,7 +380,7 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 		return
 	}
 	// 确保实例创建成功后，判断port是否需要指定
-	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
+	if needUpatePort {
 		plan.ReadPort = types.Int32Value(updatedReadPort)
 		err = c.updateReadPort(ctx, &plan, &plan)
 		if err != nil {

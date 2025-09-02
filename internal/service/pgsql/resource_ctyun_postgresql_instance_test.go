@@ -34,13 +34,14 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"master"}]`, azName)
 
 	updatedName := "pgsql-new" + utils.GenerateRandomString()
 	updatedSecurityGroupID := dependence.securityGroupID2
 	updatedProdID := "MasterSlave1222"
 	updatedStorageSpace := 120
-	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
+	updatedAzInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"slave"}]`, azName)
 	updatedBackupStorageSpace := fmt.Sprintf(`backup_storage_space="%d"`, updatedStorageSpace)
 
 	resource.Test(t, resource.TestCase{

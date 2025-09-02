@@ -90,6 +90,10 @@ resource "ctyun_mongodb_instance" "mongodb_eip" {
   storage_type           = "SATA"
   storage_space          = 100
   backup_storage_type    = "OS"
-  password               = "P@ss2wsx_1"
+  password = "xfrbp7R8r4wT7!m"
 }
 
+
+data "ctyun_zones" "az" {
+
+}
