@@ -27,11 +27,12 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"master"}]`, azName)
 	period := fmt.Sprint(`cycle_count=1`)
 
 	updatedProdID := "Master2Slave1222"
-	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":2, "node_type":"master"}]`
+	updatedAzInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":2, "node_type":"master"}]`, azName)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

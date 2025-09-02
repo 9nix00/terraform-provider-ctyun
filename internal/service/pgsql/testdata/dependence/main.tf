@@ -118,4 +118,6 @@ resource "ctyun_postgresql_instance" "test" {
 }
 
 
+data "ctyun_zones" "az" {
 
+}

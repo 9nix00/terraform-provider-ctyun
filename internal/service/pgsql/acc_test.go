@@ -16,6 +16,7 @@ type Dependence struct {
 	securityGroupID2 string
 	eipID            string
 	PgsqlID          string
+	azName           string
 }
 
 var dependence Dependence
@@ -41,6 +42,7 @@ func TestMain(m *testing.M) {
 		//eipAddress: "",
 		PgsqlID: outputs["pgsql_id"].Value,
 		//PgsqlID: "",
+		azName: outputs["az_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

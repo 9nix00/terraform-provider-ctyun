@@ -34,7 +34,8 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 	storageType := "SAS"
 	storageSpace := 120
 	backupStorageType := "SATA"
-	azInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"}, {"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"backup"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"master"}, {"availability_zone_name":"%s","availability_zone_count":1,"node_type":"backup"}]`, azName, azName)
 
 	//更新参数
 	updatedName := "tf-mongodb-single-new-" + utils.GenerateRandomString()
@@ -223,9 +224,8 @@ func TestAccCtyunMongodbInstanceReplicaOs(t *testing.T) {
 	storageType := "SAS"
 	storageSpace := 100
 	backupStorageType := "OS"
-	azInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"master"},
-				{"availability_zone_name":"cn-huadong1-jsnj2A-public-ctcloud","availability_zone_count":1,"node_type":"master"},
-				{"availability_zone_name":"cn-huadong1-jsnj3A-public-ctcloud","availability_zone_count":1,"node_type":"master"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"master"}]`, azName)
 
 	//更新参数
 	updatedName := "tf-mongodb-single-new-" + utils.GenerateRandomString()
@@ -235,11 +235,9 @@ func TestAccCtyunMongodbInstanceReplicaOs(t *testing.T) {
 
 	//updatedStorageType := ""
 	updatedStorageSpace := 110
-	updatedAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":2,"node_type":"ms"}]`
+	updatedAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"ms"}]`, azName)
 
-	updatedSpecAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"ms"},
-				{"availability_zone_name":"cn-huadong1-jsnj2A-public-ctcloud","availability_zone_count":1,"node_type":"ms"},
-				{"availability_zone_name":"cn-huadong1-jsnj3A-public-ctcloud","availability_zone_count":1,"node_type":"ms"}]`
+	updatedSpecAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"ms"}]`, azName)
 	//backupStorageType := "SATA"
 	//updatedBackupStorageSpace := 160
 	//updatedAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"s"}]`
@@ -435,9 +433,10 @@ func TestAccCtyunMongodbInstanceClusterOs(t *testing.T) {
 	storageType := "SAS"
 	storageSpace := 100
 	backupStorageType := "OS"
-	azInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":2,"node_type":"mongos"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"shard"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"config"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"mongos"},
+				{"availability_zone_name":"%s","availability_zone_count":6,"node_type":"shard"},
+				{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"config"}]`, azName, azName, azName)
 	shardNum := 2
 	mongosNum := 2
 
@@ -534,17 +533,18 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpec(t *testing.T) {
 	storageType := "SAS"
 	storageSpace := 100
 	backupStorageType := "OS"
-	azInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":2,"node_type":"mongos"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"shard"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"config"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"mongos"},
+				{"availability_zone_name":"%s","availability_zone_count":6,"node_type":"shard"},
+				{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"config"}]`, azName, azName, azName)
 	shardNum := 2
 	mongosNum := 2
 
 	//更新参数
 	updatedFlavorName := "s7.large.4"
 
-	updatedMongosSpecAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":2,"node_type":"mongos"}]`
-	updatedShardSpecAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"shard"}]`
+	updatedMongosSpecAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"mongos"}]`, azName)
+	updatedShardSpecAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":6,"node_type":"shard"}]`, azName)
 
 	upgradeNodeTypeMongos := "mongos"
 	upgradeNodeTypeShard := "shard"
@@ -649,16 +649,17 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateNodeNum(t *testing.T) {
 	storageType := "SAS"
 	storageSpace := 100
 	backupStorageType := "OS"
-	azInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":2,"node_type":"mongos"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":6,"node_type":"shard"},
-				{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"config"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"mongos"},
+				{"availability_zone_name":"%s","availability_zone_count":6,"node_type":"shard"},
+				{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"config"}]`, azName, azName, azName)
 	shardNum := 2
 	mongosNum := 2
 
 	//更新参数
 
-	updatedMongosNodeAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":1,"node_type":"mongos"}]`
-	updatedShardNodeAzInfo := `[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud","availability_zone_count":3,"node_type":"shard"}]`
+	updatedMongosNodeAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"mongos"}]`, azName)
+	updatedShardNodeAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"shard"}]`, azName)
 	upgradeNodeTypeShard := "shard"
 	upgradeNodeTypeMongos := "mongos"
 

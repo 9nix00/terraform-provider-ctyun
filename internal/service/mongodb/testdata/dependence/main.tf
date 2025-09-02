@@ -92,3 +92,7 @@ resource "ctyun_mongodb_instance" "mongodb_eip" {
   backup_storage_type    = "OS"
 }
 
+
+data "ctyun_zones" "az" {
+
+}
