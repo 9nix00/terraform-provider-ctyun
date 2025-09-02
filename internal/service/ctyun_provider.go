@@ -387,6 +387,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		vpc.NewCtyunVpcRouteTableRules(),
 		vpc.NewCtyunEips(),
 		vpc.NewCtyunBandwidths(),
+		vpc.NewCtyunNetResourcesByTag(),
 		vpce.NewCtyunVpces(),
 		vpce.NewCtyunVpceServices(),
 		vpce.NewCtyunVpceServiceTransitIPs(),
@@ -461,6 +462,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunKeypair(),
 		vpc.NewCtyunBandwidth(),
 		vpc.NewCtyunBandwidthAssociationEip(),
+
 		iam.NewCtyunPolicyAssociationUserGroup(),
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),

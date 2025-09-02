@@ -394,7 +394,7 @@ func (c *ctyunNetworkInterface) Create(ctx context.Context, request resource.Cre
 	}
 
 	// 更新状态
-	c.updatePlanFromResponse(&plan, networkInterface)
+	c.getAndMergePort(&plan, networkInterface)
 
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
@@ -422,7 +422,7 @@ func (c *ctyunNetworkInterface) Read(ctx context.Context, request resource.ReadR
 	}
 
 	// 更新状态
-	c.updatePlanFromResponse(&state, networkInterface)
+	c.getAndMergePort(&state, networkInterface)
 
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
@@ -534,7 +534,7 @@ func (c *ctyunNetworkInterface) Update(ctx context.Context, request resource.Upd
 	}
 
 	// 更新状态
-	c.updatePlanFromResponse(&plan, networkInterface)
+	c.getAndMergePort(&plan, networkInterface)
 
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
@@ -649,8 +649,8 @@ func (c *ctyunNetworkInterface) getNetworkInterface(ctx context.Context, regionI
 	return resp.ReturnObj, nil
 }
 
-// updatePlanFromResponse 根据API响应更新计划状态
-func (c *ctyunNetworkInterface) updatePlanFromResponse(plan *CtyunNetworkInterfaceResource, resp *ctvpc.CtvpcShowPortReturnObjResponse) {
+// getAndMergePort 根据API响应更新计划状态
+func (c *ctyunNetworkInterface) getAndMergePort(plan *CtyunNetworkInterfaceResource, resp *ctvpc.CtvpcShowPortReturnObjResponse) {
 	plan.Id = types.StringPointerValue(resp.NetworkInterfaceID)
 	plan.NetworkInterfaceId = types.StringPointerValue(resp.NetworkInterfaceID)
 	plan.Name = types.StringPointerValue(resp.NetworkInterfaceName)
@@ -690,7 +690,7 @@ func (c *ctyunNetworkInterface) updatePlanFromResponse(plan *CtyunNetworkInterfa
 		plan.SecondaryPrivateIps, _ = types.SetValue(types.StringType, secondaryIps)
 	}
 
-	// ... 在 updatePlanFromResponse 方法中 ...
+	// ... 在 getAndMergePort 方法中 ...
 
 	// 设置IPv6地址
 	if resp.Ipv6Addresses != nil {
