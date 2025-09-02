@@ -90,9 +90,24 @@ resource "ctyun_mongodb_instance" "mongodb_eip" {
   storage_type           = "SATA"
   storage_space          = 100
   backup_storage_type    = "OS"
-  password = "xfrbp7R8r4wT7!m"
+  password = "x!frbp7${local.random_string}"
 }
 
+
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
+}
 
 data "ctyun_zones" "az" {
 

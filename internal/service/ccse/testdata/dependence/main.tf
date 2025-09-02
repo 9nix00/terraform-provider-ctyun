@@ -170,7 +170,7 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id              =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = "P@ss${local.random_string}"
   cycle_type          = "on_demand"
   subnet_id           = local.real_subnet_id
   is_destroy_instance = false
@@ -213,7 +213,7 @@ data "ctyun_ebm_device_images" "dependence" {
 resource "ctyun_ebm" "ebm_test" {
   instance_name = "tf-ebm-for-ccsedisplay"
   hostname = "tf-ebm-for-ccse"
-  password = "P@2s2sxcv"
+  password = "P@2s${local.random_string}"
   cycle_type = "on_demand"
   device_type = local.device_type1
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid

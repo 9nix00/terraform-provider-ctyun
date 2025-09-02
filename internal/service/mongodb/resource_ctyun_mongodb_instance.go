@@ -1331,7 +1331,7 @@ func (c *CtyunMongodbInstance) UpgradeStorageLoop(ctx context.Context, state *Ct
 }
 
 func (c *CtyunMongodbInstance) updateReadPort(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
-	listResp, err2 := c.PreCheckUpdateLoop(ctx, state, 60)
+	_, err2 := c.PreCheckUpdateLoop(ctx, state, 60)
 	if err2 != nil {
 		err = err2
 		return
@@ -1346,7 +1346,6 @@ func (c *CtyunMongodbInstance) updateReadPort(ctx context.Context, state *CtyunM
 	if state.ProjectID.ValueString() != "" {
 		updateHeader.ProjectID = state.ProjectID.ValueStringPointer()
 	}
-	fmt.Println(listResp.ReturnObj.List[0].ProdOrderStatus, listResp.ReturnObj.List[0].ProdRunningStatus)
 	resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbUpdatePortApi.Do(ctx, c.meta.Credential, updateParams, updateHeader)
 	if err2 != nil {
 		err = err2

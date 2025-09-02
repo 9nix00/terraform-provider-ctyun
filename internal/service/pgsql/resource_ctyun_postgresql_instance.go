@@ -170,6 +170,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"appoint_vip": schema.StringAttribute{
 				Optional:    true,
@@ -737,56 +740,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			return
 		}
 	}
-	// 更变安全组
-	if plan.SecurityGroupId.ValueString() != "" && plan.SecurityGroupId.ValueString() != state.SecurityGroupId.ValueString() {
-		// 确保操作时，实例处于running状态，避免更新失败
-		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 30)
-		if err != nil {
-			return
-		}
-
-		deleteSgParams := &pgsql.PgsqlDeleteSecurityGroupRequest{
-			SecurityGroupId: state.SecurityGroupId.ValueString(),
-			InstanceId:      state.SecurityGroupId.ValueString(),
-		}
-		deleteSgHeader := &pgsql.PgsqlDeleteSecurityGroupRequestHeader{}
-		updateSecurityGroupParams := &pgsql.PgsqlUpdateSecurityGroupRequest{
-			SecurityGroupId:    state.SecurityGroupId.ValueString(),
-			InstanceId:         state.ID.ValueString(),
-			NewSecurityGroupId: plan.SecurityGroupId.ValueString(),
-		}
-		updatedSecurityGroupHeaders := &pgsql.PgsqlUpdateSecurityGroupRequestHeader{}
-		if !state.ProjectID.IsNull() {
-			updatedSecurityGroupHeaders.ProjectID = state.ProjectID.ValueStringPointer()
-			deleteSgHeader.ProjectID = state.ProjectID.ValueStringPointer()
-		}
-
-		// 先替换
-		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlUpdateSecurityGroupApi.Do(ctx, c.meta.Credential, updateSecurityGroupParams, updatedSecurityGroupHeaders)
-		if err2 != nil {
-			return err2
-		} else if resp.StatusCode != 200 {
-			err = fmt.Errorf("API return error. Message: %s", resp.Message)
-			return
-		}
-		// 再解绑原securityGroup
-		// 先解绑原来的安全组
-		deleteResp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDeleteSecurityGroupApi.Do(ctx, c.meta.Credential, deleteSgParams, deleteSgHeader)
-		if err2 != nil {
-			return err
-		} else if deleteResp.StatusCode != 200 {
-			err = fmt.Errorf("API return error. Message: %s", deleteResp.Message)
-			return
-		}
-	}
-	// 轮询确认姓名和安全组修改成功
-	err = c.InfoLoop(ctx, state, plan, 60)
-	if err != nil {
-		return
-	}
-
 	// 扩容云数据库实例
-
 	// 磁盘扩容
 	err = c.upgradeStorage(ctx, state, plan)
 	if err != nil {
@@ -994,63 +948,6 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {
 		return errors.New("轮询已达最大次数，资源仍未启动成功！")
-	}
-	return
-}
-
-func (c *CtyunPostgresqlInstance) InfoLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-	retryer, err := business.NewRetryer(time.Second*30, count)
-	if err != nil {
-		return
-	}
-	result := retryer.Start(
-		func(currentTime int) bool {
-			detailParams := &pgsql.PgsqlDetailRequest{
-				ProdInstId: state.ID.ValueString(),
-			}
-			detailHeaders := &pgsql.PgsqlDetailRequestHeader{
-				RegionID: state.RegionID.ValueString(),
-			}
-			if state.ProjectID.ValueString() != "" {
-				detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
-			}
-			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
-			if err2 != nil {
-				err = err2
-				return false
-			} else if resp.StatusCode != 800 {
-				err = fmt.Errorf("API return error. Message: %s", resp.Message)
-				return false
-			} else if resp.ReturnObj == nil {
-				err = common.InvalidReturnObjError
-				return false
-			}
-			// 更新成功，跳出轮询的条件：
-			// 1) plan name不为空，且plan name = state name
-			// 2) plan security group id 不为空， 且plan security_group_id = state security_group_id
-			flagName := false
-			flagSecurityGroup := false
-			if plan.Name.ValueString() != "" {
-				if plan.Name.ValueString() == resp.ReturnObj.ProdInstName {
-					flagName = true
-				}
-			}
-			if plan.SecurityGroupId.ValueString() != "" {
-				if plan.SecurityGroupId.ValueString() == resp.ReturnObj.SecurityGroupId {
-					flagSecurityGroup = true
-				}
-			}
-			if flagName && flagSecurityGroup {
-				return false
-			}
-			return true
-		})
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，资源仍未更新成功！")
 	}
 	return
 }

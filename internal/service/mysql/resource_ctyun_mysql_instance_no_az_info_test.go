@@ -20,7 +20,7 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name1 := "tf-mysql-" + utils.GenerateRandomString()
-	password := "kqjwyk111*"
+	password := "Kyk111*" + utils.GenerateRandomString()
 	updateProdID := "Master2Slave57"
 	MsProdID := "MasterSlave57"
 
@@ -87,7 +87,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
-	password := "kqjwyk111*"
+	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
 	updateProdID := "Master2Slave57"
 
@@ -168,7 +168,7 @@ func TestAccCtyunMysqlNoAzInfoInstance2(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 
 	name2 := "tf-mysql-" + utils.GenerateRandomString()
-	password := "kqjwyk111*"
+	password := "Kyk111*" + utils.GenerateRandomString()
 	updateProdID := "Master2Slave57"
 
 	storageType := "SATA"
