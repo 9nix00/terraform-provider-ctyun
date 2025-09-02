@@ -428,7 +428,7 @@ func TestAccCtyunMongodbInstanceClusterOs(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster34"
 	readPort := 12345
 	storageType := "SAS"
@@ -528,7 +528,7 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpec(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster34"
 	readPort := 12345
 	storageType := "SAS"
@@ -644,7 +644,7 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateNodeNum(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster34"
 	readPort := 12345
 	storageType := "SAS"
@@ -761,7 +761,7 @@ func TestAccCtyunMongodbInstanceClusterNoAz(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster40"
 	readPort := 12345
 	storageType := "SAS"
@@ -859,7 +859,7 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateMongosSpec(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster40"
 	readPort := 12345
 	storageType := "SAS"
@@ -956,7 +956,7 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateShardSpec(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster40"
 	readPort := 12345
 	storageType := "SAS"
@@ -1053,7 +1053,7 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateNode(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	prodId := "Cluster40"
 	readPort := 12345
 	storageType := "SAS"

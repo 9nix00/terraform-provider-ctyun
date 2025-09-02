@@ -170,6 +170,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"appoint_vip": schema.StringAttribute{
 				Optional:    true,

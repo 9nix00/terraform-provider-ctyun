@@ -1331,7 +1331,7 @@ func (c *CtyunMongodbInstance) UpgradeStorageLoop(ctx context.Context, state *Ct
 }
 
 func (c *CtyunMongodbInstance) updateReadPort(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
-	listResp, err2 := c.PreCheckUpdateLoop(ctx, state, 60)
+	_, err2 := c.PreCheckUpdateLoop(ctx, state, 60)
 	if err2 != nil {
 		err = err2
 		return

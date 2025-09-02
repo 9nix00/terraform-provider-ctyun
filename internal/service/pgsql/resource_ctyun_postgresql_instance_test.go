@@ -182,7 +182,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 	backupStorageType := `backup_storage_type = "SATA"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
@@ -277,7 +277,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	backupStorageType := `backup_storage_type="SSD"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kyk123="+utils.GenerateRandomString()"
+	password := "Kyk123="+utils.GenerateRandomString()
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
