@@ -1,9 +1,4 @@
 
-provider "ctyun" {
-  env = "prod"
-}
-
-
 # 从云主机系统盘创建私有镜像
 resource "ctyun_image_from_ecs" "%[1]s" {
   # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）

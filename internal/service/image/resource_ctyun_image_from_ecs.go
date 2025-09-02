@@ -582,20 +582,20 @@ func (c *ctyunImageFromEcs) updateImage(ctx context.Context, plan, state CtyunIm
 		ImageID:  state.Id.ValueString(),
 		RegionID: state.RegionId.ValueString(),
 	}
-	if !plan.Description.Equal(state.Description) {
+	if !plan.Description.IsNull() {
 		params.Description = plan.Description.ValueString()
 	}
 
-	if !plan.ImageName.Equal(state.ImageName) {
+	if !plan.ImageName.IsNull() {
 		params.ImageName = plan.ImageName.ValueString()
 	}
 
 	// 仅在系统盘镜像类型下更新内存限制
 	if plan.ImageType.ValueString() == "system_disk" {
-		if !plan.MinimumRAM.Equal(state.MinimumRAM) {
+		if !plan.MinimumRAM.IsNull() {
 			params.MaximumRAM = int32(plan.MaximumRAM.ValueInt64())
 		}
-		if !plan.MinimumRAM.Equal(state.MinimumRAM) {
+		if !plan.MinimumRAM.IsNull() {
 			params.MinimumRAM = int32(plan.MinimumRAM.ValueInt64())
 		}
 	}
