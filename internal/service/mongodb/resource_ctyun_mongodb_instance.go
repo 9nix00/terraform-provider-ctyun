@@ -369,17 +369,19 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 	}
 	// 如果ReadPort不为空，需要暂存下来，否则merge操作后会被默认端口覆盖
 	var updatedReadPort int32
+	var needUpatePort bool
 	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
 		updatedReadPort = plan.ReadPort.ValueInt32()
+		needUpatePort = true
 	}
 	// 创建完成后，同步云端信息
 	err = c.getAndMergeMongodbInstance(ctx, &plan)
 	if err != nil {
 		return
 	}
-	plan.ReadPort = types.Int32Value(updatedReadPort)
 	// 确保实例创建成功后，判断port是否需要指定
-	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
+	if needUpatePort {
+		plan.ReadPort = types.Int32Value(updatedReadPort)
 		err = c.updateReadPort(ctx, &plan, &plan)
 		if err != nil {
 			return
@@ -1358,49 +1360,6 @@ func (c *CtyunMongodbInstance) updateReadPort(ctx context.Context, state *CtyunM
 	return
 }
 
-//func (c *CtyunMongodbInstance) processNodeInfoList(ctx context.Context, nodeInfoList *[]mongodb.MongodbNodeInfoListRequest, config *CtyunMongodbInstanceConfig) (err error) {
-//	// 1.判断开通产品为单机版， 副本集和集群版
-//	prodType := business.MongodbProdTypeDict[config.ProdID.ValueString()]
-//	if prodType == business.MongodbProdTypeSingle {
-//		var singleNodeInfo mongodb.MongodbNodeInfoListRequest
-//		singleNodeInfo.NodeType = "s"
-//		singleNodeInfo.InstSpec = config.HostType.ValueString()[0:1]
-//		singleNodeInfo.StorageType = config.SingleStorageType.ValueString()
-//		singleNodeInfo.StorageSpace = config.SingleStorageSpace.ValueInt32()
-//		singleNodeInfo.ProdPerformanceSpec = config.SingleProdPerformanceSpec.ValueString()
-//		singleNodeInfo.Disks = 1
-//		// 若az信息不为空，则处理用户填写的az信息
-//		if !config.SingleAzInfo.IsNull() && !config.SingleAzInfo.IsUnknown() {
-//			var azZoneInfoList []AvailabilityZoneModel
-//			var singleAzInfoList []mongodb.AvailabilityZoneInfoRequest
-//			diags := config.SingleAzInfo.ElementsAs(ctx, &azZoneInfoList, true)
-//			if diags.HasError() {
-//				err = errors.New(diags[0].Detail())
-//				return
-//			}
-//			for _, azInfo := range azZoneInfoList {
-//				var singleAzInfo mongodb.AvailabilityZoneInfoRequest
-//				singleAzInfo.AvailabilityZoneName = azInfo.AvailabilityZoneName.ValueString()
-//				singleAzInfo.NodeType = azInfo.NodeType.ValueString()
-//				singleAzInfo.AvailabilityZoneCount = azInfo.AvailabilityZoneCount.ValueInt32()
-//				singleAzInfoList = append(singleAzInfoList, singleAzInfo)
-//			}
-//			singleNodeInfo.AvailabilityZoneInfo = singleAzInfoList
-//		} else {
-//			// 若用户az信息未填写，自动分配az信息
-//			singleAzInfoList, err2 := c.generateAzInfo(ctx, config, "master")
-//			if err2 != nil {
-//				return
-//			}
-//			singleNodeInfo.AvailabilityZoneInfo = singleAzInfoList
-//		}
-//	} else if prodType == business.MongodbProdTypeReplica {
-//
-//	} else if prodType == business.MongodbProdTypeCluster {
-//
-//	}
-//}
-
 func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *CtyunMongodbInstanceConfig, prodType string, nodeType string) (AzInfoList []mongodb.AvailabilityZoneInfoRequest, err error) {
 	// 获取az列表
 	azList, err := c.getRegionAzInfoList(ctx, config)
@@ -1801,70 +1760,8 @@ func (c *CtyunMongodbInstance) upgradeStorage(ctx context.Context, state *CtyunM
 			return
 		}
 	}
-	// 若plan阶段存储空间与state阶段不一致，触发更新
-	//flag, err := c.isBackupDiskUpgrade(ctx, state, plan)
-	//if !plan.BackupStorageSpace.IsNull() && !plan.BackupStorageSpace.IsUnknown() && !plan.BackupStorageSpace.Equal(state.BackupStorageSpace) {
-	//	// 若backupStorageType = os直接返回
-	//	if plan.BackupStorageType.ValueString() == business.BackupStorageTypeOS {
-	//		return
-	//	}
-	//	// 确定实例处于running状态
-	//	_, err = c.PreCheckUpdateLoop(ctx, state, 60)
-	//	nodeType := "backup"
-	//	updateParams := &mongodb.MongodbUpgradeRequest{
-	//		InstId:     state.ID.ValueString(),
-	//		DiskVolume: plan.BackupStorageSpace.ValueInt32Pointer(),
-	//		NodeType:   &nodeType,
-	//	}
-	//	if strings.Contains(state.ProdID.ValueString(), "Cluster") {
-	//		diskVolume := plan.BackupStorageSpace.ValueInt32() * state.ShardNum.ValueInt32()
-	//		updateParams.DiskVolume = &diskVolume
-	//	}
-	//
-	//	updateHeader := &mongodb.MongodbUpgradeRequestHeader{}
-	//	if state.ProjectID.ValueString() != "" {
-	//		updateHeader.ProjectID = state.ProjectID.ValueStringPointer()
-	//	}
-	//	resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbUpgradeApi.Do(ctx, c.meta.Credential, updateParams, updateHeader)
-	//	if err2 != nil {
-	//		err = err2
-	//		return
-	//	} else if resp == nil {
-	//		err = errors.New("当进行backup磁盘升配操作中，执行结果返回为nil。请确认未升配成功后，再重试。")
-	//		return
-	//	} else if resp.StatusCode != 200 {
-	//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-	//		return
-	//	}
-	//
-	//	var planNodeInfo NodeInfoListModel
-	//	planNodeInfo.NodeType = types.StringValue(nodeType)
-	//	planNodeInfo.StorageSpace = types.Int32Value(plan.BackupStorageSpace.ValueInt32())
-	//
-	//	// 轮询确认是否已扩容完成
-	//	err = c.UpgradeStorageLoop(ctx, state, plan, planNodeInfo, 60)
-	//	if err != nil {
-	//		return
-	//	}
-	//}
 	return
 }
-
-//func (c *CtyunMongodbInstance) isBackupDiskUpgrade(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (flag bool, err error) {
-//
-//	detailResp, err := c.getMongoDetailInfo(ctx, state)
-//	if err != nil {
-//		return
-//	}
-//	if !plan.BackupStorageSpace.IsNull() {
-//		backupStorageSpace := detailResp.Backup.Size[:len(detailResp.Backup.Size)-1]
-//		if fmt.Sprintf("%d", plan.BackupStorageSpace.ValueInt32()) != backupStorageSpace {
-//			flag = true
-//			return
-//		}
-//	}
-//	return
-//}
 
 func (c *CtyunMongodbInstance) getMongoDetailInfo(ctx context.Context, config *CtyunMongodbInstanceConfig) (detail *mongodb.DetailRespReturnObj, err error) {
 	detailParams := &mongodb.MongodbQueryDetailRequest{
@@ -2612,17 +2509,14 @@ type CtyunMongodbInstanceConfig struct {
 	EipID                   types.String `tfsdk:"eip_id"`                    // eip id
 	IsUpgradeBackUp         types.Bool   `tfsdk:"is_upgrade_back_up"`        // DDS模块磁盘扩容时候会使用 是否主磁盘与备磁盘一起扩容
 	HostIp                  types.String `tfsdk:"host_ip"`                   // 主机ip
-	//ProdPerformanceSpec     types.String `tfsdk:"prod_performance_spec"`     // 主机配置
-	StorageType          types.String `tfsdk:"storage_type"`           // 存储类型
-	StorageSpace         types.Int32  `tfsdk:"storage_space"`          // 存储空间
-	AvailabilityZoneInfo types.List   `tfsdk:"availability_zone_info"` // 节点可用区信息
-	ShardNum             types.Int32  `tfsdk:"shard_num"`              // 当实例为集群版，shard数量
-	MongosNum            types.Int32  `tfsdk:"mongos_num"`             // 当实例为集群版，mongos节点数量
-	//InstanceSeries          types.String `tfsdk:"instance_series"`           // 实例规格（实例类型，1=通用型，2=计算增强型，3=内存优化型，4=直通（未用到））
-	//ReplicaNum         types.Int32  `tfsdk:"replica_num"`          // 副本集数量
-	BackupStorageSpace types.Int32  `tfsdk:"backup_storage_space"` // 备用节点磁盘空间，升配时使用
-	BackupStorageType  types.String `tfsdk:"backup_storage_type"`  // 备份节点存储类型
-	UpgradeNodeType    types.String `tfsdk:"upgrade_node_type"`    // 集群版mongodb升配规格时，
+	StorageType             types.String `tfsdk:"storage_type"`              // 存储类型
+	StorageSpace            types.Int32  `tfsdk:"storage_space"`             // 存储空间
+	AvailabilityZoneInfo    types.List   `tfsdk:"availability_zone_info"`    // 节点可用区信息
+	ShardNum                types.Int32  `tfsdk:"shard_num"`                 // 当实例为集群版，shard数量
+	MongosNum               types.Int32  `tfsdk:"mongos_num"`                // 当实例为集群版，mongos节点数量
+	BackupStorageSpace      types.Int32  `tfsdk:"backup_storage_space"`      // 备用节点磁盘空间，升配时使用
+	BackupStorageType       types.String `tfsdk:"backup_storage_type"`       // 备份节点存储类型
+	UpgradeNodeType         types.String `tfsdk:"upgrade_node_type"`         // 集群版mongodb升配规格时，
 
 	prodPerformanceSpec string
 	instanceSeries      string

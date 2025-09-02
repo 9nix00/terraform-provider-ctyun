@@ -476,6 +476,13 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	// 确保主机在退订之前是处于running状态
+	err = c.StartedLoop(ctx, &state)
+	if err != nil {
+		return
+	}
+
 	err = c.refund(ctx, state)
 	if err != nil {
 		return

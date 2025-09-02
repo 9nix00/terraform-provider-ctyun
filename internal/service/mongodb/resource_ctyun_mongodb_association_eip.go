@@ -101,7 +101,7 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"eip": schema.StringAttribute{
+			"eip_address": schema.StringAttribute{
 				Computed:    true,
 				Description: "弹性ip对应的地址",
 			},
@@ -190,7 +190,7 @@ func (c *CtyunMongodbAssociationEip) Delete(ctx context.Context, request resourc
 	}
 	unbindParams := &mongodb.MongodbUnbindEipRequest{
 		EipID:  state.EipID.ValueString(),
-		Eip:    state.Eip.ValueString(),
+		Eip:    state.EipAddress.ValueString(),
 		InstID: state.InstID.ValueString(),
 	}
 	unbindHeader := &mongodb.MongodbUnbindEipRequestHeader{}
@@ -217,11 +217,11 @@ func (c *CtyunMongodbAssociationEip) MongodbBindEip(ctx context.Context, config 
 	if err != nil {
 		return err
 	}
-	config.Eip = types.StringValue(*eip.EipAddress)
+	config.EipAddress = types.StringValue(*eip.EipAddress)
 
 	bindParams := &mongodb.MongodbBindEipRequest{
 		EipID:  config.EipID.ValueString(),
-		Eip:    config.Eip.ValueString(),
+		Eip:    config.EipAddress.ValueString(),
 		InstID: config.InstID.ValueString(),
 		HostIp: config.HostIP.ValueString(),
 	}
@@ -270,7 +270,7 @@ func (c *CtyunMongodbAssociationEip) BindLoop(ctx context.Context, config *Mongo
 			}
 			nodeInfoVos := resp.ReturnObj.NodeInfoVOS
 			for _, vos := range nodeInfoVos {
-				if vos.OuterElasticIpId == config.EipID.ValueString() && vos.ElasticIp == config.Eip.ValueString() {
+				if vos.OuterElasticIpId == config.EipID.ValueString() && vos.ElasticIp == config.EipAddress.ValueString() {
 					return false
 				}
 			}
@@ -346,16 +346,16 @@ func (c *CtyunMongodbAssociationEip) getAndMergeBindEip(ctx context.Context, con
 	}
 	nodeinfoVos := resp.ReturnObj.NodeInfoVOS[0]
 	config.EipID = types.StringValue(nodeinfoVos.OuterElasticIpId)
-	config.Eip = types.StringValue(nodeinfoVos.ElasticIp)
+	config.EipAddress = types.StringValue(nodeinfoVos.ElasticIp)
 	config.HostIP = types.StringValue(resp.ReturnObj.Host)
 	return
 }
 
 type MongodbAssociationEipConfig struct {
-	EipID     types.String `tfsdk:"eip_id"`     // 弹性ip id
-	InstID    types.String `tfsdk:"inst_id"`    // 实例id
-	HostIP    types.String `tfsdk:"host_ip"`    // 主机ip
-	ProjectID types.String `tfsdk:"project_id"` // 项目id
-	RegionID  types.String `tfsdk:"region_id"`  // 资源池id
-	Eip       types.String `tfsdk:"eip"`        // eip地址
+	EipID      types.String `tfsdk:"eip_id"`      // 弹性ip id
+	InstID     types.String `tfsdk:"inst_id"`     // 实例id
+	HostIP     types.String `tfsdk:"host_ip"`     // 主机ip
+	ProjectID  types.String `tfsdk:"project_id"`  // 项目id
+	RegionID   types.String `tfsdk:"region_id"`   // 资源池id
+	EipAddress types.String `tfsdk:"eip_address"` // eip地址
 }

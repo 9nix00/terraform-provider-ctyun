@@ -20,3 +20,7 @@ output "mongodb_host_ip"{
 output "eip_id" {
   value = ctyun_eip.eip_test.id
 }
+
+output "az_name" {
+  value = data.ctyun_zones.az.zones[0]
+}
