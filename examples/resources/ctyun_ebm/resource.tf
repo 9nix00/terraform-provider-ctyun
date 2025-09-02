@@ -88,12 +88,17 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}
+
 # 创建一台带从云硬盘启动，带弹性IP的弹性裸金属
 resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s2sxcv"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type2
@@ -109,7 +114,7 @@ resource "ctyun_ebm" "ebm_test" {
 resource "ctyun_ebm" "ebm_test2" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s2sxcv"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type1
@@ -120,4 +125,19 @@ resource "ctyun_ebm" "ebm_test2" {
   data_volume_raid_uuid = local.data_raid_id
   status = "running"
   subnet_id = ctyun_subnet.subnet_test.id
+}
+
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
 }

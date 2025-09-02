@@ -30,7 +30,7 @@ func TestAccCtyunCcseNodePool(t *testing.T) {
 	initDataDiskSize := 200
 	initCycleType := "on_demand"
 	initExtra := ""
-
+	password := "P@ss" + utils.GenerateRandomString()
 	updatedName := "updated-pool"
 	updateNodeNum := 2
 	updatedVisibilityPostHostScript := "MTIz"
@@ -69,6 +69,7 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					initNodeNum,
+					password,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
@@ -98,6 +99,7 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					updateNodeNum,
+					password,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
@@ -128,6 +130,7 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					updateNodeNum,
+					password,
 				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
@@ -175,6 +178,7 @@ auto_renew = true
 					dependence.flavorName,
 					dependence.clusterID,
 					updateNodeNum,
+					password,
 				) + utils.LoadTestCase(datasourceFile, dnd, dependence.clusterID, resourceName+".name"),
 				Destroy: true,
 			},

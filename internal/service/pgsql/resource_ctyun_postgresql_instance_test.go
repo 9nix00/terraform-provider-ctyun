@@ -27,7 +27,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()
 	caseCensitive := true
 	flavorName := "s7.large.2"
 	updatedFlavorName := "s7.large.4"
@@ -182,7 +182,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 	backupStorageType := `backup_storage_type = "SATA"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
@@ -277,7 +277,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	backupStorageType := `backup_storage_type="SSD"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID

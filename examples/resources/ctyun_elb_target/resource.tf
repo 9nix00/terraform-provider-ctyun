@@ -58,10 +58,15 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
+  password            = var.password
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
 }
 
 resource "ctyun_elb_target" "elb_target_test" {
@@ -69,4 +74,19 @@ resource "ctyun_elb_target" "elb_target_test" {
   instance_type = "VM"
   instance_id = "%[4]s"
   protocol_port = 12345
+}
+
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
 }

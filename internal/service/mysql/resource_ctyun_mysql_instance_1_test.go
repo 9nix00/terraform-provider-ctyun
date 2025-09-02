@@ -19,7 +19,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql" + utils.GenerateRandomString()
-	password := "kqjwyk123."
+	password := "Kyk123." + utils.GenerateRandomString()
 	//period := 1
 	//autoRenewStatus := 0
 

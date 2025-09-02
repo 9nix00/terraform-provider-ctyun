@@ -32,7 +32,7 @@ func TestAccCtyunScalingConfig(t *testing.T) {
 	useFloating := "auto"
 	bandwidth := 1
 	loginMode := "password"
-	password := "Kqjwyk136@"
+	password := "Kyk136@" + utils.GenerateRandomString()
 	monitorService := true
 	azNames := fmt.Sprintf(`["%s", "%s"]`, "cn-huadong1-jsnj1A-public-ctcloud", "cn-huadong1-jsnj2A-public-ctcloud")
 	//azNames := fmt.Sprintf(`["%s"]`, "cn-huadong1-jsnj1A-public-ctcloud")

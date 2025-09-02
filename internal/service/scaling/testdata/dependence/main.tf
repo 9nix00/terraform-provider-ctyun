@@ -129,13 +129,27 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = "P@ss${local.random_string}"
   cycle_type          = "on_demand"
   subnet_id = local.real_subnet_id
   security_group_ids = [local.real_security_group_id]
   is_destroy_instance = true
 }
 
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
+}
 resource "ctyun_ecs" "ecs_test1" {
   instance_name       = "tf-ecs-for-scaling-ecs2"
   display_name        = "tf-ecs-for-scaling-ecs2"
@@ -144,7 +158,7 @@ resource "ctyun_ecs" "ecs_test1" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = "P@ss${local.random_string}"
   cycle_type          = "on_demand"
   subnet_id = local.real_subnet_id
   security_group_ids = [local.real_security_group_id]
@@ -159,7 +173,7 @@ resource "ctyun_ecs" "ecs_test2" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = "P@ss${local.random_string}"
   cycle_type          = "on_demand"
   subnet_id = local.real_subnet_id
   security_group_ids = [local.real_security_group_id]
@@ -174,7 +188,7 @@ resource "ctyun_ecs" "ecs_test3" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = "P@ss${local.random_string}"
   cycle_type          = "on_demand"
   subnet_id = local.real_subnet_id
   security_group_ids = [local.real_security_group_id]
