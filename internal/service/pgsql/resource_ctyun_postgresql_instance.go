@@ -167,9 +167,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
 				},
@@ -478,10 +475,10 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 	}
 
 	// 确保订单已完成状态才能退订
-	//err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
-	//if err != nil {
-	//	return
-	//}
+	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
+	if err != nil {
+		return
+	}
 
 	instance, err := c.detail(ctx, state)
 	if err != nil {
@@ -1065,6 +1062,7 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 	}
 	// 设置一个容忍机制，根据pgsql定制，pgsql开通等操作可能出现报错回滚，此期间会存在查询不到实例情况
 	tolerateCount := 30
+	syncCount := 3
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -1105,9 +1103,10 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 			}
 			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
 			detailRunningStatus := resp.ReturnObj.ProdRunningStatus
-			if detailOrderStatus == orderStatus && detailRunningStatus == orderStatus {
+			if detailOrderStatus == orderStatus && detailRunningStatus == orderStatus && syncCount <= 0 {
 				return false
 			}
+			syncCount--
 			return true
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {

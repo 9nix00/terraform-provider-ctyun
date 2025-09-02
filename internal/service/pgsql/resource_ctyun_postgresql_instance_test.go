@@ -37,7 +37,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
 
 	updatedName := "pgsql-new" + utils.GenerateRandomString()
-	//updatedSecurityGroupID := dependence.securityGroupID2
+	updatedSecurityGroupID := dependence.securityGroupID2
 	updatedProdID := "MasterSlave1222"
 	updatedStorageSpace := 120
 	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-huadong1-jsnj1A-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
@@ -68,13 +68,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--姓名, 安全组，规格扩容
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, azInfo, `backup_storage_space=100`, "", "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, azInfo, `backup_storage_space=100`, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", StorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 				),
@@ -82,13 +82,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--backup磁盘
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", StorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 				),
@@ -96,54 +96,54 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--master磁盘
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 				),
 			},
 			// update验证--主备，关机，开机，重启
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="stop"`, "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="stop"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="start"`, "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="start"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, updatedAzInfo, "", `running_control="restart"`, "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="restart"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
 				),
 			},
 			// datasource验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, updatedAzInfo, "", ``, "", backupStorageType, "") +
+					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", ``, "", backupStorageType, "") +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_id=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
@@ -158,7 +158,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, securityGroupID, updatedAzInfo, "", ``, "", backupStorageType, ""),
+					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", ``, "", backupStorageType, ""),
 				Destroy: true,
 			},
 		},

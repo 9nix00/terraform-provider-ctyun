@@ -28,20 +28,6 @@ func (c *CtyunMongodbSpecs) Schema(ctx context.Context, request datasource.Schem
 	response.Schema = schema.Schema{
 		MarkdownDescription: "",
 		Attributes: map[string]schema.Attribute{
-			//"prod_type": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "产品类型，0=UNKNOWN, 1=RDS, 2=NoSql, 3=TOOL, 4=MemDB",
-			//	Validators: []validator.String{
-			//		stringvalidator.OneOf(business.ProdType...),
-			//	},
-			//},
-			//"prod_code": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "产品编码，取值范围：HBASE/DDS/HBASE/MYSQL/POSTGRESQL/SQLSERVER",
-			//	Validators: []validator.String{
-			//		stringvalidator.OneOf(business.ProdCode...),
-			//	},
-			//},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -277,8 +263,6 @@ func (c *CtyunMongodbSpecs) Read(ctx context.Context, request datasource.ReadReq
 }
 
 type CtyunMongodbSpecsConfig struct {
-	//ProdType     types.String                `tfsdk:"prod_type"`
-	//ProdCode     types.String                `tfsdk:"prod_code"`
 	RegionID     types.String                `tfsdk:"region_id"`
 	InstanceType types.String                `tfsdk:"instance_type"`
 	ProjectID    types.String                `tfsdk:"project_id"`
