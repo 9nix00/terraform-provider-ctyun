@@ -103,7 +103,7 @@ resource "ctyun_postgresql_instance" "test" {
   storage_type          = "SATA"
   storage_space         = 100
   name                  = "pgsql-test-1"
-  password              = "Kqj=${local.random_string}"
+  password              = var.password
   case_sensitive        = true
   vpc_id                = local.real_vpc_id
   subnet_id             = local.real_subnet_id
@@ -111,19 +111,9 @@ resource "ctyun_postgresql_instance" "test" {
   backup_storage_type  = "OS"
 }
 
-locals {
-  # 生成当前时间戳的哈希值
-  hash = sha256(timestamp())
-
-  # 从哈希结果中截取字符（转为小写并移除特殊字符）
-  random_string = substr(
-    replace(
-      lower(local.hash),
-      "/[^a-z0-9]/",
-      ""  # 移除所有非字母数字的字符
-    ),
-    0, 10  # 截取前16个字符
-  )
+variable "password" {
+  type      = string
+  sensitive = true
 }
 
 data "ctyun_zones" "az" {
