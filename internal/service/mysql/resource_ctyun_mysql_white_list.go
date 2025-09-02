@@ -53,7 +53,6 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
@@ -62,6 +61,12 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			"prod_inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"group_name": schema.StringAttribute{
 				Required:    true,
