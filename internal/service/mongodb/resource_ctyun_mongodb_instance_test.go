@@ -11,14 +11,16 @@ import (
 )
 
 func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
-	//dnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
 	//datasourceName := "data.ctyun_mongodb_instances." + dnd
 
 	resourceFile := "resource_ctyun_mongodb_instance_single_on_demand.tf"
 	//datasourceFile := "datasource_ctyun_mongodb_instances.tf"
+	datasourceName := "data.ctyun_mongodb_instances." + dnd
+	datasourceFile := "datasource_ctyun_mongodb_instances.tf"
 	// 创建参数
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
@@ -89,6 +91,15 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 				),
 			},
+			// datasource验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, updatedFlavorName, subnetID, securityGroupID, updatedName, password, prodId, updatedReadPort,
+					storageType, updatedStorageSpace, backupStorageType, updatedAzInfo) +
+					utils.LoadTestCase(datasourceFile, dnd, ""),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(datasourceName, "mongodb_instances.#"),
+				),
+			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, updatedFlavorName, subnetID, securityGroupID, updatedName, password, prodId, updatedReadPort,
 					storageType, updatedStorageSpace, backupStorageType, updatedAzInfo),
@@ -100,7 +111,7 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 
 // 创建包周期，且无传AZ信息, 备份空间为os
 func TestAccCtyunMongodbInstanceSingleOnDemandNoAz(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -191,7 +202,7 @@ func TestAccCtyunMongodbInstanceSingleOnDemandNoAz(t *testing.T) {
 
 // 验证副本集，传azList，OS存储
 func TestAccCtyunMongodbInstanceReplicaOs(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -308,7 +319,7 @@ func TestAccCtyunMongodbInstanceReplicaOs(t *testing.T) {
 
 // 副本集，不传azList, 存储为SATA
 func TestAccCtyunMongodbInstanceReplicaSATANoAzList(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -402,7 +413,7 @@ func TestAccCtyunMongodbInstanceReplicaSATANoAzList(t *testing.T) {
 
 // 集群版，传azList，更新端口、名称和主存储空间
 func TestAccCtyunMongodbInstanceClusterOs(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -501,7 +512,7 @@ func TestAccCtyunMongodbInstanceClusterOs(t *testing.T) {
 
 // 集群版，传azList，更新mongos 和shard spec
 func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpec(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -616,7 +627,7 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpec(t *testing.T) {
 
 // 集群版，传azList，更新mongos shard 节点数
 func TestAccCtyunMongodbInstanceClusterOsUpdateNodeNum(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -732,7 +743,7 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateNodeNum(t *testing.T) {
 
 // 集群版，不传azList,修改存储，备份空间，端口
 func TestAccCtyunMongodbInstanceClusterNoAz(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -830,7 +841,7 @@ func TestAccCtyunMongodbInstanceClusterNoAz(t *testing.T) {
 
 // mongodb升配mongos spec
 func TestAccCtyunMongodbInstanceClusterNoAzUpdateMongosSpec(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -927,7 +938,7 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateMongosSpec(t *testing.T) {
 
 // mongodb升配 shard spec
 func TestAccCtyunMongodbInstanceClusterNoAzUpdateShardSpec(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd
@@ -1024,7 +1035,7 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateShardSpec(t *testing.T) {
 
 // 集群版，不传azList,升配shard和mongos节点数量
 func TestAccCtyunMongodbInstanceClusterNoAzUpdateNode(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mongodb_instance." + rnd

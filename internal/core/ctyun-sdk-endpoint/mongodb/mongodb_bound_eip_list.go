@@ -17,7 +17,7 @@ func NewMongodbBoundEipListApi(client *ctyunsdk.CtyunClient) *MongodbBoundEipLis
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodGet,
-			UrlPath: " /teledb-dcp/v2/openapi/dcp-order-info/eips",
+			UrlPath: "/teledb-dcp/v2/openapi/dcp-order-info/eips",
 		},
 	}
 }

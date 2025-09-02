@@ -417,6 +417,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		sfs2.NewCtyunSfsInstances(),
 		sfs2.NewCtyunSfsPermissionRules(),
 		ccse.NewCtyunCcseTemplateMarket(),
+		mongodb.NewCtyunMongodbSpecs(),
+		mongodb.NewCtyunMongodbAssociationEips(),
 	)
 }
 
@@ -507,6 +509,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcseNodeAssociation(),
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
+		mongodb.NewCtyunMongodbAssociationEip(),
 	)
 }
 

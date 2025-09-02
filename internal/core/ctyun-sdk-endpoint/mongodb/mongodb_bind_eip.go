@@ -16,7 +16,7 @@ func NewMongodbBindEipApi(client *ctyunsdk.CtyunClient) *MongodbBindEipApi {
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/Mongodb-dcp/v2/openapi/dcp-order-info/eips/bind",
+			UrlPath: "/teledb-dcp/v2/openapi/dcp-order-info/eips/bind",
 		},
 	}
 }
@@ -50,7 +50,7 @@ type MongodbBindEipRequest struct {
 }
 
 type MongodbBindEipRequestHeader struct {
-	ProjectID *string `json:"project_id,omitempty"`
+	ProjectID *string `json:"project-id,omitempty"`
 }
 
 type MongodbBindEipResponse struct {

@@ -64,7 +64,7 @@ resource "ctyun_security_group" "security_group_test" {
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -72,8 +72,13 @@ locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
-
-
+resource "ctyun_eip" "eip_test" {
+  name                = "tf-eip-for-mongodb"
+  bandwidth           = 1
+  cycle_type          = "on_demand"
+  demand_billing_type = "upflowc"
+}
+#
 resource "ctyun_mongodb_instance" "mongodb_eip" {
   cycle_type             = "on_demand"
   vpc_id                 = local.real_vpc_id

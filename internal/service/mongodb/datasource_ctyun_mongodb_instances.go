@@ -46,7 +46,7 @@ func (c *ctyunMongodbInstances) Schema(ctx context.Context, request datasource.S
 				Computed:    true,
 				Description: "当前页，不传默认为1",
 			},
-			"page_size": schema.StringAttribute{
+			"page_size": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "页大小，不传默认为10",
@@ -312,13 +312,13 @@ func (c *ctyunMongodbInstances) Read(ctx context.Context, request datasource.Rea
 		ProdInstName: nil,
 		LabelIds:     nil,
 	}
-	if config.ResDbEngine.ValueString() != "" {
+	if !config.ResDbEngine.IsNull() {
 		params.ResDbEngine = config.ResDbEngine.ValueStringPointer()
 	}
-	if config.ProdInstName.ValueString() != "" {
+	if !config.ProdInstName.IsNull() {
 		params.ProdInstName = config.ProdInstName.ValueStringPointer()
 	}
-	if config.LabelIds.ValueString() != "" {
+	if !config.LabelIds.IsNull() {
 		params.LabelIds = config.LabelIds.ValueStringPointer()
 	}
 
@@ -335,7 +335,7 @@ func (c *ctyunMongodbInstances) Read(ctx context.Context, request datasource.Rea
 	} else if resp.StatusCode != 800 {
 		err = fmt.Errorf("API return error. Message: %s ", *resp.Message)
 		return
-	} else if resp.ReturnObj != nil {
+	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return
 	}
