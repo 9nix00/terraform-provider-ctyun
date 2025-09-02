@@ -88,10 +88,8 @@ data "ctyun_zones" "test" {
 
 
 locals {
-  mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  # az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  mysql_name = "tf-mysql-${local.random_string}"
   az_name    = data.ctyun_zones.test.zones[0]
-   # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
 }
 
 data "ctyun_mysql_specs" "mysql_specs"{

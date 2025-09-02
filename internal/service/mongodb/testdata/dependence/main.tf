@@ -85,14 +85,18 @@ resource "ctyun_mongodb_instance" "mongodb_eip" {
   flavor_name            = "s7.large.2"
   subnet_id              = local.real_subnet_id
   security_group_id      =  local.real_security_group_id
-  name                   = "mongodb-for-eip"
+  name                   = "mongodb-${local.random_string}"
   prod_id                = "Single34"
   storage_type           = "SATA"
   storage_space          = 100
   backup_storage_type    = "OS"
-  password = "x!frbp7${local.random_string}"
+  password = var.password
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}
 
 locals {
   # 生成当前时间戳的哈希值

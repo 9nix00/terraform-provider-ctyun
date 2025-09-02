@@ -86,7 +86,7 @@ resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s${local.random_string}"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type2
@@ -98,18 +98,7 @@ resource "ctyun_ebm" "ebm_test" {
   subnet_id = ctyun_subnet.subnet_test.id
 }
 
-
-locals {
-  # 生成当前时间戳的哈希值
-  hash = sha256(timestamp())
-
-  # 从哈希结果中截取字符（转为小写并移除特殊字符）
-  random_string = substr(
-    replace(
-      lower(local.hash),
-      "/[^a-z0-9]/",
-      ""  # 移除所有非字母数字的字符
-    ),
-    0, 10  # 截取前16个字符
-  )
+variable "password" {
+  type      = string
+  sensitive = true
 }
