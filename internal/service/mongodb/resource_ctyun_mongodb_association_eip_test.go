@@ -54,8 +54,6 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
 				),
 			},
 			{

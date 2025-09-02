@@ -66,6 +66,9 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 			"inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"host_ip": schema.StringAttribute{
 				Required:    true,
@@ -77,7 +80,11 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "项目id",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				Validators: []validator.String{
 					validator2.Project(),
 				},

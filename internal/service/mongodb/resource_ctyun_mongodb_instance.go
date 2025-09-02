@@ -137,15 +137,11 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mongodb_specs查询支持的规格",
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mongodb_specs查询支持的规格。支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
-			//"host_type": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "主机类型 host type: S6 or S7等。可根据data.ctyun_mongodb_specs获取",
-			//	PlanModifiers: []planmodifier.String{
-			//		stringplanmodifier.RequiresReplace(),
-			//	},
-			//},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "子网Id",
@@ -168,7 +164,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）",
+				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符），支持更新。",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(4, 64),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_-]*$"), "实例名称不符合规范"),
@@ -189,7 +185,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）",
+				Description: "产品id，开通时用于确定开通单机/集群版/副本集和版本，支持更新。取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbProdIDs...),
 				},
@@ -213,7 +209,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"read_port": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "读端口,创建阶段不可填写。若需要更新读取端口时可填，取值范围：1~65535",
+				Description: "读端口,支持更新。若需要更新读取端口时可填，取值范围：1~65535",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
@@ -246,25 +242,13 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(true),
-				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容，该参数仅在升配主存储空间时生效，且需要注意is_upgrade_back_up=ture时，待升配的磁盘空间必须大于现磁盘空间（包括备份空间）。取值范围：true-主备同时扩容； false-主备不同时扩容。默认为false",
+				Description: "磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容，支持更新。该参数仅在升配主存储空间时生效，且需要注意is_upgrade_back_up=ture时，待升配的磁盘空间必须大于现磁盘空间（包括备份空间）。取值范围：true-主备同时扩容； false-主备不同时扩容。默认为false",
 			},
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Computed:      true,
 				Description:   "mongodb实例id",
 			},
-			//"instance_series": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "实例规格，取值范围：S(通用型)，C(计算增强型)，M(内存增强型)",
-			//	Validators: []validator.String{
-			//		stringvalidator.OneOf(business.MysqlInstanceSeries...),
-			//	},
-			//},
-			//"prod_performance_spec": schema.StringAttribute{
-			//	Optional:    true,
-			//	Computed:    true,
-			//	Description: "实例规格，例如：4C8G",
-			//},
 			"storage_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -273,19 +257,22 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MongodbStorageType...),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(100),
-				Description: "存储空间(单位:G)，默认为100GB。取值范围：10-6144，backup节点为单个shard的容量乘以shard的个数",
+				Description: "存储空间(单位:G)，默认为100GB，支持更新。取值范围：10-6144，backup节点为单个shard的容量乘以shard的个数",
 				Validators: []validator.Int32{
 					int32validator.Between(10, 6144),
 				},
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "可用区信息",
+				Description: "mongodb实例节点指定可用区字段，选填。若不填写，将按节点个数均匀分布到各个可用区上。若需要填写可参考提供的examples",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
@@ -312,43 +299,28 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					},
 				},
 			},
-			// todo 必须在集群版才可填写
 			"shard_num": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "shard节点数量，mongodb为集群版需填写，默认为2，取值范围：2~32",
+				Description: "shard节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32",
 				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(2, 32),
 				},
 			},
-			// todo 必须在集群版才可填写
 			"mongos_num": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "mongos节点数量，mongodb为集群版需填写，默认为2，取值范围：2~32",
+				Description: "mongos节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32",
 				Default:     int32default.StaticInt32(2),
 				Validators: []validator.Int32{
 					int32validator.Between(2, 32),
 				},
 			},
-			//"replica_num": schema.Int32Attribute{
-			//	Optional:    true,
-			//	Computed:    true,
-			//	Description: "副本集数量，mongodb为副本集需填写，默认为3，取值范围：[3, 5, 7]",
-			//	Default:     int32default.StaticInt32(3),
-			//	Validators: []validator.Int32{
-			//		int32validator.OneOf(3, 5, 7),
-			//	},
-			//},
 			"backup_storage_space": schema.Int32Attribute{
-				//Optional: true,
 				Computed: true,
 				Description: "backup节点磁盘空间，升配时用于区分节点升配。支持更新，集群版mongodb需要注意：初次创建时，备份空间实际大小为backup_storage_space * shard_num。" +
 					"例如：您需要每个shard磁盘空间为100GB，shard_num=3。实际backup_storage_space=300GB",
-				Validators: []validator.Int32{
-					int32validator.Between(10, 6144),
-				},
 			},
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
@@ -357,10 +329,13 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.StorageTypeSATA, business.StorageTypeSAS, business.StorageTypeSSD, business.BackupStorageTypeOS),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"upgrade_node_type": schema.StringAttribute{
 				Optional:    true,
-				Description: "当实例为集群版，若升配mongos、shard节点se规格时可填写。取值范围：shard, mongos",
+				Description: "当实例为集群版，若升配mongos、shard节点个数时可填写，支持更新。取值范围：shard, mongos",
 				Validators: []validator.String{
 					stringvalidator.OneOf("shard", "mongos"),
 				},
@@ -723,18 +698,11 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 		err = errors.New("在变配实例过程中， 实例id为空")
 		return
 	}
-	mongodbType := c.getMongodbType(state)
 	// prod_id（节点） 和 flavor不可同时升级
 	if !plan.FlavorName.Equal(state.FlavorName) && !plan.ProdID.Equal(state.ProdID) {
 		err = fmt.Errorf("mongodb flavor_name（cpu 内存规格） 和 prod id（节点） 不可同时更新")
 		return err
 	}
-	// 单机版mongodb不支持prod_id更新
-	if mongodbType == business.MongodbProdTypeSingle {
-		err = fmt.Errorf("单机版 mongodb不支持prod id 更新操作")
-		return err
-	}
-
 	// 修改实例名称
 	if plan.Name.ValueString() != "" && state.Name.ValueString() != plan.Name.ValueString() {
 		// 修改实例前，确定实例状态为running

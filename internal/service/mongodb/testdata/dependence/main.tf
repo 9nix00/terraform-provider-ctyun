@@ -64,7 +64,7 @@ resource "ctyun_security_group" "security_group_test" {
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
