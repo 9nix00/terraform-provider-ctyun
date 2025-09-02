@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 	backupStorageType := `backup_storage_type="SSD"`

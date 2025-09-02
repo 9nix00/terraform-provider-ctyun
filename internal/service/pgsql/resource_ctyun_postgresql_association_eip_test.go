@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_association_eip." + rnd

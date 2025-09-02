@@ -10,6 +10,7 @@ import (
 )
 
 func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
