@@ -44,9 +44,12 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 		Attributes: map[string]schema.Attribute{
 			"eip_id": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性id",
+				Description: "弹性IP的id",
 				Validators: []validator.String{
 					validator2.EipValidate(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"inst_id": schema.StringAttribute{
@@ -55,12 +58,20 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "项目id",
+				Computed:    true,
+				Description: "企业项目id",
+				Default:     defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				Validators: []validator.String{
 					validator2.Project(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{

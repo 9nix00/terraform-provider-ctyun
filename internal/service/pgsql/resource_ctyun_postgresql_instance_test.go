@@ -6,12 +6,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
+	"time"
 )
 
 func TestAccCtyunPgsqlInstance(t *testing.T) {
-
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
@@ -148,6 +148,12 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.name", updatedName),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -162,10 +168,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 
 // 不传az Info 测试
 func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
@@ -240,7 +243,14 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SATA"),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200")),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200"),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
+				),
 			},
 			// 销毁资源
 			{
@@ -253,10 +263,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 }
 
 func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
@@ -317,7 +324,14 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200")),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200"),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
+				),
 			},
 
 			// 销毁资源
