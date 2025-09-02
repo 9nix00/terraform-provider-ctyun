@@ -44,7 +44,7 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 	//updatedStorageType := ""
 	updatedStorageSpace := 130
 	//backupStorageType := "SATA"
-	updatedAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"s"}]`, azInfo)
+	updatedAzInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":1,"node_type":"s"}]`, azName)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
