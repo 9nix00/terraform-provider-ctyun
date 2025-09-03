@@ -50,9 +50,9 @@ resource "ctyun_eip" "eip_test1" {
 
 ### Required
 
-- `bandwidth` (Number) 原始弹性ip的带宽峰值，1-1024Mbps
+- `bandwidth` (Number) 原始弹性ip的带宽峰值，1-1024Mbps，支持更新
 - `cycle_type` (String) 订购周期类型，与cycle_count配合使用，month：按月，year：按年，on_demand：按需计费类型，当为按需时，demand_billing_type为必填。当此值为month或者year时，cycle_count为必填
-- `name` (String) 弹性ip名称。长度2-32，字母、数字，下划线，连字符，中文/英文字母开头，不能以http:或https:开头
+- `name` (String) 弹性ip名称。长度2-32，字母、数字，下划线，连字符，中文/英文字母开头，不能以http:或https:开头，支持更新
 
 ### Optional
 

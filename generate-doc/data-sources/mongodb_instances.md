@@ -12,7 +12,7 @@ mongodb datasource，获取mongodb实例列表
 
 - `label_ids` (String) 标签id
 - `page_no` (Number) 当前页，不传默认为1
-- `page_size` (String) 页大小，不传默认为10
+- `page_size` (Number) 页大小，不传默认为10
 - `prod_inst_name` (String) 实例名称
 - `project_id` (String) 项目id
 - `region_id` (String) 资源池id

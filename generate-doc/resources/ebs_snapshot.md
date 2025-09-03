@@ -27,7 +27,7 @@ resource "ctyun_ebs" "ebs_test" {
 }
 
 resource "ctyun_ecs_snapshot" "test" {
-  snapshot_name = "tf-test-group"
+  name = "tf-test-group"
   disk_id = ctyun_ebs.ebs_test.id
   retention_policy = "forever"
 }

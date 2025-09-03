@@ -36,7 +36,7 @@ resource "ctyun_vpc_route_table" "route" {
 
 ### Required
 
-- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
+- `name` (String) 名称，支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32，支持更新
 - `vpc_id` (String) 虚拟私有云ID
 
 ### Optional

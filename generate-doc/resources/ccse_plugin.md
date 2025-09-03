@@ -39,7 +39,7 @@ resource "ctyun_ccse_plugin" "example1" {
 ### Required
 
 - `chart_name` (String) 插件名称
-- `chart_version` (String) 插件版本号，可通过ctyun_ccse_plugin_market查询
+- `chart_version` (String) 插件版本号，可通过ctyun_ccse_plugin_market查询，支持更新
 - `cluster_id` (String) 集群ID
 
 ### Optional
