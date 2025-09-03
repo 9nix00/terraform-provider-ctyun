@@ -213,8 +213,6 @@ func (c *CtyunPgsqlAssociationEip) Configure(ctx context.Context, request resour
 	c.eipService = business.NewEipService(c.meta)
 }
 func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (c *CtyunPgsqlAssociationEip) PgsqlBindEip(ctx context.Context, config *CtyunPgsqlAssociationEipConfig) (err error) {

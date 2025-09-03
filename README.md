@@ -1,8 +1,6 @@
+Copyright@2024  China Telecom Cloud Technology Co., Ltd. （天翼云科技有限公司）
+
 # Terraform Provider Ctyun
-
-天翼云Terraform实现
-
-
 
 ## 依赖项
 

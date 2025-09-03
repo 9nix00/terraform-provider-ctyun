@@ -111,7 +111,6 @@
 * ctyun_rabbitmq_specs
 * ctyun_rabbitmq_instances
 * ctyun_postgresql_instances
-* ctyun_postgresql_security_groups
 * ctyun_postgresql_specs
 * ctyun_zones
 * ctyun_ccse_plugin_market
