@@ -1385,24 +1385,49 @@ func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *Ctyun
 	} else if prodType == "replica" {
 		config.replicaNum = business.MongodbReplicaNodeNum[config.ProdID.ValueString()]
 		if azNum >= 3 {
-			nodeDist := business.MongodbReplicaNodeDistMap[config.replicaNum]
+			distNodeNum := [3]int32{
+				(int32(config.replicaNum) + 2) / 3,
+				(int32(config.replicaNum) + 1) / 3,
+				int32(config.replicaNum) / 3,
+			}
+			//nodeDist := business.MongodbReplicaNodeDistMap[config.replicaNum]
 			// 有3个az，节点可以平均分摊在各个az下
-			for _, azItem := range azList {
+			for idx, azItem := range azList {
 				if len(AzInfoList) >= 3 {
 					break
 				}
 				var azInfo mongodb.AvailabilityZoneInfoRequest
 				azInfo.NodeType = nodeType
-				azInfo.AvailabilityZoneCount = nodeDist % 10
-				nodeDist = nodeDist / 10
+				azInfo.AvailabilityZoneCount = distNodeNum[idx]
+				if azInfo.AvailabilityZoneCount <= 0 {
+					continue
+				}
 				azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
+				AzInfoList = append(AzInfoList, azInfo)
+			}
+		} else if azNum == 2 {
+			distNodeNum := []int32{
+				(int32(config.replicaNum) + 1) / 2,
+				int32(config.replicaNum) / 2,
+			}
+			for idx, azItem := range azList {
+				var azInfo mongodb.AvailabilityZoneInfoRequest
+				if len(AzInfoList) >= 3 {
+					break
+				}
+				azInfo.NodeType = nodeType
+				azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
+				azInfo.AvailabilityZoneCount = distNodeNum[idx]
+				if azInfo.AvailabilityZoneCount <= 0 {
+					continue
+				}
 				AzInfoList = append(AzInfoList, azInfo)
 			}
 		} else {
 			var azInfo mongodb.AvailabilityZoneInfoRequest
 			azInfo.NodeType = nodeType
 			azInfo.AvailabilityZoneName = azList[0].AvailabilityZoneName
-			azInfo.AvailabilityZoneCount = business.MongodbReplicaNodeDistMap[config.replicaNum]
+			azInfo.AvailabilityZoneCount = config.replicaNum
 			AzInfoList = append(AzInfoList, azInfo)
 		}
 		return
@@ -1981,7 +2006,6 @@ func (c *CtyunMongodbInstance) getNodeInfo(ctx context.Context, state *CtyunMong
 			*azInfo = append(*azInfo, azItem)
 		}
 	}
-
 	return nil
 }
 
@@ -2063,38 +2087,38 @@ func (c *CtyunMongodbInstance) getNodeDist(ctx context.Context, state *CtyunMong
 	return nodeDist, nil
 }
 
-func (c *CtyunMongodbInstance) isUpgradeClusterSpec(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (bool, error) {
-	// 获取实例详情
-	mongoDetailInfo, err := c.getMongoDetailInfo(ctx, state)
-	if err != nil {
-		return false, err
-	}
-	mongoNodeList := mongoDetailInfo.NodeInfoVOS
-	upgradeNodeType := plan.UpgradeNodeType.ValueString()
-	for _, nodeInfo := range mongoNodeList {
-		role := strings.ToLower(nodeInfo.Role)
-		if strings.Contains(role, upgradeNodeType) {
-			cpu := nodeInfo.CpuCount
-			mem := nodeInfo.Memory
-			memInt, err2 := strconv.ParseInt(mem, 10, 32)
-			if err2 != nil {
-				return false, err2
-			}
-			newCpu, newMemory, err2 := c.getCpuAndMem(plan.prodPerformanceSpec)
-			if err2 != nil {
-				return false, err2
-			}
-			if newCpu < cpu || newMemory < int32(memInt) {
-				return true, fmt.Errorf("暂不支持降配。原配置为：%d核%dG，升配为：%d核%dG。", cpu, memInt, newCpu, newMemory)
-			}
-			if newCpu == cpu && newMemory == int32(memInt) {
-				return false, nil
-			}
-			break
-		}
-	}
-	return true, nil
-}
+//func (c *CtyunMongodbInstance) isUpgradeClusterSpec(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (bool, error) {
+//	// 获取实例详情
+//	mongoDetailInfo, err := c.getMongoDetailInfo(ctx, state)
+//	if err != nil {
+//		return false, err
+//	}
+//	mongoNodeList := mongoDetailInfo.NodeInfoVOS
+//	upgradeNodeType := plan.UpgradeNodeType.ValueString()
+//	for _, nodeInfo := range mongoNodeList {
+//		role := strings.ToLower(nodeInfo.Role)
+//		if strings.Contains(role, upgradeNodeType) {
+//			cpu := nodeInfo.CpuCount
+//			mem := nodeInfo.Memory
+//			memInt, err2 := strconv.ParseInt(mem, 10, 32)
+//			if err2 != nil {
+//				return false, err2
+//			}
+//			newCpu, newMemory, err2 := c.getCpuAndMem(plan.prodPerformanceSpec)
+//			if err2 != nil {
+//				return false, err2
+//			}
+//			if newCpu < cpu || newMemory < int32(memInt) {
+//				return true, fmt.Errorf("暂不支持降配。原配置为：%d核%dG，升配为：%d核%dG。", cpu, memInt, newCpu, newMemory)
+//			}
+//			if newCpu == cpu && newMemory == int32(memInt) {
+//				return false, nil
+//			}
+//			break
+//		}
+//	}
+//	return true, nil
+//}
 
 func (c *CtyunMongodbInstance) string2Num(num string) (int32, error) {
 	convNum, err := strconv.Atoi(num)
