@@ -6,18 +6,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"testing"
 )
 
 // 多az，单安全组->多安全组
 func TestAccCtyunScaling(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
@@ -124,10 +118,6 @@ func TestAccCtyunScaling(t *testing.T) {
 
 // 多az，使用LB，停用弹性伸缩组，更新子网和lb。 校验datasource。创建时不绑定config，更新时添加
 func TestAccCtyunScaling1(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -270,11 +260,6 @@ func TestAccCtyunScaling1(t *testing.T) {
 // 多az，创建时，手动增加云主机；更新时，手动增减云主机
 func TestAccCtyunScalingEcs(t *testing.T) {
 
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	//dnd := utils.GenerateRandomString()
 
@@ -383,11 +368,6 @@ func TestAccCtyunScalingEcs(t *testing.T) {
 
 // 多az，创建时，不添加云主机；更新时，手动增减云主机
 func TestAccCtyunScalingEcs1(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -539,10 +519,6 @@ func TestAccCtyunScalingEcs1(t *testing.T) {
 
 // 不填写expected count
 func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 

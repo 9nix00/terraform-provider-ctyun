@@ -36,21 +36,21 @@ resource "ctyun_elb_health_check" "health_check_test" {
 
 ### Required
 
-- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新
 - `protocol` (String) 健康检查协议。取值范围：TCP、UDP、HTTP
 
 ### Optional
 
-- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
-- `http_expected_codes` (Set of String) 利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx
-- `http_method` (String) 仅当protocol为HTTP时必填且生效,HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}
-- `http_url_path` (String) 仅当protocol为HTTP时必填且生效,支持的最大字符长度：80
-- `interval` (Number) 负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒
-- `max_retry` (Number) 最大重试次数，取值范围：1-10次，默认为2次
+- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新
+- `http_expected_codes` (Set of String) 利用逗号分割，仅当protocol为HTTP时必填且生效,支持http_2xx/http_3xx/http_4xx/http_5xx，一个或者多个的列表, 当 protocol 为 HTTP 时, 不填默认为 http_2xx，支持更新
+- `http_method` (String) 仅当protocol为HTTP时必填且生效，HTTP请求的方法默认GET，{GET/HEAD/POST/PUT/DELETE/TRACE/OPTIONS/CONNECT/PATCH}，支持更新
+- `http_url_path` (String) 仅当protocol为HTTP时必填且生效,支持的最大字符长度：80，支持更新
+- `interval` (Number) 负载均衡进行健康检查的时间间隔，取值范围：1-20940秒，默认为5秒，支持更新
+- `max_retry` (Number) 最大重试次数，取值范围：1-10次，默认为2次，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `protocol_port` (Number) 健康检查端口 1 - 65535
+- `protocol_port` (Number) 健康检查端口 1 - 65535，支持更新
 - `region_id` (String) 区域ID
-- `timeout` (Number) 健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒
+- `timeout` (Number) 健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒，支持更新
 
 ### Read-Only
 

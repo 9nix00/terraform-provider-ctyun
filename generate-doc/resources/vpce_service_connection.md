@@ -61,12 +61,16 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
+  password            = var.password
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}
 
 resource "ctyun_vpce_service" "vpce_service_test" {
   name  = "tf-vpce-server-tmp"
@@ -105,7 +109,7 @@ resource "ctyun_vpce_service_connection" "test" {
 
 - `endpoint_id` (String) 终端节点ID
 - `endpoint_service_id` (String) 终端节点服务ID
-- `status` (String) 连接状态，up表示申请连接，down表示断开连接
+- `status` (String) 连接状态，up表示申请连接，down表示断开连接，支持更新
 
 ### Optional
 

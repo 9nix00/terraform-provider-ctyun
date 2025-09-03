@@ -32,7 +32,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 }
 
 resource "ctyun_ecs_snapshot" "test" {
-  snapshot_name = "tf-test-group"
+  name = "tf-test-group"
   instance_id = ctyun_ecs.jdxutuzpfr.id
 }
 ```

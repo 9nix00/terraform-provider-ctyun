@@ -10,11 +10,6 @@ import (
 
 func TestAccCtyunHpfsClusters(t *testing.T) {
 
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	dnd := utils.GenerateRandomString()
 	datasourceName := "data.ctyun_hpfs_clusters." + dnd
 	datasourceFile := "datasource_ctyun_hpfs_clusters.tf"

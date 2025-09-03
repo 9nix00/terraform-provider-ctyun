@@ -111,9 +111,10 @@ resource "ctyun_mongodb_instance" "mongodb_test" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
+- `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mongodb_specs查询支持的规格。支持更新
+- `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符），支持更新。
 - `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
-- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）
+- `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，支持更新。取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
@@ -121,23 +122,22 @@ resource "ctyun_mongodb_instance" "mongodb_test" {
 ### Optional
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `availability_zone_info` (Attributes List) 可用区信息 (see [below for nested schema](#nestedatt--availability_zone_info))
-- `backup_storage_space` (Number) backup节点磁盘空间，升配时用于区分节点升配。单机版、集群版，
+- `availability_zone_info` (Attributes List) mongodb实例节点指定可用区字段，选填。若不填写，将按节点个数均匀分布到各个可用区上。若需要填写可参考提供的examples (see [below for nested schema](#nestedatt--availability_zone_info))
 - `backup_storage_type` (String) backup节点存储类型，取值范围：SATA, SAS, SSD, OS（对象存储）。若不填写，默认为云硬盘（SSD）
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容。默认true(主备一起扩容)
-- `mongos_num` (Number) mongos节点数量，mongodb为集群版需填写，默认为2，取值范围：2~32
+- `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容，支持更新。该参数仅在升配主存储空间时生效，且需要注意is_upgrade_back_up=ture时，待升配的磁盘空间必须大于现磁盘空间（包括备份空间）。取值范围：true-主备同时扩容； false-主备不同时扩容。默认为false
+- `mongos_num` (Number) mongos节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `read_port` (Number) 读端口,创建阶段不可填写。若需要更新读取端口时可填，取值范围：1~65535
+- `read_port` (Number) 读端口,支持更新。若需要更新读取端口时可填，取值范围：1~65535
 - `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `replica_num` (Number) 副本集数量，mongodb为副本集需填写，默认为3，取值范围：[3, 5, 7]
-- `shard_num` (Number) shard节点数量，mongodb为集群版需填写，默认为2，取值范围：2~32
-- `storage_space` (Number) 存储空间(单位:G)，默认为100GB。取值范围：10-6144，backup节点为单个shard的容量乘以shard的个数
+- `shard_num` (Number) shard节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32
+- `storage_space` (Number) 存储空间(单位:G)，默认为100GB，支持更新。取值范围：10-6144，backup节点为单个shard的容量乘以shard的个数
 - `storage_type` (String) 存储类型，默认为SSD。取值范围：SSD=超高IO, SAS=高IO, SATA=普通IO，SSD-genric=通用型SSD
-- `upgrade_node_type` (String) 当实例为集群版，若升配mongos、shard节点规格时可填写。取值范围：shard, mongos
+- `upgrade_node_type` (String) 当实例为集群版，若升配mongos、shard节点个数时可填写，支持更新。取值范围：shard, mongos
 
 ### Read-Only
 
+- `backup_storage_space` (Number) backup节点磁盘空间，当前不支持指定。默认与存储空间相同
 - `eip_id` (String) eip Id
 - `host_ip` (String) 主机ip
 - `id` (String) mongodb实例id

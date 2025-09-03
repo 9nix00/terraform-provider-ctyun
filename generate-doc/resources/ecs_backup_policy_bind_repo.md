@@ -29,9 +29,13 @@ resource "ctyun_ecs_backup_policy_bind_repo" "test" {
 
 ### Required
 
-- `id` (String) 云主机备份策略id
+- `policy_id` (String) 云主机备份策略id
 - `repository_id` (String) 云主机备份存储库ID
 
 ### Optional
 
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+
+### Read-Only
+
+- `id` (String) ID

@@ -31,8 +31,8 @@ resource "ctyun_ecs_backup" "test" {
 
 ### Required
 
-- `name` (String) 云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格。支持更新
 - `instance_id` (String) 云主机ID
+- `name` (String) 云主机备份名称。满足以下规则：长度为2-63字符，头尾不支持输入空格。支持更新
 - `repository_id` (String) 云主机备份存储库ID
 
 ### Optional

@@ -66,10 +66,15 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
+  password            = var.password
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test.id
   is_destroy_instance = false
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
 }
 
 resource "ctyun_elb_target" "elb_target_test" {
@@ -87,17 +92,17 @@ resource "ctyun_elb_target" "elb_target_test" {
 
 - `instance_id` (String) 云主机或物理机，或弹性容器实例ID
 - `instance_type` (String) 实例类型。取值范围：VM-虚拟云主机、BM-物理机、ECI-弹性容器
-- `protocol_port` (Number) 协议端口。取值范围：1-65535
+- `protocol_port` (Number) 协议端口。取值范围：1-65535，支持更新
 - `target_group_id` (String) 后端服务组Id
 
 ### Optional
 
 - `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `description` (String) 描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},
+- `description` (String) 描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={},，支持更新
 - `instance_ip` (String) 后端实例ip
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
-- `weight` (Number) 后端实例权重。取值范围：1-256，默认为100
+- `weight` (Number) 后端实例权重。取值范围：1-256，默认为100，支持更新
 
 ### Read-Only
 

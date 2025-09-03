@@ -66,9 +66,9 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `edition` (String) 实例类型，SeriesInfo中的seriesCode值，可参考<a href="https://www.ctyun.cn/document/10029420/11030280">产品规格说明</a>
-- `engine_version` (String) Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0
+- `engine_version` (String) Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新
 - `instance_name` (String) 实例名称，大小写字母开头。只能包含大小写字母、数字及分隔符(-)。大小写字母或数字结尾。长度4~40个字符。实例名称不可重复。
-- `password` (String, Sensitive) 实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。
+- `password` (String, Sensitive) 实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。支持更新
 - `security_group_id` (String) 安全组ID
 - `shard_mem_size` (Number) 分片规格，当version取值为BASIC，取值：1、2、4、8、16、32、64，当version取值为PLUS时，取值：8、16、32、64
 - `subnet_id` (String) 子网ID
@@ -83,9 +83,9 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `data_disk_type` (String) 磁盘类型，支持SAS和SSD，默认SAS
 - `host_type` (String) 主机类型，默认S，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型
-- `maintenance_time` (String) 实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00
+- `maintenance_time` (String) 实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `protection_status` (Boolean) 退订保护开关，默认为不保护
+- `protection_status` (Boolean) 退订保护开关，默认为不保护，支持更新
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `secondary_az_name` (String) 备可用区
 - `shard_count` (Number) 分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。

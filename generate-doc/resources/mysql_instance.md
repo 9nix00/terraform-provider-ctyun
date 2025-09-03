@@ -118,11 +118,11 @@ resource "ctyun_mysql_instance" "mysql_test" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格
+- `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格，支持更新
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
-- `prod_id` (String) 产品id，取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。
+- `prod_id` (String) 产品id，支持更新。取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。
 - `security_group_id` (String) 安全组Id
-- `storage_space` (Number) 存储空间(单位:G，范围100,32768)
+- `storage_space` (Number) 存储空间(单位:G，范围100,32768)，支持更新
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
@@ -130,15 +130,15 @@ resource "ctyun_mysql_instance" "mysql_test" {
 ### Optional
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
-- `availability_zone_info` (Attributes List) 可用区信息,需要根据prod_id而定。创建阶段,需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}] (see [below for nested schema](#nestedatt--availability_zone_info))
-- `backup_storage_space` (Number) 备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间
+- `availability_zone_info` (Attributes List) 可用区信息，需要根据prod_id而定。创建阶段，需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}] (see [below for nested schema](#nestedatt--availability_zone_info))
+- `backup_storage_space` (Number) 备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间，支持更新
 - `backup_storage_type` (String) 备份空间磁盘存储类型：SSD=超高IO、SATA=普通IO、SAS=高IO
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `password` (String, Sensitive) 实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。RSA加密存储
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `running_control` (String) 控制是否暂停，启用和重启实例，取值范围：freeze, unfreeze, restart
-- `write_port` (Number) 写数据端口
+- `running_control` (String) 控制是否暂停，启用和重启实例，支持更新，取值范围：freeze, unfreeze, restart
+- `write_port` (Number) 写数据端口，支持更新
 
 ### Read-Only
 

@@ -69,16 +69,16 @@ resource "ctyun_elb_rule" "rule_test" {
 
 ### Required
 
-- `action_type` (String) 默认规则动作类型。取值范围：forward、redirect
-- `conditions` (Attributes List) 匹配规则数据 (see [below for nested schema](#nestedatt--conditions))
+- `action_type` (String) 默认规则动作类型。取值范围：forward、redirect，支持更新
+- `conditions` (Attributes List) 匹配规则数据，支持更新 (see [below for nested schema](#nestedatt--conditions))
 - `listener_id` (String) 监听器listener Id
 
 ### Optional
 
-- `action_redirect_listener_id` (String) 重定向监听器ID，当action_type = redirect时，此字段必填
-- `action_target_groups` (Attributes List) 后端服务组 (see [below for nested schema](#nestedatt--action_target_groups))
+- `action_redirect_listener_id` (String) 重定向监听器ID，当action_type = redirect时，必填，支持更新
+- `action_target_groups` (Attributes List) 后端服务组，支持更新 (see [below for nested schema](#nestedatt--action_target_groups))
 - `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}
+- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
 
@@ -95,13 +95,13 @@ resource "ctyun_elb_rule" "rule_test" {
 
 Required:
 
-- `condition_type` (String) 匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径）
+- `condition_type` (String) 匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径），支持更新
 
 Optional:
 
-- `condition_match_type` (String) 匹配类型。取值范围：ABSOLUTE，PREFIX，REG
-- `condition_server_name` (String) 服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写
-- `condition_url_paths` (String) 匹配路径。当type = url_path填写
+- `condition_match_type` (String) 匹配类型。取值范围：ABSOLUTE，PREFIX，REG，支持更新
+- `condition_server_name` (String) 服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写，支持更新
+- `condition_url_paths` (String) 匹配路径。当type = url_path填写，支持更新
 
 
 <a id="nestedatt--action_target_groups"></a>
@@ -109,8 +109,8 @@ Optional:
 
 Required:
 
-- `target_group_id` (String) 后端服务组ID
+- `target_group_id` (String) 后端服务组ID，支持更新
 
 Optional:
 
-- `weight` (Number) 权重，取值范围：1-256。默认为100
+- `weight` (Number) 权重，取值范围：1-256。默认为100，支持更新

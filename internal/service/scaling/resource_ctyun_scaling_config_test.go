@@ -11,10 +11,6 @@ import (
 )
 
 func TestAccCtyunScalingConfig(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
