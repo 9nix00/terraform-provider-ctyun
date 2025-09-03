@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunSfsPermissionGroupRule(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs_permission_rule." + rnd
@@ -21,11 +20,6 @@ func TestAccCtyunSfsPermissionGroupRule(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	permissionGroupFuid := dependence.sfsPermissionGroupID
-
-	// 验证环境变量是否设置
-	if permissionGroupFuid == "" {
-		t.Skip("Skipping test: CTYUN_PERMISSION_GROUP_FUID not set")
-	}
 
 	// 基础配置参数
 	authAddr := "192.168.0.0/24"
@@ -106,7 +100,6 @@ func TestAccCtyunSfsPermissionGroupRule(t *testing.T) {
 }
 
 func TestAccCtyunSfsPermissionGroupRuleIPv6ToIPv4(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs_permission_rule." + rnd
@@ -117,11 +110,6 @@ func TestAccCtyunSfsPermissionGroupRuleIPv6ToIPv4(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	permissionGroupFuid := dependence.sfsPermissionGroupID
-
-	// 验证环境变量是否设置
-	if permissionGroupFuid == "" {
-		t.Skip("Skipping test: CTYUN_PERMISSION_GROUP_FUID not set")
-	}
 
 	// IPv6格式的初始配置参数
 	ipv6AuthAddr := "2001:db8::/32"

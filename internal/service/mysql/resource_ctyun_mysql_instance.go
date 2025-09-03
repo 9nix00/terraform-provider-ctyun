@@ -71,7 +71,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 		Attributes: map[string]schema.Attribute{
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格",
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
@@ -182,7 +182,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品id，取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。",
+				Description: "产品id，支持更新。取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.MysqlProdIds...),
 				},
@@ -199,7 +199,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"storage_space": schema.Int32Attribute{
 				Required:    true,
-				Description: "存储空间(单位:G，范围100,32768)",
+				Description: "存储空间(单位:G，范围100,32768)，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
@@ -219,7 +219,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间",
+				Description: "备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
@@ -227,7 +227,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "可用区信息,需要根据prod_id而定。创建阶段,需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}]",
+				Description: "可用区信息，需要根据prod_id而定。创建阶段，需要指定master和slave的所在az。例：若一主一备，需要传参：[｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'master'｝,｛'availability_zone_name':'xxxx', 'availability_zone_count':1,node_type:'slave'｝]；在更新阶段，仅需要填写扩容部分的AZ信息。例：将单节点扩容至1主2备，[{'availability_zone_name':'xxxx', 'availability_zone_count':2,node_type:'slave'}]",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
@@ -288,7 +288,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"write_port": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "写数据端口",
+				Description: "写数据端口，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(0, 65535),
 				},
@@ -339,7 +339,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"running_control": schema.StringAttribute{
 				Optional:    true,
-				Description: "控制是否暂停，启用和重启实例，取值范围：freeze, unfreeze, restart",
+				Description: "控制是否暂停，启用和重启实例，支持更新，取值范围：freeze, unfreeze, restart",
 				Validators: []validator.String{
 					stringvalidator.OneOf("freeze", "unfreeze", "restart"),
 				},
@@ -476,6 +476,13 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	// 确保主机在退订之前是处于running状态
+	err = c.StartedLoop(ctx, &state)
+	if err != nil {
+		return
+	}
+
 	err = c.refund(ctx, state)
 	if err != nil {
 		return

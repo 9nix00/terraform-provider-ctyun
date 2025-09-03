@@ -33,6 +33,8 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 	//TODO 获取存储库ID替换
 	repositoryID := "671f67c4-6131-4154-8c1d-7c5b82edd1eb"
 
+	bindDisksResourceName := "ctyun_ebs_backup_policy_bind_disks." + dnd
+	bindRepositoryResourceName := "ctyun_ebs_backup_policy_bind_repo." + dnd
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -85,6 +87,12 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "backup_policies.0.resource_ids", diskId),
 				),
 			},
+			{
+				ResourceName:            bindDisksResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
 			// 6.解绑云硬盘
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName),
@@ -118,6 +126,12 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "backup_policies.0.repository_list.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "backup_policies.0.repository_list.0.repository_id", repositoryID),
 				),
+			},
+			{
+				ResourceName:            bindRepositoryResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
 			},
 			// 10.云硬盘备份策略解绑存储库
 			{

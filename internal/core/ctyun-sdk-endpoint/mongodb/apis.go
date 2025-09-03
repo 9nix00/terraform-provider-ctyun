@@ -3,7 +3,7 @@ package mongodb
 import ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 
 type Apis struct {
-	MongodbDestroyApi             *TeledbDestroyApi
+	MongodbDestroyApi             *MongodbDestroyApi
 	MongodbCreateApi              *MongodbCreateApi
 	MongodbGetListApi             *MongodbGetListApi
 	MongodbQueryDetailApi         *MongodbQueryDetailApi
@@ -28,7 +28,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 	client.RegisterEndpoint(ctyunsdk.EnvironmentDev, EndpointMongodbTest)
 	client.RegisterEndpoint(ctyunsdk.EnvironmentProd, EndPointMongodbProd)
 	return &Apis{
-		MongodbDestroyApi:             NewTeledbDestroyApi(client),
+		MongodbDestroyApi:             NewMongodbDestroyApi(client),
 		MongodbCreateApi:              NewMongodbCreateApi(client),
 		MongodbGetListApi:             NewMongodbGetListApi(client),
 		MongodbQueryDetailApi:         NewMongodbQueryDetailApi(client),

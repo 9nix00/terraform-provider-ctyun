@@ -19,15 +19,13 @@ resource "ctyun_vpc" "vpc_test" {
   enable_ipv6 = true
 }
 
-# resource "ctyun_nat" "nat_test"{
-#   vpc_id = ctyun_vpc.vpc_test.id
-#   spec = 1
-#   name = "tf-nat-for-test"
-#   description = "terraform测试使用"
-#   cycle_type = "on_demand"
-# }
-
-
+resource "ctyun_nat" "nat_test"{
+  vpc_id = ctyun_vpc.vpc_test.id
+  spec = 1
+  name = "tf-nat-for-test"
+  description = "terraform测试使用"
+  cycle_type = "on_demand"
+}
 
 resource "ctyun_subnet" "subnet_test1" {
   vpc_id = ctyun_vpc.vpc_test.id
@@ -43,7 +41,7 @@ resource "ctyun_subnet" "subnet_test1" {
 
 resource "ctyun_subnet" "subnet_test2" {
   vpc_id = ctyun_vpc.vpc_test.id
-  name        = "tf-subnet-for-nat3"
+  name        = "tf-subnet-for-nat2"
   cidr        = "192.168.128.0/24"
   description = "terraform测试使用"
   dns         = [
@@ -77,7 +75,7 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id = ctyun_vpc.vpc_test.id
-  password            = "P@ssW0rd_1"
+  password            = var.password
   cycle_type          = "on_demand"
   subnet_id = ctyun_subnet.subnet_test1.id
   is_destroy_instance = false
@@ -99,4 +97,10 @@ resource "ctyun_private_nat_transit_ip" "ip1"{
 resource "ctyun_private_nat_transit_ip" "ip2"{
   nat_gateway_id = ctyun_private_nat.nat_test.id
   address ="192.168.128.101"
+}
+
+
+variable "password" {
+  type      = string
+  sensitive = true
 }

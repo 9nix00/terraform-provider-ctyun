@@ -40,9 +40,6 @@ func NewCtyunSnatResource() resource.Resource {
 }
 
 func (c *ctyunSnatResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//从输入获取资源ID
-	//使用ID调用API查询远端数据
-	//用查询到的数据赋值State
 	var err error
 	defer func() {
 		if err != nil {
@@ -51,14 +48,13 @@ func (c *ctyunSnatResource) ImportState(ctx context.Context, request resource.Im
 	}()
 
 	var config CtyunSnatConfig
-	var id string
-	err = terraform_extend.Split(request.ID, &id)
+	var id, regionID string
+	err = terraform_extend.Split(request.ID, &id, &regionID)
 	if err != nil {
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
-	config.RegionID = types.StringValue(regionId)
-
+	config.RegionID = types.StringValue(regionID)
+	config.SNatID = types.StringValue(id)
 	err = c.getAndMergeSnat(ctx, &config)
 	if err != nil {
 		return
@@ -102,13 +98,13 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"source_subnet_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个",
+				Description: "子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个，支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("source_cidr")),
 				},
@@ -116,7 +112,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"source_cidr": schema.StringAttribute{
 				Computed:    true,
 				Optional:    true,
-				Description: "自定义网段，与source_subnet_id有且只能填写一个",
+				Description: "自定义网段，与source_subnet_id有且只能填写一个，支持更新",
 				Validators: []validator.String{
 					validator2.Cidr(),
 					stringvalidator.ConflictsWith(path.MatchRoot("source_subnet_id")),
@@ -125,7 +121,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"snat_ips": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个",
+				Description: "弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个，支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.SizeAtMost(5),
@@ -135,7 +131,7 @@ func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "SNAT描述",
+				Description: "SNAT描述，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
@@ -200,7 +196,7 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 		return
 	}
 	plan.SNatID = loopResp.SNatID
-
+	time.Sleep(5 * time.Second)
 	// 添加description
 	err = c.updateDescription(ctx, plan)
 	if err != nil {
@@ -313,20 +309,10 @@ func (c *ctyunSnatResource) Delete(ctx context.Context, request resource.DeleteR
 		return
 	}
 
-	// todo 轮询查询
-
 	err = c.DeleteLoop(ctx, state)
 	if err != nil {
 		return
 	}
-
-	//err = c.getAndMergeSnat(ctx, &state)
-	//if err == nil {
-	//	return
-	//}
-	//if state.SNatID.ValueString() != "" {
-	//	return
-	//}
 }
 
 func (c *ctyunSnatResource) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
@@ -455,28 +441,6 @@ func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig
 	return
 }
 
-func (c *ctyunSnatResource) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state *CtyunSnatConfig, response *resource.ReadResponse) bool {
-	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowSnatApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowSnatRequest{
-		RegionID: state.RegionID.ValueString(),
-		SNatID:   state.SNatID.ValueString(),
-	})
-	if err != nil {
-		response.State.RemoveResource(ctx)
-		return false
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		response.State.RemoveResource(ctx)
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return false
-	} else if resp.ReturnObj == nil {
-		response.State.RemoveResource(ctx)
-		err = common.InvalidReturnObjError
-		return false
-	}
-
-	response.State.Set(ctx, state)
-	return true
-}
-
 func (c *ctyunSnatResource) updateSnatInfo(ctx context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) (err error) {
 	if plan.SourceSubnetID.Equal(state.SourceSubnetID) &&
 		plan.SourceCIDR.Equal(state.SourceCIDR) &&
@@ -524,14 +488,7 @@ func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state Ctyu
 	}
 
 	// 先筛选出哪些是需要删除的，哪些是需要添加的Eip
-	// plan中有，state中没有的，需要添加
-	var addIpAddressIds []string
-	// plan中没有，但是state中有的，需要删除
-	var deleteIpAddressIds []string
-	// 获取添加eip列表
-	c.difference(planSnatIps, stateSnatIps, &addIpAddressIds)
-	// 获取删除eip列表
-	c.difference(stateSnatIps, stateSnatIps, &deleteIpAddressIds)
+	addIpAddressIds, deleteIpAddressIds := utils.DifferenceStrArray(planSnatIps, stateSnatIps)
 
 	//snat添加eip
 	if len(addIpAddressIds) > 0 {
@@ -688,38 +645,6 @@ func (c *ctyunSnatResource) DeleteLoop(ctx context.Context, state CtyunSnatConfi
 	return respErr
 }
 
-func (c *ctyunSnatResource) checkSNatInfoIsSame(_ context.Context, state CtyunSnatConfig, plan CtyunSnatConfig) bool {
-	if state.SourceSubnetID.ValueString() != plan.SourceSubnetID.ValueString() {
-		return true
-	}
-	if state.SourceCIDR.ValueString() != plan.SourceCIDR.ValueString() {
-		return true
-	}
-	if state.Description.ValueString() != plan.Description.ValueString() {
-		return true
-	}
-	return false
-}
-
-// 求差集，left数组有，但是right数组中没有的集合
-func (c *ctyunSnatResource) difference(left []string, right []string, result *[]string) {
-	for _, lIp := range left {
-		if lIp == "" {
-			continue
-		}
-		flag := false
-		for _, rIp := range right {
-			if lIp == rIp {
-				flag = true
-				break
-			}
-		}
-		if !flag {
-			*result = append(*result, lIp)
-		}
-	}
-}
-
 func (c *ctyunSnatResource) inRange(ranges []int32, num int32) bool {
 	for _, v := range ranges {
 		if v == num {
@@ -727,19 +652,6 @@ func (c *ctyunSnatResource) inRange(ranges []int32, num int32) bool {
 		}
 	}
 	return false
-}
-
-func (c *ctyunSnatResource) stringToList(listString string) (list []string) {
-	startIdx := 0
-	endIdx := len(listString) - 1
-	if listString[startIdx] == '[' {
-		startIdx = 1
-	}
-	if listString[endIdx] == ']' {
-		endIdx = endIdx - 1
-	}
-	list = strings.Split(listString[startIdx:endIdx+1], ",")
-	return list
 }
 
 // 因为create 接口没有description参数，通过创建后，update接口为description赋值

@@ -29,7 +29,7 @@ func (c *ctyunEcsBackups) Metadata(_ context.Context, request datasource.Metadat
 
 type ctyunEcsBackupsModel struct {
 	InstanceBackupID          types.String `tfsdk:"instance_backup_id"`
-	InstanceBackupName        types.String `tfsdk:"instance_backup_name"`
+	InstanceBackupName        types.String `tfsdk:"name"`
 	InstanceBackupStatus      types.String `tfsdk:"instance_backup_status"`
 	InstanceBackupDescription types.String `tfsdk:"instance_backup_description"`
 	InstanceID                types.String `tfsdk:"instance_id"`
@@ -111,7 +111,7 @@ func (c *ctyunEcsBackups) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "云主机备份ID",
 						},
-						"instance_backup_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "云主机备份名称",
 						},

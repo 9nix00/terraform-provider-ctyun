@@ -371,13 +371,13 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ebs.NewCtyunEbsVolumes(),
 		ebs.NewCtyunEbsSnapshots(),
 		ebs.NewCtyunEbsBackups(),
-		ebs.NewCtyunEbsBackupRepos(),
+		//ebs.NewCtyunEbsBackupRepos(),
 		ebs.NewCtyunEbsBackupPolicies(),
 		ebs.NewCtyunEbsSnapshotPolicies(),
 		ecs.NewCtyunEcsInstances(),
 		ecs.NewCtyunEcsAffinityGroups(),
 		ecs.NewCtyunEcsSnapshots(),
-		ecs.NewCtyunEcsBackupRepos(),
+		//ecs.NewCtyunEcsBackupRepos(),
 		ecs.NewCtyunEcsBackups(),
 		ecs.NewCtyunEcsBackupPolicies(),
 		vpc.NewCtyunVpcs(),
@@ -430,6 +430,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseTemplateMarket(),
 		ports.NewCtyunNetworkInterfaces(),
 		nat.NewCtyunPrivateNatCidrs(),
+		mongodb.NewCtyunMongodbSpecs(),
+		mongodb.NewCtyunMongodbAssociationEips(),
 	)
 }
 
@@ -450,7 +452,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ebs.NewCtyunEbsAssociation(),
 		ebs.NewCtyunEbsSnapshot(),
 		ebs.NewCtyunEbsBackup(),
-		ebs.NewCtyunEbsBackupRepo(),
+		//ebs.NewCtyunEbsBackupRepo(),
 		ebs.NewCtyunEbsBackupPolicy(),
 		ebs.NewCtyunEcsBackupPolicyBindDisks(),
 		ebs.NewCtyunEbsBackupPolicyBindRepo(),
@@ -518,7 +520,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		sfs2.NewCtyunSfsPermissionGroup(),
 		sfs2.NewCtyunSfsPermissionGroupAssociation(),
 		sfs2.NewCtyunSfsPermissionGroupRule(),
-		ecs.NewCtyunEcsBackupRepo(),
+		//ecs.NewCtyunEcsBackupRepo(),
 		ecs.NewCtyunEcsBackup(),
 		ecs.NewCtyunEcsBackupPolicy(),
 		ecs.NewCtyunEcsBackupPolicyBindInstances(),
@@ -526,6 +528,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcseNodeAssociation(),
 		ports.NewCtyunNetworkInterface(),
 		ports.NewCtyunEcsPortAssociation(),
+		//ccse.NewCtyunCcseTemplateInstance(),
+		scaling2.NewCtyunScalingEcsProtection(),
+		mongodb.NewCtyunMongodbAssociationEip(),
 	)
 }
 

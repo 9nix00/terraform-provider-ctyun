@@ -6,15 +6,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 	backupStorageType := `backup_storage_type="SSD"`
@@ -25,17 +21,18 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
-	password := "Kqjwyk123="
+	password := "Kyk123=" + utils.GenerateRandomString()
 	caseCensitive := true
 	flavorName := "s7.large.2"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"master"}]`, azName)
 	period := fmt.Sprint(`cycle_count=1`)
 
 	updatedProdID := "Master2Slave1222"
-	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":2, "node_type":"master"}]`
+	updatedAzInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":2, "node_type":"master"}]`, azName)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

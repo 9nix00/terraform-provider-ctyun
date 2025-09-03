@@ -13,6 +13,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -21,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -82,7 +84,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][a-zA-Z0-9_\\-\\x{4e00}-\\x{9fa5}]*$"), "必须以拉丁字母或中文开头，只能包含拉丁字母、中文、数字、下划线和连字符"),
@@ -92,7 +94,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128\t",
+				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
 					validator2.Desc(),
@@ -122,7 +124,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"certificate_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "证书ID。当protocol为HTTPS时,此参数必选",
+				Description: "证书ID。当protocol为HTTPS时，此参数必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("protocol"),
@@ -133,12 +135,12 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"ca_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启双向认证。true（开启），false（不开启）",
+				Description: "是否开启双向认证。true（开启），false（不开启），支持更新",
 			},
 			"client_certificate_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "双向认证的证书ID，当ca_enabled=ture，必填。",
+				Description: "双向认证的证书ID，当ca_enabled=ture，必填。支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("ca_enabled"),
@@ -149,7 +151,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"access_control_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "访问控制ID,如果access_control_type=white或者black，此项必填",
+				Description: "访问控制ID，当access_control_type=white或者black，必填。支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("access_control_type"),
@@ -161,7 +163,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"access_control_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "访问控制类型。取值范围：Close（未启用）、White（白名单）、Black（黑名单）",
+				Description: "访问控制类型。取值范围：Close（未启用）、White（白名单）、Black（黑名单），支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerAccessControlTypes...),
 				},
@@ -169,23 +171,23 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"forwarded_for_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "x forward for功能。false（未开启）、true（开启）",
+				Description: "x-forward-for功能。false（未开启）、true（开启），支持更新",
 			},
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Computed:      true,
-				Description:   "监听器 ID",
+				Description:   "监听器ID",
 			},
 			"default_action_type": schema.StringAttribute{
 				Required:    true,
-				Description: "默认规则动作类型。取值范围：forward、redirect",
+				Description: "默认规则动作类型。取值范围：forward、redirect，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ListenerDefaultActionTypes...),
 				},
 			},
 			"redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "重定向监听器ID，当default_action_type为redirect时，此字段必填",
+				Description: "重定向监听器ID，当default_action_type为redirect时，此字段必填。支持更新",
 				Validators: []validator.String{
 					validator2.ConflictsWithEqualString(
 						path.MatchRoot("default_action_type"),
@@ -225,10 +227,11 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"status": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "监听器状态: DOWN / ACTIVE，可以控制监听器开关。",
+				Description: "监听器状态: DOWN/ACTIVE，可以控制监听器开关。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleStatus...),
 				},
+				Default: stringdefault.StaticString(business.ElbRuleStatusACTIVE),
 			},
 			"created_time": schema.StringAttribute{
 				Computed:    true,
@@ -241,12 +244,12 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"enable_nat_64": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启 nat64，elb需要支持ipv6能力",
+				Description: "是否开启nat64，elb需要支持ipv6能力，支持更新",
 			},
 			"listener_qps": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "qps 大小,仅支持协议为 HTTP / HTTPS 的监听器",
+				Description: "qps 大小，仅支持协议为 HTTP / HTTPS，的监听器，支持更新",
 				Validators: []validator.Int32{
 					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("protocol"),
@@ -258,7 +261,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"establish_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "建立连接超时时间，单位秒，取值范围： 1 - 1800。不支持协议为 UDP / HTTP / HTTPS 的监听器",
+				Description: "建立连接超时时间，单位秒，取值范围：1 - 1800。不支持协议为 UDP / HTTP / HTTPS 的监听器，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 1800),
 					validator2.ConflictsWithEqualInt32(
@@ -272,7 +275,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"idle_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300,不支持协议为 TCP / UDP 的监听器",
+				Description: "链接空闲断开超时时间，单位秒，取值范围：1 - 300,不支持协议为 TCP / UDP 的监听器，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
 					validator2.ConflictsWithEqualInt32(
@@ -285,7 +288,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"response_timeout": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "响应超时，单位秒，取值范围：1 - 300。不支持协议为 TCP / UDP 的监听器",
+				Description: "响应超时，单位秒，取值范围：1 - 300。不支持协议为 TCP / UDP 的监听器，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 300),
 					validator2.ConflictsWithEqualInt32(
@@ -298,7 +301,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			"listener_cps": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "cps 大小,仅支持协议为 TCP / UDP 的监听器。",
+				Description: "cps大小，仅支持协议为 TCP / UDP 的监听器。支持更新",
 				Validators: []validator.Int32{
 					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("protocol"),
@@ -309,12 +312,12 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"target_groups": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "后端服务组，最多只支持添加一个后端服务组。当default_action_type=forward时，target_groups不能为空",
+				Description: "后端服务组，最多只支持添加一个后端服务组。当default_action_type=forward时，target_groups不能为空。支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"target_group_id": schema.StringAttribute{
 							Required:    true,
-							Description: "后端服务组ID",
+							Description: "后端服务组ID，支持更新",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
@@ -323,7 +326,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 							Optional:    true,
 							Computed:    true,
 							Default:     int32default.StaticInt32(100),
-							Description: "后端主机权重，取值范围：1-256。默认为100",
+							Description: "后端主机权重，取值范围：1-256。默认为100，支持更新",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
 							},
@@ -335,6 +338,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 						path.MatchRoot("default_action_type"),
 						types.StringValue(business.ListenerDefaultActionTypeForward),
 					),
+					listvalidator.SizeAtMost(1),
 				},
 			},
 		},
@@ -364,7 +368,7 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-
+	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	err = c.setNat64(ctx, &plan, &plan)
 	if err != nil {
 		return
@@ -394,7 +398,12 @@ func (c CtyunElbListener) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-
+	if plan.Status.ValueString() == business.ElbRuleStatusDOWN {
+		err = c.stopListener(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
 	// 创建后反查创建后的nat信息
 	err = c.getAndMergeListener(ctx, &plan)
 	if err != nil {
@@ -460,14 +469,14 @@ func (c *CtyunElbListener) Update(ctx context.Context, request resource.UpdateRe
 	}
 	//停止监听器,若plan.status=DOWN，并且state.status=ACTIVE则触发停止监听器
 	if plan.Status.ValueString() == business.ElbRuleStatusDOWN && state.Status.ValueString() == business.ElbRuleStatusACTIVE {
-		err = c.stopListener(ctx, &state, &plan)
+		err = c.stopListener(ctx, plan)
 		if err != nil {
 			return
 		}
 	}
 	//启动监听器
 	if plan.Status.ValueString() == business.ElbRuleStatusACTIVE && state.Status.ValueString() == business.ElbRuleStatusDOWN {
-		err = c.startListener(ctx, &state, &plan)
+		err = c.startListener(ctx, state)
 		if err != nil {
 			return
 		}
@@ -807,20 +816,12 @@ func (c *CtyunElbListener) getAndMergeListener(ctx context.Context, plan *CtyunE
 	return
 }
 
-func (c *CtyunElbListener) CheckBeforeCreateElbListener(ctx context.Context, plan CtyunElbListenerConfig) (err error) {
-	return nil
-}
-
 // 启动监听器
-func (c *CtyunElbListener) startListener(ctx context.Context, state *CtyunElbListenerConfig, _ *CtyunElbListenerConfig) (err error) {
-	// 若state状态为active，则无需调用接口
-	if state.Status.ValueString() == business.ElbRuleStatusACTIVE {
-		return
-	}
+func (c *CtyunElbListener) startListener(ctx context.Context, state CtyunElbListenerConfig) (err error) {
 	params := &ctelb.CtelbStartListenerRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    state.RegionID.ValueString(),
-		ListenerID:  state.RegionID.ValueString(),
+		ListenerID:  state.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbStartListenerApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -835,15 +836,11 @@ func (c *CtyunElbListener) startListener(ctx context.Context, state *CtyunElbLis
 	return
 }
 
-func (c *CtyunElbListener) stopListener(ctx context.Context, state *CtyunElbListenerConfig, _ *CtyunElbListenerConfig) (err error) {
-	// 若state状态为DOWN，无须调用接口
-	if state.Status.ValueString() == business.ElbRuleStatusDOWN {
-		return
-	}
+func (c *CtyunElbListener) stopListener(ctx context.Context, state CtyunElbListenerConfig) (err error) {
 	resp, err := c.meta.Apis.SdkCtElbApis.CtelbStopListenerApi.Do(ctx, c.meta.SdkCredential, &ctelb.CtelbStopListenerRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    state.RegionID.ValueString(),
-		ListenerID:  state.RegionID.ValueString(),
+		ListenerID:  state.ID.ValueString(),
 	})
 	if err != nil {
 		return

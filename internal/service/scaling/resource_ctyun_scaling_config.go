@@ -7,12 +7,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -23,6 +23,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 )
 
@@ -50,6 +51,37 @@ func NewCtyunScalingConfig() resource.Resource {
 	return &ctyunScalingConfig{}
 }
 
+// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
+func (c *ctyunScalingConfig) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	var cfg CtyunScalingConfigModel
+	var ID, regionId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	id, err := strconv.ParseInt(ID, 10, 64)
+	if err != nil {
+		return
+	}
+	cfg.ID = types.Int64Value(id)
+	cfg.RegionID = types.StringValue(regionId)
+
+	err = c.getAndMergeScalingConfig(ctx, &cfg)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
 func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "弹性伸缩配置管理，支持配置的创建、修改和删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725/10241446",
@@ -62,13 +94,10 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
-				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "伸缩配置名称,长度为 2～15 个字符，允许使用大小写字母、数字或连字符（-）。不能以点号（.）或连字符（-）开头或结尾，不能连续使用点号（.）或连字符（-），也不能仅使用数字。",
+				Description: "伸缩配置名称,长度为 2～15 个字符，允许使用大小写字母、数字或连字符（-）。不能以点号（.）或连字符（-）开头或结尾，不能连续使用点号（.）或连字符（-），也不能仅使用数字，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 15),
 					validator2.ScalingConfigNameValidate(),
@@ -76,10 +105,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
-				Description: "镜像ID，可以通过data.ctyun_images(datasource)获取",
-				Validators: []validator.String{
-					validator2.UUID(),
-				},
+				Description: "镜像ID，可以通过data.ctyun_images(datasource)获取，支持更新",
 			},
 			//"security_group_id_list": schema.SetAttribute{
 			//	ElementType: types.StringType,
@@ -89,34 +115,25 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			// todo 描述清楚如何获取
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称",
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
-				},
+				Description: "规格名称，形如c7.2xlarge.4，支持更新。",
 			},
 			"volumes": schema.ListNestedAttribute{
 				Required:    true,
-				Description: "磁盘类型和大小列表，最多添加9块硬盘。系统盘仅支持1块。数据盘最多支持8块",
+				Description: "磁盘类型和大小列表，最多添加9块硬盘。系统盘仅支持1块。数据盘最多支持8块，支持更新。",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"volume_type": schema.StringAttribute{
 							Required:    true,
-							Description: "磁盘类型: SATA/SAS/SSD/SATA-KUNPENG/SATA-HAIGUANG/SAS-KUNPENG/SAS-HAIGUANG/SSD-genric",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
+							Description: "磁盘类型: SATA/SAS/SSD/SATA-KUNPENG/SATA-HAIGUANG/SAS-KUNPENG/SAS-HAIGUANG/SSD-genric，支持更新",
 						},
 						"volume_size": schema.Int32Attribute{
 							Required:    true,
-							Description: "磁盘大小(GB)",
-							Validators: []validator.Int32{
-								int32validator.AtLeast(1),
-							},
+							Description: "磁盘大小(GB)，支持更新",
 						},
 						"disk_mode": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "磁盘模式: VBD（虚拟块存储设备）/ISCSI（小型计算机系统接口）。当flag=OS情况下，不可填写。数据盘磁盘模式，默认为VBD",
+							Description: "磁盘模式: VBD（虚拟块存储设备）/ISCSI（小型计算机系统接口）。当flag=OS情况下，不可填写。数据盘磁盘模式，默认为VBD，支持更新",
 							Validators: []validator.String{
 								validator2.ConflictsWithEqualString(
 									path.MatchRoot("flag"),
@@ -126,7 +143,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 						},
 						"flag": schema.StringAttribute{
 							Required:    true,
-							Description: "磁盘类型: OS-系统盘, DATA-数据盘，系统盘限制1块。",
+							Description: "磁盘类型: OS-系统盘, DATA-数据盘，系统盘限制1块。，支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ScalingVolumeFlag...),
 							},
@@ -140,7 +157,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"use_floatings": schema.StringAttribute{
 				Required:    true,
-				Description: "是否使用弹性IP: diable-不使用, auto-自动分配",
+				Description: "是否使用弹性IP: diable-不使用, auto-自动分配。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingUseFloatings...),
 				},
@@ -148,7 +165,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"bandwidth": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "弹性IP带宽(Mbps)，范围1-3000",
+				Description: "弹性IP带宽(Mbps)，范围1-3000，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 3000),
 					validator2.AlsoRequiresEqualInt32(
@@ -163,7 +180,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"login_mode": schema.StringAttribute{
 				Required:    true,
-				Description: "登录方式: password-密码, key_pair-密钥对",
+				Description: "登录方式: password-密码, key_pair-密钥对，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingLoginMode...),
 				},
@@ -179,7 +196,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
-				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator）",
+				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 30),
 					validator2.AlsoRequiresEqualString(
@@ -196,7 +213,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"key_pair_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "密钥对ID，login_mode为key_pair时必填",
+				Description: "密钥对ID，login_mode为key_pair时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("login_mode"),
@@ -210,22 +227,16 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"tags": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "标签集",
+				Description: "标签集，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
 							Required:    true,
-							Description: "标签键",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
+							Description: "标签键，支持更新",
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
-							Description: "标签值",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
+							Description: "标签值，支持更新",
 						},
 					},
 				},
@@ -233,16 +244,12 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"az_names": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
-				Description: "可用区列表，仅多可用区资源池支持",
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
-				},
+				Description: "可用区列表，仅多可用区资源池支持，支持更新",
 			},
 			"monitor_service": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启详细监控",
+				Description: "是否开启详细监控，支持更新",
 				Default:     booldefault.StaticBool(true),
 			},
 			"id": schema.Int64Attribute{

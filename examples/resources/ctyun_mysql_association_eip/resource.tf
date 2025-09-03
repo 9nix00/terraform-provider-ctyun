@@ -47,8 +47,13 @@ resource "ctyun_mysql_instance" "mysql_test" {
   prod_id               = "Master2Slave80"
   storage_type          = "SATA"
   storage_space         = 100
-  password              = "Kqjwyk123."
+  password              = var.password
   flavor_name           = "c7.2xlarge.4"
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
 }
 
 resource "ctyun_eip" "eip_test" {

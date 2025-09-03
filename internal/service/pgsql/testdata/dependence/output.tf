@@ -17,8 +17,10 @@ output "eip_id" {
   value = ctyun_eip.eip_test.id
 }
 
-
-
 output "pgsql_id" {
   value = ctyun_postgresql_instance.test.id
+}
+
+output "az_name" {
+  value = data.ctyun_zones.az.zones[0]
 }

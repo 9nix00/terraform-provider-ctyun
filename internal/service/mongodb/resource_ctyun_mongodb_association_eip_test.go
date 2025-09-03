@@ -6,17 +6,10 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunMongodbAssociationEip(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -25,19 +18,18 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 
 	datasourceName := "data.ctyun_mongodb_association_eips." + dnd
 	datasourceFile := "datasource_ctyun_mysql_association_eips.tf"
-	eipId := dependence.vpcID
+	eipId := dependence.eipID
 	//eipId := "eip-140rfs2and"
-	eipAddress := dependence.vpcID
 	//eipAddress := "150.223.193.123"
-	instId := dependence.vpcID
-	hostId := dependence.vpcID
+	instId := dependence.mongodbID
+	hostIp := dependence.hostIP
+	//instId := "c1ef217509294dc6a4d6b6ec24a46586"
+	//hostIp := "192.168.128.3"
 
-	prodType := "2"
-	prodCode := "DDS"
 	instanceType := "1"
 
-	specDatasourceName := "data.ctyun_mysql_specs." + dnd
-	specDatasourceFile := "datasource_ctyun_mysql_specs.tf"
+	specDatasourceName := "data.ctyun_mongodb_specs." + dnd
+	specDatasourceFile := "datasource_ctyun_mongodb_specs.tf"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -50,32 +42,30 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 绑定IP验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId, hostId),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
-					resource.TestCheckResourceAttr(resourceName, "eip", eipAddress),
 					resource.TestCheckResourceAttr(resourceName, "inst_id", instId),
 				),
 			},
 			//datasource验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId) +
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(specDatasourceFile, dnd, prodType, prodCode, instanceType),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp) +
+					utils.LoadTestCase(specDatasourceFile, dnd, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
+					resource.TestCheckResourceAttrSet(specDatasourceName, "specs.#"),
 				),
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
+				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp),
 				Destroy: true,
 			},
 		},

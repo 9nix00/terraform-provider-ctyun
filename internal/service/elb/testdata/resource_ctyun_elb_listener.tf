@@ -11,5 +11,6 @@ resource "ctyun_elb_listener" "%[1]s"{
   %[11]s
   %[12]s
   %[13]s
+  status = "%[14]s"
 }
 

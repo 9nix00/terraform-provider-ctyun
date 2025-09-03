@@ -1,9 +1,3 @@
-
-# provider "ctyun" {
-#   region_id = "200000003664"
-#   az_name   = "cn-gs-qyi2-1a-public-ctcloud"
-# }
-
 data "ctyun_vpcs" "vpc_test" {
   page_size = 50
 }
@@ -17,7 +11,7 @@ resource "ctyun_vpc" "vpc_test" {
   count       = local.data_vpc_id == "" ? 1 : 0
   name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"
-  description = "terraform测试使用"
+  description = "terraform-paas测试使用"
   enable_ipv6 = true
 }
 
@@ -41,7 +35,7 @@ resource "ctyun_subnet" "subnet_test" {
   count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-subnet-for-paas"
-  cidr        = "192.168.0.0/16"
+  cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
   dns = [
     "8.8.8.8",
@@ -75,7 +69,7 @@ resource "ctyun_security_group" "security_group_test1" {
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 resource "ctyun_security_group" "security_group_test2" {
@@ -109,7 +103,7 @@ resource "ctyun_postgresql_instance" "test" {
   storage_type          = "SATA"
   storage_space         = 100
   name                  = "pgsql-test-1"
-  password              = "Kqjwyk123="
+  password              = var.password
   case_sensitive        = true
   vpc_id                = local.real_vpc_id
   subnet_id             = local.real_subnet_id
@@ -117,3 +111,11 @@ resource "ctyun_postgresql_instance" "test" {
   backup_storage_type  = "OS"
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}
+
+data "ctyun_zones" "az" {
+
+}

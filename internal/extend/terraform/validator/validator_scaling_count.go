@@ -31,17 +31,17 @@ func (v validatorScalingCount) ValidateInt32(ctx context.Context, request valida
 		return
 	}
 	config := request.Config
-	maxCount, err := getStringAttribute(config, path.Root("max_count"))
+	maxCount, err := geInt32Attribute(config, path.Root("max_count"))
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	minCount, err := getStringAttribute(config, path.Root("min_count"))
+	minCount, err := geInt32Attribute(config, path.Root("min_count"))
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	expectedCount, err := getStringAttribute(config, path.Root("expected_count"))
+	expectedCount, err := geInt32Attribute(config, path.Root("expected_count"))
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -61,7 +61,7 @@ func (v validatorScalingCount) ValidateInt32(ctx context.Context, request valida
 	}
 }
 
-func getStringAttribute(config tfsdk.Config, attrPath path.Path) (types.Int32, error) {
+func geInt32Attribute(config tfsdk.Config, attrPath path.Path) (types.Int32, error) {
 	var value types.Int32
 	diags := config.GetAttribute(context.Background(), attrPath, &value)
 	if diags.HasError() {

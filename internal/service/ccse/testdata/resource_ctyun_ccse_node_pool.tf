@@ -7,7 +7,7 @@ resource "ctyun_ccse_node_pool" "%[1]s" {
   instance_type            = "ecs"
   mirror_id                = "3f80d8c0-8eb5-4afa-a506-13ba68b61872"
   mirror_type              = 1
-  password                 = "P@ss2wsx"
+  password                 = "%[14]s"
   max_pod_num              = 110
   item_def_name            = "%[11]s"
   cluster_id               = "%[12]s"

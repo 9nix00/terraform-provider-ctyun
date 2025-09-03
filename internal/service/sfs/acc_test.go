@@ -21,7 +21,7 @@ type Dependence struct {
 var dependence Dependence
 
 func TestMain(m *testing.M) {
-	if skip := os.Getenv("SKIP_MYSQL_TEST"); skip != "" {
+	if skip := os.Getenv("SKIP_SFS_TEST"); skip != "" {
 		return
 	}
 	fmt.Println("开始初始化依赖资源")

@@ -83,7 +83,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}",
+				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·~！@#￥%……&*（） —— -+={}，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 					validator2.Desc(),
@@ -91,12 +91,12 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"conditions": schema.ListNestedAttribute{
 				Required:    true,
-				Description: "匹配规则数据",
+				Description: "匹配规则数据，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"condition_type": schema.StringAttribute{
 							Required:    true,
-							Description: "匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径）",
+							Description: "匹配规则类型。取值范围：server_name（服务名称）、url_path（匹配路径），支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleConditionTypes...),
 							},
@@ -104,7 +104,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_server_name": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写",
+							Description: "服务名称,格式为：xxx.xxx结构，不支持下划线'_'。当type = server_name填写，支持更新",
 							Validators: []validator.String{
 								validator2.AlsoRequiresEqualString(
 									path.MatchRelative().AtParent().AtName("condition_type"),
@@ -119,7 +119,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_url_paths": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "匹配路径。当type = url_path填写",
+							Description: "匹配路径。当type = url_path填写，支持更新",
 							Validators: []validator.String{
 								validator2.AlsoRequiresEqualString(
 									path.MatchRelative().AtParent().AtName("condition_type"),
@@ -134,7 +134,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"condition_match_type": schema.StringAttribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "匹配类型。取值范围：ABSOLUTE，PREFIX，REG",
+							Description: "匹配类型。取值范围：ABSOLUTE，PREFIX，REG，支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.ElbRuleMatchTypes...),
 								validator2.AlsoRequiresEqualString(
@@ -152,19 +152,19 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"action_type": schema.StringAttribute{
 				Required:    true,
-				Description: "默认规则动作类型。取值范围：forward、redirect",
+				Description: "默认规则动作类型。取值范围：forward、redirect，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ElbRuleActionType...),
 				},
 			},
 			"action_target_groups": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "后端服务组",
+				Description: "后端服务组，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"target_group_id": schema.StringAttribute{
 							Required:    true,
-							Description: "后端服务组ID",
+							Description: "后端服务组ID，支持更新",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
@@ -172,7 +172,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 						"weight": schema.Int32Attribute{
 							Optional:    true,
 							Computed:    true,
-							Description: "权重，取值范围：1-256。默认为100",
+							Description: "权重，取值范围：1-256。默认为100，支持更新",
 							Default:     int32default.StaticInt32(100),
 							Validators: []validator.Int32{
 								int32validator.Between(1, 256),
@@ -184,7 +184,7 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 			"action_redirect_listener_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "重定向监听器ID，当action_type = redirect时，此字段必填",
+				Description: "重定向监听器ID，当action_type = redirect时，必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("action_type"),

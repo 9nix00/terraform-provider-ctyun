@@ -16,7 +16,7 @@ func NewMongodbUnbindEipApi(client *ctyunsdk.CtyunClient) *MongodbUnbindEipApi {
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/Mongodb-dcp/v2/openapi/dcp-order-info/eips/unbind",
+			UrlPath: "/teledb-dcp/v2/openapi/dcp-order-info/eips/unbind",
 		},
 	}
 }

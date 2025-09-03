@@ -26,18 +26,27 @@ func TestAccCtyunEcs(t *testing.T) {
 	initDisplayName := "tf-test-init-ecs"
 	initSysDiskSize := 60
 	initExtra := `cycle_type         = "on_demand"`
+	nextShelveExtra := `cycle_type         = "on_demand" 
+   status = "shelve"`
+	nextStartExtra := `cycle_type         = "on_demand" 
+   status = "running"`
 
 	updatedDisplayName := "tf-test-updated-ecs"
 	updatedSysDiskSize := 100
 	updatedExtra := fmt.Sprintf(
 		`status = "running"
-  cycle_type         = "on_demand"
+  cycle_type         = "month"
+  cycle_count         = 1
   security_group_ids     = ["%s"]`, dependence.securityGroupID)
 
 	nextExtra := fmt.Sprintf(
 		`status = "stopped"
-  cycle_type         = "on_demand"
-  security_group_ids     = ["%s"]`, dependence.securityGroupID)
+   cycle_type         = "month"
+   cycle_count         = 1
+  security_group_ids     = ["%s"]
+  is_destroy_instance  = true`, dependence.securityGroupID)
+
+	affinityGroupAssociationResourceName := "ctyun_ecs_affinity_group_association." + and
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -49,7 +58,7 @@ func TestAccCtyunEcs(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// 创建
+			// 1.创建
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -77,7 +86,45 @@ func TestAccCtyunEcs(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
-			// 更新名称、密钥、安全组属性，并进行按需转包周期
+			// 2.节省关机
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					instanceName,
+					initDisplayName,
+					dependence.flavorID,
+					dependence.imageID,
+					initSysDiskSize,
+					dependence.vpcID,
+					dependence.subnetID,
+					dependence.keyPairName,
+					nextShelveExtra,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "status", "shelve"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			//3.开机
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					instanceName,
+					initDisplayName,
+					dependence.flavorID,
+					dependence.imageID,
+					initSysDiskSize,
+					dependence.vpcID,
+					dependence.subnetID,
+					dependence.keyPairName,
+					nextStartExtra,
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "status", "running"),
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			// 4.更新名称、密钥、安全组属性，并进行按需转包周期
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -107,7 +154,7 @@ func TestAccCtyunEcs(t *testing.T) {
 				),
 			},
 
-			// 关机，然后更新规格、系统盘大小，并进行包周期转按需，同时关联主机组
+			// 5.关机，然后更新规格、系统盘大小，并进行包周期转按需(不生效 去掉)，同时关联主机组
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -136,7 +183,7 @@ func TestAccCtyunEcs(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
-			// 检查是否关联成功
+			// 6.检查是否关联成功
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -155,7 +202,13 @@ func TestAccCtyunEcs(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "instances.0.affinity_group.affinity_group_id", dependence.affinityGroupID),
 				),
 			},
-			// 解绑主机组
+			{
+				ResourceName:            affinityGroupAssociationResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+			// 7.解绑主机组
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -170,7 +223,7 @@ func TestAccCtyunEcs(t *testing.T) {
 					nextExtra,
 				),
 			},
-			// 检查是否解绑成功
+			// 8.检查是否解绑成功
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,

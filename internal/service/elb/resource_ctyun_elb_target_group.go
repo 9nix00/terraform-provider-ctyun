@@ -79,7 +79,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 				},
@@ -87,7 +87,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},",
+				Description: "描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 					validator2.Desc(),
@@ -106,14 +106,14 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"health_check_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "需要关联的健康检查Id",
+				Description: "需要关联的健康检查Id，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"algorithm": schema.StringAttribute{
 				Required:    true,
-				Description: "调度算法。取值范围：rr（轮询）、wrr（带权重轮询）、lc（最少连接）、sh（源IP哈希）",
+				Description: "调度算法。取值范围：rr（轮询）、wrr（带权重轮询）、lc（最少连接）、sh（源IP哈希），支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.TargetGroupAlgorithms...),
 				},
@@ -137,7 +137,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"session_sticky_mode": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）。当 algorithm 为 lc / sh 时，sessionStickyMode无需填写，默认为 CLOSE",
+				Description: "会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）。当 algorithm 为 lc / sh 时，sessionStickyMode无需填写，默认为 CLOSE，支持更新",
 				Default:     stringdefault.StaticString("CLOSE"),
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.TargetGroupSessionStickyModes...),
@@ -151,7 +151,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"cookie_expire": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "cookie过期时间。session_sticky_mode = INSERT模式必填",
+				Description: "cookie过期时间。session_sticky_mode = INSERT模式必填，支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("session_sticky_mode"),
@@ -168,7 +168,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"rewrite_cookie_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "cookie重写名称，REWRITE模式必填",
+				Description: "cookie重写名称，REWRITE模式必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("session_sticky_mode"),
@@ -185,7 +185,7 @@ func (c *CtyunElbTargetGroup) Schema(ctx context.Context, request resource.Schem
 			"source_ip_timeout": schema.Int64Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "源IP会话保持超时时间。SOURCE_IP模式必填",
+				Description: "源IP会话保持超时时间。SOURCE_IP模式必填，支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("session_sticky_mode"),

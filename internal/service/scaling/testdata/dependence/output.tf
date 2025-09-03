@@ -18,14 +18,6 @@ output "security_group_id1" {
   value = ctyun_security_group.security_group_test1.id
 }
 
-# output "image_id" {
-#   value = local.image_id
-# }
-#
-# output "image_id1" {
-#   value = local.image_id1
-# }
-
 output "key_pair_id" {
   value = ctyun_keypair.scaling_test.id
 }
@@ -61,4 +53,12 @@ output "instance_uuid" {
 
 output "instance_uuid1" {
   value = ctyun_ecs.ecs_test1.id
+}
+
+output "instance_uuid2" {
+  value = ctyun_ecs.ecs_test2.id
+}
+
+output "instance_uuid3" {
+  value = ctyun_ecs.ecs_test3.id
 }

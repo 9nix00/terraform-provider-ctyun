@@ -6,15 +6,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
+	"time"
 )
 
 func TestAccCtyunPgsqlInstance(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
@@ -30,20 +27,21 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()
 	caseCensitive := true
 	flavorName := "s7.large.2"
 	updatedFlavorName := "s7.large.4"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
-	azInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
+	azName := dependence.azName
+	azInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"master"}]`, azName)
 
 	updatedName := "pgsql-new" + utils.GenerateRandomString()
-	updatedSecurityGroupID := dependence.securityGroupID2
+	//updatedSecurityGroupID := dependence.securityGroupID2
 	updatedProdID := "MasterSlave1222"
 	updatedStorageSpace := 120
-	updatedAzInfo := `availability_zone_info=[{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"slave"}]`
+	updatedAzInfo := fmt.Sprintf(`availability_zone_info=[{"availability_zone_name":"%s", "availability_zone_count":1, "node_type":"slave"}]`, azName)
 	updatedBackupStorageSpace := fmt.Sprintf(`backup_storage_space="%d"`, updatedStorageSpace)
 
 	resource.Test(t, resource.TestCase{
@@ -71,13 +69,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--姓名, 安全组，规格扩容
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, azInfo, `backup_storage_space=100`, "", "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, azInfo, `backup_storage_space=100`, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", StorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 				),
@@ -85,13 +83,13 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--backup磁盘
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, StorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", StorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 				),
@@ -99,63 +97,69 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			// update验证--master磁盘
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, prodId, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, azInfo, updatedBackupStorageSpace, "", "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 				),
 			},
 			// update验证--主备，关机，开机，重启
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="stop"`, "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="stop"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="start"`, "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, updatedAzInfo, updatedBackupStorageSpace, `running_control="start"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", `running_control="restart"`, "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, updatedAzInfo, "", `running_control="restart"`, "", backupStorageType, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave1222"),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", updatedSecurityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 				),
 			},
 			// datasource验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", ``, "", backupStorageType, "") +
+					vpcID, subnetID, securityGroupID, updatedAzInfo, "", ``, "", backupStorageType, "") +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_id=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.name", updatedName),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
-					vpcID, subnetID, updatedSecurityGroupID, updatedAzInfo, "", ``, "", backupStorageType, ""),
+					vpcID, subnetID, securityGroupID, updatedAzInfo, "", ``, "", backupStorageType, ""),
 				Destroy: true,
 			},
 		},
@@ -165,10 +169,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 
 // 不传az Info 测试
 func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
@@ -181,7 +182,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 	backupStorageType := `backup_storage_type = "SATA"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
@@ -243,7 +244,14 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SATA"),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200")),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200"),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
+				),
 			},
 			// 销毁资源
 			{
@@ -256,10 +264,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 }
 
 func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
@@ -272,7 +277,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	backupStorageType := `backup_storage_type="SSD"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
-	password := "Kqjwyk123="
+	password := "Kyk123="+utils.GenerateRandomString()
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
@@ -320,7 +325,14 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200")),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200"),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
+				),
 			},
 
 			// 销毁资源

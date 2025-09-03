@@ -1,13 +1,13 @@
 output "vpc_id" {
-  value = local.real_vpc_id
+  value = ctyun_vpc.vpc_test.id
 }
 
 output "vpc_id1" {
-  value = local.read_iaas_vpc_id
+  value = ctyun_vpc.vpc_test1.id
 }
 
 output "subnet_id" {
-  value = local.real_subnet_id
+  value = ctyun_subnet.subnet_test.id
 }
 
 output "sfs_uid" {

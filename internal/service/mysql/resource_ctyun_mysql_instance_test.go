@@ -24,7 +24,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
-	password := "kqjwyk111*"
+	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
 	flavorName := "s7.xlarge.2"
 
@@ -134,7 +134,7 @@ func TestAccCtyunMysqlInstanceMonth(t *testing.T) {
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
-	password := "kqjwyk111*"
+	password := "Kyk111*" + utils.GenerateRandomString()
 	cycleCount := "cycle_count=1"
 	autoRenewStatus := `auto_renew=false`
 

@@ -20,6 +20,7 @@ output "private_nat_id" {
 output "subnet_id1" {
   value = ctyun_subnet.subnet_test1.id
 }
+
 output "subnet_id2" {
   value = ctyun_subnet.subnet_test2.id
 }

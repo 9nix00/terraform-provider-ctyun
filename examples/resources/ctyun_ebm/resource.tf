@@ -66,11 +66,11 @@ data "ctyun_ebm_device_images" "test" {
 }
 
 locals {
-  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
-  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : ""
+  system_raids = data.ctyun_ebm_device_raids.system_raid.raids
+  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : null
 
-  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
-  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : ""
+  data_raids = data.ctyun_ebm_device_raids.data_raid.raids
+  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : null
 }
 
 
@@ -88,12 +88,17 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}
+
 # 创建一台带从云硬盘启动，带弹性IP的弹性裸金属
 resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s2sxcv"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type2
@@ -109,7 +114,7 @@ resource "ctyun_ebm" "ebm_test" {
 resource "ctyun_ebm" "ebm_test2" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s2sxcv"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type1
@@ -117,6 +122,7 @@ resource "ctyun_ebm" "ebm_test2" {
   security_group_ids = [ctyun_security_group.security_group_test.id]
   vpc_id = ctyun_vpc.vpc_test.id
   system_volume_raid_uuid = local.system_raid_id
+  data_volume_raid_uuid = local.data_raid_id
   status = "running"
   subnet_id = ctyun_subnet.subnet_test.id
 }

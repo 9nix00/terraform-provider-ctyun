@@ -349,7 +349,7 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"data_disks": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "数据盘信息",
+				Description: "数据盘信息，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"type": schema.StringAttribute{

@@ -170,7 +170,7 @@ resource "ctyun_ecs" "ecs_test" {
   system_disk_type    = "sata"
   system_disk_size    = 40
   vpc_id              =  local.real_vpc_id
-  password            = "P@ssW0rd_1"
+  password            = var.password
   cycle_type          = "on_demand"
   subnet_id           = local.real_subnet_id
   is_destroy_instance = false
@@ -197,11 +197,11 @@ data "ctyun_ebm_device_images" "test" {
 }
 
 locals {
-  system_raids = [for raid in data.ctyun_ebm_device_raids.system_raid.raids : raid if raid.name_en != "NORAID"]
-  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : ""
+  system_raids = data.ctyun_ebm_device_raids.system_raid.raids
+  system_raid_id = length(local.system_raids) > 0 ? local.system_raids[0].uuid : null
 
-  data_raids = [for raid in data.ctyun_ebm_device_raids.data_raid.raids : raid if raid.name_en != "NORAID"]
-  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : ""
+  data_raids = data.ctyun_ebm_device_raids.data_raid.raids
+  data_raid_id = length(local.data_raids) > 0 ? local.data_raids[0].uuid : null
 }
 
 data "ctyun_ebm_device_images" "dependence" {
@@ -213,7 +213,7 @@ data "ctyun_ebm_device_images" "dependence" {
 resource "ctyun_ebm" "ebm_test" {
   instance_name = "tf-ebm-for-ccsedisplay"
   hostname = "tf-ebm-for-ccse"
-  password = "P@2s2sxcv"
+  password = var.password
   cycle_type = "on_demand"
   device_type = local.device_type1
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
@@ -222,4 +222,9 @@ resource "ctyun_ebm" "ebm_test" {
   data_volume_raid_uuid = local.data_raid_id
   vpc_id = local.real_vpc_id
   subnet_id = local.real_subnet_id
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
 }

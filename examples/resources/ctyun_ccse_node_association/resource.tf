@@ -17,5 +17,10 @@ resource "ctyun_ccse_node_association" "ykyedkmadc" {
   mirror_id = "3d2c356a-685a-4e8c-b904-bb0725bfc220"
   visibility_post_host_script = "YWJj"
   visibility_host_script = "MTIz"
-  password = "P@ssvwlbswrsms"
+  password = var.password
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
 }

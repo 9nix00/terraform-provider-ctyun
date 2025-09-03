@@ -25,6 +25,8 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ecs_backup_policies.tf"
 	bindInstancesFile := "resource_ctyun_ecs_backup_policy_bind_instances.tf"
 	bindRepoFile := "resource_ctyun_ecs_backup_policy_bind_repo.tf"
+	bindInstancesResourceName := "ctyun_ecs_backup_policy_bind_instances." + dnd
+	bindRepoResourceName := "ctyun_ecs_backup_policy_bind_repo." + dnd
 
 	initName := "init-backup-policy-" + rnd
 	updatedName := "updated-backup-policy-" + rnd
@@ -85,6 +87,12 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "backup_policies.0.resource_ids", instanceId),
 				),
 			},
+			{
+				ResourceName:            bindInstancesResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
 			// 6.解绑云主机
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName),
@@ -119,6 +127,12 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "backup_policies.0.repository_list.0.repository_id", repositoryID),
 				),
 			},
+			{
+				ResourceName:            bindRepoResourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
 			// 10.云主机备份策略解绑存储库
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName),
@@ -148,6 +162,7 @@ func TestAccCtyunBackupPolicy(t *testing.T) {
 					"project_id",
 				},
 			},
+
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),

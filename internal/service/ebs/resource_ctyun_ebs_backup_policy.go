@@ -177,7 +177,7 @@ func (c *ctyunEbsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
-				Description: "是否保留每个月第一个备份，在retentionType为num时可设置，默认false",
+				Description: "是否保留每个月第一个备份，在retentionType为num时可设置，默认false，支持更新",
 			},
 			"retention_num": schema.Int64Attribute{
 				Optional:    true,
@@ -226,28 +226,28 @@ func (c *ctyunEbsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 				Attributes: map[string]schema.Attribute{
 					"adv_day": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0",
+						Description: "保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_week": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0",
+						Description: "保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_month": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0",
+						Description: "保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
 					},
 					"adv_year": schema.Int64Attribute{
 						Optional:    true,
-						Description: "保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0",
+						Description: "保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0 支持更新",
 						Validators: []validator.Int64{
 							int64validator.Between(0, 100),
 						},
@@ -433,18 +433,6 @@ func (c *ctyunEbsBackupPolicy) getAndMerge(ctx context.Context, cfg *CtyunEbsBac
 	return
 }
 
-// convertFromApiRepositoryList 将API返回的备份库列表转换为Terraform格式
-func ConvertFromApiRepositoryList(apiList []string) types.List {
-	if len(apiList) == 0 {
-		return types.ListNull(types.StringType)
-	}
-
-	elems := make([]attr.Value, len(apiList))
-	for i, repoID := range apiList {
-		elems[i] = types.StringValue(repoID)
-	}
-	return types.ListValueMust(types.StringType, elems)
-}
 func (c *ctyunEbsBackupPolicy) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {

@@ -315,8 +315,7 @@ func (c *ctyunEbmInterface) checkBeforeCreate(ctx context.Context, plan CtyunEbm
 	}
 	smart := utils.SecBool(instance.DeviceDetail.SmartNicExist)
 	if !smart {
-		err = fmt.Errorf("物理机 %s 必须是弹性裸金属", utils.SecString(instance.InstanceUUID))
-		return
+		return fmt.Errorf("物理机 %s 必须是弹性裸金属", utils.SecString(instance.InstanceUUID))
 	}
 	vpcID := utils.SecString(instance.VpcID)
 	// 检查配置的每个安全组是否存在
@@ -345,8 +344,7 @@ func (c *ctyunEbmInterface) createInterface(ctx context.Context, plan CtyunEbmIn
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
 	return nil
 }
@@ -443,8 +441,7 @@ func (c *ctyunEbmInterface) updateInterface(ctx context.Context, plan, state Cty
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
 	return
 }
@@ -496,8 +493,7 @@ func (c *ctyunEbmInterface) deleteInterface(ctx context.Context, plan CtyunEbmIn
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
 	return
 }

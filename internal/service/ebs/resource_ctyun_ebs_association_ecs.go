@@ -2,6 +2,7 @@ package ebs
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
@@ -35,6 +36,11 @@ func (c *ctyunEbsAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10169293**`,
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "ID",
+			},
 			"ebs_id": schema.StringAttribute{
 				Required:    true,
 				Description: "磁盘id",
@@ -72,20 +78,24 @@ func (c *ctyunEbsAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 }
 
 func (c *ctyunEbsAssociation) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunEbsAssociationConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	err := c.ebsService.MustExist(ctx, plan.EbsId.ValueString(), plan.RegionId.ValueString())
+	err = c.ebsService.MustExist(ctx, plan.EbsId.ValueString(), plan.RegionId.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	err = c.ecsService.CheckEcsStatus(ctx, plan.InstanceId.ValueString(), plan.RegionId.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -96,20 +106,17 @@ func (c *ctyunEbsAssociation) Create(ctx context.Context, request resource.Creat
 		InstanceId: plan.InstanceId.ValueString(),
 	})
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	helper := business.NewGeneralJobHelper(c.meta.Apis.CtEcsApis.JobShowApi)
-	_, err2 := helper.JobLoop(ctx, c.meta.Credential, regionId, resp.DiskJobId)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	_, err = helper.JobLoop(ctx, c.meta.Credential, regionId, resp.DiskJobId)
+	if err != nil {
 		return
 	}
 
 	plan.RegionId = types.StringValue(regionId)
-	instance, ctyunRequestError := c.getAndMergeEbsAssociationEcs(ctx, plan)
-	if ctyunRequestError != nil {
-		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
+	instance, err := c.getAndMergeEbsAssociationEcs(ctx, plan)
+	if err != nil {
 		return
 	}
 	if instance == nil {
@@ -142,15 +149,20 @@ func (c *ctyunEbsAssociation) Update(_ context.Context, _ resource.UpdateRequest
 }
 
 func (c *ctyunEbsAssociation) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunEbsAssociationConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	err := c.ecsService.CheckEcsStatus(ctx, state.InstanceId.ValueString(), state.RegionId.ValueString())
+	err = c.ecsService.CheckEcsStatus(ctx, state.InstanceId.ValueString(), state.RegionId.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	resp, err := c.meta.Apis.CtEbsApis.EbsDisassociateApi.Do(ctx, c.meta.Credential, &ctebs.EbsDisassociateRequest{
@@ -158,24 +170,27 @@ func (c *ctyunEbsAssociation) Delete(ctx context.Context, request resource.Delet
 		DiskId:   state.EbsId.ValueString(),
 	})
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	helper := business.NewGeneralJobHelper(c.meta.Apis.CtEcsApis.JobShowApi)
-	_, err2 := helper.JobLoop(ctx, c.meta.Credential, state.RegionId.ValueString(), resp.DiskJobId)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	_, err = helper.JobLoop(ctx, c.meta.Credential, state.RegionId.ValueString(), resp.DiskJobId)
+	if err != nil {
 		return
 	}
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [diskId],[ecsId],[regionId]
 func (c *ctyunEbsAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var cfg CtyunEbsAssociationConfig
 	var diskId, ecsId, regionId string
-	err := terraform_extend.Split(request.ID, &diskId, &ecsId, &regionId)
+	err = terraform_extend.Split(request.ID, &diskId, &ecsId, &regionId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -183,9 +198,9 @@ func (c *ctyunEbsAssociation) ImportState(ctx context.Context, request resource.
 	cfg.InstanceId = types.StringValue(ecsId)
 	cfg.RegionId = types.StringValue(regionId)
 
-	instance, err := c.getAndMergeEbsAssociationEcs(ctx, cfg)
+	var instance *CtyunEbsAssociationConfig
+	instance, err = c.getAndMergeEbsAssociationEcs(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
@@ -219,10 +234,12 @@ func (c *ctyunEbsAssociation) getAndMergeEbsAssociationEcs(ctx context.Context, 
 			break
 		}
 	}
+	cfg.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", cfg.EbsId.ValueString(), cfg.InstanceId.ValueString(), cfg.RegionId.ValueString()))
 	return &cfg, err
 }
 
 type CtyunEbsAssociationConfig struct {
+	ID         types.String `tfsdk:"id"`
 	EbsId      types.String `tfsdk:"ebs_id"`
 	InstanceId types.String `tfsdk:"instance_id"`
 	RegionId   types.String `tfsdk:"region_id"`

@@ -51,7 +51,7 @@ func (a *ScalingGroupCheckApi) Do(ctx context.Context, credential core.Credentia
 
 type ScalingGroupCheckRequest struct {
 	RegionID string `json:"regionID,omitempty"` /*  资源池ID  */
-	GroupID  int32  `json:"groupID,omitempty"`  /*  伸缩组ID  */
+	GroupID  int64  `json:"groupID,omitempty"`  /*  伸缩组ID  */
 }
 
 type ScalingGroupCheckResponse struct {

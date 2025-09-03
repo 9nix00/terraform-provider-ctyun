@@ -50,9 +50,6 @@ func (c *ctyunEbsSnapshotPolicy) Schema(_ context.Context, _ resource.SchemaRequ
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"repeat_weekdays": schema.StringAttribute{
 				Required:    true,
@@ -195,13 +192,16 @@ func (c *ctyunEbsSnapshotPolicy) Update(ctx context.Context, request resource.Up
 			return
 		}
 	} else {
-		//修改自动快照策略名称时不允许与已有的策略名称重复。
-		err := c.checkName(ctx, plan)
-		if err != nil {
-			return
+		if plan.Name.ValueString() != state.Name.ValueString() {
+			//修改自动快照策略名称时不允许与已有的策略名称重复。
+			err := c.checkName(ctx, plan)
+			if err != nil {
+				return
+			}
 		}
 		err = c.update(ctx, plan, state)
 	}
+
 	if err != nil {
 		return
 	}
@@ -286,9 +286,8 @@ func (c *ctyunEbsSnapshotPolicy) updateStatus(ctx context.Context, plan, state C
 func (c *ctyunEbsSnapshotPolicy) getAndMerge(ctx context.Context, cfg *CtyunEbsSnapshotPolicyConfig) (err error) {
 	// 获取实例详情
 	params := &ctebs2.EbsQueryPolicyEbsSnapRequest{
-		RegionID:           cfg.RegionId.ValueString(),
-		SnapshotPolicyID:   cfg.Id.ValueStringPointer(),
-		SnapshotPolicyName: cfg.Name.ValueStringPointer(),
+		RegionID:         cfg.RegionId.ValueString(),
+		SnapshotPolicyID: cfg.Id.ValueStringPointer(),
 	}
 	// 调用API
 	resp, err := c.meta.Apis.SdkCtEbsApis.EbsQueryPolicyEbsSnapApi.Do(ctx, c.meta.SdkCredential, params)
@@ -406,17 +405,6 @@ func (c *ctyunEbsSnapshotPolicy) create(ctx context.Context, plan *CtyunEbsSnaps
 		err = fmt.Errorf("failed to get snapshot policy ID from response")
 	}
 
-	return
-}
-
-func (c *ctyunEbsSnapshotPolicy) queryJob(ctx context.Context, plan *CtyunEbsSnapshotPolicyConfig, jobID string) (err error) {
-	helper := business.NewGeneralJobHelper(c.meta.Apis.CtEcsApis.JobShowApi)
-	reps, err := helper.JobLoop(ctx, c.meta.Credential, plan.RegionId.ValueString(), jobID)
-	if err != nil {
-		return err
-	} else {
-		plan.Id = types.StringValue(reps.ID)
-	}
 	return
 }
 

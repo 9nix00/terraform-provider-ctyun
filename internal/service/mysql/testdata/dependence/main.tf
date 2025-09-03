@@ -65,7 +65,7 @@ resource "ctyun_security_group" "security_group_test" {
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
   lifecycle {
-    prevent_destroy = true
+    prevent_destroy = false
   }
 }
 
@@ -85,10 +85,11 @@ data "ctyun_zones" "test" {
 
 }
 
+
+
 locals {
-  mysql_name = "tf-mysql-for-ip-${local.random_string}"
-  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
-   # az_name    = "cn-gs-qyi2-1a-public-ctcloud"
+  mysql_name = "tf-mysql-${local.random_string}"
+  az_name    = data.ctyun_zones.test.zones[0]
 }
 
 data "ctyun_mysql_specs" "mysql_specs"{

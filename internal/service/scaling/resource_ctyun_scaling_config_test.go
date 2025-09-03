@@ -32,7 +32,7 @@ func TestAccCtyunScalingConfig(t *testing.T) {
 	useFloating := "auto"
 	bandwidth := 1
 	loginMode := "password"
-	password := "Kqjwyk136@"
+	password := "Kyk136@" + utils.GenerateRandomString()
 	monitorService := true
 	azNames := fmt.Sprintf(`["%s", "%s"]`, "cn-huadong1-jsnj1A-public-ctcloud", "cn-huadong1-jsnj2A-public-ctcloud")
 	//azNames := fmt.Sprintf(`["%s"]`, "cn-huadong1-jsnj1A-public-ctcloud")
@@ -92,6 +92,22 @@ func TestAccCtyunScalingConfig(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "key_pair_id", keyPairId),
 					resource.TestCheckResourceAttr(resourceName, "monitor_service", fmt.Sprintf("%t", updatedMonitorService)),
 				),
+			},
+			//  资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"key_pair_id"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, name, imageID, flavorName, useFloating, bandwidth, loginMode, password, monitorService, azNames, tags, volumes),

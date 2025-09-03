@@ -92,14 +92,14 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"flavor_name": schema.StringAttribute{
 				Required:    true,
-				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_postgresql_specs查询支持的规格",
+				Description: "规格名称，形如c7.2xlarge.4，可从data.ctyun_postgresql_specs查询支持的规格，支持更新。",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
-				Description: "产品ID。Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘、规格和实例扩容同时进行",
+				Description: "产品ID，支持更新。取值范围包括：Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(prod_id)扩容同时进行",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.PgsqlProdIds...),
 				},
@@ -127,7 +127,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"storage_space": schema.Int32Attribute{
 				Required:    true,
-				Description: "主存储空间(单位:G，范围100-32768)。扩容过程中不支持磁盘、规格和实例扩容同时进行",
+				Description: "主存储空间(单位:G，范围100-32768)。支持更新，扩容过程中不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(pord_id)扩容同时进行",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
@@ -135,7 +135,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"backup_storage_space": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "备份存储空间大小",
+				Description: "备份存储空间大小。支持更新，主存储空间(storage_space)若备份存储空间(backup_storage_space)同时更新，先更新backup_storage_space。",
 				Validators: []validator.Int32{
 					validator2.ConflictsWithEqualInt32(
 						path.MatchRoot("backup_storage_type"),
@@ -167,11 +167,11 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					validator2.SecurityGroupValidate(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"appoint_vip": schema.StringAttribute{
@@ -181,13 +181,13 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.Cidr(),
+					validator2.Ip(),
 				},
 			},
 			// 实例配置
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）",
+				Description: "实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）。支持更新，但不支持更新为重名实例名称",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(4, 64),
 				},
@@ -270,13 +270,16 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				},
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
-				Optional:    true,
-				Description: "pgsql实例节点指定字段，选填，若未填写根据实例节点数分配至各个az",
+				Optional: true,
+				Description: "pgsql实例节点指定可用区字段，选填，若未填写根据实例节点数分配至各个az。示例：若创建一个一主两备的pgsql，对应的availability_zone_info为：" +
+					"[{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:master}," +
+					"{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:slave}," +
+					"{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:slave}]",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
-							Description: "资源池可用区名称",
+							Description: "资源池可用区名称，可以根据data.ctyun_zones查询",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
@@ -290,30 +293,18 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
-							Description: "节点类型(master/readNode)",
+							Description: "节点类型(master/slave)",
 							Validators: []validator.String{
-								stringvalidator.OneOf("master", "readNode"),
+								stringvalidator.OneOf("master", "slave"),
 							},
 						},
-						//"display_name": schema.StringAttribute{
-						//	Optional:    true,
-						//	Description: "可用区显示名",
-						//},
-						//"spec_id": schema.StringAttribute{
-						//	Optional:    true,
-						//	Description: "规格ID",
-						//},
 					},
 				},
 			},
-			//"new_order_id": schema.StringAttribute{
-			//	Computed:    true,
-			//	Description: "订单id",
-			//},
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Computed:      true,
-				Description:   "pgsql 实例id",
+				Description:   "postgresql实例id",
 			},
 			"alive": schema.Int32Attribute{
 				Computed:    true,
@@ -353,12 +344,11 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"tool_type": schema.Int32Attribute{
 				Computed:    true,
-				Description: "备份工具类型，1：pg_baseback，2：pgbackrest，3：s3",
+				Description: "备份工具类型，1：pg_baseback, 2：pgbackrest, 3：s3",
 			},
-
 			"running_control": schema.StringAttribute{
 				Optional:    true,
-				Description: "控制是否暂停，启用和重启实例，取值范围：stop, start, restart",
+				Description: "控制是否暂停，启用和重启实例。支持更新，取值范围：stop, start, restart",
 				Validators: []validator.String{
 					stringvalidator.OneOf("stop", "start", "restart"),
 				},
@@ -488,10 +478,10 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 	}
 
 	// 确保订单已完成状态才能退订
-	//err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
-	//if err != nil {
-	//	return
-	//}
+	err = c.StartedOrderLoop(ctx, &state, business.MysqlOrderStatusStarted, business.MysqlRunningStatusStarted, 60)
+	if err != nil {
+		return
+	}
 
 	instance, err := c.detail(ctx, state)
 	if err != nil {
@@ -508,6 +498,7 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 			return
 		}
 	}
+	time.Sleep(30 * time.Second)
 	err = c.destroy(ctx, state)
 	if err != nil {
 		return
@@ -749,56 +740,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 			return
 		}
 	}
-	// 更变安全组
-	if plan.SecurityGroupId.ValueString() != "" && plan.SecurityGroupId.ValueString() != state.SecurityGroupId.ValueString() {
-		// 确保操作时，实例处于running状态，避免更新失败
-		err = c.RunningStatusLoop(ctx, state, business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted, 30)
-		if err != nil {
-			return
-		}
-
-		deleteSgParams := &pgsql.PgsqlDeleteSecurityGroupRequest{
-			SecurityGroupId: state.SecurityGroupId.ValueString(),
-			InstanceId:      state.SecurityGroupId.ValueString(),
-		}
-		deleteSgHeader := &pgsql.PgsqlDeleteSecurityGroupRequestHeader{}
-		updateSecurityGroupParams := &pgsql.PgsqlUpdateSecurityGroupRequest{
-			SecurityGroupId:    state.SecurityGroupId.ValueString(),
-			InstanceId:         state.ID.ValueString(),
-			NewSecurityGroupId: plan.SecurityGroupId.ValueString(),
-		}
-		updatedSecurityGroupHeaders := &pgsql.PgsqlUpdateSecurityGroupRequestHeader{}
-		if !state.ProjectID.IsNull() {
-			updatedSecurityGroupHeaders.ProjectID = state.ProjectID.ValueStringPointer()
-			deleteSgHeader.ProjectID = state.ProjectID.ValueStringPointer()
-		}
-
-		// 先替换
-		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlUpdateSecurityGroupApi.Do(ctx, c.meta.Credential, updateSecurityGroupParams, updatedSecurityGroupHeaders)
-		if err2 != nil {
-			return err2
-		} else if resp.StatusCode != 200 {
-			err = fmt.Errorf("API return error. Message: %s", resp.Message)
-			return
-		}
-		// 再解绑原securityGroup
-		// 先解绑原来的安全组
-		deleteResp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDeleteSecurityGroupApi.Do(ctx, c.meta.Credential, deleteSgParams, deleteSgHeader)
-		if err2 != nil {
-			return err
-		} else if deleteResp.StatusCode != 200 {
-			err = fmt.Errorf("API return error. Message: %s", deleteResp.Message)
-			return
-		}
-	}
-	// 轮询确认姓名和安全组修改成功
-	err = c.InfoLoop(ctx, state, plan, 60)
-	if err != nil {
-		return
-	}
-
 	// 扩容云数据库实例
-
 	// 磁盘扩容
 	err = c.upgradeStorage(ctx, state, plan)
 	if err != nil {
@@ -1010,63 +952,6 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 	return
 }
 
-func (c *CtyunPostgresqlInstance) InfoLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig, loopCount ...int) (err error) {
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-	retryer, err := business.NewRetryer(time.Second*30, count)
-	if err != nil {
-		return
-	}
-	result := retryer.Start(
-		func(currentTime int) bool {
-			detailParams := &pgsql.PgsqlDetailRequest{
-				ProdInstId: state.ID.ValueString(),
-			}
-			detailHeaders := &pgsql.PgsqlDetailRequestHeader{
-				RegionID: state.RegionID.ValueString(),
-			}
-			if state.ProjectID.ValueString() != "" {
-				detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
-			}
-			resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
-			if err2 != nil {
-				err = err2
-				return false
-			} else if resp.StatusCode != 800 {
-				err = fmt.Errorf("API return error. Message: %s", resp.Message)
-				return false
-			} else if resp.ReturnObj == nil {
-				err = common.InvalidReturnObjError
-				return false
-			}
-			// 更新成功，跳出轮询的条件：
-			// 1) plan name不为空，且plan name = state name
-			// 2) plan security group id 不为空， 且plan security_group_id = state security_group_id
-			flagName := false
-			flagSecurityGroup := false
-			if plan.Name.ValueString() != "" {
-				if plan.Name.ValueString() == resp.ReturnObj.ProdInstName {
-					flagName = true
-				}
-			}
-			if plan.SecurityGroupId.ValueString() != "" {
-				if plan.SecurityGroupId.ValueString() == resp.ReturnObj.SecurityGroupId {
-					flagSecurityGroup = true
-				}
-			}
-			if flagName && flagSecurityGroup {
-				return false
-			}
-			return true
-		})
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，资源仍未更新成功！")
-	}
-	return
-}
-
 func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *CtyunPostgresqlInstanceConfig, orderStatus int32, runningStatus int32, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
@@ -1074,6 +959,7 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 	}
 	// 设置一个容忍机制，根据pgsql定制，pgsql开通等操作可能出现报错回滚，此期间会存在查询不到实例情况
 	tolerateCount := 30
+	syncCount := 3
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -1114,9 +1000,10 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 			}
 			detailOrderStatus := resp.ReturnObj.ProdOrderStatus
 			detailRunningStatus := resp.ReturnObj.ProdRunningStatus
-			if detailOrderStatus == orderStatus && detailRunningStatus == orderStatus {
+			if detailOrderStatus == orderStatus && detailRunningStatus == orderStatus && syncCount <= 0 {
 				return false
 			}
+			syncCount--
 			return true
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {

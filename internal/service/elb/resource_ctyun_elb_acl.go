@@ -64,7 +64,7 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Description: "唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 				},
@@ -72,7 +72,7 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}",
+				Description: "支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 					validator2.Desc(),
@@ -80,7 +80,7 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			},
 			"source_ips": schema.SetAttribute{
 				Required:    true,
-				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据",
+				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据，支持更新",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
@@ -18,6 +19,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var (
@@ -53,7 +55,6 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
@@ -62,8 +63,11 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			"prod_inst_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"group_name": schema.StringAttribute{
@@ -115,6 +119,10 @@ func (c *CtyunMysqlWhiteList) Create(ctx context.Context, request resource.Creat
 	var plan CtyunMysqlWhiteListConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkStatus(ctx, plan)
+	if err != nil {
 		return
 	}
 	// 开始创建
@@ -181,6 +189,10 @@ func (c *CtyunMysqlWhiteList) Update(ctx context.Context, request resource.Updat
 	var state CtyunMysqlWhiteListConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkStatus(ctx, plan)
+	if err != nil {
 		return
 	}
 	err = c.updateMysqlWhiteList(ctx, &state, &plan)
@@ -370,4 +382,57 @@ type CtyunMysqlWhiteListConfig struct {
 	CreatedTime         types.String `tfsdk:"created_time"`
 	UpdatedTime         types.String `tfsdk:"updated_time"`
 	AccessMachineType   types.String `tfsdk:"access_machine_type"` // 访问类型
+}
+
+// checkStatus 数据库状态为running
+func (c *CtyunMysqlWhiteList) checkStatus(ctx context.Context, state CtyunMysqlWhiteListConfig) (err error) {
+	retryer, err := business.NewRetryer(time.Second*30, 10)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 获取实例详情
+			var resp *mysql.DetailRespReturnObj
+			resp, err = c.getDetail(ctx, state)
+			if err != nil {
+				return false
+			}
+			// 资源不正常，继续轮询
+			if resp.ProdRunningStatus != 0 {
+				return true
+			}
+			return false
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("资源状态异常")
+	}
+	return
+}
+
+func (c *CtyunMysqlWhiteList) getDetail(ctx context.Context, state CtyunMysqlWhiteListConfig) (instance *mysql.DetailRespReturnObj, err error) {
+	// 获取实例详情
+	detailParams := &mysql.TeledbQueryDetailRequest{
+		OuterProdInstId: state.ProdInstID.ValueString(),
+	}
+	detailHeaders := &mysql.TeledbQueryDetailRequestHeaders{
+		InstID:   state.ProdInstID.ValueString(),
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		detailHeaders.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 0 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	instance = resp.ReturnObj
+	return
 }

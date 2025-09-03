@@ -22,6 +22,9 @@ var dependence Dependence
 
 func TestMain(m *testing.M) {
 	// 初始化依赖资源
+	if skip := os.Getenv("SKIP_REDIS_TEST"); skip != "" {
+		return
+	}
 	fmt.Println("开始初始化依赖资源")
 	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {
