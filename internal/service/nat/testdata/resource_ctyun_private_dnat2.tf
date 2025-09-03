@@ -1,4 +1,4 @@
-resource "ctyun_private_dnat" "%[1]s"{
+resource "ctyun_private_nat_dnat" "%[1]s"{
   nat_gateway_id = "%[2]s"
   external_ip = "%[3]s"
   protocol = "%[4]s"

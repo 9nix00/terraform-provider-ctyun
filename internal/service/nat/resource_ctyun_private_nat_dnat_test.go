@@ -14,21 +14,21 @@ func TestAccCtyunPrivateDNat(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
-	resourceName := "ctyun_private_dnat." + rnd
+	resourceName := "ctyun_private_nat_dnat." + rnd
 	datasourceName := "data.ctyun_private_dnats." + dnd
 
 	resourceFile := "resource_ctyun_private_dnat.tf"
 	datasourceFile := "datasource_ctyun_private_dnat.tf"
 
-	natGatewayId := "natgw-dfe58mpj0s"
+	natGatewayId := dependence.privateNatID
 	internalPort := utils.GenerateRandomPort(0, 65535)
 	updatedInternalPort := utils.GenerateRandomPort(0, 65535)
 	externalPort := utils.GenerateRandomPort(0, 1024)
 	updatedExternalPort := utils.GenerateRandomPort(0, 1024)
 
-	internalIp := "192.168.1.3"
-	updatedInternalIp := "192.168.1.6"
-	externalIp := "192.168.1.7"
+	internalIp := "192.168.128.3"
+	updatedInternalIp := "192.168.128.6"
+	externalIp := "192.168.128.7"
 	protocol := "tcp"
 	updatedProtocol := "udp"
 
