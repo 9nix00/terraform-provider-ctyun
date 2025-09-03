@@ -219,9 +219,6 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"host_ip": schema.StringAttribute{
 				Computed:    true,
 				Description: "主机ip",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"innodb_buffer_pool_size": schema.StringAttribute{
 				Computed:    true,
@@ -1313,44 +1310,18 @@ func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *Ctyun
 		return
 	} else if prodType == "replica" {
 		config.replicaNum = business.MongodbReplicaNodeNum[config.ProdID.ValueString()]
-
 		if azNum >= 3 {
-			distNodeNum := [3]int32{
-				(int32(config.replicaNum) + 2) / 3,
-				(int32(config.replicaNum) + 1) / 3,
-				int32(config.replicaNum) / 3,
-			}
-			//nodeDist := business.MongodbReplicaNodeDistMap[config.replicaNum]
+			nodeDist := business.MongodbReplicaNodeDistMap[config.replicaNum]
 			// 有3个az，节点可以平均分摊在各个az下
-			for idx, azItem := range azList {
+			for _, azItem := range azList {
 				if len(AzInfoList) >= 3 {
 					break
 				}
 				var azInfo mongodb.AvailabilityZoneInfoRequest
 				azInfo.NodeType = nodeType
-				azInfo.AvailabilityZoneCount = distNodeNum[idx]
-				if azInfo.AvailabilityZoneCount <= 0 {
-					continue
-				}
+				azInfo.AvailabilityZoneCount = nodeDist % 10
+				nodeDist = nodeDist / 10
 				azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
-				AzInfoList = append(AzInfoList, azInfo)
-			}
-		} else if azNum == 2 {
-			distNodeNum := []int32{
-				(int32(config.replicaNum) + 1) / 2,
-				int32(config.replicaNum) / 2,
-			}
-			for idx, azItem := range azList {
-				if len(AzInfoList) >= 2 {
-					break
-				}
-				var azInfo mongodb.AvailabilityZoneInfoRequest
-				azInfo.NodeType = nodeType
-				azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
-				azInfo.AvailabilityZoneCount = distNodeNum[idx]
-				if azInfo.AvailabilityZoneCount <= 0 {
-					continue
-				}
 				AzInfoList = append(AzInfoList, azInfo)
 			}
 		} else {
