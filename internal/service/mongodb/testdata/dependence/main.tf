@@ -85,7 +85,7 @@ resource "ctyun_mongodb_instance" "mongodb_eip" {
   flavor_name            = "s7.large.2"
   subnet_id              = local.real_subnet_id
   security_group_id      =  local.real_security_group_id
-  name                   = "mongodb-${local.random_string}"
+  name                   = "mongodb-94671e2509"
   prod_id                = "Single34"
   storage_type           = "SATA"
   storage_space          = 100

@@ -44,8 +44,7 @@ type CtyunMongodbInstance struct {
 }
 
 func (c *CtyunMongodbInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
+
 }
 
 func (c *CtyunMongodbInstance) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
@@ -205,6 +204,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "订单id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"read_port": schema.Int32Attribute{
 				Optional:    true,
@@ -217,6 +219,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"host_ip": schema.StringAttribute{
 				Computed:    true,
 				Description: "主机ip",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"innodb_buffer_pool_size": schema.StringAttribute{
 				Computed:    true,
@@ -318,9 +323,8 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				},
 			},
 			"backup_storage_space": schema.Int32Attribute{
-				Computed: true,
-				Description: "backup节点磁盘空间，升配时用于区分节点升配。支持更新，集群版mongodb需要注意：初次创建时，备份空间实际大小为backup_storage_space * shard_num。" +
-					"例如：您需要每个shard磁盘空间为100GB，shard_num=3。实际backup_storage_space=300GB",
+				Computed:    true,
+				Description: "backup节点磁盘空间，当前不支持指定。默认与存储空间相同",
 			},
 			"backup_storage_type": schema.StringAttribute{
 				Optional:    true,
@@ -449,7 +453,6 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if err != nil {
 		return
 	}
-
 	err = c.updateMongodbInstance(ctx, &state, &plan)
 	if err != nil {
 		return
@@ -729,32 +732,7 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 		}
 	}
 
-	// 修改安全组
-	if plan.SecurityGroupID.ValueString() != "" && state.SecurityGroupID.ValueString() != plan.SecurityGroupID.ValueString() {
-		// 修改实例前，确定实例状态为running
-		_, err = c.PreCheckUpdateLoop(ctx, state)
-		if err != nil {
-			return
-		}
-		updateSecurityGroupParams := &mongodb.MongodbUpdateSecurityGroupRequest{
-			SecurityGroupId:    state.SecurityGroupID.ValueString(),
-			InstanceId:         state.ID.ValueString(),
-			NewSecurityGroupId: plan.SecurityGroupID.ValueString(),
-		}
-		updateSecurityGroupHeader := &mongodb.MongodbUpdateSecurityGroupRequestHeader{}
-		if state.ProjectID.ValueString() != "" {
-			updateSecurityGroupHeader.ProjectID = state.ProjectID.ValueStringPointer()
-		}
-		resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbUpdateSecurityGroupApi.Do(ctx, c.meta.Credential, updateSecurityGroupParams, updateSecurityGroupHeader)
-		if err2 != nil {
-			err = err2
-			return
-		} else if resp.StatusCode != 200 {
-			err = fmt.Errorf("API return error. Message: %s", resp.Message)
-			return
-		}
-	}
-	// 变更完name和security group，确认是否变更完成
+	// 变更完name，确认是否变更完成
 	err = c.PostCheckUpdateNameAndSecurityGroupLoop(ctx, state, plan, 60)
 	if err != nil {
 		return
@@ -794,55 +772,6 @@ func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state 
 	state.FlavorName = plan.FlavorName
 	if !plan.UpgradeNodeType.IsNull() {
 		state.UpgradeNodeType = plan.UpgradeNodeType
-	}
-	return
-}
-
-func (c *CtyunMongodbInstance) isDiskUpgrade(ctx context.Context, nodeInfoList NodeInfoListModel, state *CtyunMongodbInstanceConfig) (flag bool, err error) {
-	flag = false
-
-	detailResp, err := c.getMongoDetailInfo(ctx, state)
-	if err != nil {
-		return
-	}
-
-	if nodeInfoList.NodeType.ValueString() == "master" {
-		masterStorageSpace := detailResp.DiskSize
-		if nodeInfoList.StorageSpace.ValueInt32() != masterStorageSpace {
-			flag = true
-			return
-		}
-	} else if nodeInfoList.NodeType.ValueString() == "backup" {
-		backupStorageSpace := detailResp.Backup.Size[:len(detailResp.Backup.Size)-1]
-		if fmt.Sprintf("%d", nodeInfoList.StorageSpace.ValueInt32()) != backupStorageSpace {
-			flag = true
-			return
-		}
-
-	}
-	return
-}
-
-// 查询详情，确认spec是否更改
-func (c *CtyunMongodbInstance) isSpecUpgrade(ctx context.Context, state *CtyunMongodbInstanceConfig, spec string) (isUpgrade bool, err error) {
-	isUpgrade = true
-	err = nil
-	if state.prodPerformanceSpec != "" {
-		if state.prodPerformanceSpec == spec {
-			return false, nil
-		} else {
-			return true, nil
-		}
-	}
-
-	detailReturnObj, err := c.getMongoDetailInfo(ctx, state)
-	if err != nil {
-		return
-	}
-
-	if detailReturnObj.MachineSpec == spec {
-		isUpgrade = false
-		return
 	}
 	return
 }
@@ -1892,16 +1821,6 @@ func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMong
 			return err
 		}
 	} else if mongodbType == business.MongodbProdTypeCluster {
-		// mongodb 集群版单独处理，先判断是否需要变配
-		//isUpgrade, err := c.isUpgradeClusterSpec(ctx, state, plan)
-		//if err != nil {
-		//	return err
-		//}
-		//// 不需要升配
-		//if !isUpgrade {
-		//	return nil
-		//}
-		// 获取az节点规格
 		err := c.getNodeInfo(ctx, state, plan, mongodbType, &azInfo, plan.UpgradeNodeType.ValueString())
 		if err != nil {
 			return err
@@ -2061,66 +1980,6 @@ func (c *CtyunMongodbInstance) getNodeDist(ctx context.Context, state *CtyunMong
 		}
 	}
 	return nodeDist, nil
-}
-
-func (c *CtyunMongodbInstance) isUpgradeClusterSpec(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (bool, error) {
-	// 获取实例详情
-	mongoDetailInfo, err := c.getMongoDetailInfo(ctx, state)
-	if err != nil {
-		return false, err
-	}
-	mongoNodeList := mongoDetailInfo.NodeInfoVOS
-	upgradeNodeType := plan.UpgradeNodeType.ValueString()
-	for _, nodeInfo := range mongoNodeList {
-		role := strings.ToLower(nodeInfo.Role)
-		if strings.Contains(role, upgradeNodeType) {
-			cpu := nodeInfo.CpuCount
-			mem := nodeInfo.Memory
-			memInt, err2 := strconv.ParseInt(mem, 10, 32)
-			if err2 != nil {
-				return false, err2
-			}
-			newCpu, newMemory, err2 := c.getCpuAndMem(plan.prodPerformanceSpec)
-			if err2 != nil {
-				return false, err2
-			}
-			if newCpu < cpu || newMemory < int32(memInt) {
-				return true, fmt.Errorf("暂不支持降配。原配置为：%d核%dG，升配为：%d核%dG。", cpu, memInt, newCpu, newMemory)
-			}
-			if newCpu == cpu && newMemory == int32(memInt) {
-				return false, nil
-			}
-			break
-		}
-	}
-	return true, nil
-}
-
-func (c *CtyunMongodbInstance) string2Num(num string) (int32, error) {
-	convNum, err := strconv.Atoi(num)
-	if err == nil {
-		return -1, err
-	}
-	return int32(convNum), nil
-
-}
-
-func (c *CtyunMongodbInstance) getCpuAndMem(spec string) (cpu int32, memory int32, err error) {
-	re := regexp.MustCompile(`(\d+)C(\d+)G`)
-	matches := re.FindStringSubmatch(spec)
-	if len(matches) < 3 {
-		fmt.Println("格式错误")
-		return
-	}
-	cpu, err = c.string2Num(matches[1]) // 第一个数字
-	if err != nil {
-		return
-	}
-	memory, err = c.string2Num(matches[2]) // 第二个数字
-	if err != nil {
-		return
-	}
-	return cpu, memory, nil
 }
 
 func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) error {
@@ -2466,30 +2325,11 @@ func (c *CtyunMongodbInstance) afterUpdateSpecLoop(ctx context.Context, state *C
 	return nil
 }
 
-func (c *CtyunMongodbInstance) destroy(ctx context.Context, state CtyunMongodbInstanceConfig) (err error) {
-	deleteParams := &mongodb.MongodbDestroyRequest{
-		InstId: state.ID.ValueString(),
-	}
-	deleteHeader := &mongodb.MongodbDestroyRequestHeader{}
-	if state.ProjectID.ValueString() != "" {
-		deleteHeader.ProjectID = state.ProjectID.ValueString()
-	}
-	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDestroyApi.Do(ctx, c.meta.Credential, deleteParams, deleteHeader)
-	if err != nil {
-		return
-	} else if resp.StatusCode != 200 {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	}
-	return
-}
-
 type CtyunMongodbInstanceConfig struct {
-	CycleType  types.String `tfsdk:"cycle_type"`  // 计费模式： 1是包周期，2是按需
-	RegionID   types.String `tfsdk:"region_id"`   // 资源池Id
-	VpcID      types.String `tfsdk:"vpc_id"`      // 虚拟私有云Id
-	FlavorName types.String `tfsdk:"flavor_name"` // 规格名称
-	//HostType                types.String `tfsdk:"host_type"`                 // 主机类型 host type: S6 or S7
+	CycleType               types.String `tfsdk:"cycle_type"`                // 计费模式： 1是包周期，2是按需
+	RegionID                types.String `tfsdk:"region_id"`                 // 资源池Id
+	VpcID                   types.String `tfsdk:"vpc_id"`                    // 虚拟私有云Id
+	FlavorName              types.String `tfsdk:"flavor_name"`               // 规格名称
 	SubnetID                types.String `tfsdk:"subnet_id"`                 // 子网Id
 	SecurityGroupID         types.String `tfsdk:"security_group_id"`         // 安全组
 	Name                    types.String `tfsdk:"name"`                      // 集群名称
@@ -2513,7 +2353,7 @@ type CtyunMongodbInstanceConfig struct {
 	AvailabilityZoneInfo    types.List   `tfsdk:"availability_zone_info"`    // 节点可用区信息
 	ShardNum                types.Int32  `tfsdk:"shard_num"`                 // 当实例为集群版，shard数量
 	MongosNum               types.Int32  `tfsdk:"mongos_num"`                // 当实例为集群版，mongos节点数量
-	BackupStorageSpace      types.Int32  `tfsdk:"backup_storage_space"`      // 备用节点磁盘空间，升配时使用
+	BackupStorageSpace      types.Int32  `tfsdk:"backup_storage_space"`      // 备用节点磁盘空间
 	BackupStorageType       types.String `tfsdk:"backup_storage_type"`       // 备份节点存储类型
 	UpgradeNodeType         types.String `tfsdk:"upgrade_node_type"`         // 集群版mongodb升配规格时，
 

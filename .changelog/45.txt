@@ -8,7 +8,4 @@ release-note:new-data-source
 ctyun_postgresql_instances
 
 release-note:new-data-source
-ctyun_postgresql_security_groups
-
-release-note:new-data-source
 ctyun_postgresql_specs
