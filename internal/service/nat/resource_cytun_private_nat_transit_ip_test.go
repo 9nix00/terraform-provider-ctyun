@@ -20,8 +20,8 @@ func TestAccCtyunPrivateNatTransitIp(t *testing.T) {
 	datasourceFile := "datasource_ctyun_private_nat_transit_ip.tf"
 
 	natGatewayId := dependence.privateNatID
-	address := "192.168.128.100"
-	updatedAddress := "192.168.128.101"
+	address := "192.168.128.55"
+	updatedAddress := "192.168.128.56"
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

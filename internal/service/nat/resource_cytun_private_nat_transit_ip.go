@@ -99,12 +99,15 @@ func (c *ctyunPrivateNatTransitIpResource) Create(ctx context.Context, request r
 	}
 
 	// 创建中转IP
-	_, err = c.meta.Apis.SdkCtNatApis.CtnatCreatePrivatenatIPApi.Do(ctx, c.meta.SdkCredential, &ctnat.CtnatCreatePrivatenatIPRequest{
+	createResp, err := c.meta.Apis.SdkCtNatApis.CtnatCreatePrivatenatIPApi.Do(ctx, c.meta.SdkCredential, &ctnat.CtnatCreatePrivatenatIPRequest{
 		RegionID:     plan.RegionID.ValueString(),
 		NatGatewayID: plan.NatGatewayID.ValueString(),
 		Address:      plan.Address.ValueString(),
 	})
 	if err != nil {
+		return
+	} else if createResp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", createResp.Message, createResp.Description)
 		return
 	}
 
@@ -151,12 +154,11 @@ func (c *ctyunPrivateNatTransitIpResource) Read(ctx context.Context, request res
 
 func (c *ctyunPrivateNatTransitIpResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	// 中转IP不支持更新操作，直接将计划状态设置为当前状态
-	var plan CtyunPrivateNatTransitIpConfig
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	// 由于所有属性都需要替换资源，实际上不会执行更新操作
+	response.Diagnostics.AddError(
+		"不支持更新操作",
+		"中转IP不支持更新操作，如需修改请先删除再重新创建",
+	)
 }
 
 func (c *ctyunPrivateNatTransitIpResource) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
