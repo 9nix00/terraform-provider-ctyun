@@ -76,7 +76,8 @@ func StrPointerArrayToStrArray(array []*string) []string {
 func StrArrayToStrPointerArray(array []string) []*string {
 	ret := []*string{}
 	for _, str := range array {
-		ret = append(ret, &str)
+		s := str
+		ret = append(ret, &s)
 	}
 	return ret
 }
