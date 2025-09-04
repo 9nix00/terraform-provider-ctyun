@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// 读取所有PR文件
-	files, err := ioutil.ReadDir(changelogDir)
+	files, err := os.ReadDir(changelogDir)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading changelog directory: %v", err))
 	}
@@ -38,7 +38,7 @@ func main() {
 }
 
 func processFile(cl *ChangeLog, path string) {
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		panic(fmt.Sprintf("Error reading file %s: %v", path, err))
 	}
@@ -104,7 +104,7 @@ func generateMarkdown(cl *ChangeLog) {
 	}
 
 	// 写入文件
-	if err := ioutil.WriteFile("CHANGELOG.md", buf.Bytes(), 0644); err != nil {
+	if err := os.WriteFile("CHANGELOG.md", buf.Bytes(), 0644); err != nil {
 		panic(fmt.Sprintf("Error writing CHANGELOG.md: %v", err))
 	}
 }

@@ -1,5 +1,3 @@
-Copyright@2024  China Telecom Cloud Technology Co., Ltd. （天翼云科技有限公司）
-
 # Terraform Provider Ctyun
 
 ## 依赖项
@@ -54,3 +52,7 @@ provider "ctyun" {
 ## 文档参考
 
 详见工程中的[generate-doc](https://github.com/ctyun-it/terraform-provider-ctyun/tree/main/generate-doc)
+
+
+## 版权声明
+Copyright@2024  China Telecom Cloud Technology Co., Ltd. （天翼云科技有限公司）
