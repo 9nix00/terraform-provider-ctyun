@@ -29,7 +29,7 @@ func main() {
 	// 解析每个文件内容
 	for _, f := range files {
 		if filepath.Ext(f.Name()) == ".txt" {
-			processFile(cl, filepath.Join(changelogDir, f.Name())) //误报
+			processFile(cl, filepath.Join(changelogDir, f.Name()))
 		}
 	}
 

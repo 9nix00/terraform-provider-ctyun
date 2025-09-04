@@ -574,7 +574,7 @@ func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServi
 			ClientToken:       uuid.NewString(),
 			RegionID:          plan.RegionID.ValueString(),
 			EndpointServiceID: plan.ID.ValueString(),
-			Email:             &email, // 误报
+			Email:             &email,
 		}
 		var resp *ctvpc.CtvpcCreateEndpointServiceWhitelistResponse
 		resp, err = c.meta.Apis.SdkCtVpcApis.CtvpcCreateEndpointServiceWhitelistApi.Do(ctx, c.meta.SdkCredential, params)

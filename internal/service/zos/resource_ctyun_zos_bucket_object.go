@@ -397,7 +397,7 @@ func (c *ctyunZosBucketObject) create(ctx context.Context, plan CtyunZosBucketOb
 
 	var body io.ReadSeeker
 	if source != "" {
-		file, e := os.Open(source) // 客户端程序 输入可控
+		file, e := os.Open(source)
 		if e != nil {
 			err = fmt.Errorf("文件 (%s) 打开时出错: %s", source, e.Error())
 			return
