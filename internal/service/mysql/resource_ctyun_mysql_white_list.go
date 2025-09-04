@@ -224,6 +224,10 @@ func (c *CtyunMysqlWhiteList) Delete(ctx context.Context, request resource.Delet
 	if response.Diagnostics.HasError() {
 		return
 	}
+	err = c.checkStatus(ctx, state)
+	if err != nil {
+		return
+	}
 	params := &mysql.TeledbDeleteAccessWhiteListRequest{
 		OuterProdInstID: state.ProdInstID.ValueString(),
 		GroupName:       state.GroupName.ValueString(),
