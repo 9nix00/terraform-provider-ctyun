@@ -831,7 +831,7 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 func (c *CtyunMongodbInstance) ListLoop(ctx context.Context, params *mongodb.MongodbGetListRequest, header *mongodb.MongodbGetListHeaders, loopCount ...int) (*mongodb.MongodbGetListResponse, error) {
 	var err error
 	var response *mongodb.MongodbGetListResponse
-	count := 60
+	count := 120
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
