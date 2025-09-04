@@ -52,6 +52,7 @@ func GenerateRandomString() string {
 	length := 10
 	builder := strings.Builder{}
 	builder.Grow(length)
+	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < length; i++ {
 		randomIndex := rand.Intn(len(charset))
 		builder.WriteByte(charset[randomIndex])

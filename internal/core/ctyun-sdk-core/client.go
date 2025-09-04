@@ -49,9 +49,7 @@ func ClientConfigTest() *CtyunClientConfig {
 func ClientTest() *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
+			TLSClientConfig: &tls.Config{},
 		},
 		Timeout: 0,
 	}

@@ -397,7 +397,7 @@ func (c *ctyunZosBucketObject) create(ctx context.Context, plan CtyunZosBucketOb
 
 	var body io.ReadSeeker
 	if source != "" {
-		file, e := os.Open(source)
+		file, e := os.Open(source) // 客户端程序 输入可控
 		if e != nil {
 			err = fmt.Errorf("文件 (%s) 打开时出错: %s", source, e.Error())
 			return
@@ -571,7 +571,8 @@ func (c *ctyunZosBucketObject) updateTags(ctx context.Context, plan, state *Ctyu
 		},
 	}
 
-	for k, v := range tags {
+	for key, value := range tags {
+		k, v := key, value
 		input.Tagging.TagSet = append(input.Tagging.TagSet, &s3.Tag{Key: &k, Value: &v})
 	}
 	_, err = state.client.PutObjectTagging(input)
