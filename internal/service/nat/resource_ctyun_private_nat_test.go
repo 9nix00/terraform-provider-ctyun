@@ -35,7 +35,7 @@ func TestAccNewCtyunPrivateNatResource(t *testing.T) {
 	initName := utils.GenerateRandomString()
 
 	updatedName := utils.GenerateRandomString()
-	updatedDescription := utils.GenerateRandomString()
+	updatedDescription := "terraform provider 开发测试 更新"
 	//azName := "可用区1" // 添加可用区名称
 
 	resource.Test(t, resource.TestCase{
@@ -130,9 +130,8 @@ func TestAccNewCtyunPrivateNatResource(t *testing.T) {
 	})
 }
 
-func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
+func TestAccNewCtyunPrivateNatResource3(t *testing.T) {
 	rnd := utils.GenerateRandomString()
-
 	err := os.Setenv("TF_ACC", "1")
 	if err != nil {
 		return
@@ -163,9 +162,6 @@ func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// 1.resource create验证, cycle_type=按需
-			// 1.1 Create验证
-
 			// 3 cycle_type = year类型
 			// 3.1 Create验证
 			{
@@ -181,6 +177,66 @@ func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
 			// 销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount, dependence.subnetID1),
+				Destroy: true,
+			},
+		},
+	})
+}
+
+func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
+	rnd := utils.GenerateRandomString()
+
+	err := os.Setenv("TF_ACC", "1")
+	if err != nil {
+		return
+	}
+	resourceName := "ctyun_private_nat." + rnd
+
+	initDescription := "terraform provider 开发测试"
+	resourceFile := "resource_ctyun_private_nat.tf"
+
+	//vpcId := "vpc-8gs2ubvbry"
+	//subnetID := "subnet-2cgxr10o4x"
+	vpcId := dependence.vpcID
+	subnetID := dependence.subnetID2
+	spec := "small"
+
+	cycleCount := fmt.Sprintf(`cycle_count=%d`, 1)
+
+	yearCycleType := "month"
+
+	initName := utils.GenerateRandomString()
+
+	//azName := "可用区1" // 添加可用区名称
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 1.resource create验证, cycle_type=按需
+			// 1.1 Create验证
+
+			// 3 cycle_type = year类型
+			// 3.1 Create验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount, subnetID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "description", initDescription),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
+					resource.TestCheckResourceAttrSet(resourceName, "nat_gateway_id"),
+					resource.TestCheckResourceAttr(resourceName, "cycle_type", "month"),
+					resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
+				),
+			},
+			// 销毁
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount, subnetID),
 				Destroy: true,
 			},
 		},

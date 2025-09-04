@@ -99,11 +99,17 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,

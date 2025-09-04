@@ -26,7 +26,7 @@ func NewCtyunPrivateNats() datasource.DataSource {
 }
 
 func (c *ctyunPrivateNats) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_private_nat_nats"
+	response.TypeName = request.ProviderTypeName + "_private_nats"
 }
 
 func (c *ctyunPrivateNats) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
