@@ -104,3 +104,20 @@ variable "password" {
   type      = string
   sensitive = true
 }
+resource "ctyun_security_group" "security_group_test" {
+  vpc_id      = ctyun_vpc.vpc_test.id
+  name        = "tf-sg-for-private-nat"
+  description = "terraform测试使用"
+}
+resource "ctyun_port" "port" {
+  name                       = "port-test-update"
+  description                = "port 测试-测试"
+  subnet_id                  = ctyun_subnet.subnet_test1.id
+  security_group_ids        =  [ctyun_security_group.security_group_test.id]
+  secondary_private_ip_count = 1
+}
+
+resource "ctyun_ecs_port_association" "ecs_port_for_association_test" {
+  instance_id          =  ctyun_ecs.ecs_test.id
+  network_interface_id = ctyun_port.port.id
+}

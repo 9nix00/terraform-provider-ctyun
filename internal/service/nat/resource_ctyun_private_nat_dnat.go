@@ -85,6 +85,7 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"internal_ip": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "对应的内部IP(和port_id二选一)",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("port_id")),
@@ -342,10 +343,10 @@ func (c *ctyunPrivateDnatResource) ImportState(ctx context.Context, request reso
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
-func (c *ctyunPrivateDnatResource) getAndMergePrivateDnat(ctx context.Context, cfg *CtyunPrivateDnatConfig) (err error) {
+func (c *ctyunPrivateDnatResource) getAndMergePrivateDnat(ctx context.Context, plan *CtyunPrivateDnatConfig) (err error) {
 	resp, err := c.meta.Apis.SdkCtNatApis.CtnatQueryPrivatenatDnatApi.Do(ctx, c.meta.SdkCredential, &ctnat.CtnatQueryPrivatenatDnatRequest{
-		RegionID:     cfg.RegionID.ValueString(),
-		NatGatewayID: cfg.NatGatewayID.ValueString(),
+		RegionID:     plan.RegionID.ValueString(),
+		NatGatewayID: plan.NatGatewayID.ValueString(),
 		PageNo:       1,
 		PageSize:     50,
 	})
@@ -359,23 +360,23 @@ func (c *ctyunPrivateDnatResource) getAndMergePrivateDnat(ctx context.Context, c
 	// 查找匹配的DNAT规则
 	var targetDnat *ctnat.CtnatQueryPrivatenatDnatReturnObjResponse
 	for _, dnat := range resp.ReturnObj {
-		if dnat.DnatID == cfg.DnatID.ValueString() {
+		if dnat.DnatID == plan.DnatID.ValueString() {
 			targetDnat = dnat
 			break
 		}
 	}
 
 	// 如果没找到，尝试通过其他属性匹配
-	if targetDnat == nil && !cfg.DnatID.IsNull() && cfg.DnatID.ValueString() != "" {
+	if targetDnat == nil && !plan.DnatID.IsNull() && plan.DnatID.ValueString() != "" {
 		for _, dnat := range resp.ReturnObj {
 			// 根据请求参数匹配
-			if dnat.ExternalIP == cfg.ExternalIP.ValueString() &&
-				dnat.ExternalPort == cfg.ExternalPort.ValueInt32() &&
-				dnat.InternalPort == cfg.InternalPort.ValueInt32() &&
-				dnat.Protocol == cfg.Protocol.ValueString() {
+			if dnat.ExternalIP == plan.ExternalIP.ValueString() &&
+				dnat.ExternalPort == plan.ExternalPort.ValueInt32() &&
+				dnat.InternalPort == plan.InternalPort.ValueInt32() &&
+				dnat.Protocol == plan.Protocol.ValueString() {
 				// 如果internal_ip或port_id匹配其中一个
-				if (cfg.InternalIP.ValueString() != "" && dnat.InternalIP == cfg.InternalIP.ValueString()) ||
-					(cfg.PortID.ValueString() != "" && dnat.PortID == cfg.PortID.ValueString()) {
+				if (plan.InternalIP.ValueString() != "" && dnat.InternalIP == plan.InternalIP.ValueString()) ||
+					(plan.PortID.ValueString() != "" && dnat.PortID == plan.PortID.ValueString()) {
 					targetDnat = dnat
 					break
 				}
@@ -388,33 +389,39 @@ func (c *ctyunPrivateDnatResource) getAndMergePrivateDnat(ctx context.Context, c
 		return
 	}
 
-	cfg.DnatID = types.StringValue(targetDnat.DnatID)
-	cfg.ID = types.StringValue(targetDnat.DnatID)
-	cfg.ExternalIP = types.StringValue(targetDnat.ExternalIP)
-	cfg.ExternalPort = types.Int32Value(targetDnat.ExternalPort)
-	cfg.InternalPort = types.Int32Value(targetDnat.InternalPort)
-	cfg.InternalIP = types.StringValue(targetDnat.InternalIP)
+	plan.DnatID = types.StringValue(targetDnat.DnatID)
+	plan.ID = types.StringValue(targetDnat.DnatID)
+	plan.ExternalIP = types.StringValue(targetDnat.ExternalIP)
+	plan.ExternalPort = types.Int32Value(targetDnat.ExternalPort)
+	plan.InternalPort = types.Int32Value(targetDnat.InternalPort)
+
+	// 只有当internal_ip在配置中已设置或不为null时，才更新该值
+	if !plan.InternalIP.IsNull() || targetDnat.InternalIP != "" {
+		plan.InternalIP = types.StringValue(targetDnat.InternalIP)
+	} else {
+		plan.InternalIP = types.StringValue("")
+	}
 
 	// 处理可能为null的字段
-	if targetDnat.PortID == "" && cfg.PortID.IsNull() {
-		cfg.PortID = types.StringValue("")
+	if targetDnat.PortID == "" && plan.PortID.IsNull() {
+		plan.PortID = types.StringValue("")
 	} else {
-		cfg.PortID = types.StringValue(targetDnat.PortID)
+		plan.PortID = types.StringValue(targetDnat.PortID)
 	}
 
-	cfg.PortName = types.StringValue(targetDnat.PortName)
-	cfg.DeviceID = types.StringValue(targetDnat.DeviceID)
-	cfg.Protocol = types.StringValue(targetDnat.Protocol)
+	plan.PortName = types.StringValue(targetDnat.PortName)
+	plan.DeviceID = types.StringValue(targetDnat.DeviceID)
+	plan.Protocol = types.StringValue(targetDnat.Protocol)
 
 	// 处理描述字段
-	if targetDnat.Description == "" && cfg.Description.IsNull() {
-		cfg.Description = types.StringValue("")
+	if targetDnat.Description == "" && plan.Description.IsNull() {
+		plan.Description = types.StringValue("")
 	} else {
-		cfg.Description = types.StringValue(targetDnat.Description)
+		plan.Description = types.StringValue(targetDnat.Description)
 	}
 
-	cfg.State = types.StringValue(targetDnat.State)
-	cfg.CreatedAt = types.StringValue(targetDnat.CreatedAt)
+	plan.State = types.StringValue(targetDnat.State)
+	plan.CreatedAt = types.StringValue(targetDnat.CreatedAt)
 
 	return nil
 }

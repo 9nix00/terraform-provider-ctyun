@@ -20,6 +20,7 @@ type Dependence struct {
 	ecsID         string
 	privateNatIP1 string
 	privateNatIP2 string
+	portId        string
 }
 
 var dependence Dependence
@@ -43,6 +44,7 @@ func TestMain(m *testing.M) {
 		ecsID:         outputs["ecs_id"].Value,
 		privateNatIP1: outputs["private_nat_ip1"].Value,
 		privateNatIP2: outputs["private_nat_ip2"].Value,
+		portId:        outputs["port_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

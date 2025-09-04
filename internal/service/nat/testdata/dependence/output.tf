@@ -10,9 +10,9 @@ output "vpc_id" {
   value = ctyun_vpc.vpc_test.id
 }
 
-# output "nat_id" {
-#   value = ctyun_nat.nat_test.id
-# }
+output "nat_id" {
+  value = ctyun_nat.nat_test.id
+}
 output "private_nat_id" {
   value = ctyun_private_nat.nat_test.id
 }
@@ -34,4 +34,7 @@ output "private_nat_ip1" {
 }
 output "private_nat_ip2" {
   value = ctyun_private_nat_transit_ip.ip1.address
+}
+output "port_id" {
+  value = ctyun_port.port.id
 }
