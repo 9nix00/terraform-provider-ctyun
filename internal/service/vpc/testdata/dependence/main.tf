@@ -69,3 +69,23 @@ variable "password" {
   type      = string
   sensitive = true
 }
+
+
+
+
+
+# 创建数据盘资源
+resource "ctyun_ebs" "data_disk_test" {
+  name       = "tf-test-data-disk"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
+}
+
+# 创建EBS与ECS的关联关系（显式挂载）
+resource "ctyun_ebs_association_ecs" "data_disk_association" {
+  instance_id = ctyun_ecs.ecs_test.id
+  ebs_id      = ctyun_ebs.data_disk_test.id
+}
+# 查询网络接口资源

@@ -17,3 +17,10 @@ output "ecs_id" {
 output "security_group_id" {
   value = ctyun_security_group.security_group_test.id
 }
+output "data_disk_id" {
+  value = ctyun_ebs.data_disk_test.id
+}
+
+output "instance_id" {
+  value =ctyun_ecs.ecs_test.id
+}

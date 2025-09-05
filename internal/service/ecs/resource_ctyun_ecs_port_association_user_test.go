@@ -1,4 +1,4 @@
-package ports_test
+package ecs_test
 
 import (
 	"fmt"
@@ -26,7 +26,7 @@ func TestAccCtyunEcsPortAssociation_all(t *testing.T) {
 		Steps: []resource.TestStep{
 			{
 				// 测试基本创建场景
-				Config: utils.LoadTestCase(configFile, rnd, dependence.instanceID),
+				Config: utils.LoadTestCase(configFile, rnd, dependence.instanceID, dependence.ecsPortForAssociationId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
 					resource.TestCheckResourceAttrSet(name, "region_id"),
@@ -36,7 +36,7 @@ func TestAccCtyunEcsPortAssociation_all(t *testing.T) {
 			},
 			{
 				// 测试更新场景
-				Config: utils.LoadTestCase(configFile, rnd, dependence.instanceID),
+				Config: utils.LoadTestCase(configFile, rnd, dependence.instanceID, dependence.ecsPortForAssociationId),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
 					resource.TestCheckResourceAttrSet(name, "region_id"),
@@ -58,7 +58,7 @@ func TestAccCtyunEcsPortAssociation_all(t *testing.T) {
 			},
 			{
 				// 测试销毁解绑场景
-				Config:  utils.LoadTestCase(configFile, rnd, dependence.instanceID),
+				Config:  utils.LoadTestCase(configFile, rnd, dependence.instanceID, dependence.ecsPortForAssociationId),
 				Destroy: true,
 			},
 		},

@@ -1,4 +1,4 @@
-package ports_test
+package vpc_test
 
 import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"

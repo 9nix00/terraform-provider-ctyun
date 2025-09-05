@@ -1,4 +1,4 @@
-package ports_test
+package vpc_test
 
 import (
 	"fmt"
