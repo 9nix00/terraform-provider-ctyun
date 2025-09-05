@@ -48,7 +48,6 @@ import (
 	mysql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/nat"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ports"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
 	scaling2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/scaling"
@@ -428,7 +427,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		sfs2.NewCtyunSfsInstances(),
 		sfs2.NewCtyunSfsPermissionRules(),
 		ccse.NewCtyunCcseTemplateMarket(),
-		ports.NewCtyunNetworkInterfaces(),
+		vpc.NewCtyunNetworkInterfaces(),
 		nat.NewCtyunPrivateNatCidrs(),
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
@@ -526,8 +525,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunEcsBackupPolicyBindInstances(),
 		ecs.NewCtyunEcsBackupPolicyBindRepo(),
 		ccse.NewCtyunCcseNodeAssociation(),
-		ports.NewCtyunNetworkInterface(),
-		ports.NewCtyunEcsPortAssociation(),
+		vpc.NewCtyunNetworkInterface(),
+		ecs.NewCtyunEcsPortAssociation(),
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),

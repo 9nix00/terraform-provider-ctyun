@@ -89,3 +89,6 @@ resource "ctyun_ebs_association_ecs" "data_disk_association" {
   ebs_id      = ctyun_ebs.data_disk_test.id
 }
 # 查询网络接口资源
+
+
+
