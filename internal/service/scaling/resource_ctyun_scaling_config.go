@@ -196,7 +196,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				Optional:    true,
 				Computed:    true,
 				Sensitive:   true,
-				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:; '<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新",
+				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 30),
 					validator2.AlsoRequiresEqualString(
