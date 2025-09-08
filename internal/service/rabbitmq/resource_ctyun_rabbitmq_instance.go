@@ -448,7 +448,7 @@ func (c *ctyunRabbitmqInstance) checkSpecParams(ctx context.Context, plan CtyunR
 		RegionId: plan.RegionID.ValueString(),
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -554,7 +554,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		ZoneList:        plan.zoneList,
 	}
 
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -584,7 +584,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		ZoneList:        plan.zoneList,
 	}
 
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -673,7 +673,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		DiskExtendSize: plan.DiskSize.ValueInt32(),
 		AutoPay:        true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesDiskExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesDiskExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -741,7 +741,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		ExtendNodeNum: plan.NodeNum.ValueInt32(),
 		AutoPay:       true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesNodeExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesNodeExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -811,7 +811,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		SpecName:   plan.SpecName.ValueString(),
 		AutoPay:    true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -865,7 +865,7 @@ func (c *ctyunRabbitmqInstance) updateName(ctx context.Context, plan, state Ctyu
 		ProdInstId:   state.ID.ValueString(),
 		InstanceName: plan.InstanceName.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesInstanceNameApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesInstanceNameApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -882,7 +882,7 @@ func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbi
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -898,7 +898,7 @@ func (c *ctyunRabbitmqInstance) destroy(ctx context.Context, plan CtyunRabbitmqI
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -995,7 +995,7 @@ func (c *ctyunRabbitmqInstance) getByName(ctx context.Context, plan CtyunRabbitm
 		PageNum:  1,
 		PageSize: 100,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -1020,7 +1020,7 @@ func (c *ctyunRabbitmqInstance) getByID(ctx context.Context, plan CtyunRabbitmqI
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
