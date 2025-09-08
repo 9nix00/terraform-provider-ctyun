@@ -58,7 +58,7 @@ func (c *CtyunElbListener) Metadata(ctx context.Context, request resource.Metada
 
 func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10140276",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10140276**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

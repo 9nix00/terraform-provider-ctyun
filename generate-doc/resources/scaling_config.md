@@ -1,5 +1,5 @@
 # ctyun_scaling_config (Resource)
-弹性伸缩配置管理，支持配置的创建、修改和删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725/10241446
+**详细说明请见文档：https://www.ctyun.cn/document/10027725/10241446**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -67,8 +68,8 @@ resource "ctyun_scaling_config" "scaling_config_example" {
 - `bandwidth` (Number) 弹性IP带宽(Mbps)，范围1-3000，支持更新
 - `key_pair_id` (String) 密钥对ID，login_mode为key_pair时必填，支持更新
 - `monitor_service` (Boolean) 是否开启详细监控，支持更新
-- `password` (String, Sensitive) 密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:;'<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新
-- `region_id` (String) 区域ID
+- `password` (String, Sensitive) 密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:; '<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新
+- `region_id` (String) 资源池ID
 - `tags` (Attributes List) 标签集，支持更新 (see [below for nested schema](#nestedatt--tags))
 
 ### Read-Only

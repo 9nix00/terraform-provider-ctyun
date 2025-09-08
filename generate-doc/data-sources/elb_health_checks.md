@@ -1,4 +1,5 @@
 # ctyun_elb_health_checks (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032101**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -28,7 +30,7 @@ data "ctyun_elb_health_checks" "examples" {
 
 - `ids` (String) 健康检查ID列表，用逗号分隔
 - `name` (String) 健康检查名称, 只能由数字，字母，-组成不能以数字和-开头，最大长度32
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 
@@ -52,6 +54,6 @@ Read-Only:
 - `project_id` (String) 项目ID
 - `protocol` (String) 健康检查协议: TCP / UDP / HTTP
 - `protocol_port` (Number) 健康检查端口
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `status` (Number) 状态 1 表示 UP, 0 表示 DOWN
 - `timeout` (Number) 健康检查响应的最大超时时间

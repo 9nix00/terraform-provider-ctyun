@@ -1,5 +1,5 @@
 # ctyun_elb_health_check (Resource)
-弹性负载均衡--健康检查创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10032101
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032101**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -49,7 +50,7 @@ resource "ctyun_elb_health_check" "health_check_test" {
 - `max_retry` (Number) 最大重试次数，取值范围：1-10次，默认为2次，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `protocol_port` (Number) 健康检查端口 1 - 65535，支持更新
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `timeout` (Number) 健康检查响应的最大超时时间，取值范围：2-60秒，默认为2秒，支持更新
 
 ### Read-Only

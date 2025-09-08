@@ -37,12 +37,12 @@ func (c *ctyunElbAcls) Metadata(ctx context.Context, request datasource.Metadata
 
 func (c *ctyunElbAcls) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032777**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 			},
 			"ids": schema.StringAttribute{
 				Optional:    true,

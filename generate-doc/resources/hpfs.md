@@ -14,6 +14,10 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_hpfs" "test" {
   sfs_protocol = "hpfs"
@@ -40,7 +44,7 @@ resource "ctyun_hpfs" "test" {
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `cycle_type` (String) 订购周期类型，只支持on_demand
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `subnet_id` (String) 子网 ID
 - `vpc_id` (String) 虚拟网 ID
 

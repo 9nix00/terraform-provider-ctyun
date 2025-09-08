@@ -1,5 +1,5 @@
 # ctyun_elb_listener (Resource)
-弹性负载均衡--监听创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10140276
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10140276**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -37,7 +38,6 @@ resource "ctyun_subnet" "subnet_test" {
   ]
 }
 
-
 resource "ctyun_elb_loadbalancer" "listener_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-listener"
@@ -47,6 +47,7 @@ resource "ctyun_elb_loadbalancer" "listener_test" {
   cycle_type    = "month"
   cycle_count   = 1
 }
+
 resource "ctyun_elb_target_group" "test2" {
   name      = "tf-tg-for-target2"
   vpc_id    = ctyun_vpc.vpc_test.id

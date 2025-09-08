@@ -1,5 +1,5 @@
 # ctyun_elb_target (Resource)
-弹性负载均衡--后端主机新增/读取/编辑/删除，文档地址：https://www.ctyun.cn/document/10026756/10196689
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10196689**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -80,7 +81,7 @@ variable "password" {
 resource "ctyun_elb_target" "elb_target_test" {
   target_group_id = ctyun_elb_target_group.target_group_test.id
   instance_type = "VM"
-  instance_id = "%[4]s"
+  instance_id = ctyun_ecs.ecs_test.id
   protocol_port = 12345
 }
 ```

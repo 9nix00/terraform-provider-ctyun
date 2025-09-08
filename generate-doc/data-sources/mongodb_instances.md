@@ -1,5 +1,5 @@
 # ctyun_mongodb_instances (Data Source)
-mongodb datasource，获取mongodb实例列表
+**详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
