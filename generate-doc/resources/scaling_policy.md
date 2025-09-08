@@ -1,5 +1,5 @@
 # ctyun_scaling_policy (Resource)
-弹性伸缩策略管理，支持伸缩策略的创建、修改和删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725/10241454
+**详细说明请见文档：https://www.ctyun.cn/document/10027725/10241454**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -136,7 +137,7 @@ resource "ctyun_scaling_policy" "policy_alert_example" {
 - `is_execute` (Boolean) 控制是否需要执行弹性伸缩策略，true表示执行，false表示不执行。默认为false，支持更新
 - `operate_count` (Number) 调整值，当status=disable时，支持更新
 - `operate_unit` (String) 操作单位: count-个数, percent-百分比，当status=disable时，支持更新
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `status` (String) 告警规则状态：enable：启用。disable：停用，支持更新
 - `target_disable_scale_in` (Boolean) 是否禁用缩容，当status=disable时，支持更新。默认为false。
 - `target_metric_name` (String) 监控指标名称，取值范围：cpu_util-CPU使用率，network_incoming_bytes_rate_inband-网络流入速率，network_outing_bytes_rate_inband-网络流出速率，当status=disable时，支持更新

@@ -1,4 +1,5 @@
 # ctyun_scaling_ecs_protection (Resource)
+**详细说明请见文档：//www.ctyun.cn/document/10027725/10216534**
 
 
 
@@ -13,22 +14,21 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
-
-
 
 variable "key_pair" {
   type      = string
   sensitive = true
 }
 
-
 variable "ecs_password" {
   type      = string
   sensitive = true
 }
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-scaling"
   cidr        = "192.168.0.0/16"
@@ -143,4 +143,4 @@ resource "ctyun_scaling_ecs_protection" "scaling_ecs_protect_example" {
 ### Optional
 
 - `instance_id_list` (Set of String) 需要开启伸缩保护的的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID

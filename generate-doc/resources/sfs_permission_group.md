@@ -1,5 +1,5 @@
 # ctyun_sfs_permission_group (Resource)
-弹性文件服务权限组管理，支持权限组创建、更新和删除。具体文档：https://www.ctyun.cn/document/10027350/10192622
+**详细说明请见文档：https://www.ctyun.cn/document/10027350/10192622**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }

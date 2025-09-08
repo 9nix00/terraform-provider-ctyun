@@ -1,5 +1,5 @@
 # ctyun_sfs_permission_group_association (Resource)
-弹性文件服务权限组绑定管理。支持弹性文件实例与vpc绑定，更新和解绑。具体文档：https://www.ctyun.cn/document/10027350/10192625
+**详细说明请见文档：https://www.ctyun.cn/document/10027350/10192625**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }

@@ -66,7 +66,7 @@ func (c *ctyunSfsPermissionGroupRule) ImportState(ctx context.Context, request r
 
 func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "天翼云SFS（文件存储）权限组规则管理，支持权限组规则创建、更新和删除。具体文档可参考：https://www.ctyun.cn/document/10027350/10192622",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027350/10192622**`,
 		Attributes: map[string]schema.Attribute{
 			"permission_group_fuid": schema.StringAttribute{
 				Required:    true,

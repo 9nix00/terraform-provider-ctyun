@@ -1,5 +1,5 @@
 # ctyun_elb_rule (Resource)
-弹性负载均衡--转发规则，文档地址：https://www.ctyun.cn/document/10026756/10032110
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032110**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -38,7 +39,6 @@ resource "ctyun_subnet" "subnet_test" {
   ]
 }
 
-
 resource "ctyun_elb_loadbalancer" "listener_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-listener"
@@ -48,6 +48,7 @@ resource "ctyun_elb_loadbalancer" "listener_test" {
   cycle_type    = "month"
   cycle_count   = 1
 }
+
 resource "ctyun_elb_target_group" "test2" {
   name      = "tf-tg-for-target2_12"
   vpc_id    = ctyun_vpc.vpc_test.id
@@ -55,7 +56,7 @@ resource "ctyun_elb_target_group" "test2" {
 }
 
 resource "ctyun_elb_rule" "rule_test" {
-  listener_id = "%[2]s"
+  listener_id = ctyun_elb_loadbalancer.listener_test.id
   conditions = [
     { "type" : "server_name", "condition_server_name" : "terraform-test.com" }
   ]

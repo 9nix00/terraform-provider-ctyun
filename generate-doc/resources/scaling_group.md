@@ -1,5 +1,5 @@
 # ctyun_scaling_group (Resource)
-弹性伸缩组管理、弹性伸缩组云主机管理，支持弹性伸缩组的创建、更新和删除。组内云主机的插入删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725
+**详细说明请见文档：：https://www.ctyun.cn/document/10027725**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -158,7 +159,7 @@ resource "ctyun_scaling_group" "scaling_group_test" {
 - `is_destroy` (Boolean) 移除时是否销毁，仅当移除云主机时生效（对手动添加的机器做处理），true-ecs移出伸缩组时销毁， false-ecs移出伸缩组时不销毁，支持更新
 - `lb_list` (Attributes List) 负载均衡列表，use_lb=1时必填。当status=disable时支持更新 (see [below for nested schema](#nestedatt--lb_list))
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `remove_instance_uuid_list` (Set of String) 需要删除手动/自动加入伸缩组的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。
 - `security_group_id_list` (Set of String) 安全组ID列表。支持更新
 - `status` (String) 伸缩组状态。取值范围：enable 或 disable，支持更新。可以用于控制伸缩组的状态更新

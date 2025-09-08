@@ -40,12 +40,12 @@ func (c *ctyunElbListeners) Metadata(ctx context.Context, request datasource.Met
 
 func (c *ctyunElbListeners) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10140276**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -74,7 +74,7 @@ func (c *ctyunElbListeners) Schema(ctx context.Context, request datasource.Schem
 					Attributes: map[string]schema.Attribute{
 						"region_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "区域ID",
+							Description: "资源池ID",
 						},
 						"az_name": schema.StringAttribute{
 							Computed:    true,

@@ -9,13 +9,13 @@ import (
 )
 
 const (
-	ScalingConfigNamePasswordError        = "不满足scaling config password格式"
-	ScalingConfigNamePasswordLengthError  = "密码长度必须为8～30个字符"
-	ScalingConfigNamePasswordStartError   = "不能以斜线号(/)开头"
-	ScalingConfigNamePasswordWindowsError = "Windows密码不能包含管理员用户名"
-	ScalingConfigNamePasswordTypeError    = "密码必须包含大写字母、小写字母、数字和特殊符号中的至少3类"
-	ScalingConfigNamePasswordSeqCharError = "密码不能包含3个及以上连续字符"
-	ScalingConfigNamePasswordSeqNumError  = "密码不能包含3个及以上连续数字"
+	ScalingConfigNamePwError        = "不满足scaling config password格式"
+	ScalingConfigNamePwLengthError  = "密码长度必须为8～30个字符"
+	ScalingConfigNamePwStartError   = "不能以斜线号(/)开头"
+	ScalingConfigNamePwWindowsError = "Windows密码不能包含管理员用户名"
+	ScalingConfigNamePwTypeError    = "密码必须包含大写字母、小写字母、数字和特殊符号中的至少3类"
+	ScalingConfigNamePwSeqCharError = "密码不能包含3个及以上连续字符"
+	ScalingConfigNamePwSeqNumError  = "密码不能包含3个及以上连续数字"
 )
 
 type validatorScalingConfigPassword struct {
@@ -26,7 +26,7 @@ func ScalingConfigPasswordValidate() validator.String {
 }
 
 func (v validatorScalingConfigPassword) Description(ctx context.Context) string {
-	return ScalingConfigNamePasswordError
+	return ScalingConfigNamePwError
 }
 
 func (v validatorScalingConfigPassword) MarkdownDescription(ctx context.Context) string {
@@ -44,13 +44,13 @@ func (v validatorScalingConfigPassword) ValidateString(ctx context.Context, requ
 	// 规则1: 长度验证 (8～30个字符)
 	n := len(password)
 	if n < 8 || n > 30 {
-		response.Diagnostics.AddError(ScalingConfigNamePasswordLengthError, ScalingConfigNamePasswordLengthError)
+		response.Diagnostics.AddError(ScalingConfigNamePwLengthError, ScalingConfigNamePwLengthError)
 		return
 	}
 
 	// 规则2: 不能以斜线号(/)开头
 	if strings.HasPrefix(password, "/") {
-		response.Diagnostics.AddError(ScalingConfigNamePasswordStartError, ScalingConfigNamePasswordStartError)
+		response.Diagnostics.AddError(ScalingConfigNamePwStartError, ScalingConfigNamePwStartError)
 		return
 	}
 
@@ -58,7 +58,7 @@ func (v validatorScalingConfigPassword) ValidateString(ctx context.Context, requ
 	//if isWindows {
 	//	lowerPass := strings.ToLower(password)
 	//	if strings.Contains(lowerPass, "administrator") {
-	//		response.Diagnostics.AddError(ScalingConfigNamePasswordWindowsError, ScalingConfigNamePasswordWindowsError)
+	//		response.Diagnostics.AddError(ScalingConfigNamePwWindowsError, ScalingConfigNamePwWindowsError)
 	//		return
 	//	}
 	//}
@@ -101,7 +101,7 @@ func (v validatorScalingConfigPassword) ValidateString(ctx context.Context, requ
 	}
 
 	if typesCount < 3 {
-		response.Diagnostics.AddError(ScalingConfigNamePasswordTypeError, ScalingConfigNamePasswordTypeError)
+		response.Diagnostics.AddError(ScalingConfigNamePwTypeError, ScalingConfigNamePwTypeError)
 		return
 	}
 
@@ -110,13 +110,13 @@ func (v validatorScalingConfigPassword) ValidateString(ctx context.Context, requ
 		seq := password[i : i+3]
 		// 检查字母连续 (如abc, xyz)
 		if isAlphabeticSequence(seq) {
-			response.Diagnostics.AddError(fmt.Sprintf("密码不能包含3个及以上连续字符 (%q)", seq), ScalingConfigNamePasswordSeqCharError)
+			response.Diagnostics.AddError(fmt.Sprintf("密码不能包含3个及以上连续字符 (%q)", seq), ScalingConfigNamePwSeqCharError)
 			return
 		}
 
 		// 检查数字连续 (如123, 789)
 		if isNumericSequence(seq) {
-			response.Diagnostics.AddError(fmt.Sprintf("密码不能包含3个及以上连续数字 (%q)", seq), ScalingConfigNamePasswordSeqNumError)
+			response.Diagnostics.AddError(fmt.Sprintf("密码不能包含3个及以上连续数字 (%q)", seq), ScalingConfigNamePwSeqNumError)
 			return
 		}
 	}
