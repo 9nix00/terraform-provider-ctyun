@@ -38,7 +38,6 @@ resource "ctyun_subnet" "subnet_test" {
   ]
 }
 
-
 resource "ctyun_elb_loadbalancer" "listener_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-listener"
@@ -48,6 +47,7 @@ resource "ctyun_elb_loadbalancer" "listener_test" {
   cycle_type    = "month"
   cycle_count   = 1
 }
+
 resource "ctyun_elb_target_group" "test2" {
   name      = "tf-tg-for-target2_12"
   vpc_id    = ctyun_vpc.vpc_test.id
@@ -55,7 +55,7 @@ resource "ctyun_elb_target_group" "test2" {
 }
 
 resource "ctyun_elb_rule" "rule_test" {
-  listener_id = "%[2]s"
+  listener_id = ctyun_elb_loadbalancer.listener_test.id
   conditions = [
     { "type" : "server_name", "condition_server_name" : "terraform-test.com" }
   ]

@@ -72,7 +72,7 @@ variable "password" {
 resource "ctyun_elb_target" "elb_target_test" {
   target_group_id = ctyun_elb_target_group.target_group_test.id
   instance_type = "VM"
-  instance_id = "%[4]s"
+  instance_id = ctyun_ecs.ecs_test.id
   protocol_port = 12345
 }
 

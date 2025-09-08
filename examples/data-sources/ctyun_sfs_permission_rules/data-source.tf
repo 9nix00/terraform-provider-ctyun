@@ -15,6 +15,6 @@ resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
   description = "创建sfs规则组"
 }
 
-data "ctyun_sfs_permission_rules" "%[1]s" {
+data "ctyun_sfs_permission_rules" "test" {
   permission_group_fuid = ctyun_sfs_permission_group.sfs_permission_group_test.id
 }

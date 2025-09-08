@@ -29,7 +29,6 @@ resource "ctyun_subnet" "subnet_test" {
   ]
 }
 
-
 resource "ctyun_elb_loadbalancer" "listener_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-listener"
@@ -39,6 +38,7 @@ resource "ctyun_elb_loadbalancer" "listener_test" {
   cycle_type    = "month"
   cycle_count   = 1
 }
+
 resource "ctyun_elb_target_group" "test2" {
   name      = "tf-tg-for-target2"
   vpc_id    = ctyun_vpc.vpc_test.id

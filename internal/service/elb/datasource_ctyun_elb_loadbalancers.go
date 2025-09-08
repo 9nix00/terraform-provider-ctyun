@@ -32,12 +32,12 @@ func (c *ctyunElbLoadBalancers) Metadata(_ context.Context, request datasource.M
 
 func (c *ctyunElbLoadBalancers) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**详情文档可查看：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=24&api=5647&data=88&isNormal=1&vid=82",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10138703**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 			},
 			"ids": schema.StringAttribute{
 				Optional:    true,
@@ -51,12 +51,10 @@ func (c *ctyunElbLoadBalancers) Schema(_ context.Context, _ datasource.SchemaReq
 				},
 			},
 			"name": schema.StringAttribute{
-				//Computed:    true,
 				Optional:    true,
 				Description: "名称",
 			},
 			"subnet_id": schema.StringAttribute{
-				//Computed:    true,
 				Optional:    true,
 				Description: "子网ID",
 			},
@@ -143,7 +141,7 @@ func (c *ctyunElbLoadBalancers) Schema(_ context.Context, _ datasource.SchemaReq
 						},
 						"region_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "区域id",
+							Description: "资源池ID",
 						},
 						"eip_info": schema.ListNestedAttribute{
 							Computed: true,

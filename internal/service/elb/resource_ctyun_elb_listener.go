@@ -58,7 +58,7 @@ func (c *CtyunElbListener) Metadata(ctx context.Context, request resource.Metada
 
 func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--监听创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10140276",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10140276**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -88,7 +88,7 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][a-zA-Z0-9_\\-\\x{4e00}-\\x{9fa5}]*$"), "必须以拉丁字母或中文开头，只能包含拉丁字母、中文、数字、下划线和连字符"),
-					stringvalidator.RegexMatches(regexp.MustCompile(`^([^h]|h[^t]|ht[^t]|htt[^p]|http[^s]|https.).*$`), "不能以http:或https:开头"),
+					stringvalidator.RegexMatches(regexp.MustCompile(` ^ ([^h] | h[^t] | ht[^t] | htt[^p] | http[^s] | https.).*$`), "不能以http:或https:开头"),
 				},
 			},
 			"description": schema.StringAttribute{
