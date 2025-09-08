@@ -197,67 +197,67 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 				Computed:    true,
 				Sensitive:   true,
 				Description: "密码，login_mode为password时必填。密码规则：（1）8～30 个字符（2）必须同时包含三项（大写字母、小写字母、数字、 ()`~!@#$%^&*_-+=|{}[]:; '<>,.?/ 中的特殊符号）（3）不能以斜线号（/）开头 （4）不能包含3个及以上连续字符，如abc、123 （5）Windows镜像不能包含镜像用户名（Administrator）、用户名大小写变化（adminiSTrator），支持更新",
-		Validators: []validator.String{
-		stringvalidator.LengthBetween(8, 30),
-		validator2.AlsoRequiresEqualString(
-		path.MatchRoot("login_mode"),
-		types.StringValue(business.ScalingLoginModePasswordStr),
-	),
-		validator2.ConflictsWithEqualString(
-		path.MatchRoot("login_mode"),
-		types.StringValue(business.ScalingLoginModeKeyPairStr),
-	),
-		validator2.ScalingConfigPasswordValidate(),
-	},
-	},
-		"key_pair_id": schema.StringAttribute{
-		Optional:    true,
-		Computed:    true,
-		Description: "密钥对ID，login_mode为key_pair时必填，支持更新",
-		Validators: []validator.String{
-			validator2.AlsoRequiresEqualString(
-				path.MatchRoot("login_mode"),
-				types.StringValue(business.ScalingLoginModeKeyPairStr),
-			),
-			validator2.ConflictsWithEqualString(
-				path.MatchRoot("login_mode"),
-				types.StringValue(business.ScalingLoginModePasswordStr),
-			),
-		},
-	},
-		"tags": schema.ListNestedAttribute{
-		Optional:    true,
-		Description: "标签集，支持更新",
-		NestedObject: schema.NestedAttributeObject{
-			Attributes: map[string]schema.Attribute{
-				"key": schema.StringAttribute{
-					Required:    true,
-					Description: "标签键，支持更新",
-				},
-				"value": schema.StringAttribute{
-					Required:    true,
-					Description: "标签值，支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(8, 30),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("login_mode"),
+						types.StringValue(business.ScalingLoginModePasswordStr),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("login_mode"),
+						types.StringValue(business.ScalingLoginModeKeyPairStr),
+					),
+					validator2.ScalingConfigPasswordValidate(),
 				},
 			},
+			"key_pair_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "密钥对ID，login_mode为key_pair时必填，支持更新",
+				Validators: []validator.String{
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("login_mode"),
+						types.StringValue(business.ScalingLoginModeKeyPairStr),
+					),
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("login_mode"),
+						types.StringValue(business.ScalingLoginModePasswordStr),
+					),
+				},
+			},
+			"tags": schema.ListNestedAttribute{
+				Optional:    true,
+				Description: "标签集，支持更新",
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"key": schema.StringAttribute{
+							Required:    true,
+							Description: "标签键，支持更新",
+						},
+						"value": schema.StringAttribute{
+							Required:    true,
+							Description: "标签值，支持更新",
+						},
+					},
+				},
+			},
+			"az_names": schema.SetAttribute{
+				ElementType: types.StringType,
+				Optional:    true,
+				Description: "可用区列表，仅多可用区资源池支持，支持更新",
+			},
+			"monitor_service": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "是否开启详细监控，支持更新",
+				Default:     booldefault.StaticBool(true),
+			},
+			"id": schema.Int64Attribute{
+				Computed:    true,
+				Description: "弹性伸缩配置ID",
+			},
 		},
-	},
-		"az_names": schema.SetAttribute{
-		ElementType: types.StringType,
-		Optional:    true,
-		Description: "可用区列表，仅多可用区资源池支持，支持更新",
-	},
-		"monitor_service": schema.BoolAttribute{
-		Optional:    true,
-		Computed:    true,
-		Description: "是否开启详细监控，支持更新",
-		Default:     booldefault.StaticBool(true),
-	},
-		"id": schema.Int64Attribute{
-		Computed:    true,
-		Description: "弹性伸缩配置ID",
-	},
-},
-}
+	}
 }
 
 func (c *ctyunScalingConfig) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {

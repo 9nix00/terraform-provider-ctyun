@@ -85,7 +85,7 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 63),
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(` ^[a-zA-Z]([a - zA - Z0 - 9 -]*[a-zA-Z0-9])?$`),
+						regexp.MustCompile(`^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?$`),
 						"权限组名称只能由数字、字母(区分大小写)、-组成，不能以数字和-开头、且不能以-结尾",
 					),
 				},
