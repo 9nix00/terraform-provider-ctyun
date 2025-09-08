@@ -1,10 +1,24 @@
 # ctyun_mysql_instance (Resource)
+**详细说明请见文档：https://www.ctyun.cn/document/10033813/10134365**
 
 
 
 ## 样例
 
 ```terraform
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-paas"
   cidr        = "192.168.0.0/16"

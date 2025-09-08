@@ -1,4 +1,5 @@
 # ctyun_elb_listeners (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10140276**
 
 
 
@@ -13,6 +14,8 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -31,7 +34,7 @@ data "ctyun_elb_listeners" "examples" {
 - `load_balancer_id` (String) 负载均衡实例ID
 - `name` (String) 监听器名称
 - `project_id` (String) 企业项目ID，默认为'0'
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 
@@ -60,7 +63,7 @@ Read-Only:
 - `protocol` (String) 监听协议: TCP / UDP / HTTP / HTTPS
 - `protocol_port` (Number) 监听端口
 - `redirect_listener_id` (String) 重定向监听器ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `status` (String) 监听器状态: DOWN / ACTIVE
 - `updated_time` (String) 更新时间，为UTC格式
 

@@ -1,5 +1,5 @@
 # ctyun_elb_targets (Data Source)
-**查询后端主机列表
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10196689**
 
 
 
@@ -14,6 +14,8 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -28,7 +30,7 @@ data "ctyun_elb_targets" "test"{
 ### Optional
 
 - `ids` (String) 后端服务ID列表，以,分隔
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `target_group_id` (String) 后端服务组ID
 
 ### Read-Only
@@ -50,7 +52,7 @@ Read-Only:
 - `instance_type` (String) 实例类型: VM / BM
 - `project_id` (String) 项目ID
 - `protocol_port` (Number) 协议端口
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `status` (String) 状态: DOWN / ACTIVE
 - `target_group_id` (String) 后端服务组ID
 - `updated_time` (String) 更新时间，为UTC格式

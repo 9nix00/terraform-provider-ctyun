@@ -1,5 +1,5 @@
 # ctyun_elb_certificate (Resource)
-弹性负载均衡-证书管理，接口链接：https://www.ctyun.cn/document/10026756/10155416
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10155416**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -41,7 +42,7 @@ resource "ctyun_elb_certificate" "certificate_test" {
 - `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新
 - `private_key` (String) 服务器证书私钥，type=Server服务器证书此字段必填
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 

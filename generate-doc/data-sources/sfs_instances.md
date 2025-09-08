@@ -1,5 +1,5 @@
 # ctyun_sfs_instances (Data Source)
-弹性文件服务创建/更新/删除。具体文档可参考：https://www.ctyun.cn/document/10027350
+**详细说明请见文档：https://www.ctyun.cn/document/10027350**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -30,7 +31,7 @@ data "ctyun_sfs_instances" "sfs_test" {
 - `page_no` (Number) 列表的分页页码，默认为1
 - `page_size` (Number) 每页包含的元素个数，默认为10
 - `project_id` (String) 企业项目ID，默认为0
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 

@@ -1,5 +1,5 @@
 # ctyun_scaling_ecs_list (Data Source)
-弹性伸缩组内实例列表查询，具体细节可参考文档：https://www.ctyun.cn/document/10027725/10216515
+**详细说明请见文档：https://www.ctyun.cn/document/10027725/10216515**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }

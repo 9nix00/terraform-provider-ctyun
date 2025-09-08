@@ -1,4 +1,5 @@
 # ctyun_postgresql_specs (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10034019/10167295**
 
 
 
@@ -13,6 +14,8 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
