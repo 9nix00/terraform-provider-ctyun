@@ -32,17 +32,30 @@ resource "ctyun_subnet" "subnet_test" {
 
 resource "ctyun_security_group" "security_group_test" {
   vpc_id      = ctyun_vpc.vpc_test.id
-  name        = "terraform-minchiang-mq"
+  name        = "sg-test-mq"
   description = "terraform测试使用"
 }
 
-resource "ctyun_rabbitmq_instance" "tbidgqvfbs" {
-  instance_name = "tf-rabbitmq-kkk"
-  cpu_num = 4
-  mem_size = 8
-  node_num = 3
-  zone_list = ["cn-huadong1-jsnj1A-public-ctcloud"]
-  disk_type = "SSD"
+data "ctyun_zones" "test"{
+
+}
+
+data "ctyun_rabbitmq_specs" "test"{
+
+}
+
+locals {
+  single_sku = [for sku in data.ctyun_rabbitmq_specs.test.specs[0].sku : sku if sku.prod_name == "单机版"]
+  single_disk_type = local.single_sku[0].disk_item.res_items[0]
+  single_spec_name = local.single_sku[0].res_item.res_items[0].spec[0].spec_name
+}
+
+resource "ctyun_rabbitmq_instance" "test" {
+  instance_name = "tf-rabbitmq-example"
+  spec_name = local.single_spec_name
+  node_num = 1
+  zone_list = [data.ctyun_zones.test.zones[0]]
+  disk_type = local.single_disk_type
   disk_size = 300
   vpc_id = ctyun_vpc.vpc_test.id
   subnet_id = ctyun_subnet.subnet_test.id
