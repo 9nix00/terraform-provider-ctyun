@@ -421,6 +421,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseTemplateMarket(),
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
+		rabbitmq.NewCtyunRabbitmqVhosts(),
+		rabbitmq.NewCtyunRabbitmqExchanges(),
 	)
 }
 
@@ -512,6 +514,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		rabbitmq.NewCtyunRabbitmqVhost(),
+		rabbitmq.NewCtyunRabbitmqExchange(),
 	)
 }
 

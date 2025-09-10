@@ -86,10 +86,13 @@ type AmqpExchangeQueryV3ReturnObjDataResponse struct {
 }
 
 type AmqpExchangeQueryV3ReturnObjDataItemsResponse struct {
-	Auto_delete *bool  `json:"auto_delete"` /*  是否自动删除  */
-	Durable     *bool  `json:"durable"`     /*  是否持久化，默认都是持久化  */
-	Name        string `json:"name"`        /*  交换器名称  */
-	RawType     string `json:"type"`        /*  交换器类型  */
-	Vhost       string `json:"vhost"`       /*  虚拟机名称  */
-	Argument    string `json:"argument"`    /*  交换器参数  */
+	Auto_delete bool   `json:"auto_delete"` /*  是否自动删除  */
+	Durable     bool   `json:"durable"`     /*  是否持久化，默认都是持久化  */
+	Internal    bool   `json:"internal"`
+	Name        string `json:"name"`  /*  交换器名称  */
+	RawType     string `json:"type"`  /*  交换器类型  */
+	Vhost       string `json:"vhost"` /*  虚拟机名称  */
+	Argument    struct {
+		XDelayedType string `json:"x-delayed-type"`
+	} `json:"argument"` /*  交换器参数  */
 }

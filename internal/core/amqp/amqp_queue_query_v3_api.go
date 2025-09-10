@@ -68,5 +68,23 @@ type AmqpQueueQueryV3Response struct {
 }
 
 type AmqpQueueQueryV3ReturnObjResponse struct {
-	Data string `json:"data"` /*  返回数据  */
+	Data *AmqpQueueQueryV3ReturnObjData `json:"data"` /*  返回数据  */
+}
+
+type AmqpQueueQueryV3ReturnObjData struct {
+	FilteredCount int                                  `json:"filtered_count"`
+	ItemCount     int                                  `json:"item_count"`
+	Items         []*AmqpQueueQueryV3ReturnObjDataItem `json:"items"`
+	Page          int                                  `json:"page"`
+	PageCount     int                                  `json:"page_count"`
+	PageSize      int                                  `json:"page_size"`
+	TotalCount    int                                  `json:"total_count"`
+}
+
+type AmqpQueueQueryV3ReturnObjDataItem struct {
+	Vhost      string `json:"vhost"`
+	Durable    bool   `json:"durable"`
+	Name       string `json:"name"`
+	AutoDelete bool   `json:"auto_delete"`
+	Consumers  int    `json:"consumers"`
 }

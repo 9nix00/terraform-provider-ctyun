@@ -52,12 +52,16 @@ func (a *AmqpExchangeCreateV3Api) Do(ctx context.Context, credential core.Creden
 }
 
 type AmqpExchangeCreateV3Request struct {
-	RegionId    string `json:"regionId,omitempty"`   /*  资源池id  */
-	ProdInstId  string `json:"prodInstId,omitempty"` /*  实例ID  */
-	Vhost       string `json:"vhost,omitempty"`      /*  vhost名称(vhost需提前创建，否则接口放回成功但不会真正创建交换机)   */
-	Name        string `json:"name,omitempty"`       /*  交换器名称  */
-	Auto_delete bool   `json:"auto_delete"`          /*  是否自动删除  */
-	RawType     string `json:"type,omitempty"`       /*  交换器类型  */
+	RegionId          string  `json:"regionId,omitempty"`   /*  资源池id  */
+	ProdInstId        string  `json:"prodInstId,omitempty"` /*  实例ID  */
+	Vhost             string  `json:"vhost,omitempty"`      /*  vhost名称(vhost需提前创建，否则接口放回成功但不会真正创建交换机)   */
+	Name              string  `json:"name,omitempty"`       /*  交换器名称  */
+	Auto_delete       *bool   `json:"auto_delete"`          /*  是否自动删除  */
+	RawType           string  `json:"type,omitempty"`       /*  交换器类型  */
+	AlternateExchange *string `json:"alternate-exchange,omitempty"`
+	XDelayedType      *string `json:"x-delayed-type,omitempty"`
+	Durable           *bool   `json:"durable,omitempty"`
+	Internal          *bool   `json:"internal,omitempty"`
 }
 
 type AmqpExchangeCreateV3Response struct {

@@ -60,5 +60,17 @@ type AmqpVhostQueryV3ReturnObjResponse struct {
 }
 
 type AmqpVhostQueryV3ReturnObjDataResponse struct {
-	Vhosts []string `json:"vhosts"` /*  虚拟机列表  */
+	Vhosts       []string           `json:"vhosts"` /*  虚拟机列表  */
+	VhostsDetail []AmqpVhostsDetail `json:"vhostsDetail"`
+}
+
+type AmqpVhostsDetail struct {
+	Name                   string      `json:"name"`
+	Messages               interface{} `json:"messages"`
+	MessagesReady          interface{} `json:"messagesReady"`
+	MessagesUnacknowledged interface{} `json:"messagesUnacknowledged"`
+	PublishBytesRate       float64     `json:"publishBytesRate"`
+	DeliverBytesRate       float64     `json:"deliverBytesRate"`
+	PublishMessagesRate    float64     `json:"publishMessagesRate"`
+	DeliverMessagesRate    float64     `json:"deliverMessagesRate"`
 }
