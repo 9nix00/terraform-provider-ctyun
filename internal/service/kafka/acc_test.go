@@ -19,6 +19,7 @@ type Dependence struct {
 	kafkaClusterDiskType  string
 	kafkaClusterSpecName  string
 	kafkaClusterSpecName2 string
+	instanceID            string
 }
 
 var dependence Dependence
@@ -45,6 +46,7 @@ func TestMain(m *testing.M) {
 		kafkaSingleDiskType:   outputs["kafka_single_disk_type"].Value,
 		kafkaSingleSpecName:   outputs["kafka_single_spec_name"].Value,
 		kafkaSingleSpecName2:  outputs["kafka_single_spec_name2"].Value,
+		instanceID:            outputs["instance_id"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 

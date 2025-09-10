@@ -33,3 +33,7 @@ output "kafka_cluster_spec_name" {
 output "kafka_cluster_spec_name2" {
   value = local.cluster_spec_name2
 }
+
+output "instance_id" {
+  value = ctyun_kafka_instance.test_kafka_instance.id
+}

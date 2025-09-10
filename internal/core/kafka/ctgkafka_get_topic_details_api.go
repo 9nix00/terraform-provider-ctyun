@@ -51,41 +51,41 @@ type CtgkafkaGetTopicDetailsRequest struct {
 }
 
 type CtgkafkaGetTopicDetailsResponse struct {
-	StatusCode int32                                     `json:"statusCode,omitempty"` /*  接口系统层面状态码。成功：800，失败：900。  */
-	Message    string                                    `json:"message,omitempty"`    /*  描述状态。  */
-	ReturnObj  *CtgkafkaGetTopicDetailsReturnObjResponse `json:"returnObj"`            /*  返回对象。  */
-	Error      string                                    `json:"error,omitempty"`      /*  错误码，描述错误信息。  */
+	StatusCode string                                    `json:"statusCode"` /*  接口系统层面状态码。成功：800，失败：900。  */
+	Message    string                                    `json:"message"`    /*  描述状态。  */
+	ReturnObj  *CtgkafkaGetTopicDetailsReturnObjResponse `json:"returnObj"`  /*  返回对象。  */
+	Error      string                                    `json:"error"`      /*  错误码，描述错误信息。  */
 }
 
 type CtgkafkaGetTopicDetailsReturnObjResponse struct {
-	Data []*CtgkafkaGetTopicDetailsReturnObjDataResponse `json:"data"` /*  主题详情信息。  */
+	Data *CtgkafkaGetTopicDetailsReturnObjDataResponse `json:"data"` /*  主题详情信息。  */
 }
 
 type CtgkafkaGetTopicDetailsReturnObjDataResponse struct {
-	TopicName       string                                                       `json:"topicName,omitempty"` /*  主题名称。  */
-	PartitionList   []*CtgkafkaGetTopicDetailsReturnObjDataPartitionListResponse `json:"partitionList"`       /*  分区列表信息。  */
-	GroupSubscribed []string                                                     `json:"groupSubscribed"`     /*  订阅主题的消费组列表。  */
+	TopicName       string                                                       `json:"topicName"`       /*  主题名称。  */
+	PartitionList   []*CtgkafkaGetTopicDetailsReturnObjDataPartitionListResponse `json:"partitionList"`   /*  分区列表信息。  */
+	GroupSubscribed []string                                                     `json:"groupSubscribed"` /*  订阅主题的消费组列表。  */
 }
 
 type CtgkafkaGetTopicDetailsReturnObjDataPartitionListResponse struct {
-	TopicName   string                                                               `json:"topicName,omitempty"`   /*  主题名称。  */
-	PartitionId int32                                                                `json:"partitionId,omitempty"` /*  分区ID。  */
-	Offsets     *CtgkafkaGetTopicDetailsReturnObjDataPartitionListOffsetsResponse    `json:"offsets"`               /*  分区偏移量信息。  */
-	Replicas    []*CtgkafkaGetTopicDetailsReturnObjDataPartitionListReplicasResponse `json:"replicas"`              /*  副本信息。  */
+	TopicName   string                                                               `json:"topicName"`   /*  主题名称。  */
+	PartitionId int32                                                                `json:"partitionId"` /*  分区ID。  */
+	Offsets     *CtgkafkaGetTopicDetailsReturnObjDataPartitionListOffsetsResponse    `json:"offsets"`     /*  分区偏移量信息。  */
+	Replicas    []*CtgkafkaGetTopicDetailsReturnObjDataPartitionListReplicasResponse `json:"replicas"`    /*  副本信息。  */
 }
 
 type CtgkafkaGetTopicDetailsReturnObjDataPartitionListOffsetsResponse struct {
-	Total      int64 `json:"total,omitempty"`      /*  分区消息总数。  */
-	Begin      int64 `json:"begin,omitempty"`      /*  分区leader副本的最大偏移量。  */
-	End        int64 `json:"end,omitempty"`        /*  分区leader副本的最小偏移量。  */
-	UpdateTime int64 `json:"updateTime,omitempty"` /*  分区最近写入消息的毫秒时间戳。  */
-	Hw         int64 `json:"hw,omitempty"`         /*  分区消息高水位线，所有副本均已确认写入的最大偏移量。  */
+	Total      int64 `json:"total"`      /*  分区消息总数。  */
+	Begin      int64 `json:"begin"`      /*  分区leader副本的最大偏移量。  */
+	End        int64 `json:"end"`        /*  分区leader副本的最小偏移量。  */
+	UpdateTime int64 `json:"updateTime"` /*  分区最近写入消息的毫秒时间戳。  */
+	Hw         int64 `json:"hw"`         /*  分区消息高水位线，所有副本均已确认写入的最大偏移量。  */
 }
 
 type CtgkafkaGetTopicDetailsReturnObjDataPartitionListReplicasResponse struct {
-	BrokerId int32 `json:"brokerId,omitempty"` /*  Broker节点ID。  */
-	IsLeader *bool `json:"isLeader"`           /*  是否是主副本。  */
-	InSync   *bool `json:"inSync"`             /*  副本是否处于同步状态。  */
-	Size     int64 `json:"size,omitempty"`     /*  副本消息大小，单位字节。  */
-	Lag      int64 `json:"lag,omitempty"`      /*  该副本当前落后hw的消息数。  */
+	BrokerId int32 `json:"brokerId"` /*  Broker节点ID。  */
+	IsLeader *bool `json:"isLeader"` /*  是否是主副本。  */
+	InSync   *bool `json:"inSync"`   /*  副本是否处于同步状态。  */
+	Size     int64 `json:"size"`     /*  副本消息大小，单位字节。  */
+	Lag      int64 `json:"lag"`      /*  该副本当前落后hw的消息数。  */
 }
