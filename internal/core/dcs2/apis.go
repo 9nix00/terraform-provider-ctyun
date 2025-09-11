@@ -52,6 +52,7 @@ type Apis struct {
 	Dcs2ChangeAutoRenewStatusApi                *Dcs2ChangeAutoRenewStatusApi
 	Dcs2DescribeAvailableRegionApi              *Dcs2DescribeAvailableRegionApi
 	Dcs2DescribeInstancesApi                    *Dcs2DescribeInstancesApi
+	Dcs2DescribeCycleBinInstancesApi            *Dcs2DescribeCycleBinInstancesApi
 	Dcs2DescribeDedicatedClusterInstanceListApi *Dcs2DescribeDedicatedClusterInstanceListApi
 	Dcs2DescribePriceApi                        *Dcs2DescribePriceApi
 	Dcs2RenewInstanceApi                        *Dcs2RenewInstanceApi
@@ -230,6 +231,7 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		Dcs2ChangeAutoRenewStatusApi:                NewDcs2ChangeAutoRenewStatusApi(client),
 		Dcs2DescribeAvailableRegionApi:              NewDcs2DescribeAvailableRegionApi(client),
 		Dcs2DescribeInstancesApi:                    NewDcs2DescribeInstancesApi(client),
+		Dcs2DescribeCycleBinInstancesApi:            NewDcs2DescribeCycleBinInstancesApi(client),
 		Dcs2DescribeDedicatedClusterInstanceListApi: NewDcs2DescribeDedicatedClusterInstanceListApi(client),
 		Dcs2DescribePriceApi:                        NewDcs2DescribePriceApi(client),
 		Dcs2RenewInstanceApi:                        NewDcs2RenewInstanceApi(client),
