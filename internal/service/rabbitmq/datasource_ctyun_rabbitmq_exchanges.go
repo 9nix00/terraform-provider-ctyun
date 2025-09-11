@@ -77,7 +77,7 @@ func (c *ctyunRabbitmqExchanges) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
-				Description: "交换器名称",
+				Description: "交换器名称（模糊匹配）",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 128),
 					//stringvalidator.RegexMatches(regexp.MustCompile("^[0-9a-zA-Z_-]+$"), "交换器名称不符合规则"),

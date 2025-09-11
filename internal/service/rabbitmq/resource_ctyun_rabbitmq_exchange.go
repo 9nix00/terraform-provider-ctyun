@@ -33,9 +33,8 @@ var (
 )
 
 type ctyunRabbitmqExchange struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta            *common.CtyunMetadata
+	rabbitmqService *business.RabbitmqService
 }
 
 func NewCtyunRabbitmqExchange() resource.Resource {
@@ -160,7 +159,7 @@ func (c *ctyunRabbitmqExchange) Schema(_ context.Context, _ resource.SchemaReque
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 128),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[0-9a-zA-Z_-]+$"), "备用交换器名称不符合规则"),
+					//stringvalidator.RegexMatches(regexp.MustCompile("^[0-9a-zA-Z_-]+$"), "备用交换器名称不符合规则"),
 				},
 			},
 			"x_delayed_type": schema.StringAttribute{
@@ -195,6 +194,10 @@ func (c *ctyunRabbitmqExchange) Create(ctx context.Context, request resource.Cre
 	var plan CtyunRabbitmqExchangeConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkBeforeCreate(ctx, plan)
+	if err != nil {
 		return
 	}
 	err = c.create(ctx, plan)
@@ -264,8 +267,7 @@ func (c *ctyunRabbitmqExchange) Configure(_ context.Context, request resource.Co
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-	c.vpcService = business.NewVpcService(meta)
-	c.sgService = business.NewSecurityGroupService(meta)
+	c.rabbitmqService = business.NewRabbitmqService(meta)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [name],[vhost],[instanceID],[regionID]
@@ -292,6 +294,38 @@ func (c *ctyunRabbitmqExchange) ImportState(ctx context.Context, request resourc
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+// checkBeforeCreate 创建前检查
+func (c *ctyunRabbitmqExchange) checkBeforeCreate(ctx context.Context, plan CtyunRabbitmqExchangeConfig) (err error) {
+	name, vhost, instanceID, regionID := plan.Name.ValueString(), plan.Vhost.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()
+	// 确保vhost 存在
+	exist, err := c.rabbitmqService.CheckVhostExist(ctx, vhost, instanceID, regionID)
+	if err != nil {
+		return
+	}
+	if !exist {
+		return fmt.Errorf("rabbitmq vhost %s not exist", vhost)
+	}
+	// 确保备用交换机存在
+	if plan.AlternateExchange.ValueString() != "" {
+		exist, err = c.rabbitmqService.CheckExchangeExist(ctx, plan.AlternateExchange.ValueString(), vhost, instanceID, regionID)
+		if err != nil {
+			return
+		}
+		if !exist {
+			return fmt.Errorf("rabbitmq alternate exchange %s not exist", plan.AlternateExchange.ValueString())
+		}
+	}
+	// 确保交换器名称没有被占用
+	exist, err = c.rabbitmqService.CheckExchangeExist(ctx, name, vhost, instanceID, regionID)
+	if err != nil {
+		return
+	}
+	if exist {
+		return fmt.Errorf("rabbitmq exchange %s already exist", name)
+	}
+	return
 }
 
 // create 创建
@@ -338,11 +372,12 @@ func (c *ctyunRabbitmqExchange) delete(ctx context.Context, plan CtyunRabbitmqEx
 	return
 }
 
-// checkExchangeByName 根据名称判断是否存在
-func (c *ctyunRabbitmqExchange) checkExchangeByName(ctx context.Context, plan CtyunRabbitmqExchangeConfig) (exchange *amqp.AmqpExchangeQueryV3ReturnObjDataItemsResponse, err error) {
+// getExchangeByName 根据名称查询交换器
+func (c *ctyunRabbitmqExchange) getExchangeByName(ctx context.Context, plan CtyunRabbitmqExchangeConfig) (exchange *amqp.AmqpExchangeQueryV3ReturnObjDataItemsResponse, err error) {
 	params := &amqp.AmqpExchangeQueryV3Request{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.InstanceID.ValueString(),
+		Vhost:      plan.Vhost.ValueString(),
 		Name:       plan.Name.ValueString(),
 	}
 
@@ -366,13 +401,19 @@ func (c *ctyunRabbitmqExchange) checkExchangeByName(ctx context.Context, plan Ct
 		err = common.ResourceNotExistError
 		return
 	}
-	exchange = resp.ReturnObj.Data.Items[0]
+	for _, item := range resp.ReturnObj.Data.Items {
+		if item.Name == plan.Name.ValueString() {
+			exchange = item
+			return
+		}
+	}
+
 	return
 }
 
 // getAndMerge 从远端查询
 func (c *ctyunRabbitmqExchange) getAndMerge(ctx context.Context, plan *CtyunRabbitmqExchangeConfig) (err error) {
-	exchange, err := c.checkExchangeByName(ctx, *plan)
+	exchange, err := c.getExchangeByName(ctx, *plan)
 	if err != nil {
 		return
 	}

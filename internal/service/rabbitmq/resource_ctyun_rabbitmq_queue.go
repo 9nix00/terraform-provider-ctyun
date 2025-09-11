@@ -35,9 +35,8 @@ var (
 )
 
 type ctyunRabbitmqQueue struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta            *common.CtyunMetadata
+	rabbitmqService *business.RabbitmqService
 }
 
 func NewCtyunRabbitmqQueue() resource.Resource {
@@ -253,6 +252,10 @@ func (c *ctyunRabbitmqQueue) Create(ctx context.Context, request resource.Create
 	if response.Diagnostics.HasError() {
 		return
 	}
+	err = c.checkBeforeCreate(ctx, plan)
+	if err != nil {
+		return
+	}
 	err = c.create(ctx, plan)
 	if err != nil {
 		return
@@ -321,11 +324,10 @@ func (c *ctyunRabbitmqQueue) Configure(_ context.Context, request resource.Confi
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-	c.vpcService = business.NewVpcService(meta)
-	c.sgService = business.NewSecurityGroupService(meta)
+	c.rabbitmqService = business.NewRabbitmqService(meta)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [name],[instanceID],[regionID]
+// 导入命令：terraform import [配置标识].[导入配置名称] [name],[vhost],[instanceID],[regionID]
 func (c *ctyunRabbitmqQueue) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -334,13 +336,14 @@ func (c *ctyunRabbitmqQueue) ImportState(ctx context.Context, request resource.I
 		}
 	}()
 	var cfg CtyunRabbitmqQueueConfig
-	var name, instanceID, regionID string
-	err = terraform_extend.Split(request.ID, &name, &instanceID, &regionID)
+	var name, vhost, instanceID, regionID string
+	err = terraform_extend.Split(request.ID, &name, &vhost, &instanceID, &regionID)
 	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.Name = types.StringValue(name)
+	cfg.Vhost = types.StringValue(vhost)
 	cfg.InstanceID = types.StringValue(instanceID)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -348,6 +351,37 @@ func (c *ctyunRabbitmqQueue) ImportState(ctx context.Context, request resource.I
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+func (c *ctyunRabbitmqQueue) checkBeforeCreate(ctx context.Context, plan CtyunRabbitmqQueueConfig) (err error) {
+	name, vhost, instanceID, regionID := plan.Name.ValueString(), plan.Vhost.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()
+	// 确保vhost 存在
+	exist, err := c.rabbitmqService.CheckVhostExist(ctx, vhost, instanceID, regionID)
+	if err != nil {
+		return
+	}
+	if !exist {
+		return fmt.Errorf("rabbitmq vhost %s not exist", vhost)
+	}
+	// 确保死信交换机存在
+	if plan.XDeadLetterExchange.ValueString() != "" {
+		exist, err = c.rabbitmqService.CheckExchangeExist(ctx, plan.XDeadLetterExchange.ValueString(), vhost, instanceID, regionID)
+		if err != nil {
+			return
+		}
+		if !exist {
+			return fmt.Errorf("rabbitmq x-dead-letter exchange %s not exist", plan.XDeadLetterExchange.ValueString())
+		}
+	}
+	// 确保队列名称没有被占用
+	exist, err = c.rabbitmqService.CheckQueueExist(ctx, name, vhost, instanceID, regionID)
+	if err != nil {
+		return
+	}
+	if exist {
+		return fmt.Errorf("rabbitmq exchange %s already exist", name)
+	}
+	return
 }
 
 // create 创建
@@ -361,7 +395,7 @@ func (c *ctyunRabbitmqQueue) create(ctx context.Context, plan CtyunRabbitmqQueue
 		Auto_delete:           plan.AutoDelete.ValueBoolPointer(),
 		XExpires:              plan.XExpires.ValueInt64Pointer(),
 		XDeadLetterExchange:   plan.XDeadLetterExchange.ValueStringPointer(),
-		XDeadLetterRoutingKey: plan.XDeadLetterExchange.ValueStringPointer(),
+		XDeadLetterRoutingKey: plan.XDeadLetterRoutingKey.ValueStringPointer(),
 		XMessageTTL:           plan.XMessageTTL.ValueInt64Pointer(),
 		XMaxLength:            plan.XMaxLength.ValueInt64Pointer(),
 		XMaxLengthBytes:       plan.XMaxLengthBytes.ValueInt64Pointer(),
@@ -399,11 +433,12 @@ func (c *ctyunRabbitmqQueue) delete(ctx context.Context, plan CtyunRabbitmqQueue
 	return
 }
 
-// checkQueueByName 根据名称判断是否存在
-func (c *ctyunRabbitmqQueue) checkQueueByName(ctx context.Context, plan CtyunRabbitmqQueueConfig) (queue *amqp.AmqpQueueQueryV3ReturnObjDataItem, err error) {
+// getQueueByName 根据名称查询队列
+func (c *ctyunRabbitmqQueue) getQueueByName(ctx context.Context, plan CtyunRabbitmqQueueConfig) (queue *amqp.AmqpQueueQueryV3ReturnObjDataItem, err error) {
 	params := &amqp.AmqpQueueQueryV3Request{
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.InstanceID.ValueString(),
+		Vhost:      plan.Vhost.ValueString(),
 		Name:       plan.Name.ValueString(),
 	}
 
@@ -429,13 +464,17 @@ func (c *ctyunRabbitmqQueue) checkQueueByName(ctx context.Context, plan CtyunRab
 
 // getAndMerge 从远端查询
 func (c *ctyunRabbitmqQueue) getAndMerge(ctx context.Context, plan *CtyunRabbitmqQueueConfig) (err error) {
-	queue, err := c.checkQueueByName(ctx, *plan)
+	queue, err := c.getQueueByName(ctx, *plan)
 	if err != nil {
 		return
 	}
 	plan.Durable = types.BoolValue(queue.Durable)
 	plan.Vhost = types.StringValue(queue.Vhost)
 	plan.AutoDelete = types.BoolValue(queue.AutoDelete)
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.Name.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()))
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s,%s",
+		plan.Name.ValueString(),
+		plan.Vhost.ValueString(),
+		plan.InstanceID.ValueString(),
+		plan.RegionID.ValueString()))
 	return
 }

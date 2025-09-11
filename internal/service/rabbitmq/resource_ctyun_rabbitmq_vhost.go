@@ -29,9 +29,8 @@ var (
 )
 
 type ctyunRabbitmqVhost struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta            *common.CtyunMetadata
+	rabbitmqService *business.RabbitmqService
 }
 
 func NewCtyunRabbitmqVhost() resource.Resource {
@@ -107,6 +106,11 @@ func (c *ctyunRabbitmqVhost) Create(ctx context.Context, request resource.Create
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	err = c.checkBeforeCreate(ctx, plan)
+	if err != nil {
+		return
+	}
 	err = c.create(ctx, plan)
 	if err != nil {
 		return
@@ -175,8 +179,7 @@ func (c *ctyunRabbitmqVhost) Configure(_ context.Context, request resource.Confi
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-	c.vpcService = business.NewVpcService(meta)
-	c.sgService = business.NewSecurityGroupService(meta)
+	c.rabbitmqService = business.NewRabbitmqService(meta)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [name],[instanceID],[regionID]
@@ -202,6 +205,19 @@ func (c *ctyunRabbitmqVhost) ImportState(ctx context.Context, request resource.I
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+
+// checkBeforeCreate 创建前检查
+func (c *ctyunRabbitmqVhost) checkBeforeCreate(ctx context.Context, plan CtyunRabbitmqVhostConfig) (err error) {
+	name, instanceID, regionID := plan.Name.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()
+	exist, err := c.rabbitmqService.CheckVhostExist(ctx, name, instanceID, regionID)
+	if err != nil {
+		return
+	}
+	if exist {
+		err = fmt.Errorf("rabbitmq vhost %s already exist", name)
+	}
+	return
 }
 
 // create 创建
@@ -240,37 +256,10 @@ func (c *ctyunRabbitmqVhost) delete(ctx context.Context, plan CtyunRabbitmqVhost
 	return
 }
 
-// checkVhostByName 根据名称判断是否存在
-func (c *ctyunRabbitmqVhost) checkVhostByName(ctx context.Context, plan CtyunRabbitmqVhostConfig) (exist bool, err error) {
-	params := &amqp.AmqpVhostQueryV3Request{
-		RegionId:   plan.RegionID.ValueString(),
-		ProdInstId: plan.InstanceID.ValueString(),
-	}
-
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpVhostQueryV3Api.Do(ctx, c.meta.SdkCredential, params)
-	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	} else if resp.ReturnObj.Data == nil {
-		err = common.InvalidReturnObjResultsError
-		return
-	}
-	for _, vhost := range resp.ReturnObj.Data.Vhosts {
-		if vhost == plan.Name.ValueString() {
-			return true, err
-		}
-	}
-	return
-}
-
 // getAndMerge 从远端查询
 func (c *ctyunRabbitmqVhost) getAndMerge(ctx context.Context, plan *CtyunRabbitmqVhostConfig) (err error) {
-	exist, err := c.checkVhostByName(ctx, *plan)
+	name, instanceID, regionID := plan.Name.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()
+	exist, err := c.rabbitmqService.CheckVhostExist(ctx, name, instanceID, regionID)
 	if err != nil {
 		return
 	}
@@ -278,6 +267,6 @@ func (c *ctyunRabbitmqVhost) getAndMerge(ctx context.Context, plan *CtyunRabbitm
 		err = common.ResourceNotExistError
 		return
 	}
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.Name.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()))
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", name, instanceID, regionID))
 	return
 }

@@ -69,6 +69,8 @@ type CtyunRabbitmqInstanceConfig struct {
 	SecurityGroupID types.String `tfsdk:"security_group_id"`
 	CycleType       types.String `tfsdk:"cycle_type"`
 	CycleCount      types.Int32  `tfsdk:"cycle_count"`
+	CreateTime      types.String `tfsdk:"create_time"`
+	ExpireTime      types.String `tfsdk:"expire_time"`
 
 	zoneList []string
 }
@@ -222,6 +224,20 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				},
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "过期时间，UTC格式，按需时为空",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -613,6 +629,8 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
 	plan.NodeNum = types.Int32Value(instance.NodeCount)
 	plan.SpecName = types.StringValue(instance.Prod)
+	plan.CreateTime = types.StringValue(utils.ConvertToUTCZ(instance.CreateTime))
+	plan.ExpireTime = types.StringValue(utils.ConvertToUTCZ(instance.ExpireTime))
 	return
 }
 
@@ -623,6 +641,12 @@ func (c *ctyunRabbitmqInstance) checkBeforeUpdate(ctx context.Context, plan, sta
 	}
 	if instance.Status != 1 {
 		return fmt.Errorf("请在实例处于运行中状态时再进行更新操作")
+	}
+	if strings.Contains(plan.SpecName.ValueString(), "single") && !strings.Contains(state.SpecName.ValueString(), "single") {
+		return fmt.Errorf("不支持单机版和周期版互转")
+	}
+	if strings.Contains(plan.SpecName.ValueString(), "cluster") && !strings.Contains(state.SpecName.ValueString(), "cluster") {
+		return fmt.Errorf("不支持单机版和周期版互转")
 	}
 
 	return nil
