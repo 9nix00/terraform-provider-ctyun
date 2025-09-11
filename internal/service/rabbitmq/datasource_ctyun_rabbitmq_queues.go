@@ -14,41 +14,38 @@ import (
 )
 
 var (
-	_ datasource.DataSource              = &ctyunRabbitmqExchanges{}
-	_ datasource.DataSourceWithConfigure = &ctyunRabbitmqExchanges{}
+	_ datasource.DataSource              = &ctyunRabbitmqQueues{}
+	_ datasource.DataSourceWithConfigure = &ctyunRabbitmqQueues{}
 )
 
-type ctyunRabbitmqExchanges struct {
+type ctyunRabbitmqQueues struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunRabbitmqExchanges() datasource.DataSource {
-	return &ctyunRabbitmqExchanges{}
+func NewCtyunRabbitmqQueues() datasource.DataSource {
+	return &ctyunRabbitmqQueues{}
 }
 
-func (c *ctyunRabbitmqExchanges) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_rabbitmq_exchanges"
+func (c *ctyunRabbitmqQueues) Metadata(_ context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_rabbitmq_queues"
 }
 
-type CtyunRabbitmqExchangesModel struct {
-	Name         types.String `tfsdk:"name"`
-	Vhost        types.String `tfsdk:"vhost"`
-	Type         types.String `tfsdk:"type"`
-	Durable      types.Bool   `tfsdk:"durable"`
-	Internal     types.Bool   `tfsdk:"internal"`
-	AutoDelete   types.Bool   `tfsdk:"auto_delete"`
-	XDelayedType types.String `tfsdk:"x_delayed_type"`
+type CtyunRabbitmqQueuesModel struct {
+	Name       types.String `tfsdk:"name"`
+	Vhost      types.String `tfsdk:"vhost"`
+	Durable    types.Bool   `tfsdk:"durable"`
+	AutoDelete types.Bool   `tfsdk:"auto_delete"`
 }
 
-type CtyunRabbitmqExchangesConfig struct {
-	RegionID   types.String                  `tfsdk:"region_id"`
-	InstanceID types.String                  `tfsdk:"instance_id"`
-	Vhost      types.String                  `tfsdk:"vhost"`
-	Name       types.String                  `tfsdk:"name"`
-	Exchanges  []CtyunRabbitmqExchangesModel `tfsdk:"exchanges"`
+type CtyunRabbitmqQueuesConfig struct {
+	RegionID   types.String               `tfsdk:"region_id"`
+	InstanceID types.String               `tfsdk:"instance_id"`
+	Name       types.String               `tfsdk:"name"`
+	Vhost      types.String               `tfsdk:"vhost"`
+	Queues     []CtyunRabbitmqQueuesModel `tfsdk:"queues"`
 }
 
-func (c *ctyunRabbitmqExchanges) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
+func (c *ctyunRabbitmqQueues) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10000118/10001967**`,
 		Attributes: map[string]schema.Attribute{
@@ -77,23 +74,19 @@ func (c *ctyunRabbitmqExchanges) Schema(_ context.Context, _ datasource.SchemaRe
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
-				Description: "交换器名称",
+				Description: "队列名称",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 128),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[0-9a-zA-Z_-]+$"), "交换器名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[0-9a-zA-Z_-]+$"), "队列名称不符合规则"),
 				},
 			},
-			"exchanges": schema.ListNestedAttribute{
-				Description: "exchange列表",
+			"queues": schema.ListNestedAttribute{
+				Description: "队列列表",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
-							Description: "交换器名称",
-							Computed:    true,
-						},
-						"type": schema.StringAttribute{
-							Description: "交换器类型",
+							Description: "队列名称",
 							Computed:    true,
 						},
 						"vhost": schema.StringAttribute{
@@ -104,16 +97,8 @@ func (c *ctyunRabbitmqExchanges) Schema(_ context.Context, _ datasource.SchemaRe
 							Description: "是否持久化",
 							Computed:    true,
 						},
-						"internal": schema.BoolAttribute{
-							Description: "是否内置",
-							Computed:    true,
-						},
 						"auto_delete": schema.BoolAttribute{
 							Description: "是否自动删除",
-							Computed:    true,
-						},
-						"x_delayed_type": schema.StringAttribute{
-							Description: "当type为x-delayed-message时有值",
 							Computed:    true,
 						},
 					},
@@ -123,14 +108,14 @@ func (c *ctyunRabbitmqExchanges) Schema(_ context.Context, _ datasource.SchemaRe
 	}
 }
 
-func (c *ctyunRabbitmqExchanges) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
+func (c *ctyunRabbitmqQueues) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var config CtyunRabbitmqExchangesConfig
+	var config CtyunRabbitmqQueuesConfig
 	response.Diagnostics.Append(request.Config.Get(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -143,7 +128,7 @@ func (c *ctyunRabbitmqExchanges) Read(ctx context.Context, request datasource.Re
 
 	config.RegionID = types.StringValue(regionId)
 	// 组装请求体
-	params := &amqp.AmqpExchangeQueryV3Request{
+	params := &amqp.AmqpQueueQueryV3Request{
 		RegionId:   regionId,
 		ProdInstId: config.InstanceID.ValueString(),
 	}
@@ -154,7 +139,7 @@ func (c *ctyunRabbitmqExchanges) Read(ctx context.Context, request datasource.Re
 		params.Vhost = config.Vhost.ValueString()
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpExchangeQueryV3Api.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpQueueQueryV3Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -164,25 +149,22 @@ func (c *ctyunRabbitmqExchanges) Read(ctx context.Context, request datasource.Re
 		err = common.InvalidReturnObjError
 		return
 	}
-	config.Exchanges = []CtyunRabbitmqExchangesModel{}
+	config.Queues = []CtyunRabbitmqQueuesModel{}
 	// 解析返回值
 	for _, e := range resp.ReturnObj.Data.Items {
-		item := CtyunRabbitmqExchangesModel{
-			Name:         types.StringValue(e.Name),
-			Vhost:        types.StringValue(e.Vhost),
-			Type:         types.StringValue(e.RawType),
-			Durable:      types.BoolValue(e.Durable),
-			Internal:     types.BoolValue(e.Internal),
-			AutoDelete:   types.BoolValue(e.Auto_delete),
-			XDelayedType: types.StringValue(e.Argument.XDelayedType),
+		item := CtyunRabbitmqQueuesModel{
+			Name:       types.StringValue(e.Name),
+			Vhost:      types.StringValue(e.Vhost),
+			Durable:    types.BoolValue(e.Durable),
+			AutoDelete: types.BoolValue(e.AutoDelete),
 		}
-		config.Exchanges = append(config.Exchanges, item)
+		config.Queues = append(config.Queues, item)
 	}
 	// 保存到state
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
-func (c *ctyunRabbitmqExchanges) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
+func (c *ctyunRabbitmqQueues) Configure(_ context.Context, request datasource.ConfigureRequest, _ *datasource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}

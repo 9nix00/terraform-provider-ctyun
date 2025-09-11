@@ -350,7 +350,11 @@ func (c *ctyunRabbitmqExchange) checkExchangeByName(ctx context.Context, plan Ct
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		if resp.Message == "交换器不存在" {
+			err = common.ResourceNotExistError
+		} else {
+			err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		}
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError

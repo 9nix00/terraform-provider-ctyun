@@ -49,14 +49,14 @@ func (c *ctyunRabbitmqQueue) Metadata(_ context.Context, request resource.Metada
 }
 
 type CtyunRabbitmqQueueConfig struct {
-	ID                    types.String `tfsdk:"id"`
-	InstanceID            types.String `tfsdk:"instance_id"`
-	Name                  types.String `tfsdk:"name"`
-	Vhost                 types.String `tfsdk:"vhost"`
-	RegionID              types.String `tfsdk:"region_id"`
-	Durable               types.Bool   `tfsdk:"durable"`                   // 是否持久化，可选
-	AutoDelete            types.Bool   `tfsdk:"auto_delete"`               // 是否自动删除，可选
-	Node                  types.String `tfsdk:"node"`                      // 队列所在节点，可选
+	ID         types.String `tfsdk:"id"`
+	InstanceID types.String `tfsdk:"instance_id"`
+	Name       types.String `tfsdk:"name"`
+	Vhost      types.String `tfsdk:"vhost"`
+	RegionID   types.String `tfsdk:"region_id"`
+	Durable    types.Bool   `tfsdk:"durable"`     // 是否持久化，可选
+	AutoDelete types.Bool   `tfsdk:"auto_delete"` // 是否自动删除，可选
+	//Node                  types.String `tfsdk:"node"`                      // 队列所在节点，可选
 	XExpires              types.Int64  `tfsdk:"x_expires"`                 // 队列过期时间(ms)，可选
 	XDeadLetterExchange   types.String `tfsdk:"x_dead_letter_exchange"`    // 死信交换器名称，可选
 	XDeadLetterRoutingKey types.String `tfsdk:"x_dead_letter_routing_key"` // 死信路由键，可选
@@ -130,15 +130,25 @@ func (c *ctyunRabbitmqQueue) Schema(_ context.Context, _ resource.SchemaRequest,
 					boolplanmodifier.UseStateForUnknown(),
 				},
 			},
-			"node": schema.StringAttribute{
-				Description: "队列所在节点，默认为实例随机节点",
-				Optional:    true,
-				Computed:    true,
+			"vhost": schema.StringAttribute{
+				Required:    true,
+				Description: "vhost名称",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthBetween(1, 128),
 				},
 			},
+			//"node": schema.StringAttribute{
+			//	Description: "队列所在节点，默认为实例随机节点",
+			//	Optional:    true,
+			//	Computed:    true,
+			//	PlanModifiers: []planmodifier.String{
+			//		stringplanmodifier.RequiresReplace(),
+			//		stringplanmodifier.UseStateForUnknown(),
+			//	},
+			//},
 			"x_expires": schema.Int64Attribute{
 				Description: "队列过期时间，过期后队列自动删除，单位为ms",
 				Optional:    true,
@@ -349,7 +359,6 @@ func (c *ctyunRabbitmqQueue) create(ctx context.Context, plan CtyunRabbitmqQueue
 		Name:                  plan.Name.ValueString(),
 		Durable:               plan.Durable.ValueBoolPointer(),
 		Auto_delete:           plan.AutoDelete.ValueBoolPointer(),
-		Node:                  plan.Node.ValueStringPointer(),
 		XExpires:              plan.XExpires.ValueInt64Pointer(),
 		XDeadLetterExchange:   plan.XDeadLetterExchange.ValueStringPointer(),
 		XDeadLetterRoutingKey: plan.XDeadLetterExchange.ValueStringPointer(),
@@ -377,6 +386,7 @@ func (c *ctyunRabbitmqQueue) delete(ctx context.Context, plan CtyunRabbitmqQueue
 		RegionId:   plan.RegionID.ValueString(),
 		Name:       plan.Name.ValueString(),
 		ProdInstId: plan.InstanceID.ValueString(),
+		Vhost:      plan.Vhost.ValueString(),
 	}
 
 	resp, err := c.meta.Apis.SdkAmqpApis.AmqpQueueDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
@@ -419,11 +429,13 @@ func (c *ctyunRabbitmqQueue) checkQueueByName(ctx context.Context, plan CtyunRab
 
 // getAndMerge 从远端查询
 func (c *ctyunRabbitmqQueue) getAndMerge(ctx context.Context, plan *CtyunRabbitmqQueueConfig) (err error) {
-	_, err = c.checkQueueByName(ctx, *plan)
+	queue, err := c.checkQueueByName(ctx, *plan)
 	if err != nil {
 		return
 	}
-
+	plan.Durable = types.BoolValue(queue.Durable)
+	plan.Vhost = types.StringValue(queue.Vhost)
+	plan.AutoDelete = types.BoolValue(queue.AutoDelete)
 	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.Name.ValueString(), plan.InstanceID.ValueString(), plan.RegionID.ValueString()))
 	return
 }

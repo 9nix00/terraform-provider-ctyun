@@ -423,6 +423,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mongodb.NewCtyunMongodbAssociationEips(),
 		rabbitmq.NewCtyunRabbitmqVhosts(),
 		rabbitmq.NewCtyunRabbitmqExchanges(),
+		rabbitmq.NewCtyunRabbitmqQueues(),
 	)
 }
 
@@ -516,6 +517,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mongodb.NewCtyunMongodbAssociationEip(),
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
+		rabbitmq.NewCtyunRabbitmqQueue(),
 	)
 }
 

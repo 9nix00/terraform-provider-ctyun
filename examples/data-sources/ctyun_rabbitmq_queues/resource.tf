@@ -12,12 +12,13 @@ provider "ctyun" {
 }
 
 # 全部
-data "ctyun_rabbitmq_exchanges" "all" {
+data "ctyun_rabbitmq_queues" "all" {
   instance_id = "8ccc8af2e6704080a72548735a081660"
 }
 
 # 指定vhost
-data "ctyun_rabbitmq_exchanges" "test" {
+data "ctyun_rabbitmq_queues" "test" {
   instance_id = "8ccc8af2e6704080a72548735a081660"
   vhost = "/"
+  name = "aaa"
 }
