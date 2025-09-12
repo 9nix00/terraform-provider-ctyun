@@ -32,8 +32,15 @@ type Apis struct {
 	CtgkafkaAclAddV3Api                    *CtgkafkaAclAddV3Api
 	CtgkafkaAclQueryV3Api                  *CtgkafkaAclQueryV3Api
 	CtgkafkaAclDeleteV3Api                 *CtgkafkaAclDeleteV3Api
+	CtgkafkaAclStrategyCreateApi           *CtgkafkaAclStrategyCreateApi
+	CtgkafkaAclStrategyDeleteApi           *CtgkafkaAclStrategyDeleteApi
+	CtgkafkaAclStrategyDetailApi           *CtgkafkaAclStrategyDetailApi
+	CtgkafkaAclStrategyListApi             *CtgkafkaAclStrategyListApi
+	CtgkafkaAclStrategyTurnAutoMatchApi    *CtgkafkaAclStrategyTurnAutoMatchApi
 	CtgkafkaSaslUserCreateV3Api            *CtgkafkaSaslUserCreateV3Api
 	CtgkafkaSaslUserQueryV3Api             *CtgkafkaSaslUserQueryV3Api
+	CtgkafkaSaslUserTopicsAclApi           *CtgkafkaSaslUserTopicsAclApi
+	CtgkafkaUpdateUserTopicsAclApi         *CtgkafkaUpdateUserTopicsAclApi
 	CtgkafkaSaslUserDeleteV3Api            *CtgkafkaSaslUserDeleteV3Api
 	CtgkafkaQueryMessageByOffsetV3Api      *CtgkafkaQueryMessageByOffsetV3Api
 	CtgkafkaQueryMessageByTimestampV3Api   *CtgkafkaQueryMessageByTimestampV3Api
@@ -133,6 +140,13 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		CtgkafkaSaslUserCreateV3Api:            NewCtgkafkaSaslUserCreateV3Api(client),
 		CtgkafkaSaslUserQueryV3Api:             NewCtgkafkaSaslUserQueryV3Api(client),
 		CtgkafkaSaslUserDeleteV3Api:            NewCtgkafkaSaslUserDeleteV3Api(client),
+		CtgkafkaSaslUserTopicsAclApi:           NewCtgkafkaSaslUserTopicsAclApi(client),
+		CtgkafkaUpdateUserTopicsAclApi:         NewCtgkafkaUpdateUserTopicsAclApi(client),
+		CtgkafkaAclStrategyCreateApi:           NewCtgkafkaAclStrategyCreateApi(client),
+		CtgkafkaAclStrategyDetailApi:           NewCtgkafkaAclStrategyDetailApi(client),
+		CtgkafkaAclStrategyDeleteApi:           NewCtgkafkaAclStrategyDeleteApi(client),
+		CtgkafkaAclStrategyListApi:             NewCtgkafkaAclStrategyListApi(client),
+		CtgkafkaAclStrategyTurnAutoMatchApi:    NewCtgkafkaAclStrategyTurnAutoMatchApi(client),
 		CtgkafkaQueryMessageByOffsetV3Api:      NewCtgkafkaQueryMessageByOffsetV3Api(client),
 		CtgkafkaQueryMessageByTimestampV3Api:   NewCtgkafkaQueryMessageByTimestampV3Api(client),
 		CtgkafkaResourceTagAddtagV3Api:         NewCtgkafkaResourceTagAddtagV3Api(client),

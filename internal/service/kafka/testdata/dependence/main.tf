@@ -89,7 +89,7 @@ data "ctyun_zones" "test" {
 }
 
 resource "ctyun_kafka_instance" "test_kafka_instance" {
-  instance_name = "init-kafka-123instance2"
+  instance_name = "init-kafka-123instance3"
   engine_version = "3.6"
   spec_name = local.cluster_spec_name
   node_num = 3
@@ -104,5 +104,17 @@ resource "ctyun_kafka_instance" "test_kafka_instance" {
   cycle_count = 2
   auto_renew = true
   auto_renew_cycle_count = 1
+}
+
+resource "ctyun_kafka_topic" "test_kafka_topic" {
+  name = "test_topic"
+  prod_inst_id = ctyun_kafka_instance.test_kafka_instance.id
+  partition_num  = 1
+}
+
+resource "ctyun_kafka_user" "test_kafka_user" {
+  name = "test_kafka_user"
+  prod_inst_id = ctyun_kafka_instance.test_kafka_instance.id
+  password  = "sad231Dwwww"
 }
 

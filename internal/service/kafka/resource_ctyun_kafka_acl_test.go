@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
+func TestAccCtyunKafkaAcl(t *testing.T) {
 	err := os.Setenv("TF_ACC", "1")
 	if err != nil {
 		return
@@ -19,20 +19,18 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
-	resourceName := "ctyun_kafka_consumer_group." + rnd
-	datasourceName := "data.ctyun_kafka_consumer_groups." + dnd
-	resourceFile := "resource_ctyun_kafka_consumer_group.tf"
-	datasourceFile := "datasource_ctyun_kafka_consumer_groups.tf"
+	resourceName := "ctyun_kafka_acl." + rnd
+	datasourceName := "data.ctyun_kafka_acls." + dnd
+	resourceFile := "resource_ctyun_kafka_acl.tf"
+	datasourceFile := "datasource_ctyun_kafka_acls.tf"
 
-	initName := "init-kafka_consumer_group-" + rnd
+	initName := "init-kafka-acl-" + rnd
 	prodInstId := dependence.instanceID
-	topicName := dependence.topicName
 
-	resetConfig := fmt.Sprintf(`reset_config = {
-      topic_name = "%s"
-      type       = 1
-      time       = 1571299747516
-    }`, topicName)
+	initUseNewTopic := "2"
+	updateUseNewTopic := "1"
+	userName := dependence.userName
+
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -45,28 +43,27 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, initUseNewTopic, userName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "use_new_topic", initUseNewTopic),
 				),
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", resetConfig),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updateUseNewTopic, userName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttr(resourceName, "description", "desc-update"),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "use_new_topic", updateUseNewTopic),
 				),
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updateUseNewTopic, userName) +
 					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.0.name", initName),
+					resource.TestCheckResourceAttr(datasourceName, "acls.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "acls.0.name", initName),
 				),
 			},
 			{
@@ -76,17 +73,15 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
 					prodInstId := ds.Attributes["prod_inst_id"]
-					groupName := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, groupName), nil
+					name := ds.Attributes["name"]
+					useNewTopic := ds.Attributes["use_new_topic"]
+					return fmt.Sprintf("%s,%s,%s,%s", prodInstId, regionId, name, useNewTopic), nil
 				},
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"project_id",
-				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"id"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config:  utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updateUseNewTopic, userName) + utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
 				Destroy: true,
 			},
 		},

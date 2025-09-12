@@ -51,9 +51,14 @@ type CtyunKafkaConsumerGroupConfig struct {
 	State         types.String `tfsdk:"state"`
 	CoordinatorId types.Int32  `tfsdk:"coordinator_id"`
 
-	//重置消费点请求参数
+	// 重置消费点配置对象
+	ResetConfig *CtyunKafkaConsumerGroupResetConfig `tfsdk:"reset_config"` /*  重置时间点毫秒时间戳，type=1时必填。  */
+}
+
+// 重置消费点配置结构体
+type CtyunKafkaConsumerGroupResetConfig struct {
 	TopicName          types.String                                                      `tfsdk:"topic_name"`           /*  主题名称。  */
-	RawType            types.Int32                                                       `tfsdk:"type"`                 /*  类型，<li>0：重置到latest。 <li>1：按时间重置。<li>2：重置到earliest。<li>3：按位点重置，此类型参数partitionShiftList为必填。  */
+	Type               types.Int32                                                       `tfsdk:"type"`                 /*  类型，<li>0：重置到latest。 <li>1：按时间重置。<li>2：重置到earliest。<li>3：按位点重置，此类型参数partitionShiftList为必填。  */
 	PartitionShiftList []*ctgkafka.CtgkafkaConsumerGroupResetV3PartitionShiftListRequest `tfsdk:"partition_shift_list"` /*  位点重置列表，当type为3时必填。  */
 	Time               types.Int64                                                       `tfsdk:"time"`                 /*  重置时间点毫秒时间戳，type=1时必填。  */
 }
@@ -117,38 +122,44 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 				Computed:    true,
 				Description: "协调器编号",
 			},
-
-			//重置消费点请求参数
-			"topic_name": schema.StringAttribute{
+			// 重置消费点配置对象
+			"reset_config": schema.SingleNestedAttribute{
 				Optional:    true,
-				Description: "主题名称",
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
-				},
-			},
-			"type": schema.Int32Attribute{
-				Optional:    true,
-				Description: "类型，0：重置到latest；1：按时间重置；2：重置到earliest；3：按位点重置，此类型参数partitionShiftList为必填",
-				Validators: []validator.Int32{
-					int32validator.Between(0, 3),
-				},
-			},
-			"time": schema.Int64Attribute{
-				Optional:    true,
-				Description: "重置时间点毫秒时间戳，type=1时必填",
-			},
-			"partition_shift_list": schema.ListNestedAttribute{
-				Optional:    true,
-				Description: "位点重置列表，当type为3时必填",
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"partition": schema.Int32Attribute{
-							Optional:    true,
-							Description: "主题分区号",
+				Description: "重置消费点配置",
+				Attributes: map[string]schema.Attribute{
+					//重置消费点请求参数
+					"topic_name": schema.StringAttribute{
+						Required:    true,
+						Description: "主题名称 支持更新",
+						Validators: []validator.String{
+							stringvalidator.UTF8LengthAtLeast(1),
 						},
-						"shift_by": schema.Int64Attribute{
-							Optional:    true,
-							Description: "主题分区消费位点向左或向右移动的相对位置，例如当前offset是1000，当shiftBy=-10重置后offset=990，当shiftBy=10重置后offset=1010。",
+					},
+					"type": schema.Int32Attribute{
+						Required:    true,
+						Description: "类型，0：重置到latest；1：按时间重置；2：重置到earliest；3：按位点重置，此类型参数partitionShiftList为必填 支持更新",
+						Validators: []validator.Int32{
+							int32validator.Between(0, 3),
+						},
+					},
+					"time": schema.Int64Attribute{
+						Optional:    true,
+						Description: "重置时间点毫秒时间戳，type=1时必填 支持更新",
+					},
+					"partition_shift_list": schema.ListNestedAttribute{
+						Optional:    true,
+						Description: "位点重置列表，当type为3时必填 支持更新",
+						NestedObject: schema.NestedAttributeObject{
+							Attributes: map[string]schema.Attribute{
+								"partition": schema.Int32Attribute{
+									Optional:    true,
+									Description: "主题分区号 支持更新",
+								},
+								"shift_by": schema.Int64Attribute{
+									Optional:    true,
+									Description: "主题分区消费位点向左或向右移动的相对位置，例如当前offset是1000，当shiftBy=-10重置后offset=990，当shiftBy=10重置后offset=1010。支持更新",
+								},
+							},
 						},
 					},
 				},
@@ -237,6 +248,11 @@ func (c *ctyunKafkaConsumerGroup) Update(ctx context.Context, request resource.U
 	if err != nil {
 		return
 	}
+	err = c.reset(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	state.ResetConfig = plan.ResetConfig
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -324,9 +340,7 @@ func (c *ctyunKafkaConsumerGroup) create(ctx context.Context, plan CtyunKafkaCon
 
 // update 更新
 func (c *ctyunKafkaConsumerGroup) update(ctx context.Context, plan, state CtyunKafkaConsumerGroupConfig) (err error) {
-	if !plan.RawType.IsNull() {
-		return
-	}
+
 	params := &ctgkafka.CtgkafkaConsumerGroupUpdateRequest{
 		RegionId:    state.RegionID.ValueString(),
 		ProdInstId:  plan.ProdInstId.ValueString(),
@@ -348,23 +362,37 @@ func (c *ctyunKafkaConsumerGroup) update(ctx context.Context, plan, state CtyunK
 
 // reset 重置消费组消费点
 func (c *ctyunKafkaConsumerGroup) reset(ctx context.Context, plan, state CtyunKafkaConsumerGroupConfig) (err error) {
-	if plan.RawType.IsNull() || plan.TopicName.IsNull() {
+	// 检查 ResetConfig 是否存在
+	if plan.ResetConfig == nil {
 		return
 	}
+	// 检查必要参数是否存在
+	if plan.ResetConfig.Type.IsNull() || plan.ResetConfig.TopicName.IsNull() {
+		return
+	}
+
 	params := &ctgkafka.CtgkafkaConsumerGroupResetV3Request{
 		RegionId:   state.RegionID.ValueString(),
 		ProdInstId: state.ProdInstId.ValueString(),
 		GroupName:  plan.Name.ValueString(),
-		TopicName:  plan.TopicName.ValueString(),
-		PartitionShiftList: []*ctgkafka.CtgkafkaConsumerGroupResetV3PartitionShiftListRequest{
-			{
-				Partition: plan.PartitionShiftList[0].Partition,
-				ShiftBy:   plan.PartitionShiftList[0].ShiftBy,
-			},
-		},
-		RawType: plan.RawType.ValueInt32(),
-		Time:    plan.Time.ValueInt64(),
+		TopicName:  plan.ResetConfig.TopicName.ValueString(),
+		RawType:    plan.ResetConfig.Type.ValueInt32(),
+		Time:       plan.ResetConfig.Time.ValueInt64(),
 	}
+
+	// 判空处理PartitionShiftList
+	if plan.ResetConfig.PartitionShiftList != nil && len(plan.ResetConfig.PartitionShiftList) > 0 {
+		params.PartitionShiftList = make([]*ctgkafka.CtgkafkaConsumerGroupResetV3PartitionShiftListRequest, 0, len(plan.ResetConfig.PartitionShiftList))
+		for _, item := range plan.ResetConfig.PartitionShiftList {
+			if item != nil {
+				params.PartitionShiftList = append(params.PartitionShiftList, &ctgkafka.CtgkafkaConsumerGroupResetV3PartitionShiftListRequest{
+					Partition: item.Partition,
+					ShiftBy:   item.ShiftBy,
+				})
+			}
+		}
+	}
+
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaConsumerGroupResetV3Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
@@ -372,7 +400,7 @@ func (c *ctyunKafkaConsumerGroup) reset(ctx context.Context, plan, state CtyunKa
 		return fmt.Errorf("API return error. Message: %s", resp.Message)
 	} else if resp.ReturnObj == nil {
 		return common.InvalidReturnObjError
-	} else if resp.ReturnObj.Data != "modify success" {
+	} else if resp.ReturnObj.Data != "reset success" {
 		return fmt.Errorf("API return error. Data: %s", resp.ReturnObj.Data)
 	}
 	return

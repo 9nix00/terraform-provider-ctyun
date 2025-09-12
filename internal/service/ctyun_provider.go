@@ -401,6 +401,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		kafka.NewCtyunKafkaSpecs(),
 		kafka.NewCtyunKafkaConsumerGroups(),
 		kafka.NewCtyunKafkaTopics(),
+		kafka.NewCtyunKafkaUsers(),
+		kafka.NewCtyunKafkaAcls(),
 		rabbitmq.NewCtyunRabbitmqInstances(),
 		rabbitmq.NewCtyunRabbitmqSpecs(),
 		ccse.NewCtyunCcsePluginMarket(),
@@ -514,6 +516,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mongodb.NewCtyunMongodbAssociationEip(),
 		kafka.NewCtyunKafkaConsumerGroup(),
 		kafka.NewCtyunKafkaTopic(),
+		kafka.NewCtyunKafkaUser(),
+		kafka.NewCtyunKafkaAcl(),
 	)
 }
 

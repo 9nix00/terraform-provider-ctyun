@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 )
 
-func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
+func TestAccCtyunKafkaUsers(t *testing.T) {
 	err := os.Setenv("TF_ACC", "1")
 	if err != nil {
 		return
@@ -19,20 +19,28 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
-	resourceName := "ctyun_kafka_consumer_group." + rnd
-	datasourceName := "data.ctyun_kafka_consumer_groups." + dnd
-	resourceFile := "resource_ctyun_kafka_consumer_group.tf"
-	datasourceFile := "datasource_ctyun_kafka_consumer_groups.tf"
+	resourceName := "ctyun_kafka_user." + rnd
+	datasourceName := "data.ctyun_kafka_users." + dnd
+	resourceFile := "resource_ctyun_kafka_user.tf"
+	datasourceFile := "datasource_ctyun_kafka_users.tf"
 
-	initName := "init-kafka_consumer_group-" + rnd
+	initName := "init-kafka-user-" + rnd
 	prodInstId := dependence.instanceID
+	initPassword := "sad231Dwwww"
+	updatePassword := "sad231Dwwasd"
 	topicName := dependence.topicName
+	aclInfo := fmt.Sprintf(`permission_info = [{
+operation = "READ"
+topic = "%s"}]`, topicName)
 
-	resetConfig := fmt.Sprintf(`reset_config = {
-      topic_name = "%s"
-      type       = 1
-      time       = 1571299747516
-    }`, topicName)
+	aclInfoUpdate := fmt.Sprintf(`permission_info = [{
+permission = "DENY"
+operation = "READ"
+topic = "%s"},{
+permission = "ALLOW"
+operation = "WRITE"
+topic = "%s"}]`, topicName, topicName)
+
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -45,28 +53,27 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, initPassword, aclInfo),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", resetConfig),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttr(resourceName, "description", "desc-update"),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "password", updatePassword),
+					resource.TestCheckResourceAttr(resourceName, "permission_info.#", "2"),
 				),
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate) +
 					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.0.name", initName),
+					resource.TestCheckResourceAttr(datasourceName, "users.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "users.0.name", initName),
 				),
 			},
 			{
@@ -76,16 +83,15 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
 					prodInstId := ds.Attributes["prod_inst_id"]
-					groupName := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, groupName), nil
+					name := ds.Attributes["name"]
+					password := ds.Attributes["password"]
+					return fmt.Sprintf("%s,%s,%s,%s", prodInstId, regionId, name, password), nil
 				},
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"project_id",
-				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"id", "permission_info"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate) +
 					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
 				Destroy: true,
 			},
