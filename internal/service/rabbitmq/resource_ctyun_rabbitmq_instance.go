@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -14,7 +15,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -200,12 +200,9 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
+				Description: "订购周期类型，取值范围：month：按月，on_demand：按需，支持更新。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf("month", "on_demand"),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringvalidator.OneOf(business.OrderCycleTypeMonth, business.OrderCycleTypeOnDemand),
 				},
 			},
 			"cycle_count": schema.Int32Attribute{
@@ -221,9 +218,6 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 						types.StringValue(business.OrderCycleTypeOnDemand),
 					),
 					int32validator.OneOf(1, 2, 3, 5, 6, 7, 12, 24, 36),
-				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"create_time": schema.StringAttribute{
@@ -648,6 +642,9 @@ func (c *ctyunRabbitmqInstance) checkBeforeUpdate(ctx context.Context, plan, sta
 	if strings.Contains(plan.SpecName.ValueString(), "cluster") && !strings.Contains(state.SpecName.ValueString(), "cluster") {
 		return fmt.Errorf("不支持单机版和周期版互转")
 	}
+	if plan.CycleType.Equal(state.CycleType) && !plan.CycleCount.Equal(state.CycleCount) {
+		return fmt.Errorf("不支持续订")
+	}
 
 	return nil
 }
@@ -668,6 +665,60 @@ func (c *ctyunRabbitmqInstance) update(ctx context.Context, plan, state CtyunRab
 	}
 	err = c.updateSpec(ctx, plan, state)
 	if err != nil {
+		return
+	}
+	return
+}
+
+// updateCycle 包周期到期转按需和按需转包周期
+func (c *ctyunRabbitmqInstance) updateCycle(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	if plan.CycleType.Equal(state.CycleType) {
+		return
+	}
+	if plan.CycleType.ValueString() == business.OnDemandCycleType {
+		err = c.transToPrePaid(ctx, plan, state)
+	} else {
+		err = c.transChargeType(ctx, plan, state)
+	}
+	return
+}
+
+// transToPrePaid 包周期到期转按需
+func (c *ctyunRabbitmqInstance) transToPrePaid(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	params := &amqp2.AmqpTransToPrePaidRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransToPrePaidApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// transChargeType 按需转包周期
+func (c *ctyunRabbitmqInstance) transChargeType(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	autoPay := true
+	params := &amqp2.AmqpTransChargeTypeRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+		CycleCnt:   plan.CycleCount.ValueInt32(),
+		AutoPay:    &autoPay,
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return
 	}
 	return
