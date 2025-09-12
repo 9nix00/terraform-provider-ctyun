@@ -530,6 +530,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		mongodb.NewCtyunMongodbAccount(),
+		mongodb.NewCtyunMongodbWhiteList(),
+		mongodb.NewCtyunMongodbBackupResource(),
+		mongodb.NewCtyunMongodbParamTemplateResource(),
 	)
 }
 
