@@ -52,6 +52,7 @@ func GenerateRandomString() string {
 	length := 10
 	builder := strings.Builder{}
 	builder.Grow(length)
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < length; i++ {
 		randomIndex := rand.Intn(len(charset))
 		builder.WriteByte(charset[randomIndex])
@@ -59,8 +60,7 @@ func GenerateRandomString() string {
 	return builder.String()
 }
 func GenerateRandomPort(min int, max int) int {
-	// 使用当前时间作为种子
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 	// 生成一个 min 到 max 之间的随机数
 	randomNum := rand.Intn(max-min) + min // Intn(n) 返回一个范围是 [0, n) 的随机数
 	return randomNum

@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -30,12 +31,12 @@ resource "ctyun_security_group" "security_group_test" {
 
 ### Required
 
-- `name` (String) 安全组名称，字母、中文、数字，下划线，连字符，中文/英文字母开头，长度2-32
+- `name` (String) 安全组名称，字母、中文、数字，下划线，连字符，中文/英文字母开头，长度2-32，支持更新
 - `vpc_id` (String) vpcId
 
 ### Optional
 
-- `description` (String) 描述，长度最大为128
+- `description` (String) 描述，长度最大为128，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 

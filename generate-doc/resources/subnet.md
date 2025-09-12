@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -38,13 +39,13 @@ resource "ctyun_subnet" "subnet_test" {
 ### Required
 
 - `cidr` (String) 网段，取值范围：10.0.0.0/8~10.255.255.0/24或者172.16.0.0/12~172.31.255.0/24或者192.168.0.0/16~192.168.255.0/24。约束：必须是cidr格式，例如:192.168.0.0/16
-- `dns` (Set of String) 子网dns列表, 最多同时支持4个dns地址
-- `name` (String) 支持字母、中文、数字，下划线以及-，中文/英文字母开头，长度 2-32
-- `vpc_id` (String) vpcId
+- `dns` (Set of String) 子网dns列表, 最多同时支持4个dns地址，支持更新
+- `name` (String) 子网名称，支持字母、中文、数字，下划线以及-，中文/英文字母开头，长度 2-32，支持更新
+- `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
 
-- `description` (String) 描述，长度最大为128
+- `description` (String) 描述，长度最大为128，支持更新
 - `enable_ipv6` (Boolean) 是否开启IPv6网段，false：不开启，true: 开启，默认为不开启false，注意：在子网内开启IPv6网段时，必须保证所在vpc也启用了开启IPv6网段
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

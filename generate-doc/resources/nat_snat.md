@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -53,14 +54,14 @@ resource "ctyun_nat_snat" "snat_test"{
 ### Required
 
 - `nat_gateway_id` (String) NAT网关Id
-- `snat_ips` (Set of String) 弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个
+- `snat_ips` (Set of String) 弹性公网IP集合，每个元素为eipID，至少输入1个，最多5个，支持更新
 
 ### Optional
 
-- `description` (String) SNAT描述
-- `region_id` (String) 资源池id，默认使用provider ctyun总region_id 或者环境变量
-- `source_cidr` (String) 自定义网段，与source_subnet_id有且只能填写一个
-- `source_subnet_id` (String) 子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个
+- `description` (String) SNAT描述，支持更新
+- `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
+- `source_cidr` (String) 自定义网段，与source_subnet_id有且只能填写一个，支持更新
+- `source_subnet_id` (String) 子网ID，需要和NAT网关同属一个VPC，与source_cidr有且只能填写一个，支持更新
 
 ### Read-Only
 

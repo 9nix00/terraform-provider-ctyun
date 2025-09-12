@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -27,7 +28,7 @@ resource "ctyun_ebs" "ebs_test" {
 }
 
 resource "ctyun_ecs_snapshot" "test" {
-  snapshot_name = "tf-test-group"
+  name = "tf-test-group"
   disk_id = ctyun_ebs.ebs_test.id
   retention_policy = "forever"
 }

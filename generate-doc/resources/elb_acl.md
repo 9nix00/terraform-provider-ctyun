@@ -1,5 +1,5 @@
 # ctyun_elb_acl (Resource)
-弹性负载均衡-访问控制，文档地址：https://www.ctyun.cn/document/10026756/10032777
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032777**
 
 
 
@@ -14,11 +14,12 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
 
-resource "ctyun_elb_acl" "%[1]s" {
+resource "ctyun_elb_acl" "test" {
   name = "tf_acl"
   source_ips = ["127.0.0.1/32","192.168.0.0/16","192.168.10.0"]
 }
@@ -29,15 +30,15 @@ resource "ctyun_elb_acl" "%[1]s" {
 
 ### Required
 
-- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
-- `source_ips` (Set of String) IP地址的集合或者CIDR, 单次最多添加 10 条数据
+- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新
+- `source_ips` (Set of String) IP地址的集合或者CIDR, 单次最多添加 10 条数据，支持更新
 
 ### Optional
 
 - `az_name` (String) 可用区名称，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}
+- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_+= <>?:,.,/;'[]·！@#￥%……&*（） ——+={}，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 

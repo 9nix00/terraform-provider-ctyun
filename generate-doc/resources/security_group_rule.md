@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -24,7 +25,7 @@ provider "ctyun" {
 #  action            = "accept"
 #  priority          = 50
 #  protocol          = "tcp"
-#  ether_type        = "IPv4"
+#  ether_type        = "ipv4"
 #  dest_cidr_ip      = "0.0.0.0/0"
 #  description       = "80-90端口1"
 #  range             = "80-90"
@@ -36,7 +37,7 @@ provider "ctyun" {
 #  action            = "drop"
 #  priority          = 50
 #  protocol          = "udp"
-#  ether_type        = "IPv4"
+#  ether_type        = "ipv4"
 #  dest_cidr_ip      = "0.0.0.0/0"
 #  description       = "3306端口1"
 #  range             = "3306"
@@ -68,7 +69,7 @@ resource "ctyun_security_group_rule" "security_group_rule_egress_any" {
 
 ### Optional
 
-- `description` (String) 描述，长度1-128
+- `description` (String) 描述，长度1-128，支持更新
 - `dest_cidr_ip` (String) 远端地址，为cidr地址格式，如果不填默认为0.0.0.0/0
 - `priority` (Number) 优先级：1~100，取值越小优先级越大，默认优先级为50
 - `range` (String) 安全组开放的传输层协议相关的源端端口范围，格式如：8000-9000，如果仅开放单一端口则直接填写，如：22，中间不能有空格以及其他特殊字符；如果protocol的值为any，请保证此值留空，如果protocol的值为tcp或udp，此值必填

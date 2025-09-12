@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -64,12 +65,12 @@ resource "ctyun_rabbitmq_instance" "tbidgqvfbs" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum
+- `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum，支持更新
 - `disk_type` (String) 磁盘类型，通常支持SAS、SSD、FAST-SSD
-- `instance_name` (String) 实例名称
-- `node_num` (Number) 节点数。支持1、3、5、7、9
+- `instance_name` (String) 实例名称，支持更新
+- `node_num` (Number) 节点数。支持1、3、5、7、9，支持更新
 - `security_group_id` (String) 安全组ID
-- `spec_name` (String) 实例的规格类型，建议使用ctyun_rabbitmq_specs查看
+- `spec_name` (String) 实例的规格类型，建议使用ctyun_rabbitmq_specs查看，支持更新
 - `subnet_id` (String) 子网ID
 - `vpc_id` (String) 虚拟私有云ID
 - `zone_list` (Set of String) 实例所在可用区信息，只能传一个或三个可用区，可通过ctyun_regions查看

@@ -1,5 +1,5 @@
 # ctyun_elb_rules (Data Source)
-**获取elb rules列表
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032110**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -29,7 +30,7 @@ data "ctyun_elb_rules" "test"{
 
 - `ids` (String) 转发规则ID列表，以,分隔
 - `load_balancer_id` (String) 负载均衡实例ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 
@@ -51,7 +52,7 @@ Read-Only:
 - `listener_id` (String) 监听器ID
 - `load_balancer_id` (String) 负载均衡ID
 - `project_id` (String) 项目ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `status` (String) 状态: ACTIVE / DOWN
 - `updated_time` (String) 更新时间，为UTC格式
 

@@ -53,12 +53,12 @@ func (c *CtyunElbCertificate) Metadata(ctx context.Context, request resource.Met
 
 func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡-证书管理，接口链接：https://www.ctyun.cn/document/10026756/10155416",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10155416**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

@@ -7,22 +7,21 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
-
-
 
 variable "key_pair" {
   type      = string
   sensitive = true
 }
 
-
 variable "ecs_password" {
   type      = string
   sensitive = true
 }
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-scaling"
   cidr        = "192.168.0.0/16"

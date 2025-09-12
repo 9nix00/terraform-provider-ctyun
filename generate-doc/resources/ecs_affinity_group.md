@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -29,7 +30,7 @@ resource "ctyun_ecs_affinity_group" "test" {
 
 ### Required
 
-- `affinity_group_name` (String) 云主机组名称，满足以下规则：长度在1-64个字符，只能由中文、英文字母、数字、下划线_、中划线-、点.组成
+- `affinity_group_name` (String) 云主机组名称，满足以下规则：长度在1-64个字符，只能由中文、英文字母、数字、下划线_、中划线-、点.组成 支持更新
 - `affinity_group_policy` (String) 云主机组策略类型，取值范围：<br />anti-affinity（强制反亲和性），<br />affinity（强制亲和性），<br />soft-anti-affinity（反亲和性），<br />soft-affinity（亲和性)，<br />power-anti-affinity（电力反亲和性)
 
 ### Optional

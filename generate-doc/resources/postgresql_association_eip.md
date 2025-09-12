@@ -1,4 +1,5 @@
 # ctyun_postgresql_association_eip (Resource)
+**详细说明请见文档：https://www.ctyun.cn/document/10034019/10174601**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -96,8 +98,8 @@ resource "ctyun_postgresql_association_eip" "pgsql_association_eip_test" {
 
 ### Optional
 
-- `project_id` (String) 项目id
-- `region_id` (String) 资源池Id
+- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 
 ### Read-Only
 

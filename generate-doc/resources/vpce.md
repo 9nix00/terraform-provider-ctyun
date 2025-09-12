@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -70,16 +71,16 @@ resource "ctyun_vpce" "test" {
 ### Required
 
 - `endpoint_service_id` (String) 终端节点服务ID
-- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32
+- `name` (String) 支持拉丁字母、中文、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32，支持更新
 - `subnet_id` (String) 子网ID
 - `vpc_id` (String) 虚拟私有云ID
-- `whitelist_flag` (Boolean) 是否开启白名单
+- `whitelist_flag` (Boolean) 是否开启白名单，支持更新
 
 ### Optional
 
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `subnet_ip` (String) 子网IP
-- `whitelist_cidr` (Set of String) 白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个
+- `whitelist_cidr` (Set of String) 白名单列表，当whitelist_flag=true是必填，最多同时支持20个地址，最少输入一个，支持更新
 
 ### Read-Only
 

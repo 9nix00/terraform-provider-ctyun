@@ -1,11 +1,24 @@
 # ctyun_elb_loadbalancer (Resource)
-**文档详情：https://www.ctyun.cn/document/10026756/10138703
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10138703**
 
 
 
 ## 样例
 
 ```terraform
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+provider "ctyun" {
+  env = "prod"
+}
+
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-elb"
   cidr        = "192.168.0.0/16"
@@ -25,7 +38,6 @@ resource "ctyun_subnet" "subnet_test" {
   ]
 }
 
-
 resource "ctyun_elb_loadbalancer" "elb_test" {
   subnet_id     = ctyun_subnet.subnet_test.id
   name          = "tf-elb-for-test"
@@ -43,9 +55,9 @@ resource "ctyun_elb_loadbalancer" "elb_test" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：year：按年，month：按月，on_demand：按需。当此值为month或year时，cycle_count为必填
-- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+- `name` (String) 唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新
 - `resource_type` (String) 资源类型。internal：内网负载均衡，external：公网负载均衡
-- `sla_name` (String) lb的规格名称,支持:elb.s2.small（标准型Ⅰ），elb.s3.small（增强型Ⅰ），elb.s4.small（高阶型Ⅰ），elb.s5.small（超强型Ⅰ），elb.s2.large（标准型Ⅱ），elb.s3.large（增强型Ⅱ），elb.s4.large（高阶型Ⅱ），elb.s5.large（超强型Ⅱ）
+- `sla_name` (String) lb的规格名称，支持:elb.s2.small（标准型Ⅰ），elb.s3.small（增强型Ⅰ），elb.s4.small（高阶型Ⅰ），elb.s5.small（超强型Ⅰ），elb.s2.large（标准型Ⅱ），elb.s3.large（增强型Ⅱ），elb.s4.large（高阶型Ⅱ），elb.s5.large（超强型Ⅱ），支持更新
 - `subnet_id` (String) 子网ID
 - `vpc_id` (String) 虚拟私有云ID
 
@@ -53,7 +65,7 @@ resource "ctyun_elb_loadbalancer" "elb_test" {
 
 - `az_name` (String) 可用区名称
 - `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
-- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
+- `description` (String) 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·~！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新
 - `eip_id` (String) 弹性公网IP的ID。当resource_type=external为必填
 - `pay_voucher_price` (String) 代金券金额，支持到小数点后两位
 - `private_ip_address` (String) 负载均衡的私有IP地址，不指定则自动分配

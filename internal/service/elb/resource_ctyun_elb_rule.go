@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	strings "strings"
+	"strings"
 )
 
 var (
@@ -57,7 +57,7 @@ func (c *CtyunElbRule) Metadata(ctx context.Context, request resource.MetadataRe
 
 func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--转发规则，文档地址：https://www.ctyun.cn/document/10026756/10032110",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032110**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

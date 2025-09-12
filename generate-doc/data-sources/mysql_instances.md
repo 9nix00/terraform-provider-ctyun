@@ -1,4 +1,5 @@
 # ctyun_mysql_instances (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10033813/10134365**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -31,7 +33,7 @@ data "ctyun_mysql_instances" "test" {
 - `page_size` (Number) 单页记录条数
 - `prod_inst_name` (String) 实例名称
 - `project_id` (String) 项目ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `res_db_engine` (String) 数据库引擎 枚举5.7, 8.0
 - `tag_vo_list` (Attributes List) 标签列表 (see [below for nested schema](#nestedatt--tag_vo_list))
 - `vip` (String) 连接ip

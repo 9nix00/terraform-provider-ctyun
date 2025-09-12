@@ -1,4 +1,5 @@
 # ctyun_hpfs_instances (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10088932/10090437**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -20,7 +22,7 @@ provider "ctyun" {
 data "ctyun_hpfs_instances" "test" {
   sfs_status = "available"
   sfs_protocol = "hpfs"
-  az_name = "bb9fdb42056f11eda1610242ac110002"
+  az_name = "cn-huadong1-jsnj1A-public-ctcloud"
 }
 ```
 
@@ -53,12 +55,12 @@ Read-Only:
 - `dataflow_count` (Number) HPFS文件系统下的数据流动策略数量
 - `dataflow_list` (Set of String) HPFS文件系统下的数据流动策略ID列表
 - `hpfs_share_path` (String) HPFS文件系统共享路径(Linux)
+- `name` (String) 并行文件命名
 - `on_demand` (Boolean) 是否按需订购
 - `project_id` (String) 资源所属企业项目 ID
 - `region_id` (String) 资源池 ID
 - `secret_key` (String) HPC型挂载需要的密钥
 - `sfs_id` (String) 并行文件唯一 ID
-- `sfs_name` (String) 并行文件命名
 - `sfs_protocol` (String) 挂载协议，nfs/hpfs
 - `sfs_size` (Number) 大小（GB）
 - `sfs_status` (String) 并行文件状态

@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -39,8 +40,8 @@ resource "ctyun_bandwidth" "bandwidth_test2" {
 
 ### Required
 
-- `bandwidth` (Number) 共享带宽的带宽峰值（Mbit/s），取值范围5-1000
-- `name` (String) 共享带宽命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾
+- `bandwidth` (Number) 共享带宽的带宽峰值（Mbit/s），取值范围5-1000，支持更新
+- `name` (String) 共享带宽命名，单账户单资源池下，命名需唯一，长度为2-63个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾，支持更新
 
 ### Optional
 
