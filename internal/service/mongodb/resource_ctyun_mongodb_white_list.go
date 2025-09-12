@@ -1,0 +1,345 @@
+package mongodb
+
+import (
+	"context"
+	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
+)
+
+var (
+	_ resource.Resource                = &CtyunMongodbWhiteList{}
+	_ resource.ResourceWithConfigure   = &CtyunMongodbWhiteList{}
+	_ resource.ResourceWithImportState = &CtyunMongodbWhiteList{}
+)
+
+func NewCtyunMongodbWhiteList() resource.Resource {
+	return &CtyunMongodbWhiteList{}
+}
+
+type CtyunMongodbWhiteList struct {
+	meta *common.CtyunMetadata
+}
+
+type CtyunMongodbWhiteListModel struct {
+	ID            types.String `tfsdk:"id"`
+	InstanceID    types.String `tfsdk:"instance_id"`
+	RegionID      types.String `tfsdk:"region_id"`
+	ProjectID     types.String `tfsdk:"project_id"`
+	IpList        types.List   `tfsdk:"ip_list"`
+	GroupName     types.String `tfsdk:"group_name"`      // 白名单分组名
+	IpType        types.String `tfsdk:"ip_type"`         // 白名单分组名
+	WhiteListType types.String `tfsdk:"white_list_type"` // 白名单分组名
+
+}
+
+func (c *CtyunMongodbWhiteList) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_mongodb_white_list"
+}
+
+func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		MarkdownDescription: `**MongoDB白名单分组资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089536**`,
+		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "资源唯一标识，格式为 instance_id:ip_whitelist_name",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"instance_id": schema.StringAttribute{
+				Required:    true,
+				Description: "MongoDB实例ID",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"region_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
+			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Validators: []validator.String{
+					validator2.Project(),
+				},
+			},
+			"group_name": schema.StringAttribute{
+				Required:    true,
+				Description: "白名单分组名",
+			},
+			"ip_type": schema.StringAttribute{
+				Required:    true,
+				Description: "白名单分组名",
+			},
+			"white_list_type": schema.StringAttribute{
+				Required:    true,
+				Description: "白名单分组名",
+			},
+			"ip_list": schema.ListAttribute{
+				ElementType: types.StringType,
+				Required:    true,
+				Description: "IP列表",
+			},
+		},
+	}
+}
+
+func (c *CtyunMongodbWhiteList) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	if req.ProviderData == nil {
+		return
+	}
+	meta := req.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+
+func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan CtyunMongodbWhiteListModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 获取IP列表
+	var ipList []string
+	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 创建白名单分组
+	createReq := &mongodb.MongodbCreateIpWhitelistRequest{
+		ProdInstId:    plan.InstanceID.ValueString(),
+		GroupName:     plan.GroupName.ValueString(),
+		IpType:        plan.IpType.ValueString(),
+		IpList:        ipList,
+		WhiteListType: plan.WhiteListType.ValueString(),
+	}
+
+	headers := &mongodb.MongodbCreateIpWhitelistRequestHeaders{
+		RegionID: plan.RegionID.ValueString(),
+	}
+	if !plan.ProjectID.IsNull() {
+		headers.ProjectID = plan.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "创建MongoDB白名单分组", map[string]interface{}{
+		"instance_id": plan.InstanceID.ValueString(),
+	})
+
+	createResp, err := c.meta.Apis.SdkMongodbApis.MongodbCreateIpWhitelistApi.Do(ctx, c.meta.Credential, createReq, headers)
+	if err != nil {
+		resp.Diagnostics.AddError("创建MongoDB白名单分组失败", err.Error())
+		return
+	}
+
+	if createResp.StatusCode != 800 {
+		if createResp.Message != nil {
+			resp.Diagnostics.AddError("创建MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *createResp.Message))
+		} else {
+			resp.Diagnostics.AddError("创建MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", createResp.StatusCode))
+		}
+		return
+	}
+
+	// 设置ID
+	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (c *CtyunMongodbWhiteList) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state CtyunMongodbWhiteListModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 查询白名单列表
+	describeReq := &mongodb.MongodbDescribeIpWhitelistRequest{
+		ProdInstId: state.InstanceID.ValueString(),
+	}
+
+	headers := &mongodb.MongodbDescribeIpWhitelistRequestHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if !state.ProjectID.IsNull() {
+		headers.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "查询MongoDB白名单列表", map[string]interface{}{
+		"instance_id": state.InstanceID.ValueString(),
+	})
+
+	describeResp, err := c.meta.Apis.SdkMongodbApis.MongodbDescribeIpWhitelistApi.Do(ctx, c.meta.Credential, describeReq, headers)
+	if err != nil {
+		resp.Diagnostics.AddError("查询MongoDB白名单列表失败", err.Error())
+		return
+	}
+
+	if describeResp.StatusCode != 800 {
+		if describeResp.Message != nil {
+			resp.Diagnostics.AddError("查询MongoDB白名单列表失败", fmt.Sprintf("API返回错误: %s", *describeResp.Message))
+		} else {
+			resp.Diagnostics.AddError("查询MongoDB白名单列表失败", fmt.Sprintf("API返回错误，状态码: %d", describeResp.StatusCode))
+		}
+		return
+	}
+
+	if describeResp.ReturnObj == nil {
+		resp.Diagnostics.AddError("查询MongoDB白名单列表失败", "API返回空结果")
+		return
+	}
+
+	// 查找对应的白名单分组
+	var found bool
+	for _, group := range describeResp.ReturnObj.WhitelistGroup {
+		if group.IpWhitelistName == state.GroupName.ValueString() {
+			// 更新状态
+			ipList, diags := types.ListValueFrom(ctx, types.StringType, group.IpList)
+			resp.Diagnostics.Append(diags...)
+			if resp.Diagnostics.HasError() {
+				return
+			}
+			state.IpList = ipList
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		resp.Diagnostics.AddWarning(
+			"白名单分组不存在",
+			fmt.Sprintf("MongoDB实例 %s 中未找到白名单分组 %s", state.InstanceID.ValueString(), state.GroupName.ValueString()),
+		)
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan CtyunMongodbWhiteListModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 获取IP列表
+	var ipList []string
+	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 更新白名单分组
+	updateReq := &mongodb.MongodbUpdateIpWhitelistRequest{
+		ProdInstId:      plan.InstanceID.ValueString(),
+		IpWhitelistName: plan.GroupName.ValueString(),
+		IpList:          ipList,
+	}
+
+	headers := &mongodb.MongodbUpdateIpWhitelistRequestHeaders{
+		RegionID: plan.RegionID.ValueString(),
+	}
+	if !plan.ProjectID.IsNull() {
+		headers.ProjectID = plan.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "更新MongoDB白名单分组", map[string]interface{}{
+		"instance_id":       plan.InstanceID.ValueString(),
+		"ip_whitelist_name": plan.GroupName.ValueString(),
+	})
+
+	updateResp, err := c.meta.Apis.SdkMongodbApis.MongodbUpdateIpWhitelistApi.Do(ctx, c.meta.Credential, updateReq, headers)
+	if err != nil {
+		resp.Diagnostics.AddError("更新MongoDB白名单分组失败", err.Error())
+		return
+	}
+
+	if updateResp.StatusCode != 800 {
+		if updateResp.Message != nil {
+			resp.Diagnostics.AddError("更新MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *updateResp.Message))
+		} else {
+			resp.Diagnostics.AddError("更新MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", updateResp.StatusCode))
+		}
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state CtyunMongodbWhiteListModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// 删除白名单分组
+	deleteReq := &mongodb.MongodbDeleteIpWhitelistRequest{
+		ProdInstId: state.InstanceID.ValueString(),
+		GroupName:  state.GroupName.ValueString(),
+	}
+
+	headers := &mongodb.MongodbDeleteIpWhitelistRequestHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if !state.ProjectID.IsNull() {
+		headers.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "删除MongoDB白名单分组", map[string]interface{}{
+		"instance_id":       state.InstanceID.ValueString(),
+		"ip_whitelist_name": state.GroupName.ValueString(),
+	})
+
+	deleteResp, err := c.meta.Apis.SdkMongodbApis.MongodbDeleteIpWhitelistApi.Do(ctx, c.meta.Credential, deleteReq, headers)
+	if err != nil {
+		resp.Diagnostics.AddError("删除MongoDB白名单分组失败", err.Error())
+		return
+	}
+
+	if deleteResp.StatusCode != 800 {
+		if deleteResp.Message != nil {
+			resp.Diagnostics.AddError("删除MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *deleteResp.Message))
+		} else {
+			resp.Diagnostics.AddError("删除MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", deleteResp.StatusCode))
+		}
+		return
+	}
+}
+
+func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
