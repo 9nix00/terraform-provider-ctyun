@@ -9,6 +9,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -76,8 +77,9 @@ func (c *ctyunPrivateSnatResource) Schema(_ context.Context, _ resource.SchemaRe
 				Description:   "ID，同snat_id",
 			},
 			"snat_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "Snat规则的id",
+				Computed:      true,
+				Description:   "Snat规则的id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -100,12 +102,12 @@ func (c *ctyunPrivateSnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"source_subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "子网ID，需要和NAT网关同属一个VPC",
+				Description: "子网ID，需要和NAT网关同属一个VPC 支持更新",
 			},
-			"snat_ips": schema.SetAttribute{
+			"addresses": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "IP地址，必须在中转网段指定的网络范围内",
+				Description: "中转IP地址，必须在中转网段指定的网络范围内 支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
 					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
@@ -113,27 +115,27 @@ func (c *ctyunPrivateSnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "SNAT描述",
+				Computed:    true,
+				Description: "SNAT描述 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
-				},
+					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
+					validator2.DescNotStartWithHttp()},
 			},
 			"source_vpc_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "源vpc名称",
+				Computed:      true,
+				Description:   "源vpc名称",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"source_subnet_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "源Subnet名称",
-			},
-			"addresses": schema.ListAttribute{
-				Computed:    true,
-				Description: "中转IP地址",
-				ElementType: types.StringType,
-			},
+			//"source_subnet_name": schema.StringAttribute{
+			//	Computed:      true,
+			//	Description:   "源Subnet名称",
+			//	PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			//},
 			"state": schema.StringAttribute{
-				Computed:    true,
-				Description: "SNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期",
+				Computed:      true,
+				Description:   "SNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -232,7 +234,7 @@ func (c *ctyunPrivateSnatResource) Update(ctx context.Context, request resource.
 		return
 	}
 
-	state.SnatIps = plan.SnatIps
+	state.Addresses = plan.Addresses
 	// 查询远端信息并更新本地
 	err = c.getAndMergeSnat(ctx, &state)
 	if err != nil {
@@ -306,16 +308,15 @@ func (c *ctyunPrivateSnatResource) getAndMergeSnat(ctx context.Context, config *
 	config.SNatID = types.StringValue(snat.SnatID)
 	config.Description = types.StringValue(snat.Description)
 	config.SourceVpcName = types.StringValue(snat.SrcVpcName)
-	config.SourceSubnetName = types.StringValue(snat.SrcSubnetName)
+	//config.SourceSubnetName = types.StringValue(snat.SrcSubnetName)
 	config.State = types.StringValue(snat.State)
 
-	addressesList, diags := types.ListValueFrom(ctx, types.StringType, snat.Addresses)
+	snatIps, diags := types.SetValueFrom(ctx, types.StringType, snat.Addresses)
 	if diags.HasError() {
 		err = fmt.Errorf("failed to convert addresses to list")
 		return
 	}
-	config.Addresses = addressesList
-
+	config.Addresses = snatIps
 	// 确保source_subnet_id保持不变
 	config.SourceSubnetID = types.StringValue(snat.SrcSubnetID)
 
@@ -331,7 +332,7 @@ func (c *ctyunPrivateSnatResource) checkBeforeCreateSnat(ctx context.Context, pl
 
 	// 检查eip
 	var snatIps []string
-	diag := plan.SnatIps.ElementsAs(ctx, &snatIps, false)
+	diag := plan.Addresses.ElementsAs(ctx, &snatIps, false)
 	if diag.HasError() {
 		err = fmt.Errorf(diag.Errors()[0].Detail())
 		return
@@ -353,7 +354,7 @@ func (c *ctyunPrivateSnatResource) createSnat(ctx context.Context, plan CtyunPri
 	natGatewayId := plan.NatGatewayID.ValueString()
 	sourceSubnetId := plan.SourceSubnetID.ValueString()
 	var snatIps []string
-	plan.SnatIps.ElementsAs(ctx, &snatIps, true)
+	plan.Addresses.ElementsAs(ctx, &snatIps, true)
 
 	params := &ctnat.CtnatCreatePrivatenatSnatRequest{
 		RegionID:       regionId,
@@ -380,12 +381,12 @@ func (c *ctyunPrivateSnatResource) createSnat(ctx context.Context, plan CtyunPri
 func (c *ctyunPrivateSnatResource) updateSnatInfo(ctx context.Context, state CtyunPrivateSnatConfig, plan CtyunPrivateSnatConfig) (err error) {
 	if plan.SourceSubnetID.Equal(state.SourceSubnetID) &&
 		plan.Description.Equal(state.Description) &&
-		plan.SnatIps.Equal(state.SnatIps) {
+		plan.Addresses.Equal(state.Addresses) {
 		return
 	}
 
 	var snatIps []string
-	plan.SnatIps.ElementsAs(ctx, &snatIps, true)
+	plan.Addresses.ElementsAs(ctx, &snatIps, true)
 
 	params := &ctnat.CtnatModifyPrivatenatSnatRequest{
 		RegionID:       state.RegionID.ValueString(),
@@ -484,15 +485,15 @@ func (c *ctyunPrivateSnatResource) DeleteLoop(ctx context.Context, state CtyunPr
 }
 
 type CtyunPrivateSnatConfig struct {
-	ID               types.String `tfsdk:"id"`
-	RegionID         types.String `tfsdk:"region_id"`          //区域id
-	NatGatewayID     types.String `tfsdk:"nat_gateway_id"`     //NAT网关ID
-	SourceSubnetID   types.String `tfsdk:"source_subnet_id"`   //子网id
-	SnatIps          types.Set    `tfsdk:"snat_ips"`           //IP地址，必须在中转网段指定的网络范围内
-	Description      types.String `tfsdk:"description"`        //支持拉丁字母、中文、数字, 特殊字符
-	SNatID           types.String `tfsdk:"snat_id"`            //snat id
-	SourceVpcName    types.String `tfsdk:"source_vpc_name"`    //源vpc名称
-	SourceSubnetName types.String `tfsdk:"source_subnet_name"` //源Subnet名称
-	Addresses        types.List   `tfsdk:"addresses"`          //中转IP地址
-	State            types.String `tfsdk:"state"`              //SNAT状态
+	ID             types.String `tfsdk:"id"`
+	RegionID       types.String `tfsdk:"region_id"`        //区域id
+	NatGatewayID   types.String `tfsdk:"nat_gateway_id"`   //NAT网关ID
+	SourceSubnetID types.String `tfsdk:"source_subnet_id"` //子网id
+	Addresses      types.Set    `tfsdk:"addresses"`        //IP地址，必须在中转网段指定的网络范围内
+	Description    types.String `tfsdk:"description"`      //支持拉丁字母、中文、数字, 特殊字符
+	SNatID         types.String `tfsdk:"snat_id"`          //snat id
+	SourceVpcName  types.String `tfsdk:"source_vpc_name"`  //源vpc名称
+	//SourceSubnetName types.String `tfsdk:"source_subnet_name"` //源Subnet名称
+
+	State types.String `tfsdk:"state"` //SNAT状态
 }

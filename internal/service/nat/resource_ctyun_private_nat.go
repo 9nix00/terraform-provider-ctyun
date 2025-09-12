@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -48,8 +49,9 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/00000000",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID，值与nat_gateway_id相同",
+				Computed:      true,
+				Description:   "ID，值与nat_gateway_id相同",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -91,26 +93,28 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				Validators: []validator.String{
 					stringvalidator.OneOf("small", "medium", "large", "xlarge"),
 				},
+				Description: "规格(可传值：small, medium, large, xlarge)  支持更新",
 			},
 			"name": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
+				Required:    true,
+				Description: "nat名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32 支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					validator2.Desc(),
+					validator2.DescNotStartWithHttp(),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+				Description: "nat描述 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
+					validator2.DescNotStartWithHttp(),
 				},
 			},
+
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
 				Description: "订购周期类型，取值范围：year：按年，month：按月，on_demand：按需。当此值为month或year时，cycle_count为必填",
@@ -140,11 +144,15 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 					validator2.CycleCount(1, 11, 1, 3),
 				},
 			},
+			//TODO 添加单元测试
 			"auto_renew": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "是否自动续订，默认为true",
 				Default:     booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -158,23 +166,28 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
-				Description: "代金券金额，支持到小数点后两位",
+				Description: "代金券金额，支持到小数点后两位 支持更新",
+			},
+
+			"nat_gateway_id": schema.StringAttribute{
+				Computed:      true,
+				Description:   "网关id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"master_order_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "订单id",
-			},
-			"nat_gateway_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "网关id",
+				Computed:      true,
+				Description:   "订单id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"vpc_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "NAT所属的vpc专有网络名字",
+				Computed:      true,
+				Description:   "NAT所属的vpc专有网络名字",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"creation_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "NAT网关的创建时间",
+			"create_time": schema.StringAttribute{
+				Computed:      true,
+				Description:   "NAT网关的创建时间,为UTC格式",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -195,13 +208,12 @@ func (c *ctyunPrivateNat) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
-	// 创建前检查
+	// 创建前检查  NAT的创建，依赖于先有VPC
 	err = c.checkBeforeCreateNat(ctx, plan)
 	if err != nil {
 		return
 	}
-	// 创建
-	// NAT的创建，依赖于先有VPC
+	// 创建NAT
 	returnObj, createParams, err := c.createNat(ctx, &plan)
 	if err != nil {
 		return
@@ -215,13 +227,6 @@ func (c *ctyunPrivateNat) Create(ctx context.Context, request resource.CreateReq
 		return
 	}
 
-	// 根据订单编号轮询查询资源的uuid
-	/*
-		helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-		loop, err := helper.OrderLoop(ctx, c.meta.Credential, masterOrderId, 600)
-		if err != nil {
-			return
-		}*/
 	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
 
 	if err != nil {
@@ -425,10 +430,6 @@ func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatCo
 		AutoRenew:       &autoRenew,
 		PayVoucherPrice: payVoucherPrice,
 	}
-	//if cycleType == business.OrderCycleTypeOnDemand {
-	//	params.CycleCount = 1
-	//	plan.CycleCount = types.Int64Value(1)
-	//}
 	if cycleType != business.OrderCycleTypeOnDemand && cycleCount > 0 {
 		params.CycleCount = cycleCount
 	}
@@ -474,7 +475,6 @@ func (c *ctyunPrivateNat) getAndMergeNat(ctx context.Context, cfg *CtyunPrivateN
 	cfg.NatGatewayID = types.StringValue(natObj.NatGatewayID)
 	cfg.Description = types.StringValue(natObj.Description)
 	cfg.VpcName = types.StringValue(natObj.VpcName)
-	//cfg.VpcCidr = utils.SecStringValue(natObj.VpcCidr)
 	cfg.CreationTime = types.StringValue(natObj.CreateDate)
 	return nil
 }
@@ -690,7 +690,7 @@ type CtyunPrivateNatConfig struct {
 	MasterOrderID   types.String `tfsdk:"master_order_id"`   //订单id
 	NatGatewayID    types.String `tfsdk:"nat_gateway_id"`    //网关 ID
 	VpcName         types.String `tfsdk:"vpc_name"`          //NAT所属的专有网络名字
-	CreationTime    types.String `tfsdk:"creation_time"`     //NAT网关的创建时间
+	CreationTime    types.String `tfsdk:"create_time"`       //NAT网关的创建时间
 }
 
 type LoopOrderPrivateResponse struct {

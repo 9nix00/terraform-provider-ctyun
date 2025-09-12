@@ -105,6 +105,29 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 		return
 	}
 
+	_, err := c.createEcsPortAssociation(ctx, plan)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"绑定弹性网卡失败",
+			fmt.Sprintf("绑定弹性网卡到云主机时发生错误: %s", err.Error()),
+		)
+		return
+	}
+
+	// 设置ID
+	plan.ID = types.StringValue(generateEcsPortAssociationId(plan.RegionID.ValueString(), plan.InstanceID.ValueString(), plan.NetworkInterfaceID.ValueString()))
+	_, err = c.getAndMergeEcsPortAssociation(ctx, plan)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"获取云主机弹性网卡绑定详情失败",
+			fmt.Sprintf("获取云主机弹性网卡绑定详情时发生错误: %s", err.Error()),
+		)
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (c *ctyunEcsPortAssociation) createEcsPortAssociation(ctx context.Context, plan CtyunEcsPortAssociationConfig) (*ctecs.CtecsPortsAttachInstanceV41Response, error) {
 	regionId := c.meta.GetExtraIfEmpty(plan.RegionID.ValueString(), common.ExtraRegionId)
 	projectId := c.meta.GetExtraIfEmpty(plan.ProjectID.ValueString(), common.ExtraProjectId)
 	azName := c.meta.GetExtraIfEmpty(plan.AzName.ValueString(), common.ExtraAzName)
@@ -120,19 +143,8 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 		InstanceType:       3, // 3-虚拟机
 	}
 
-	_, err := c.meta.Apis.SdkCtEcsApis.CtecsPortsAttachInstanceV41Api.Do(ctx, c.meta.SdkCredential, attachRequest)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"绑定弹性网卡失败",
-			fmt.Sprintf("绑定弹性网卡到云主机时发生错误: %s", err.Error()),
-		)
-		return
-	}
-
-	// 设置ID
-	plan.ID = types.StringValue(generateEcsPortAssociationId(regionId, plan.InstanceID.ValueString(), plan.NetworkInterfaceID.ValueString()))
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsPortsAttachInstanceV41Api.Do(ctx, c.meta.SdkCredential, attachRequest)
+	return resp, err
 }
 
 func (c *ctyunEcsPortAssociation) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -142,15 +154,7 @@ func (c *ctyunEcsPortAssociation) Read(ctx context.Context, req resource.ReadReq
 		return
 	}
 
-	regionId := c.meta.GetExtraIfEmpty(state.RegionID.ValueString(), common.ExtraRegionId)
-
-	// 查询云主机详情以确认弹性网卡是否仍然绑定
-	describeRequest := &ctecs.CtecsDetailsInstanceV41Request{
-		RegionID:   regionId,
-		InstanceID: state.InstanceID.ValueString(),
-	}
-
-	describeResponse, err := c.meta.Apis.SdkCtEcsApis.CtecsDetailsInstanceV41Api.Do(ctx, c.meta.SdkCredential, describeRequest)
+	describeResponse, err := c.getAndMergeEcsPortAssociation(ctx, state)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"获取云主机详情失败",
@@ -177,6 +181,19 @@ func (c *ctyunEcsPortAssociation) Read(ctx context.Context, req resource.ReadReq
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (c *ctyunEcsPortAssociation) getAndMergeEcsPortAssociation(ctx context.Context, state CtyunEcsPortAssociationConfig) (*ctecs.CtecsDetailsInstanceV41Response, error) {
+	regionId := c.meta.GetExtraIfEmpty(state.RegionID.ValueString(), common.ExtraRegionId)
+
+	// 查询云主机详情以确认弹性网卡是否仍然绑定
+	describeRequest := &ctecs.CtecsDetailsInstanceV41Request{
+		RegionID:   regionId,
+		InstanceID: state.InstanceID.ValueString(),
+	}
+
+	describeResponse, err := c.meta.Apis.SdkCtEcsApis.CtecsDetailsInstanceV41Api.Do(ctx, c.meta.SdkCredential, describeRequest)
+	return describeResponse, err
 }
 
 func (c *ctyunEcsPortAssociation) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {

@@ -24,3 +24,6 @@ output "data_disk_id" {
 output "instance_id" {
   value =ctyun_ecs.ecs_test.id
 }
+output "subnet_id" {
+  value =ctyun_subnet.subnet_test.id
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -42,12 +43,14 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 		MarkdownDescription: `详细说明请见文档：https://www.ctyun.cn/document/10026759/00000000`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "ID，同dnat_id",
+				Computed:      true,
+				Description:   "ID，同dnat_id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"dnat_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "PrivateDnat规则的id",
+				Computed:      true,
+				Description:   "PrivateDnat规则的id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -67,18 +70,18 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			},
 			"external_ip": schema.StringAttribute{
 				Required:    true,
-				Description: "中转IP",
+				Description: "中转IP 支持更新",
 			},
 			"external_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "对外的端口（1-65535）",
+				Description: "对外的端口（1-65535） 支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
 			},
 			"internal_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "对应的内部端口（1-65535）",
+				Description: "对应的内部端口（1-65535）支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 65535),
 				},
@@ -86,7 +89,7 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			"internal_ip": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "对应的内部IP(和port_id二选一)",
+				Description: "对应的内部IP(和port_id二选一) 支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("port_id")),
 				},
@@ -94,22 +97,14 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			"port_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "对应的网卡ID(和internal_ip二选一)",
+				Description: "对应的网卡ID(和internal_ip二选一) 支持更新",
 				Validators: []validator.String{
 					stringvalidator.ConflictsWith(path.MatchRoot("internal_ip")),
 				},
 			},
-			"port_name": schema.StringAttribute{
-				Computed:    true,
-				Description: "网卡名称",
-			},
-			"device_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "网卡对应的设备ID",
-			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
-				Description: "协议: tcp, udp",
+				Description: "协议: tcp, udp 支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("tcp", "udp"),
 				},
@@ -117,15 +112,32 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "描述",
+				Description: "DNAT描述支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
+					validator2.DescNotStartWithHttp(),
+				},
 			},
 			"state": schema.StringAttribute{
-				Computed:    true,
-				Description: "运行状态: running代表运行中, freeze代表已冻结, expired代表已到期",
+				Computed:      true,
+				Description:   "运行状态: running代表运行中, freeze代表已冻结, expired代表已到期",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"created_at": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间",
+			"create_time": schema.StringAttribute{
+				Computed:      true,
+				Description:   "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"port_name": schema.StringAttribute{
+				Computed:      true,
+				Description:   "网卡名称",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+			},
+			"device_id": schema.StringAttribute{
+				Computed:      true,
+				Description:   "网卡对应的设备ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -440,6 +452,6 @@ type CtyunPrivateDnatConfig struct {
 	DeviceID     types.String `tfsdk:"device_id"`      /*  网卡对应的设备ID  */
 	Protocol     types.String `tfsdk:"protocol"`       /*  协议: tcp/udp  */
 	State        types.String `tfsdk:"state"`          /*  DNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期  */
-	CreatedAt    types.String `tfsdk:"created_at"`     /*  创建时间  */
+	CreatedAt    types.String `tfsdk:"create_time"`    /*  创建时间  */
 	Description  types.String `tfsdk:"description"`    /*  描述  */
 }

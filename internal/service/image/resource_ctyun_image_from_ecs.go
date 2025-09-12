@@ -41,12 +41,7 @@ func (c *ctyunImageFromEcs) Metadata(_ context.Context, request resource.Metadat
 
 func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**创建私有镜像接口合集，支持系统盘、数据盘、整机、快照四种方式，详细说明请见：**
-- 系统盘：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=23&api=4765&data=89&isNormal=1&vid=83
-- 数据盘：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=23&api=5230&data=89&isNormal=1&vid=83
-- 整机：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=23&api=18058&data=89&isNormal=1&vid=83
-- 快照：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=23&api=18057&data=89&isNormal=1&vid=83
-- 修改属性：https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=23&api=5085&data=89&isNormal=1&vid=83`,
+		MarkdownDescription: `**创建私有镜像，详细说明请见：https://www.ctyun.cn/document/10027726/10031013**`,
 		Attributes: map[string]schema.Attribute{
 			// 新增：资源ID（由API返回，自动生成）
 			"id": schema.StringAttribute{
@@ -57,7 +52,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 			// 公共必填参数（所有创建方式均需）
 			"image_name": schema.StringAttribute{
 				Required:    true,
-				Description: "镜像名称。长度2~32字符，仅数字、字母、-组成，不能以数字或-开头/结尾，且不与已有私有镜像重名。",
+				Description: "镜像名称。长度2~32字符，仅数字、字母、-组成，不能以数字或-开头/结尾，且不与已有私有镜像重名。支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 					stringvalidator.RegexMatches(
@@ -65,8 +60,6 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 						"镜像名称格式错误：需2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾。",
 					),
 				},
-				// 修改接口支持更新名称，无需重建（补充修改接口对应的PlanModifier）
-				PlanModifiers: []planmodifier.String{},
 			},
 			// 镜像类型字段
 			"image_type": schema.StringAttribute{
@@ -83,7 +76,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "镜像描述。长度1~128字符，不能以空格开头或结尾。",
+				Description: "镜像描述。长度1~128字符，不能以空格开头或结尾。 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 128),
 					stringvalidator.RegexMatches(
@@ -91,8 +84,6 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 						"描述不能以空格开头或结尾。",
 					),
 				},
-				// 修改接口支持更新描述，无需重建
-				PlanModifiers: []planmodifier.String{},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -147,12 +138,12 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 						},
 					},
 				},
-				// 标签变更需重建（创建接口无动态更新标签能力）
+				// TODO 标签变更需重建（创建接口暂无无动态更新标签能力）
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},
 			},
-
+			//TODO  后面研究下这个参数 具体用法
 			"enable_image_integrity_check": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -178,7 +169,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional: true,
 				Computed: true,
 				//Default:     int64default.StaticInt64(0),
-				Description: "最小内存限制（GiB），仅系统盘、快照创建方式支持，取值0/1/2/4/8/16/32/64/128/256/512。",
+				Description: "最小内存限制（GiB），仅系统盘、快照创建方式支持，取值0/1/2/4/8/16/32/64/128/256/512。支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("image_type"),
@@ -186,15 +177,12 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 					),
 					int64validator.OneOf(0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512),
 				},
-
-				// 修改接口支持更新，无需重建
-				PlanModifiers: []planmodifier.Int64{},
 			},
 			"maximum_ram": schema.Int64Attribute{
 				Optional: true,
 				Computed: true,
 				//Default:     int64default.StaticInt64(0),
-				Description: "最大内存限制（GiB），仅系统盘、快照创建方式支持，需≥最小内存。",
+				Description: "最大内存限制（GiB），仅系统盘、快照创建方式支持，需≥最小内存。 支持更新",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("image_type"),
@@ -202,8 +190,6 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 					),
 					int64validator.OneOf(0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512),
 				},
-				// 修改接口支持更新，无需重建
-				PlanModifiers: []planmodifier.Int64{},
 			},
 
 			// 数据盘特有参数

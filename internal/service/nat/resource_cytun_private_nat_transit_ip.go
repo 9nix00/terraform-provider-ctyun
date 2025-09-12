@@ -8,6 +8,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -68,18 +70,30 @@ func (c *ctyunPrivateNatTransitIpResource) Schema(_ context.Context, _ resource.
 			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "中转IP状态: running代表运行中, freeze代表已冻结, expired代表已到期",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"is_default": schema.BoolAttribute{
 				Computed:    true,
 				Description: "是否为默认中转地址",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"snat_count": schema.Int32Attribute{
 				Computed:    true,
 				Description: "在使用此中转IP的snat数量",
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.UseStateForUnknown(),
+				},
 			},
 			"dnat_count": schema.Int32Attribute{
 				Computed:    true,
 				Description: "在使用此中转IP的dnat数量",
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
