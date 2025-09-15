@@ -49,7 +49,7 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttrSet(resourceName, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(resourceName, "port_id"),
 					resource.TestCheckResourceAttrSet(resourceName, "region_id"),
 				),
 			},
@@ -134,7 +134,7 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 				Config: utils.LoadTestCase(configFile, rnd, initialPortName, initialDescription, subnetId, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
-					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "port_id"),
 					resource.TestCheckResourceAttrSet(name, "mac_address"),
 					resource.TestCheckResourceAttrSet(name, "status"),
 					resource.TestCheckResourceAttr(name, "name", initialPortName),
@@ -148,7 +148,7 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
-					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "port_id"),
 					resource.TestCheckResourceAttrSet(name, "mac_address"),
 					resource.TestCheckResourceAttrSet(name, "status"),
 					resource.TestCheckResourceAttr(name, "name", updatedPortName),
@@ -198,7 +198,7 @@ func TestAccCtyunNetworkInterface_case2(t *testing.T) {
 				Config: utils.LoadTestCase(configFile, rnd, initialPortName, initialDescription, subnetId, primaryIp, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
-					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "port_id"),
 					resource.TestCheckResourceAttrSet(name, "mac_address"),
 					resource.TestCheckResourceAttrSet(name, "status"),
 					resource.TestCheckResourceAttr(name, "name", initialPortName),
@@ -213,7 +213,7 @@ func TestAccCtyunNetworkInterface_case2(t *testing.T) {
 				Config: utils.LoadTestCase(configFile, rnd, updatedPortName, updatedDescription, subnetId, primaryIp, securityGroupId, secondaryIpCount, ipv6AddressCount),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttrSet(name, "id"),
-					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "port_id"),
 					resource.TestCheckResourceAttrSet(name, "mac_address"),
 					resource.TestCheckResourceAttrSet(name, "status"),
 					resource.TestCheckResourceAttr(name, "name", updatedPortName),

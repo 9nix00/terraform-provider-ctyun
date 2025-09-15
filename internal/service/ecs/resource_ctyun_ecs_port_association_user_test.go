@@ -42,7 +42,7 @@ func TestAccCtyunEcsPortAssociation_all(t *testing.T) {
 					resource.TestCheckResourceAttrSet(name, "region_id"),
 					resource.TestCheckResourceAttrSet(name, "project_id"),
 					resource.TestCheckResourceAttr(name, "instance_id", dependence.instanceID),
-					resource.TestCheckResourceAttrSet(name, "network_interface_id"),
+					resource.TestCheckResourceAttrSet(name, "port_id"),
 				),
 			},
 			{
@@ -75,12 +75,13 @@ func generateImportStateIdFunc(resourceName string) resource.ImportStateIdFunc {
 
 		regionId := rs.Primary.Attributes["region_id"]
 		instanceId := rs.Primary.Attributes["instance_id"]
-		networkInterfaceId := rs.Primary.Attributes["network_interface_id"]
+		networkInterfaceId := rs.Primary.Attributes["port_id"]
 
 		if regionId == "" || instanceId == "" || networkInterfaceId == "" {
 			return "", fmt.Errorf("missing required attributes for import")
 		}
 
 		return fmt.Sprintf("%s,%s,%s", regionId, instanceId, networkInterfaceId), nil
+
 	}
 }

@@ -223,9 +223,9 @@ func (c *ctyunPrivateNat) Create(ctx context.Context, request resource.CreateReq
 	masterOrderId := returnObj.MasterOrderID
 	plan.MasterOrderID = types.StringValue(masterOrderId)
 	//response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
+	//if response.Diagnostics.HasError() {
+	//	return
+	//}
 
 	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
 

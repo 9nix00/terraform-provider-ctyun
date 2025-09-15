@@ -67,7 +67,7 @@ func (c *ctyunNetworkInterfaces) Schema(_ context.Context, _ datasource.SchemaRe
 							Computed:    true,
 							Description: "网卡描述",
 						},
-						"network_interface_id": schema.StringAttribute{
+						"port_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "网卡ID",
 						},
@@ -181,9 +181,9 @@ func (c *ctyunNetworkInterfaces) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	// 处理响应数据
-	var networkInterfaces []CtyunNetworkInterfaceConfig
+	var networkInterfaces []CtyunNetworkInterfaces
 	for _, port := range response.ReturnObj {
-		networkInterface := CtyunNetworkInterfaceConfig{
+		networkInterface := CtyunNetworkInterfaces{
 			Id:                 types.StringPointerValue(port.NetworkInterfaceID),
 			Name:               types.StringPointerValue(port.NetworkInterfaceName),
 			Description:        types.StringPointerValue(port.Description),
@@ -247,11 +247,11 @@ func (c *ctyunNetworkInterfaces) Configure(_ context.Context, req datasource.Con
 	c.meta = meta
 }
 
-type CtyunNetworkInterfaceConfig struct {
+type CtyunNetworkInterfaces struct {
 	Id                  types.String   `tfsdk:"id"`
 	Name                types.String   `tfsdk:"name"`
 	Description         types.String   `tfsdk:"description"`
-	NetworkInterfaceId  types.String   `tfsdk:"network_interface_id"`
+	NetworkInterfaceId  types.String   `tfsdk:"port_id"`
 	SubnetId            types.String   `tfsdk:"subnet_id"`
 	VpcId               types.String   `tfsdk:"vpc_id"`
 	MacAddress          types.String   `tfsdk:"mac_address"`
@@ -265,11 +265,11 @@ type CtyunNetworkInterfaceConfig struct {
 }
 
 type CtyunNetworkInterfacesConfig struct {
-	RegionId          types.String                  `tfsdk:"region_id"`
-	VpcId             types.String                  `tfsdk:"vpc_id"`
-	DeviceId          types.String                  `tfsdk:"device_id"`
-	SubnetId          types.String                  `tfsdk:"subnet_id"`
-	PageNo            types.Int64                   `tfsdk:"page_no"`
-	PageSize          types.Int64                   `tfsdk:"page_size"`
-	NetworkInterfaces []CtyunNetworkInterfaceConfig `tfsdk:"network_interfaces"`
+	RegionId          types.String             `tfsdk:"region_id"`
+	VpcId             types.String             `tfsdk:"vpc_id"`
+	DeviceId          types.String             `tfsdk:"device_id"`
+	SubnetId          types.String             `tfsdk:"subnet_id"`
+	PageNo            types.Int64              `tfsdk:"page_no"`
+	PageSize          types.Int64              `tfsdk:"page_size"`
+	NetworkInterfaces []CtyunNetworkInterfaces `tfsdk:"network_interfaces"`
 }
