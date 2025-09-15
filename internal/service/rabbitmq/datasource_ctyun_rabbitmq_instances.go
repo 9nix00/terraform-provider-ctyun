@@ -162,7 +162,7 @@ func (c *ctyunRabbitmqInstances) getByID(ctx context.Context, config *CtyunRabbi
 		ProdInstId: config.InstanceID.ValueString(),
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -208,7 +208,7 @@ func (c *ctyunRabbitmqInstances) getByPage(ctx context.Context, config *CtyunRab
 		params.PageSize = config.PageSize.ValueInt32()
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {

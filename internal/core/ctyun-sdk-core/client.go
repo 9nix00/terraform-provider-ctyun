@@ -2,6 +2,7 @@ package ctyunsdk
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"github.com/hashicorp/go-retryablehttp"
@@ -47,8 +48,12 @@ func ClientConfigTest() *CtyunClientConfig {
 // ClientTest 测试环境客户端
 func ClientTest() *http.Client {
 	return &http.Client{
-		Transport: &http.Transport{},
-		Timeout:   0,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+		Timeout: 0,
 	}
 }
 
