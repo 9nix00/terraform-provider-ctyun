@@ -3,7 +3,7 @@ package ctyunsdk
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -83,11 +83,7 @@ func (c CtyunResponse) ParseByStandardModelWithCheck(obj interface{}) CtyunReque
 		if code == "" {
 			code = model.ParseStatusCode()
 		}
-		for i, e := range errInfos {
-			errInfos[i] = "API return error. " + e
-		}
-
-		err := errors.New(strings.Join(errInfos, ","))
+		err := fmt.Errorf("API return error: " + strings.Join(errInfos, " "))
 		wrapError := WrapWithErrorCode(err, code, &c)
 		return wrapError
 	}
