@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -32,7 +32,7 @@ type CtyunMongodbWhiteList struct {
 	meta *common.CtyunMetadata
 }
 
-type CtyunMongodbWhiteListModel struct {
+type CtyunMongodbWhiteListConfig struct {
 	ID            types.String `tfsdk:"id"`
 	InstanceID    types.String `tfsdk:"instance_id"`
 	RegionID      types.String `tfsdk:"region_id"`
@@ -123,7 +123,71 @@ func (c *CtyunMongodbWhiteList) Configure(ctx context.Context, req resource.Conf
 }
 
 func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan CtyunMongodbWhiteListModel
+
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunMongodbWhiteListConfig
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// 获取IP列表
+	var ipList []string
+	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// 创建前检查
+	err = c.checkBeforeCreate(ctx, &plan)
+	if err != nil {
+		return
+	}
+	err = c.create(ctx, &plan, ipList)
+	if err != nil {
+		return
+	}
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
+
+	// 设置ID
+	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
+
+func (c *CtyunMongodbWhiteList) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunMongodbWhiteListConfig
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunMongodbWhiteListConfig
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
@@ -135,7 +199,59 @@ func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	err = c.update(ctx, plan, ipList)
+	if err != nil {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+}
 
+func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunMongodbWhiteListConfig
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+}
+
+func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunMongodbWhiteListConfig
+	var instanceID, groupName string
+	err = terraform_extend.Split(req.ID, &instanceID, &groupName)
+	if err != nil {
+		return
+	}
+	cfg.InstanceID = types.StringValue(instanceID)
+	cfg.GroupName = types.StringValue(groupName)
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+}
+
+func (c *CtyunMongodbWhiteList) checkBeforeCreate(ctx context.Context, c2 *CtyunMongodbWhiteListConfig) (err error) {
+	return nil
+}
+func (c *CtyunMongodbWhiteList) create(ctx context.Context, plan *CtyunMongodbWhiteListConfig, ipList []string) (err error) {
 	// 创建白名单分组
 	createReq := &mongodb.MongodbCreateIpWhitelistRequest{
 		ProdInstId:    plan.InstanceID.ValueString(),
@@ -156,112 +272,55 @@ func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateR
 		"instance_id": plan.InstanceID.ValueString(),
 	})
 
-	createResp, err := c.meta.Apis.SdkMongodbApis.MongodbCreateIpWhitelistApi.Do(ctx, c.meta.Credential, createReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbCreateIpWhitelistApi.Do(ctx, c.meta.Credential, createReq, headers)
 	if err != nil {
-		resp.Diagnostics.AddError("创建MongoDB白名单分组失败", err.Error())
 		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
 	}
-
-	if createResp.StatusCode != 800 {
-		if createResp.Message != nil {
-			resp.Diagnostics.AddError("创建MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *createResp.Message))
-		} else {
-			resp.Diagnostics.AddError("创建MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", createResp.StatusCode))
-		}
-		return
-	}
-
-	// 设置ID
 	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	return
 }
-
-func (c *CtyunMongodbWhiteList) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state CtyunMongodbWhiteListModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+func (c *CtyunMongodbWhiteList) getAndMerge(ctx context.Context, plan *CtyunMongodbWhiteListConfig) (err error) {
 	// 查询白名单列表
 	describeReq := &mongodb.MongodbDescribeIpWhitelistRequest{
-		ProdInstId: state.InstanceID.ValueString(),
+		ProdInstId: plan.InstanceID.ValueString(),
 	}
 
 	headers := &mongodb.MongodbDescribeIpWhitelistRequestHeaders{
-		RegionID: state.RegionID.ValueString(),
+		RegionID: plan.RegionID.ValueString(),
 	}
-	if !state.ProjectID.IsNull() {
-		headers.ProjectID = state.ProjectID.ValueStringPointer()
+	if !plan.ProjectID.IsNull() {
+		headers.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
-	tflog.Info(ctx, "查询MongoDB白名单列表", map[string]interface{}{
-		"instance_id": state.InstanceID.ValueString(),
-	})
-
-	describeResp, err := c.meta.Apis.SdkMongodbApis.MongodbDescribeIpWhitelistApi.Do(ctx, c.meta.Credential, describeReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDescribeIpWhitelistApi.Do(ctx, c.meta.Credential, describeReq, headers)
 	if err != nil {
-		resp.Diagnostics.AddError("查询MongoDB白名单列表失败", err.Error())
 		return
-	}
-
-	if describeResp.StatusCode != 800 {
-		if describeResp.Message != nil {
-			resp.Diagnostics.AddError("查询MongoDB白名单列表失败", fmt.Sprintf("API返回错误: %s", *describeResp.Message))
-		} else {
-			resp.Diagnostics.AddError("查询MongoDB白名单列表失败", fmt.Sprintf("API返回错误，状态码: %d", describeResp.StatusCode))
-		}
-		return
-	}
-
-	if describeResp.ReturnObj == nil {
-		resp.Diagnostics.AddError("查询MongoDB白名单列表失败", "API返回空结果")
-		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
 	}
 
 	// 查找对应的白名单分组
 	var found bool
-	for _, group := range describeResp.ReturnObj.WhitelistGroup {
-		if group.IpWhitelistName == state.GroupName.ValueString() {
+	for _, group := range resp.ReturnObj.WhitelistGroup {
+		if group.IpWhitelistName == plan.GroupName.ValueString() {
 			// 更新状态
-			ipList, diags := types.ListValueFrom(ctx, types.StringType, group.IpList)
-			resp.Diagnostics.Append(diags...)
-			if resp.Diagnostics.HasError() {
-				return
-			}
-			state.IpList = ipList
+			ipList, _ := types.ListValueFrom(ctx, types.StringType, group.IpList)
+			plan.IpList = ipList
 			found = true
 			break
 		}
 	}
-
 	if !found {
-		resp.Diagnostics.AddWarning(
-			"白名单分组不存在",
-			fmt.Sprintf("MongoDB实例 %s 中未找到白名单分组 %s", state.InstanceID.ValueString(), state.GroupName.ValueString()),
-		)
-		resp.State.RemoveResource(ctx)
-		return
+		return fmt.Errorf("API return error. Message: mongodb white list not found")
 	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	return
 }
-
-func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan CtyunMongodbWhiteListModel
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// 获取IP列表
-	var ipList []string
-	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+func (c *CtyunMongodbWhiteList) update(ctx context.Context, plan CtyunMongodbWhiteListConfig, ipList []string) (err error) {
 	// 更新白名单分组
 	updateReq := &mongodb.MongodbUpdateIpWhitelistRequest{
 		ProdInstId:      plan.InstanceID.ValueString(),
@@ -281,31 +340,15 @@ func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateR
 		"ip_whitelist_name": plan.GroupName.ValueString(),
 	})
 
-	updateResp, err := c.meta.Apis.SdkMongodbApis.MongodbUpdateIpWhitelistApi.Do(ctx, c.meta.Credential, updateReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpdateIpWhitelistApi.Do(ctx, c.meta.Credential, updateReq, headers)
 	if err != nil {
-		resp.Diagnostics.AddError("更新MongoDB白名单分组失败", err.Error())
 		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
 	}
-
-	if updateResp.StatusCode != 800 {
-		if updateResp.Message != nil {
-			resp.Diagnostics.AddError("更新MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *updateResp.Message))
-		} else {
-			resp.Diagnostics.AddError("更新MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", updateResp.StatusCode))
-		}
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	return
 }
-
-func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state CtyunMongodbWhiteListModel
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
+func (c *CtyunMongodbWhiteList) delete(ctx context.Context, state CtyunMongodbWhiteListConfig) (err error) {
 	// 删除白名单分组
 	deleteReq := &mongodb.MongodbDeleteIpWhitelistRequest{
 		ProdInstId: state.InstanceID.ValueString(),
@@ -324,22 +367,11 @@ func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteR
 		"ip_whitelist_name": state.GroupName.ValueString(),
 	})
 
-	deleteResp, err := c.meta.Apis.SdkMongodbApis.MongodbDeleteIpWhitelistApi.Do(ctx, c.meta.Credential, deleteReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDeleteIpWhitelistApi.Do(ctx, c.meta.Credential, deleteReq, headers)
 	if err != nil {
-		resp.Diagnostics.AddError("删除MongoDB白名单分组失败", err.Error())
 		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
 	}
-
-	if deleteResp.StatusCode != 800 {
-		if deleteResp.Message != nil {
-			resp.Diagnostics.AddError("删除MongoDB白名单分组失败", fmt.Sprintf("API返回错误: %s", *deleteResp.Message))
-		} else {
-			resp.Diagnostics.AddError("删除MongoDB白名单分组失败", fmt.Sprintf("API返回错误，状态码: %d", deleteResp.StatusCode))
-		}
-		return
-	}
-}
-
-func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	return
 }

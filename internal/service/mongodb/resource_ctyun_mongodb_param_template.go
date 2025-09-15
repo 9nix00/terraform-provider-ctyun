@@ -36,8 +36,8 @@ type CtyunMongodbParamTemplateResource struct {
 	meta *common.CtyunMetadata
 }
 
-// CtyunMongodbParamTemplateResourceModel describes the resource data model.
-type CtyunMongodbParamTemplateResourceModel struct {
+// CtyunMongodbParamTemplateConfig describes the resource data model.
+type CtyunMongodbParamTemplateConfig struct {
 	ID            types.String `tfsdk:"id"`
 	RegionID      types.String `tfsdk:"region_id"`
 	ProjectID     types.String `tfsdk:"project_id"`
@@ -164,75 +164,202 @@ func (r *CtyunMongodbParamTemplateResource) Configure(ctx context.Context, req r
 }
 
 func (r *CtyunMongodbParamTemplateResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data CtyunMongodbParamTemplateResourceModel
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunMongodbParamTemplateConfig
 
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
+	// Read Terraform plan plan into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
+	err = r.create(ctx, &plan)
+	if err != nil {
+		return
+	}
+	err = r.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
+	// 保存数据到Terraform状态
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
 
-	if r.createParamTemplate(ctx, data, resp) {
+func (r *CtyunMongodbParamTemplateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunMongodbParamTemplateConfig
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	err = r.getAndMerge(ctx, &state)
+	if err != nil {
 		return
 	}
 
 	// 保存数据到Terraform状态
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *CtyunMongodbParamTemplateResource) createParamTemplate(ctx context.Context, data CtyunMongodbParamTemplateResourceModel, resp *resource.CreateResponse) bool {
-	// Create param template
-	createReq := &mongodb.MongodbCreateParamTemplateRequest{
-		TemplateName:  data.TemplateName.ValueString(),
-		EngineVersion: data.EngineVersion.ValueString(),
-		NodeType:      data.NodeType.ValueString(),
-	}
+func (r *CtyunMongodbParamTemplateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunMongodbParamTemplateConfig
 
-	if !data.Description.IsNull() {
-		createReq.TemplateDesc = data.Description.ValueString()
-	}
-
-	header := &mongodb.MongodbCreateParamTemplateRequestHeaders{
-		RegionID: data.RegionID.ValueString(),
-	}
-
-	if !data.ProjectID.IsNull() {
-		header.ProjectID = data.ProjectID.ValueStringPointer()
-	}
-
-	tflog.Info(ctx, "开始创建MongoDB参数组", map[string]interface{}{
-		"template_name": data.TemplateName.ValueString(),
-	})
-
-	response, err := r.meta.Apis.SdkMongodbApis.MongodbCreateParamTemplateApi.Do(ctx, r.meta.Credential, createReq, header)
-	if err != nil {
-		resp.Diagnostics.AddError("创建MongoDB参数组失败", err.Error())
-		return true
-	}
-
-	if response.StatusCode != 200 {
-		resp.Diagnostics.AddError("创建MongoDB参数组失败", fmt.Sprintf("API返回错误，状态码: %d, 错误信息: %s", response.StatusCode, response.Error))
-		return true
-	}
-
-	// 设置参数组ID
-	templateId := *response.ReturnObj
-	data.TemplateId = types.StringValue(templateId)
-
-	// 设置资源ID
-	data.ID = types.StringValue(templateId)
-	return false
-}
-
-func (r *CtyunMongodbParamTemplateResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var data CtyunMongodbParamTemplateResourceModel
-
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	var state CtyunMongodbParamTemplateConfig
+	// Read Terraform plan data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	err = r.update(ctx, &plan, &state)
+	if err != nil {
+		return
+	}
+	err = r.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
+	// 保存数据到Terraform状态
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+}
+
+func (r *CtyunMongodbParamTemplateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunMongodbParamTemplateConfig
+
+	// Read Terraform prior state data into the model
+	resp.Diagnostics.Append(req.State.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	err = r.delete(ctx, plan)
+	if err != nil {
+		return
+	}
+}
+
+func (r *CtyunMongodbParamTemplateResource) delete(ctx context.Context, plan CtyunMongodbParamTemplateConfig) (err error) {
+	// 删除参数组
+	deleteReq := &mongodb.MongodbDeleteParamTemplateRequest{
+		//TemplateId: plan.TemplateId.ValueString(),
+	}
+
+	header := &mongodb.MongodbDeleteParamTemplateRequestHeaders{
+		RegionID: plan.RegionID.ValueString(),
+	}
+
+	if !plan.ProjectID.IsNull() {
+		header.ProjectID = plan.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "开始删除MongoDB参数组", map[string]interface{}{
+		"template_id": plan.TemplateId.ValueString(),
+	})
+
+	resp, err := r.meta.Apis.SdkMongodbApis.MongodbDeleteParamTemplateApi.Do(ctx, r.meta.Credential, deleteReq, header)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	}
+	return
+}
+
+func (r *CtyunMongodbParamTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+}
+func (r *CtyunMongodbParamTemplateResource) create(ctx context.Context, plan *CtyunMongodbParamTemplateConfig) (err error) {
+	// Create param template
+	createReq := &mongodb.MongodbCreateParamTemplateRequest{
+		TemplateName:  plan.TemplateName.ValueString(),
+		EngineVersion: plan.EngineVersion.ValueString(),
+		NodeType:      plan.NodeType.ValueString(),
+	}
+
+	if !plan.Description.IsNull() {
+		createReq.TemplateDesc = plan.Description.ValueString()
+	}
+
+	header := &mongodb.MongodbCreateParamTemplateRequestHeaders{
+		RegionID: plan.RegionID.ValueString(),
+	}
+
+	if !plan.ProjectID.IsNull() {
+		header.ProjectID = plan.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "开始创建MongoDB参数组", map[string]interface{}{
+		"template_name": plan.TemplateName.ValueString(),
+	})
+
+	resp, err := r.meta.Apis.SdkMongodbApis.MongodbCreateParamTemplateApi.Do(ctx, r.meta.Credential, createReq, header)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
+	}
+	// 设置参数组ID
+	templateId := *resp.ReturnObj
+	plan.TemplateId = types.StringValue(templateId)
+
+	// 设置资源ID
+	plan.ID = types.StringValue(templateId)
+	return
+}
+func (r *CtyunMongodbParamTemplateResource) update(ctx context.Context, plan, state *CtyunMongodbParamTemplateConfig) (err error) {
+
+	updateReq := &mongodb.MongodbUpdateParamTemplateDescRequest{
+		TemplateId: state.TemplateId.ValueString(),
+	}
+
+	header := &mongodb.MongodbUpdateParamTemplateDescRequestHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+
+	// 只有描述可以更新
+	if !plan.Description.IsNull() {
+		updateReq.TemplateDesc = plan.Description.ValueString()
+	}
+
+	resp, err := r.meta.Apis.SdkMongodbApis.MongodbUpdateParamTemplateDescApi.Do(ctx, r.meta.Credential, updateReq, header)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	}
+	return
+}
+
+func (r *CtyunMongodbParamTemplateResource) getAndMerge(ctx context.Context, plan *CtyunMongodbParamTemplateConfig) (err error) {
 	// 获取参数组信息
 	describeReq := &mongodb.MongodbDescribeParamTemplatesRequest{
 		PageNow:  1,
@@ -240,138 +367,39 @@ func (r *CtyunMongodbParamTemplateResource) Read(ctx context.Context, req resour
 	}
 
 	header := &mongodb.MongodbDescribeParamTemplatesRequestHeaders{
-		RegionID: data.RegionID.ValueString(),
+		RegionID: plan.RegionID.ValueString(),
 	}
 
-	if !data.ProjectID.IsNull() {
-		header.ProjectID = data.ProjectID.ValueStringPointer()
+	if !plan.ProjectID.IsNull() {
+		header.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
-	response, err := r.meta.Apis.SdkMongodbApis.MongodbDescribeParamTemplatesApi.Do(ctx, r.meta.Credential, describeReq, header)
+	resp, err := r.meta.Apis.SdkMongodbApis.MongodbDescribeParamTemplatesApi.Do(ctx, r.meta.Credential, describeReq, header)
 	if err != nil {
-		resp.Diagnostics.AddError("查询MongoDB参数组信息失败", err.Error())
 		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
 	}
-
-	if response.StatusCode != 200 {
-		resp.Diagnostics.AddError("查询MongoDB参数组信息失败", fmt.Sprintf("API返回错误，状态码: %d, 错误信息: %s", response.StatusCode, response.Error))
-		return
-	}
-
 	// 查找参数组信息
 	var templateInfo *mongodb.MongodbParamTemplateInfo
-	for _, item := range response.ReturnObj.List {
-		if item.TemplateId == data.TemplateId.ValueString() {
+	for _, item := range resp.ReturnObj.List {
+		if item.TemplateId == plan.TemplateId.ValueString() {
 			templateInfo = &item
 			break
 		}
 	}
 
 	if templateInfo == nil {
-		resp.Diagnostics.AddError("未找到MongoDB参数组信息", fmt.Sprintf("参数组ID: %s", data.TemplateId.ValueString()))
-		return
+		return fmt.Errorf("TemplateId %s templateInfo not found ", plan.TemplateId.ValueString())
 	}
 
 	// 更新数据
-	data.TemplateName = types.StringValue(templateInfo.TemplateName)
-	data.Description = types.StringValue(templateInfo.TemplateDesc)
-
-	data.EngineVersion = types.StringValue(templateInfo.EngineVersion)
-
-	data.CreatedTime = types.StringValue(templateInfo.CreatedTime)
-	data.UpdatedTime = types.StringValue(templateInfo.UpdatedTime)
-
-	// 保存数据到Terraform状态
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-func (r *CtyunMongodbParamTemplateResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data CtyunMongodbParamTemplateResourceModel
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// 只有描述可以更新
-	if !data.Description.Equal(data.Description) {
-		// 更新参数组描述
-		updateReq := &mongodb.MongodbUpdateParamTemplateDescRequest{
-			TemplateId:   data.TemplateId.ValueString(),
-			TemplateDesc: data.Description.ValueString(),
-		}
-
-		header := &mongodb.MongodbUpdateParamTemplateDescRequestHeaders{
-			RegionID: data.RegionID.ValueString(),
-		}
-
-		if !data.ProjectID.IsNull() {
-			header.ProjectID = data.ProjectID.ValueStringPointer()
-		}
-
-		tflog.Info(ctx, "开始更新MongoDB参数组描述", map[string]interface{}{
-			"template_id": data.TemplateId.ValueString(),
-		})
-
-		response, err := r.meta.Apis.SdkMongodbApis.MongodbUpdateParamTemplateDescApi.Do(ctx, r.meta.Credential, updateReq, header)
-		if err != nil {
-			resp.Diagnostics.AddError("更新MongoDB参数组描述失败", err.Error())
-			return
-		}
-
-		if response.StatusCode != 200 {
-			resp.Diagnostics.AddError("更新MongoDB参数组描述失败", fmt.Sprintf("API返回错误，状态码: %d, 错误信息: %s", response.StatusCode, response.Error))
-			return
-		}
-	}
-
-	// 保存数据到Terraform状态
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-func (r *CtyunMongodbParamTemplateResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var data CtyunMongodbParamTemplateResourceModel
-
-	// Read Terraform prior state data into the model
-	resp.Diagnostics.Append(req.State.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// 删除参数组
-	deleteReq := &mongodb.MongodbDeleteParamTemplateRequest{
-		//TemplateId: data.TemplateId.ValueString(),
-	}
-
-	header := &mongodb.MongodbDeleteParamTemplateRequestHeaders{
-		RegionID: data.RegionID.ValueString(),
-	}
-
-	if !data.ProjectID.IsNull() {
-		header.ProjectID = data.ProjectID.ValueStringPointer()
-	}
-
-	tflog.Info(ctx, "开始删除MongoDB参数组", map[string]interface{}{
-		"template_id": data.TemplateId.ValueString(),
-	})
-
-	response, err := r.meta.Apis.SdkMongodbApis.MongodbDeleteParamTemplateApi.Do(ctx, r.meta.Credential, deleteReq, header)
-	if err != nil {
-		resp.Diagnostics.AddError("删除MongoDB参数组失败", err.Error())
-		return
-	}
-
-	if response.StatusCode != 200 {
-		resp.Diagnostics.AddError("删除MongoDB参数组失败", fmt.Sprintf("API返回错误，状态码: %d, 错误信息: %s", response.StatusCode, response.Error))
-		return
-	}
-
-	tflog.Info(ctx, "MongoDB参数组删除成功", map[string]interface{}{
-		"template_id": data.TemplateId.ValueString(),
-	})
-}
-
-func (r *CtyunMongodbParamTemplateResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	plan.TemplateName = types.StringValue(templateInfo.TemplateName)
+	plan.Description = types.StringValue(templateInfo.TemplateDesc)
+	plan.EngineVersion = types.StringValue(templateInfo.EngineVersion)
+	plan.CreatedTime = types.StringValue(templateInfo.CreatedTime)
+	plan.UpdatedTime = types.StringValue(templateInfo.UpdatedTime)
+	return
 }

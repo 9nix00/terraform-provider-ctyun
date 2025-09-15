@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -46,7 +46,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "资源唯一标识，格式为 {instance_id}:{account_name}",
+				Description: "资源唯一标识，格式为 {instance_id},{account_name}",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -157,13 +157,145 @@ func (c *CtyunMongodbAccount) Configure(ctx context.Context, req resource.Config
 	c.meta = meta
 }
 
-func (c *CtyunMongodbAccount) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (c *CtyunMongodbAccount) Create(ctx context.Context, req resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan MongodbAccountConfig
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	if resp.Diagnostics.HasError() {
+	response.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 创建前检查
+	err = c.checkBeforeCreate(ctx, &plan)
+	if err != nil {
+		return
+	}
+	err = c.create(ctx, plan)
+	if err != nil {
+		return
+	}
+	err = c.getAndMerge(ctx, &plan)
+	// 查询账号信息
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+}
+
+func (c *CtyunMongodbAccount) Read(ctx context.Context, req resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state MongodbAccountConfig
+	response.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+}
+
+func (c *CtyunMongodbAccount) Update(ctx context.Context, req resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan, state MongodbAccountConfig
+	response.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	response.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
 		return
 	}
 
+	// 如果密码变更，更新密码
+	if !plan.Password.IsNull() && !plan.Password.Equal(state.Password) {
+		err = c.updateAccountPassword(ctx, &plan)
+		if err != nil {
+			return
+		}
+	}
+	// 如果权限变更，更新权限
+	// 检查roles块或者database字段是否变更
+	rolesChanged := len(plan.Roles) != len(state.Roles)
+	if !rolesChanged {
+		for i := range plan.Roles {
+			if !plan.Roles[i].Database.Equal(state.Roles[i].Database) ||
+				!plan.Roles[i].Role.Equal(state.Roles[i].Role) {
+				rolesChanged = true
+				break
+			}
+		}
+	}
+
+	if rolesChanged || !plan.Database.Equal(state.Database) {
+		err = c.updateAccountPermission(ctx, &plan)
+		if err != nil {
+			response.Diagnostics.AddError("更新MongoDB账号权限失败", err.Error())
+			return
+		}
+	}
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+}
+
+func (c *CtyunMongodbAccount) Delete(ctx context.Context, req resource.DeleteRequest, response *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state MongodbAccountConfig
+	response.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+}
+
+func (c *CtyunMongodbAccount) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg MongodbAccountConfig
+	var instanceID, name string
+	err = terraform_extend.Split(request.ID, &instanceID, &name)
+	if err != nil {
+		return
+	}
+	cfg.InstanceID = types.StringValue(instanceID)
+	cfg.Name = types.StringValue(name)
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+}
+func (c *CtyunMongodbAccount) create(ctx context.Context, plan MongodbAccountConfig) (err error) {
 	// 创建账号权限列表
 	var roles []mongodb.MongodbAccountRole
 
@@ -203,134 +335,20 @@ func (c *CtyunMongodbAccount) Create(ctx context.Context, req resource.CreateReq
 		"account_name": plan.Name.ValueString(),
 	})
 
-	createResp, err := c.meta.Apis.SdkMongodbApis.MongodbCreateAccountApi.Do(ctx, c.meta.Credential, createReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbCreateAccountApi.Do(ctx, c.meta.Credential, createReq, headers)
 	if err != nil {
-		resp.Diagnostics.AddError("创建MongoDB账号失败", err.Error())
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	}
-
-	if createResp.StatusCode != 800 {
-		resp.Diagnostics.AddError("创建MongoDB账号失败", fmt.Sprintf("API返回错误: %s", *createResp.Message))
-		return
-	}
-
 	// 设置ID
-	id := fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.Name.ValueString())
-	plan.ID = types.StringValue(id)
-
-	// 查询账号信息
-	if err := c.readAccountInfo(ctx, &plan); err != nil {
-		resp.Diagnostics.AddError("获取账号信息失败", err.Error())
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.Name.ValueString()))
+	return
 }
 
-func (c *CtyunMongodbAccount) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state MongodbAccountConfig
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	if err := c.readAccountInfo(ctx, &state); err != nil {
-		resp.Diagnostics.AddError("获取账号信息失败", err.Error())
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-func (c *CtyunMongodbAccount) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state MongodbAccountConfig
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	// 如果密码变更，更新密码
-	if !plan.Password.Equal(state.Password) {
-		err := c.updateAccountPassword(ctx, &plan)
-		if err != nil {
-			resp.Diagnostics.AddError("更新MongoDB账号密码失败", err.Error())
-			return
-		}
-	}
-
-	// 如果权限变更，更新权限
-	// 检查roles块或者database字段是否变更
-	rolesChanged := len(plan.Roles) != len(state.Roles)
-	if !rolesChanged {
-		for i := range plan.Roles {
-			if !plan.Roles[i].Database.Equal(state.Roles[i].Database) ||
-				!plan.Roles[i].Role.Equal(state.Roles[i].Role) {
-				rolesChanged = true
-				break
-			}
-		}
-	}
-
-	if rolesChanged || !plan.Database.Equal(state.Database) {
-		err := c.updateAccountPermission(ctx, &plan)
-		if err != nil {
-			resp.Diagnostics.AddError("更新MongoDB账号权限失败", err.Error())
-			return
-		}
-	}
-
-	if err := c.readAccountInfo(ctx, &plan); err != nil {
-		resp.Diagnostics.AddError("获取账号信息失败", err.Error())
-		return
-	}
-
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
-}
-
-func (c *CtyunMongodbAccount) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state MongodbAccountConfig
-	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	deleteReq := &mongodb.MongodbDeleteAccountRequest{
-		AccountName:  state.Name.ValueString(),
-		DatabaseName: state.Database.ValueString(),
-	}
-
-	headers := &mongodb.MongodbDeleteAccountRequestHeaders{
-		RegionID:   state.RegionID.ValueString(),
-		ProdInstId: state.InstanceID.ValueString(),
-	}
-	if !state.ProjectID.IsNull() {
-		headers.ProjectID = state.ProjectID.ValueStringPointer()
-	}
-
-	tflog.Info(ctx, "删除MongoDB账号", map[string]interface{}{
-		"instance_id":  state.InstanceID.ValueString(),
-		"account_name": state.Name.ValueString(),
-	})
-
-	deleteResp, err := c.meta.Apis.SdkMongodbApis.MongodbDeleteAccountApi.Do(ctx, c.meta.Credential, deleteReq, headers)
-	if err != nil {
-		resp.Diagnostics.AddError("删除MongoDB账号失败", err.Error())
-		return
-	}
-
-	if deleteResp.StatusCode != 800 {
-		resp.Diagnostics.AddError("删除MongoDB账号失败", fmt.Sprintf("API返回错误: %s", *deleteResp.Message))
-		return
-	}
-}
-
-func (c *CtyunMongodbAccount) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-}
-
-// readAccountInfo 查询账号信息并更新到配置中
-func (c *CtyunMongodbAccount) readAccountInfo(ctx context.Context, plan *MongodbAccountConfig) error {
+// getAndMerge 查询账号信息并更新到配置中
+func (c *CtyunMongodbAccount) getAndMerge(ctx context.Context, plan *MongodbAccountConfig) (err error) {
 	// 解析ID获取instance_id和account_name
 	instanceID := plan.InstanceID.ValueString()
 
@@ -347,25 +365,16 @@ func (c *CtyunMongodbAccount) readAccountInfo(ctx context.Context, plan *Mongodb
 		headers.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
-	describeResp, err := c.meta.Apis.SdkMongodbApis.MongodbDescribeAccountsApi.Do(ctx, c.meta.Credential, describeReq, headers)
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDescribeAccountsApi.Do(ctx, c.meta.Credential, describeReq, headers)
 	if err != nil {
-		return err
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
 	}
-
-	if describeResp.StatusCode != 800 {
-		if describeResp.Message != nil {
-			return fmt.Errorf("API返回错误: %s", *describeResp.Message)
-		} else {
-			return fmt.Errorf("API返回错误，状态码: %d", describeResp.StatusCode)
-		}
-	}
-
-	if describeResp.ReturnObj == nil || len(describeResp.ReturnObj.List) == 0 {
-		return fmt.Errorf("未找到账号信息")
-	}
-
 	// 这里获取账号信息, 并更新到配置中  循环list 获取账号信息user字段 ==plan.user
-	for _, account := range describeResp.ReturnObj.List {
+	for _, account := range resp.ReturnObj.List {
 		if account.User == plan.Name.ValueString() {
 			// 如果数据库没有设置，则使用API返回的值
 			if plan.Database.IsNull() || plan.Database.IsUnknown() {
@@ -472,6 +481,38 @@ func (c *CtyunMongodbAccount) updateAccountPermission(ctx context.Context, plan 
 	}
 
 	return nil
+}
+func (c *CtyunMongodbAccount) delete(ctx context.Context, state MongodbAccountConfig) (err error) {
+	deleteReq := &mongodb.MongodbDeleteAccountRequest{
+		AccountName:  state.Name.ValueString(),
+		DatabaseName: state.Database.ValueString(),
+	}
+
+	headers := &mongodb.MongodbDeleteAccountRequestHeaders{
+		RegionID:   state.RegionID.ValueString(),
+		ProdInstId: state.InstanceID.ValueString(),
+	}
+	if !state.ProjectID.IsNull() {
+		headers.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	tflog.Info(ctx, "删除MongoDB账号", map[string]interface{}{
+		"instance_id":  state.InstanceID.ValueString(),
+		"account_name": state.Name.ValueString(),
+	})
+
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDeleteAccountApi.Do(ctx, c.meta.Credential, deleteReq, headers)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return
+	}
+	return
+}
+
+func (c *CtyunMongodbAccount) checkBeforeCreate(ctx context.Context, m *MongodbAccountConfig) (err error) {
+	return
 }
 
 type MongodbAccountRole struct {
