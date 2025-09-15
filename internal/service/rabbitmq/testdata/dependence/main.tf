@@ -88,7 +88,7 @@ data "ctyun_zones" "test" {
 }
 
 resource "ctyun_rabbitmq_instance" "test" {
-  instance_name = "tf-rabbitmq-2"
+  instance_name = "tf-rabbitmq-3"
   spec_name = local.cluster_spec_name
   node_num = 3
   zone_list = data.ctyun_zones.test.zones
