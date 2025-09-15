@@ -22,6 +22,8 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 	resourceFile := "resource_ctyun_rabbitmq_instance.tf"
 	datasourceFile := "datasource_ctyun_rabbitmq_instances.tf"
 
+	cycleResourceFile := "resource_ctyun_rabbitmq_instance_on_demand.tf"
+
 	zone := os.Getenv("CTYUN_AZ_NAME")
 	nodeNum := 3
 	diskSize := 100
@@ -74,7 +76,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 			// 更新属性
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqClusterSpecName2,
 					updatedNum,
@@ -102,7 +104,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqClusterSpecName2,
 					updatedNum,
@@ -151,7 +153,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqClusterSpecName2,
 					updatedNum,
@@ -180,6 +182,8 @@ func TestAccCtyunRabbitmqInstanceClusterOnDemand(t *testing.T) {
 	datasourceName := "data.ctyun_rabbitmq_instances." + dnd
 	resourceFile := "resource_ctyun_rabbitmq_instance_on_demand.tf"
 	datasourceFile := "datasource_ctyun_rabbitmq_instances.tf"
+
+	cycleResourceFile := "resource_ctyun_rabbitmq_instance.tf"
 
 	zone := os.Getenv("CTYUN_AZ_NAME")
 	nodeNum := 1
@@ -226,12 +230,15 @@ func TestAccCtyunRabbitmqInstanceClusterOnDemand(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", dependence.securityGroupID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
+					resource.TestCheckResourceAttrSet(resourceName, "actual_cycle_type"),
+					resource.TestCheckResourceAttrSet(resourceName, "endpoint"),
+					resource.TestCheckResourceAttrSet(resourceName, "ssl_endpoint"),
 				),
 			},
 			// 更新属性
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqSingleSpecName2,
 					nodeNum,
@@ -259,7 +266,7 @@ func TestAccCtyunRabbitmqInstanceClusterOnDemand(t *testing.T) {
 
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqSingleSpecName2,
 					nodeNum,
@@ -308,7 +315,7 @@ func TestAccCtyunRabbitmqInstanceClusterOnDemand(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd,
+					cycleResourceFile, rnd,
 					updatedName,
 					dependence.rabbitmqSingleSpecName2,
 					nodeNum,

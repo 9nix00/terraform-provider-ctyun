@@ -68,7 +68,10 @@ type CtyunRabbitmqInstanceConfig struct {
 	SubnetID        types.String `tfsdk:"subnet_id"`
 	SecurityGroupID types.String `tfsdk:"security_group_id"`
 	CycleType       types.String `tfsdk:"cycle_type"`
+	ActualCycleType types.String `tfsdk:"actual_cycle_type"`
 	CycleCount      types.Int32  `tfsdk:"cycle_count"`
+	Endpoint        types.String `tfsdk:"endpoint"`
+	SslEndpoint     types.String `tfsdk:"ssl_endpoint"`
 	CreateTime      types.String `tfsdk:"create_time"`
 	ExpireTime      types.String `tfsdk:"expire_time"`
 
@@ -101,8 +104,9 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				},
 			},
 			"master_order_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "主订单号",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -220,6 +224,24 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					int32validator.OneOf(1, 2, 3, 5, 6, 7, 12, 24, 36),
 				},
 			},
+			"actual_cycle_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。",
+			},
+			"endpoint": schema.StringAttribute{
+				Computed:    true,
+				Description: "接入点",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"ssl_endpoint": schema.StringAttribute{
+				Computed:    true,
+				Description: "SSL接入点",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，UTC格式",
@@ -330,6 +352,7 @@ func (c *ctyunRabbitmqInstance) Update(ctx context.Context, request resource.Upd
 	if err != nil {
 		return
 	}
+	state.CycleType, state.CycleCount = plan.CycleType, plan.CycleCount
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -623,8 +646,12 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
 	plan.NodeNum = types.Int32Value(instance.NodeCount)
 	plan.SpecName = types.StringValue(instance.Prod)
-	plan.CreateTime = types.StringValue(utils.ConvertToUTCZ(instance.CreateTime))
-	plan.ExpireTime = types.StringValue(utils.ConvertToUTCZ(instance.ExpireTime))
+	cTime, eTime := utils.ConvertToUTCZ(instance.CreateTime), utils.ConvertToUTCZ(instance.ExpireTime)
+	plan.CreateTime = types.StringValue(cTime)
+	plan.ExpireTime = types.StringValue(eTime)
+	plan.Endpoint = types.StringValue(instance.Endpoint)
+	plan.SslEndpoint = types.StringValue(instance.SslEndpoint)
+	plan.ActualCycleType = types.StringValue(map[string]string{"1": business.OrderCycleTypeMonth, "2": business.OrderCycleTypeYear}[instance.BillMode])
 	return
 }
 
@@ -664,6 +691,10 @@ func (c *ctyunRabbitmqInstance) update(ctx context.Context, plan, state CtyunRab
 		return
 	}
 	err = c.updateSpec(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateCycle(ctx, plan, state)
 	if err != nil {
 		return
 	}

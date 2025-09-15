@@ -66,7 +66,7 @@ type AmqpTransChargeTypeResponse struct {
 }
 
 type AmqpTransChargeTypeReturnObjResponse struct {
-	Data *AmqpTransChargeTypeReturnObjDataResponse `json:"data"` /*  返回数据。  */
+	Data []*AmqpTransChargeTypeReturnObjDataResponse `json:"data"` /*  返回数据。  */
 }
 
 type AmqpTransChargeTypeReturnObjDataResponse struct{}

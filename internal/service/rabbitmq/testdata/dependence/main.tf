@@ -88,7 +88,7 @@ data "ctyun_zones" "test" {
 }
 
 resource "ctyun_rabbitmq_instance" "test" {
-  instance_name = "tf-rabbitmq-3"
+  instance_name = "tf-rabbitmq-${local.random_string}"
   spec_name = local.cluster_spec_name
   node_num = 3
   zone_list = data.ctyun_zones.test.zones
@@ -105,4 +105,19 @@ resource "ctyun_rabbitmq_exchange" "test" {
   vhost = "/"
   name = "tf-exchange"
   type = "direct"
+}
+
+locals {
+  # 生成当前时间戳的哈希值
+  hash = sha256(timestamp())
+
+  # 从哈希结果中截取字符（转为小写并移除特殊字符）
+  random_string = substr(
+    replace(
+      lower(local.hash),
+      "/[^a-z0-9]/",
+      ""  # 移除所有非字母数字的字符
+    ),
+    0, 10  # 截取前16个字符
+  )
 }
