@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -36,3 +37,7 @@ resource "ctyun_bandwidth_association_eip" "bandwidth_association_eip_test" {
 
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
+
+### Read-Only
+
+- `id` (String) id

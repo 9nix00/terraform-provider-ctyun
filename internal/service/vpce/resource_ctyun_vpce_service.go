@@ -568,7 +568,8 @@ func (c *ctyunVpceService) calcWhitelist(ctx context.Context, plan *CtyunVpceSer
 
 // addWhitelist 添加白名单
 func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
-	for _, email := range plan.whitelist {
+	for i, _ := range plan.whitelist {
+		email := plan.whitelist[i]
 		params := &ctvpc.CtvpcCreateEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
 			RegionID:          plan.RegionID.ValueString(),
@@ -589,7 +590,8 @@ func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServi
 
 // delWhitelist 删除白名单
 func (c *ctyunVpceService) delWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
-	for _, email := range plan.whitelist {
+	for i, _ := range plan.whitelist {
+		email := plan.whitelist[i]
 		params := &ctvpc.CtvpcDeleteEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
 			RegionID:          plan.RegionID.ValueString(),

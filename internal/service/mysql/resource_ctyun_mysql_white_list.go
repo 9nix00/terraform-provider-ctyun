@@ -34,7 +34,7 @@ type CtyunMysqlWhiteList struct {
 
 func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "创建/删除/更改/查询 mysql白名单",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10033813/10133794**`,
 		Attributes: map[string]schema.Attribute{
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -222,6 +222,10 @@ func (c *CtyunMysqlWhiteList) Delete(ctx context.Context, request resource.Delet
 	var state CtyunMysqlWhiteListConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkStatus(ctx, state)
+	if err != nil {
 		return
 	}
 	params := &mysql.TeledbDeleteAccessWhiteListRequest{

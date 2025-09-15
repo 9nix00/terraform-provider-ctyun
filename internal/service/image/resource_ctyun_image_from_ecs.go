@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -45,9 +46,11 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 		Attributes: map[string]schema.Attribute{
 			// 新增：资源ID（由API返回，自动生成）
 			"id": schema.StringAttribute{
-				Computed:      true,
-				Description:   "私有镜像唯一标识（镜像ID）",
-				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:    true,
+				Description: "私有镜像唯一标识（镜像ID）",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			// 公共必填参数（所有创建方式均需）
 			"image_name": schema.StringAttribute{
@@ -143,12 +146,16 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 					listplanmodifier.RequiresReplace(),
 				},
 			},
-			//TODO  后面研究下这个参数 具体用法
+			//
 			"enable_image_integrity_check": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     booldefault.StaticBool(false),
 				Description: "是否启用镜像完整性校验，仅资源池支持时生效。",
+				// 云主机变更需重建
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 
 			// 系统盘/数据盘/整机共用参数（云主机ID）
@@ -221,6 +228,12 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 	}
 }
 func (c *ctyunImageFromEcs) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunImageFromEcsConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
@@ -232,18 +245,142 @@ func (c *ctyunImageFromEcs) Create(ctx context.Context, request resource.CreateR
 
 	switch imageType {
 	case "system_disk":
-		c.createSystemDiskImage(ctx, plan, response)
+		c.createSystemDiskImage(ctx, &plan, response)
 	case "data_disk":
-		c.createDataDiskImage(ctx, plan, response)
+		c.createDataDiskImage(ctx, &plan, response)
 	case "entire_machine":
-		c.createEntireMachineImage(ctx, plan, response)
+		c.createEntireMachineImage(ctx, &plan, response)
 	default:
 		response.Diagnostics.AddError("参数错误", "未提供有效的创建参数组合")
 		return
 	}
+	// 查询镜像状态信息
+	err = c.getAndMergeImage(ctx, &plan)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
 
-func (c *ctyunImageFromEcs) createSystemDiskImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+func (c *ctyunImageFromEcs) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunImageFromEcsConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.getAndMergeImage(ctx, &state)
+	if err != nil {
+		if err.Error() == common.ImageImageCheckNotFound {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+}
+
+func (c *ctyunImageFromEcs) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	// tf文件中的计划状态
+	var plan CtyunImageFromEcsConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// state中的当前状态
+	var state CtyunImageFromEcsConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 检查更新前条件
+	err = c.checkBeforeUpdate(ctx, &plan, &state)
+	if err != nil {
+		return
+	}
+
+	// 按字段逐个更新
+	err = c.updateImageAttributes(ctx, &plan, &state)
+	if err != nil {
+		return
+	}
+
+	// 查询远端信息确保更新成功，并将最新状态设置到state中
+	err = c.getAndMergeImage(ctx, &state)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+}
+
+func (c *ctyunImageFromEcs) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var state CtyunImageFromEcsConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	_, err := c.meta.Apis.SdkCtImageApis.CtimageDeleteImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageDeleteImageRequest{
+		ImageID:  state.Id.ValueString(),
+		RegionID: state.RegionId.ValueString(),
+	})
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	// 等待镜像删除成功
+	e := c.waitForImageDeleted(ctx, &state)
+	if e != nil {
+		response.Diagnostics.AddError(e.Error(), e.Error())
+		return
+	}
+}
+
+// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]
+func (c *ctyunImageFromEcs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var cfg CtyunImageFromEcsConfig
+	var imageId, regionId string
+	err := terraform_extend.Split(request.ID, &imageId, &regionId)
+	if err != nil {
+		response.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+
+	cfg.Id = types.StringValue(imageId)
+	cfg.RegionId = types.StringValue(regionId)
+
+	err = c.getAndMergeImage(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &cfg)...)
+}
+
+func (c *ctyunImageFromEcs) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+func (c *ctyunImageFromEcs) createSystemDiskImage(ctx context.Context, plan *CtyunImageFromEcsConfig, response *resource.CreateResponse) (err error) {
 	// 系统盘创建方式
 	// 构造标签列表
 	// 根据传入的不同参数确定创建方式
@@ -306,22 +443,10 @@ func (c *ctyunImageFromEcs) createSystemDiskImage(ctx context.Context, plan Ctyu
 	}
 
 	// 轮询镜像状态直到active
-	err = c.waitForUploadImageActive(ctx, plan)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-
-	// 查询镜像状态信息
-	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-	if ctyunRequestError != nil {
-		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+	return c.waitForUploadImageActive(ctx, plan)
 
 }
-func (c *ctyunImageFromEcs) createDataDiskImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+func (c *ctyunImageFromEcs) createDataDiskImage(ctx context.Context, plan *CtyunImageFromEcsConfig, response *resource.CreateResponse) (err error) {
 	// 构造标签列表
 	// 根据传入的不同参数确定创建方式
 	regionId := plan.RegionId.ValueString()
@@ -380,22 +505,10 @@ func (c *ctyunImageFromEcs) createDataDiskImage(ctx context.Context, plan CtyunI
 	}
 
 	// 轮询镜像状态直到active
-	err = c.waitForUploadImageActive(ctx, plan)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-
-	// 查询镜像状态信息
-	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-	if ctyunRequestError != nil {
-		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+	return c.waitForUploadImageActive(ctx, plan)
 
 }
-func (c *ctyunImageFromEcs) createEntireMachineImage(ctx context.Context, plan CtyunImageFromEcsConfig, response *resource.CreateResponse) {
+func (c *ctyunImageFromEcs) createEntireMachineImage(ctx context.Context, plan *CtyunImageFromEcsConfig, response *resource.CreateResponse) (err error) {
 
 	// 构造标签列表
 	// 根据传入的不同参数确定创建方式
@@ -430,7 +543,6 @@ func (c *ctyunImageFromEcs) createEntireMachineImage(ctx context.Context, plan C
 
 	resp, err := c.meta.Apis.SdkCtImageApis.CtimageCreateFullEcsImageApi.Do(ctx, c.meta.SdkCredential, entireReq)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -458,217 +570,11 @@ func (c *ctyunImageFromEcs) createEntireMachineImage(ctx context.Context, plan C
 	}
 
 	// 轮询镜像状态直到active
-	err = c.waitForUploadImageActive(ctx, plan)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-
-	// 查询镜像状态信息
-	instance, ctyunRequestError := c.getAndMergeImage(ctx, plan)
-	if ctyunRequestError != nil {
-		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-
-}
-
-func (c *ctyunImageFromEcs) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	var state CtyunImageFromEcsConfig
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	instance, err := c.getAndMergeImage(ctx, state)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-	if instance == nil {
-		response.State.RemoveResource(ctx)
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-}
-
-func (c *ctyunImageFromEcs) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-
-	// tf文件中的计划状态
-	var plan CtyunImageFromEcsConfig
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	// state中的当前状态
-	var state CtyunImageFromEcsConfig
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	// 检查更新前条件
-	err = c.checkBeforeUpdate(ctx, plan, state)
-	if err != nil {
-		return
-	}
-
-	// 按字段逐个更新
-	err = c.updateImageAttributes(ctx, plan, state)
-	if err != nil {
-		return
-	}
-
-	// 查询远端信息确保更新成功，并将最新状态设置到state中
-	updatedState, err := c.getAndMergeImage(ctx, state)
-	if err != nil {
-		return
-	}
-
-	response.Diagnostics.Append(response.State.Set(ctx, updatedState)...)
-}
-
-// checkBeforeUpdate 更新前检查
-func (c *ctyunImageFromEcs) checkBeforeUpdate(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	// 检查镜像状态是否允许更新
-	instance, err := c.getImageByID(ctx, state)
-	if err != nil {
-		return err
-	}
-
-	if instance.ImageStatus != business.ImageStatusActive {
-		return fmt.Errorf("镜像状态不是active，无法进行更新操作")
-	}
-
-	return nil
-}
-
-// updateImageAttributes 按字段更新镜像属性
-func (c *ctyunImageFromEcs) updateImageAttributes(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	// 更新镜像名称
-	err = c.updateImage(ctx, plan, state)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// updateImage 更新镜像描述
-func (c *ctyunImageFromEcs) updateImage(ctx context.Context, plan, state CtyunImageFromEcsConfig) (err error) {
-	params := &ctimage.CtimageUpdateImageRequest{
-		ImageID:  state.Id.ValueString(),
-		RegionID: state.RegionId.ValueString(),
-	}
-	if !plan.Description.IsNull() {
-		params.Description = plan.Description.ValueString()
-	}
-
-	if !plan.ImageName.IsNull() {
-		params.ImageName = plan.ImageName.ValueString()
-	}
-
-	// 仅在系统盘镜像类型下更新内存限制
-	if plan.ImageType.ValueString() == "system_disk" {
-		if !plan.MinimumRAM.IsNull() {
-			params.MaximumRAM = int32(plan.MaximumRAM.ValueInt64())
-		}
-		if !plan.MinimumRAM.IsNull() {
-			params.MinimumRAM = int32(plan.MinimumRAM.ValueInt64())
-		}
-	}
-	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, params)
-
-	if err != nil {
-		return fmt.Errorf("更新镜像描述失败: %w", err)
-	}
-
-	return
-}
-
-// updateImageMemoryLimits 更新内存限制
-
-// getImageByID 根据ID获取镜像详情
-func (c *ctyunImageFromEcs) getImageByID(ctx context.Context, cfg CtyunImageFromEcsConfig) (*ctimage.CtimageDetailImageReturnObjImagesResponse, error) {
-	response, err := c.meta.Apis.SdkCtImageApis.CtimageDetailImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageDetailImageRequest{
-		ImageID:  cfg.Id.ValueString(),
-		RegionID: cfg.RegionId.ValueString(),
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if response.ReturnObj == nil || len(response.ReturnObj.Images) == 0 {
-		return nil, fmt.Errorf("未找到镜像信息")
-	}
-
-	return response.ReturnObj.Images[0], nil
-}
-
-func (c *ctyunImageFromEcs) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	var state CtyunImageFromEcsConfig
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	_, err := c.meta.Apis.SdkCtImageApis.CtimageDeleteImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageDeleteImageRequest{
-		ImageID:  state.Id.ValueString(),
-		RegionID: state.RegionId.ValueString(),
-	})
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-
-	// 等待镜像删除成功
-	e := c.waitForImageDeleted(ctx, state)
-	if e != nil {
-		response.Diagnostics.AddError(e.Error(), e.Error())
-		return
-	}
-}
-
-// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]
-func (c *ctyunImageFromEcs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var cfg CtyunImageFromEcsConfig
-	var imageId, regionId string
-	err := terraform_extend.Split(request.ID, &imageId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-
-	cfg.Id = types.StringValue(imageId)
-	cfg.RegionId = types.StringValue(regionId)
-
-	instance, err := c.getAndMergeImage(ctx, cfg)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-}
-
-func (c *ctyunImageFromEcs) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
-	if request.ProviderData == nil {
-		return
-	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
+	return c.waitForUploadImageActive(ctx, plan)
 }
 
 // waitForImageDeleted 等待镜像删除成功
-func (c *ctyunImageFromEcs) waitForImageDeleted(ctx context.Context, cfg CtyunImageFromEcsConfig) error {
+func (c *ctyunImageFromEcs) waitForImageDeleted(ctx context.Context, cfg *CtyunImageFromEcsConfig) error {
 	executeSuccessFlag := false
 	retryer, _ := business.NewRetryer(time.Second*5, 60)
 	retryer.Start(
@@ -707,7 +613,7 @@ func (c *ctyunImageFromEcs) waitForImageDeleted(ctx context.Context, cfg CtyunIm
 	return nil
 }
 
-func (c *ctyunImageFromEcs) waitForUploadImageActive(ctx context.Context, cfg CtyunImageFromEcsConfig) error {
+func (c *ctyunImageFromEcs) waitForUploadImageActive(ctx context.Context, cfg *CtyunImageFromEcsConfig) error {
 	executeSuccessFlag := false
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 
@@ -740,24 +646,91 @@ func (c *ctyunImageFromEcs) waitForUploadImageActive(ctx context.Context, cfg Ct
 	return nil
 }
 
-// getAndMergeImage 查询合并镜像
-func (c *ctyunImageFromEcs) getAndMergeImage(ctx context.Context, cfg CtyunImageFromEcsConfig) (*CtyunImageFromEcsConfig, error) {
+// checkBeforeUpdate 更新前检查
+func (c *ctyunImageFromEcs) checkBeforeUpdate(ctx context.Context, plan, state *CtyunImageFromEcsConfig) (err error) {
+	// 检查镜像状态是否允许更新
+	instance, err := c.getImageByID(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	if instance.ImageStatus != business.ImageStatusActive {
+		return fmt.Errorf("镜像状态不是active，无法进行更新操作")
+	}
+
+	return nil
+}
+
+// updateImageAttributes 按字段更新镜像属性
+func (c *ctyunImageFromEcs) updateImageAttributes(ctx context.Context, plan, state *CtyunImageFromEcsConfig) (err error) {
+	// 更新镜像名称
+	err = c.updateImage(ctx, plan, state)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// updateImage 更新镜像描述
+func (c *ctyunImageFromEcs) updateImage(ctx context.Context, plan, state *CtyunImageFromEcsConfig) (err error) {
+	params := &ctimage.CtimageUpdateImageRequest{
+		ImageID:  state.Id.ValueString(),
+		RegionID: state.RegionId.ValueString(),
+	}
+	if !plan.Description.IsNull() {
+		params.Description = plan.Description.ValueString()
+	}
+
+	if !plan.ImageName.IsNull() {
+		params.ImageName = plan.ImageName.ValueString()
+	}
+
+	// 仅在系统盘镜像类型下更新内存限制
+	if plan.ImageType.ValueString() == "system_disk" {
+		if !plan.MaximumRAM.IsNull() {
+			params.MaximumRAM = int32(plan.MaximumRAM.ValueInt64())
+		}
+		if !plan.MinimumRAM.IsNull() {
+			params.MinimumRAM = int32(plan.MinimumRAM.ValueInt64())
+		}
+	}
+	_, err = c.meta.Apis.SdkCtImageApis.CtimageUpdateImageApi.Do(ctx, c.meta.SdkCredential, params)
+
+	if err != nil {
+		return fmt.Errorf("更新镜像描述失败: %w", err)
+	}
+
+	return
+}
+
+// updateImageMemoryLimits 更新内存限制
+
+// getImageByID 根据ID获取镜像详情
+func (c *ctyunImageFromEcs) getImageByID(ctx context.Context, cfg *CtyunImageFromEcsConfig) (*ctimage.CtimageDetailImageReturnObjImagesResponse, error) {
 	response, err := c.meta.Apis.SdkCtImageApis.CtimageDetailImageApi.Do(ctx, c.meta.SdkCredential, &ctimage.CtimageDetailImageRequest{
 		ImageID:  cfg.Id.ValueString(),
 		RegionID: cfg.RegionId.ValueString(),
 	})
+
 	if err != nil {
-		if err.Error() == common.ImageImageCheckNotFound {
-			return nil, nil
-		}
 		return nil, err
 	}
 
 	if response.ReturnObj == nil || len(response.ReturnObj.Images) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf(common.ImageImageCheckNotFound)
 	}
 
-	resp := response.ReturnObj.Images[0]
+	return response.ReturnObj.Images[0], nil
+}
+
+// getAndMergeImage 查询合并镜像
+func (c *ctyunImageFromEcs) getAndMergeImage(ctx context.Context, cfg *CtyunImageFromEcsConfig) (err error) {
+
+	resp, err := c.getImageByID(ctx, cfg)
+	if err != nil {
+		return
+	}
 
 	cfg.Id = types.StringValue(resp.ImageID)
 	cfg.ImageName = types.StringValue(resp.ImageName)
@@ -774,10 +747,10 @@ func (c *ctyunImageFromEcs) getAndMergeImage(ctx context.Context, cfg CtyunImage
 	// 如果有标签信息，也需要设置
 	// 注意：根据API文档，详情接口可能不返回标签信息，需要根据实际情况调整
 
-	return &cfg, nil
+	return
 }
 
-// CtyunImageFromEcsConfig 映射从云主机/快照创建私有镜像的配置参数，适配四种创建方式：
+// *CtyunImageFromEcsConfig 映射从云主机/快照创建私有镜像的配置参数，适配四种创建方式：
 // 1. 系统盘镜像（API 4765）
 // 2. 数据盘镜像（API 5230）
 // 3. 整机镜像（API 18058）

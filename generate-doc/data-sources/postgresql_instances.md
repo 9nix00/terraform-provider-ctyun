@@ -1,4 +1,5 @@
 # ctyun_postgresql_instances (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10034019/10153165**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -34,7 +36,7 @@ data "ctyun_postgresql_instances" "test" {
 - `prod_inst_id` (String) 实例ID
 - `prod_inst_name` (String) 实例名称，支持模糊匹配
 - `project_id` (String) 项目ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 

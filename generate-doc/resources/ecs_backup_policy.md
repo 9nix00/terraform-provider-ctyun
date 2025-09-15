@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -70,10 +71,10 @@ resource "ctyun_ecs_backup_policy" "test" {
 
 Optional:
 
-- `adv_day` (Number) 保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0
-- `adv_month` (Number) 保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0
-- `adv_week` (Number) 保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0
-- `adv_year` (Number) 保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0
+- `adv_day` (Number) 保留n天内，每天最新的一个备份，n为输入的数字。单位为天，取值范围：[0, 100]，默认值0 支持更新
+- `adv_month` (Number) 保留n月内，每月最新的一个备份，n为输入的数字。单位为月，取值范围：[0, 100]，默认值0 支持更新
+- `adv_week` (Number) 保留n周内，每周最新的一个备份，n为输入的数字。单位为周，取值范围：[0, 100]，默认值0 支持更新
+- `adv_year` (Number) 保留n年内，每年最新的一个备份，n为输入的数字。单位为年，取值范围：[0, 100]，默认值0 支持更新
 
 
 <a id="nestedatt--repository_list"></a>

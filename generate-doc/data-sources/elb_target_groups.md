@@ -1,4 +1,5 @@
 # ctyun_elb_target_groups (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10155289**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -29,7 +31,7 @@ data "ctyun_elb_target_groups" "test" {
 - `health_check_id` (String) 健康检查ID
 - `ids` (String) 后端服务组ID列表，以,分隔
 - `name` (String) 后端服务组名称
-- `region_id` (String)
+- `region_id` (String) 资源池ID
 - `vpc_id` (String) vpcID
 
 ### Read-Only
@@ -50,7 +52,7 @@ Read-Only:
 - `id` (String) 后端服务组ID
 - `name` (String) 后端服务组名称
 - `project_id` (String) 项目ID
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 - `rewrite_cookie_name` (String) cookie重写名称
 - `session_sticky_mode` (String) 会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）
 - `source_ip_timeout` (Number) 源IP会话保持超时时间

@@ -72,7 +72,7 @@ func (c *ctyunSfsPermissionGroupAssociation) ImportState(ctx context.Context, re
 
 func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性文件服务权限组绑定管理。支持弹性文件实例与vpc绑定，更新和解绑。具体文档：https://www.ctyun.cn/document/10027350/10192625",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027350/10192625**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

@@ -527,8 +527,7 @@ func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state Ctyu
 	return nil
 }
 
-func (c *ctyunSnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcCreateSnatEntryRequest, loopCount ...int) (loopResponse *SNatLoopCreateResponse, err error) {
-	var respError error
+func (c *ctyunSnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcCreateSnatEntryRequest, loopCount ...int) (loopResponse *SNatLoopCreateResponse, respError error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -553,9 +552,13 @@ func (c *ctyunSnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcC
 
 			case business.NatCreateStatusDone:
 				//开通完成
-				SnatId := resp.ReturnObj.Snat.SnatID
+				snatId := resp.ReturnObj.Snat.SnatID
+				// 返回的id不正确，继续查询
+				if !strings.HasPrefix(utils.SecString(snatId), "ngwsr") {
+					return true
+				}
 				loopResponse = &SNatLoopCreateResponse{
-					SNatID: utils.SecStringValue(SnatId),
+					SNatID: utils.SecStringValue(snatId),
 					Status: types.StringValue(status),
 				}
 				return false

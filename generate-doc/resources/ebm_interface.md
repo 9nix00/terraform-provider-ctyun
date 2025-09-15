@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -33,7 +34,7 @@ resource "ctyun_ebm_interface" "test" {
 
 - `instance_id` (String) 物理机UUID
 - `ipv4` (String) IPV4地址
-- `security_group_ids` (Set of String) 安全组ID
+- `security_group_ids` (Set of String) 安全组ID，支持更新
 - `subnet_id` (String) 子网ID
 
 ### Optional

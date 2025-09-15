@@ -1,4 +1,5 @@
 # ctyun_elb_acls (Data Source)
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032777**
 
 
 
@@ -13,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -28,7 +30,7 @@ data "ctyun_elb_acls" "examples" {
 
 - `ids` (String) 访问控制ID列表, 逗号分割
 - `name` (String) 访问控制名称,只能由数字，字母，-组成不能以数字和-开头，最大长度32
-- `region_id` (String) 区域ID
+- `region_id` (String) 资源池ID
 
 ### Read-Only
 

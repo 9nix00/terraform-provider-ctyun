@@ -14,9 +14,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
@@ -40,7 +40,7 @@ func (c *ctyunNetworkInterface) Metadata(_ context.Context, request resource.Met
 	response.TypeName = request.ProviderTypeName + "_port"
 }
 
-type CtyunNetworkInterfaceResource struct {
+type CtyunNetworkInterfaceConfig struct {
 	Id                      types.String `tfsdk:"id"`
 	Name                    types.String `tfsdk:"name"`
 	Description             types.String `tfsdk:"description"`
@@ -52,7 +52,7 @@ type CtyunNetworkInterfaceResource struct {
 	SecondaryPrivateIps     types.Set    `tfsdk:"secondary_private_ips"`
 	Ipv6AddressCount        types.Int32  `tfsdk:"ipv6_address_count"`
 	Ipv6Addresses           types.List   `tfsdk:"ipv6_addresses"`
-	NetworkInterfaceId      types.String `tfsdk:"network_interface_id"`
+	NetworkInterfaceId      types.String `tfsdk:"port_id"`
 	MacAddress              types.String `tfsdk:"mac_address"`
 	InstanceId              types.String `tfsdk:"instance_id"`
 	InstanceType            types.String `tfsdk:"instance_type"`
@@ -179,7 +179,7 @@ func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaReque
 					listvalidator.SizeAtMost(10),
 				},
 			},
-			"network_interface_id": schema.StringAttribute{
+			"port_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "网卡ID",
 				PlanModifiers: []planmodifier.String{
@@ -219,61 +219,144 @@ func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaReque
 }
 
 func (c *ctyunNetworkInterface) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
-	var plan CtyunNetworkInterfaceResource
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan CtyunNetworkInterfaceConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-	resp, err := c.createNetworkInterface(ctx, plan)
-
+	err = c.createNetworkInterface(ctx, &plan)
 	if err != nil {
-		response.Diagnostics.AddError(
-			"创建弹性网卡失败",
-			fmt.Sprintf("创建弹性网卡时发生错误: %s", err.Error()),
-		)
 		return
 	}
 
-	if resp.ReturnObj == nil || resp.ReturnObj.NetworkInterfaceID == nil {
-		// 打印详细的错误信息
-		errorInfo := ""
-		if resp.Message != nil {
-			errorInfo += fmt.Sprintf("Message: %s ", *resp.Message)
-		}
-		if resp.ErrorCode != nil {
-			errorInfo += fmt.Sprintf("ErrorCode: %s ", *resp.ErrorCode)
-		}
-		if resp.Description != nil {
-			errorInfo += fmt.Sprintf("Description: %s ", *resp.Description)
-		}
-
-		response.Diagnostics.AddError(
-			"创建弹性网卡失败",
-			fmt.Sprintf("API返回数据: %s", errorInfo),
-		)
-		return
-	}
-	// 更新计划中的所有字段
-	plan.Id = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceID)
-	plan.NetworkInterfaceId = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceID)
 	// 查询网卡详细信息并更新状态
-	updatedPlan, err := c.getAndMergePort(ctx, &plan)
+	err = c.getAndMergePort(ctx, &plan)
 	if err != nil {
-		response.Diagnostics.AddError(
-			"获取弹性网卡信息失败",
-			fmt.Sprintf("获取弹性网卡信息时发生错误: %s", err.Error()),
-		)
 		return
 	}
-
-	if updatedPlan != nil {
-		plan = *updatedPlan
-	}
-
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
 
-func (c *ctyunNetworkInterface) createNetworkInterface(ctx context.Context, plan CtyunNetworkInterfaceResource) (*ctvpc.CtvpcCreatePortResponse, error) {
+func (c *ctyunNetworkInterface) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunNetworkInterfaceConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 更新状态
+	err = c.getAndMergePort(ctx, &state)
+	if err != nil {
+		if strings.Contains(err.Error(), "not found") {
+			err = nil
+			response.State.RemoveResource(ctx)
+		}
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
+}
+
+func (c *ctyunNetworkInterface) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var plan, state CtyunNetworkInterfaceConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkBeforeUpdate(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateNetworkInterface(ctx, &plan, &state)
+	if err != nil {
+		return
+	}
+	// 查询网卡详细信息并更新状态
+	err = c.getAndMergePort(ctx, &plan)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+}
+
+func (c *ctyunNetworkInterface) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunNetworkInterfaceConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	_, err = c.getNetworkInterfaceById(ctx, &state)
+	if err != nil {
+		return
+	}
+	err = c.delete(ctx, state)
+	if err != nil {
+		return
+	}
+
+}
+
+// ImportState 导入资源状态
+func (c *ctyunNetworkInterface) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunNetworkInterfaceConfig
+	var id, regionId string
+	err = terraform_extend.Split(request.ID, &id, &regionId)
+	if err != nil {
+		return
+	}
+	cfg.RegionId = types.StringValue(regionId)
+	cfg.NetworkInterfaceId = types.StringValue(id)
+
+	// 查询网卡详细信息并更新状态
+	err = c.getAndMergePort(ctx, &cfg)
+	if err != nil {
+		return
+	}
+
+	// 设置导入的属性
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+
+}
+
+// Configure 配置资源
+func (c *ctyunNetworkInterface) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+	if request.ProviderData == nil {
+		return
+	}
+	meta := request.ProviderData.(*common.CtyunMetadata)
+	c.meta = meta
+}
+func (c *ctyunNetworkInterface) createNetworkInterface(ctx context.Context, plan *CtyunNetworkInterfaceConfig) (err error) {
 	// 根据传入的不同参数确定创建方式
 	regionId := plan.RegionId.ValueString()
 	// 构造创建请求参数
@@ -352,312 +435,129 @@ func (c *ctyunNetworkInterface) createNetworkInterface(ctx context.Context, plan
 	// 调用API创建弹性网卡
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreatePortApi.Do(ctx, c.meta.SdkCredential, createReq)
 	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (c *ctyunNetworkInterface) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	var state CtyunNetworkInterfaceResource
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
 		return
 	}
-
-	// 更新状态
-	updatedState, err := c.getAndMergePort(ctx, &state)
-	if err != nil {
-		response.Diagnostics.AddError(
-			"获取弹性网卡信息失败",
-			fmt.Sprintf("获取弹性网卡信息时发生错误: %s", err.Error()),
-		)
-		return
-	}
-
-	// 如果返回为nil，表示资源不存在，需要从状态中移除
-	if updatedState == nil {
-		response.State.RemoveResource(ctx)
-		return
-	}
-
-	state = *updatedState
-
-	response.Diagnostics.Append(response.State.Set(ctx, state)...)
-}
-
-func (c *ctyunNetworkInterface) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var plan, state CtyunNetworkInterfaceResource
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	_, done := c.updateNetworkInterface(ctx, plan, state, response)
-	if done {
-		return
-	}
-
-	// 查询网卡详细信息并更新状态
-	updatedPlan, err := c.getAndMergePort(ctx, &plan)
-	if err != nil {
-		response.Diagnostics.AddError(
-			"获取弹性网卡信息失败",
-			fmt.Sprintf("获取弹性网卡信息时发生错误: %s", err.Error()),
-		)
-		return
-	}
-
-	if updatedPlan != nil {
-		plan = *updatedPlan
-	}
-
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-}
-
-func (c *ctyunNetworkInterface) updateNetworkInterface(ctx context.Context, plan CtyunNetworkInterfaceResource, state CtyunNetworkInterfaceResource, response *resource.UpdateResponse) (string, bool) {
-	// 检查必要参数
-	networkInterfaceId := plan.NetworkInterfaceId.ValueString()
-	if networkInterfaceId == "" {
-		networkInterfaceId = state.NetworkInterfaceId.ValueString()
-	}
-
-	if networkInterfaceId == "" {
-		response.Diagnostics.AddError(
-			"更新弹性网卡失败",
-			"network_interface_id不能为空",
-		)
-		return "", true
-	}
-	// 检查是否需要更新名称或描述
-	if !plan.Name.Equal(state.Name) || !plan.Description.Equal(state.Description) {
-		updateReq := &ctvpc.CtvpcUpdatePortRequest{
-			ClientToken:        uuid.NewString(),
-			RegionID:           plan.RegionId.ValueString(),
-			NetworkInterfaceID: networkInterfaceId,
-		}
-
-		// 处理名称
-		if !plan.Name.IsNull() {
-			name := plan.Name.ValueString()
-			updateReq.Name = &name
-		}
-
-		// 处理描述
-		if !plan.Description.IsNull() {
-			description := plan.Description.ValueString()
-			updateReq.Description = &description
-		}
-		// 处理安全组ID列表
-		if !plan.SecurityGroupIds.IsNull() && len(plan.SecurityGroupIds.Elements()) > 0 {
-			var sgIds []string
-			plan.SecurityGroupIds.ElementsAs(ctx, &sgIds, false)
-			sgIdPtrs := make([]*string, len(sgIds))
-			for i, sgId := range sgIds {
-				sgIdPtrs[i] = &sgId
-			}
-			updateReq.SecurityGroupIDs = sgIdPtrs
-		} else {
-			// 如果安全组为空，则传递空数组
-			updateReq.SecurityGroupIDs = []*string{}
-		}
-		// 调用API更新网卡属性
-		_, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePortApi.Do(ctx, c.meta.SdkCredential, updateReq)
-		if err != nil {
-			response.Diagnostics.AddError(
-				"更新弹性网卡属性失败",
-				fmt.Sprintf("更新弹性网卡属性时发生错误: %s", err.Error()),
-			)
-			return "", true
-		}
-	}
-	return networkInterfaceId, false
-}
-
-func (c *ctyunNetworkInterface) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	var state CtyunNetworkInterfaceResource
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	// 检查必要参数
-	var networkInterfaceId string
-	if !state.NetworkInterfaceId.IsNull() {
-		networkInterfaceId = state.NetworkInterfaceId.ValueString()
-	}
-
-	if networkInterfaceId == "" {
-		response.Diagnostics.AddError(
-			"删除弹性网卡失败",
-			"network_interface_id不能为空",
-		)
-		return
-	}
-
-	var regionId string
-	if !state.RegionId.IsNull() {
-		regionId = state.RegionId.ValueString()
-	}
-
-	// 构造删除请求参数
-	deleteReq := &ctvpc.CtvpcDeletePortRequest{
-		ClientToken:        uuid.NewString(),
-		RegionID:           regionId,
-		NetworkInterfaceID: networkInterfaceId,
-	}
-
-	// 调用API删除弹性网卡
-	_, err := c.meta.Apis.SdkCtVpcApis.CtvpcDeletePortApi.Do(ctx, c.meta.SdkCredential, deleteReq)
-	if err != nil {
-		response.Diagnostics.AddError(
-			"删除弹性网卡失败",
-			fmt.Sprintf("删除弹性网卡时发生错误: %s", err.Error()),
-		)
-		return
-	}
-
-}
-
-// ImportState 导入资源状态
-func (c *ctyunNetworkInterface) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var id, regionId string
-	err := terraform_extend.Split(request.ID, &id, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(
-			"导入弹性网卡失败",
-			fmt.Sprintf("导入弹性网卡时发生错误: %s", err.Error()),
-		)
-		return
-	}
-
-	// 设置导入的属性
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("id"), id)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("network_interface_id"), id)...)
-	response.Diagnostics.Append(response.State.SetAttribute(ctx, path.Root("region_id"), regionId)...)
-}
-
-// Configure 配置资源
-func (c *ctyunNetworkInterface) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
-	if request.ProviderData == nil {
-		return
-	}
-	meta := request.ProviderData.(*common.CtyunMetadata)
-	c.meta = meta
-}
-
-// getNetworkInterface 获取网卡详细信息
-func (c *ctyunNetworkInterface) getNetworkInterface(ctx context.Context, regionId, networkInterfaceId string) (*ctvpc.CtvpcShowPortReturnObjResponse, error) {
-	// 检查networkInterfaceId是否为空
-	if networkInterfaceId == "" {
-		return nil, fmt.Errorf("networkInterfaceId不能为空")
-	}
-
-	req := &ctvpc.CtvpcShowPortRequest{
-		RegionID:           regionId,
-		NetworkInterfaceID: networkInterfaceId,
-	}
-
-	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowPortApi.Do(ctx, c.meta.SdkCredential, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.ReturnObj == nil {
-		// 打印详细的错误信息
-		errorInfo := ""
-		if resp.Message != nil {
-			errorInfo += fmt.Sprintf("Message: %s ", *resp.Message)
-		}
-		if resp.ErrorCode != nil {
-			errorInfo += fmt.Sprintf("ErrorCode: %s ", *resp.ErrorCode)
-		}
-		if resp.Description != nil {
-			errorInfo += fmt.Sprintf("Description: %s ", *resp.Description)
-		}
-		if errorInfo != "" {
-			return nil, fmt.Errorf("API返回数据为空 (%s)", errorInfo)
-		}
-		return nil, fmt.Errorf("API返回数据为空")
-	}
-
-	return resp.ReturnObj, nil
-}
-
-// getAndMergePort 查询网卡信息并合并到资源配置中
-func (c *ctyunNetworkInterface) getAndMergePort(ctx context.Context, plan *CtyunNetworkInterfaceResource) (*CtyunNetworkInterfaceResource, error) {
-	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowPortApi.Do(ctx, c.meta.SdkCredential, &ctvpc.CtvpcShowPortRequest{
-		RegionID:           plan.RegionId.ValueString(),
-		NetworkInterfaceID: plan.NetworkInterfaceId.ValueString(),
-	})
-	if err != nil {
-		// 检查是否是因为网卡不存在导致的错误
-		if err.Error() == common.OpenapiVpcPortNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	if resp.ReturnObj == nil {
-		// 打印详细的错误信息
-		errorInfo := ""
-		if resp.Message != nil {
-			errorInfo += fmt.Sprintf("Message: %s ", *resp.Message)
-		}
-		if resp.ErrorCode != nil {
-			errorInfo += fmt.Sprintf("ErrorCode: %s ", *resp.ErrorCode)
-		}
-		if resp.Description != nil {
-			errorInfo += fmt.Sprintf("Description: %s ", *resp.Description)
-		}
-		if errorInfo != "" {
-			return nil, fmt.Errorf("API返回数据为空 (%s)", errorInfo)
-		}
-		return nil, fmt.Errorf("API返回数据为空")
+	if resp.ReturnObj == nil || resp.ReturnObj.NetworkInterfaceID == nil {
+		return fmt.Errorf("API返回数据: %s", *resp.ErrorCode)
 	}
 	// 更新计划中的所有字段
 	plan.Id = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceID)
 	plan.NetworkInterfaceId = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceID)
-	plan.Name = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceName)
-	plan.Description = types.StringPointerValue(resp.ReturnObj.Description)
-	plan.MacAddress = types.StringPointerValue(resp.ReturnObj.MacAddress)
-	plan.SubnetId = types.StringPointerValue(resp.ReturnObj.SubnetID)
-	plan.PrimaryIpAddress = types.StringPointerValue(resp.ReturnObj.PrimaryPrivateIp)
-	plan.InstanceId = types.StringPointerValue(resp.ReturnObj.InstanceID)
-	plan.InstanceType = types.StringPointerValue(resp.ReturnObj.InstanceType)
+	return
+}
+func (c *ctyunNetworkInterface) updateNetworkInterface(ctx context.Context, plan, state *CtyunNetworkInterfaceConfig) (err error) {
+	updateReq := &ctvpc.CtvpcUpdatePortRequest{
+		ClientToken:        uuid.NewString(),
+		RegionID:           plan.RegionId.ValueString(),
+		NetworkInterfaceID: plan.Id.ValueString(),
+	}
+
+	// 处理名称
+	if !plan.Name.IsNull() {
+		updateReq.Name = plan.Name.ValueStringPointer()
+	}
+	// 处理描述
+	if !plan.Description.IsNull() {
+		updateReq.Description = plan.Description.ValueStringPointer()
+	}
+	// 处理安全组ID列表
+	if !plan.SecurityGroupIds.IsNull() && len(plan.SecurityGroupIds.Elements()) > 0 {
+		var sgIds []string
+		plan.SecurityGroupIds.ElementsAs(ctx, &sgIds, false)
+		sgIdPtrs := make([]*string, len(sgIds))
+		for i, sgId := range sgIds {
+			sgIdPtrs[i] = &sgId
+		}
+		updateReq.SecurityGroupIDs = sgIdPtrs
+	}
+	// 调用API更新网卡属性
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePortApi.Do(ctx, c.meta.SdkCredential, updateReq)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return
+	}
+	return
+}
+
+// getNetworkInterface 获取网卡详细信息
+func (c *ctyunNetworkInterface) getNetworkInterfaceById(ctx context.Context, plan *CtyunNetworkInterfaceConfig) (networkInterface *ctvpc.CtvpcShowPortReturnObjResponse, err error) {
+	req := &ctvpc.CtvpcShowPortRequest{
+		RegionID:           plan.RegionId.ValueString(),
+		NetworkInterfaceID: plan.NetworkInterfaceId.ValueString(),
+	}
+
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcShowPortApi.Do(ctx, c.meta.SdkCredential, req)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	networkInterface = resp.ReturnObj
+	return
+}
+
+// getAndMergePort 查询网卡信息并合并到资源配置中
+func (c *ctyunNetworkInterface) getAndMergePort(ctx context.Context, plan *CtyunNetworkInterfaceConfig) (err error) {
+	networkInterface, err := c.getNetworkInterfaceById(ctx, plan)
+	if err != nil {
+		return
+	}
+	// 更新计划中的所有字段
+	plan.Id = types.StringPointerValue(networkInterface.NetworkInterfaceID)
+	plan.NetworkInterfaceId = types.StringPointerValue(networkInterface.NetworkInterfaceID)
+	plan.Name = types.StringPointerValue(networkInterface.NetworkInterfaceName)
+	plan.Description = types.StringPointerValue(networkInterface.Description)
+	plan.MacAddress = types.StringPointerValue(networkInterface.MacAddress)
+	plan.SubnetId = types.StringPointerValue(networkInterface.SubnetID)
+	plan.PrimaryIpAddress = types.StringPointerValue(networkInterface.PrimaryPrivateIp)
+	plan.InstanceId = types.StringPointerValue(networkInterface.InstanceID)
+	plan.InstanceType = types.StringPointerValue(networkInterface.InstanceType)
 
 	// 设置状态
-	if resp.ReturnObj.AdminStatus != nil {
-		plan.Status = types.StringValue(*resp.ReturnObj.AdminStatus)
+	if networkInterface.AdminStatus != nil {
+		plan.Status = types.StringValue(*networkInterface.AdminStatus)
 	} else {
 		plan.Status = types.StringValue("UNKNOWN")
 	}
 
 	// 设置安全组ID
-	if resp.ReturnObj.SecurityGroupIds != nil {
-		sgIds := make([]attr.Value, len(resp.ReturnObj.SecurityGroupIds))
-		for i, sgId := range resp.ReturnObj.SecurityGroupIds {
+	if networkInterface.SecurityGroupIds != nil {
+		sgIds := make([]attr.Value, len(networkInterface.SecurityGroupIds))
+		for i, sgId := range networkInterface.SecurityGroupIds {
 			if sgId != nil {
 				sgIds[i] = types.StringValue(*sgId)
 			}
 		}
 		plan.SecurityGroupIds, _ = types.SetValue(types.StringType, sgIds)
+	} else {
+		// 如果没有安全组ID，确保字段被正确初始化为空集合
+		plan.SecurityGroupIds, _ = types.SetValue(types.StringType, []attr.Value{})
 	}
 
 	// 设置辅助私有IP
-	if resp.ReturnObj.SecondaryPrivateIps != nil {
-		secondaryIps := make([]attr.Value, len(resp.ReturnObj.SecondaryPrivateIps))
-		for i, ip := range resp.ReturnObj.SecondaryPrivateIps {
+	if networkInterface.SecondaryPrivateIps != nil {
+		secondaryIps := make([]attr.Value, len(networkInterface.SecondaryPrivateIps))
+		for i, ip := range networkInterface.SecondaryPrivateIps {
 			if ip != nil {
 				secondaryIps[i] = types.StringValue(*ip)
 			}
 		}
 		plan.SecondaryPrivateIps, _ = types.SetValue(types.StringType, secondaryIps)
+	} else {
+		// 如果没有辅助私有IP，确保字段被正确初始化为空集合
+		plan.SecondaryPrivateIps, _ = types.SetValue(types.StringType, []attr.Value{})
 	}
 
 	// 设置IPv6地址
-	if resp.ReturnObj.Ipv6Addresses != nil {
-		ipv6Addrs := make([]attr.Value, len(resp.ReturnObj.Ipv6Addresses))
-		for i, addr := range resp.ReturnObj.Ipv6Addresses {
+	if networkInterface.Ipv6Addresses != nil {
+		ipv6Addrs := make([]attr.Value, len(networkInterface.Ipv6Addresses))
+		for i, addr := range networkInterface.Ipv6Addresses {
 			if addr != nil {
 				ipv6Addrs[i] = types.StringValue(*addr)
 			}
@@ -668,5 +568,27 @@ func (c *ctyunNetworkInterface) getAndMergePort(ctx context.Context, plan *Ctyun
 		plan.Ipv6Addresses, _ = types.ListValue(types.StringType, []attr.Value{})
 	}
 
-	return plan, nil
+	return
+}
+func (c *ctyunNetworkInterface) delete(ctx context.Context, state CtyunNetworkInterfaceConfig) (err error) {
+	// 构造删除请求参数
+	deleteReq := &ctvpc.CtvpcDeletePortRequest{
+		ClientToken:        uuid.NewString(),
+		RegionID:           state.RegionId.ValueString(),
+		NetworkInterfaceID: state.NetworkInterfaceId.ValueString(),
+	}
+
+	// 调用API删除弹性网卡
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDeletePortApi.Do(ctx, c.meta.SdkCredential, deleteReq)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return
+	}
+	return
+}
+
+func (c *ctyunNetworkInterface) checkBeforeUpdate(ctx context.Context, plan CtyunNetworkInterfaceConfig, state CtyunNetworkInterfaceConfig) (err error) {
+	return
 }

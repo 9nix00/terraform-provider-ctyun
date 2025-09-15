@@ -1,5 +1,5 @@
 # ctyun_elb_target_group (Resource)
-弹性负载均衡--后端主机组创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10155289
+**详细说明请见文档：https://www.ctyun.cn/document/10026756/10155289**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -46,22 +47,22 @@ resource "ctyun_elb_target_group" "target_group_test" {
 
 ### Required
 
-- `algorithm` (String) 调度算法。取值范围：rr（轮询）、wrr（带权重轮询）、lc（最少连接）、sh（源IP哈希）
-- `name` (String) 名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+- `algorithm` (String) 调度算法。取值范围：rr（轮询）、wrr（带权重轮询）、lc（最少连接）、sh（源IP哈希），支持更新
+- `name` (String) 名称，唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新
 - `vpc_id` (String) 需要创建后端主机组的 VPC 的 ID
 
 ### Optional
 
-- `cookie_expire` (Number) cookie过期时间。session_sticky_mode = INSERT模式必填
-- `description` (String) 描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},
-- `health_check_id` (String) 需要关联的健康检查Id
+- `cookie_expire` (Number) cookie过期时间。session_sticky_mode = INSERT模式必填，支持更新
+- `description` (String) 描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},，支持更新
+- `health_check_id` (String) 需要关联的健康检查Id，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `protocol` (String) 支持 TCP / UDP / HTTP / HTTPS, 该字段不支持更新。当protocol=HTTP/HTTPS时，target_group.session_sticky_mode仅支持INSERT/REWRITE
 - `proxy_protocol` (Number) 1 开启，0 关闭，只有protocol=tcp的时候,可填写（关闭/开启proxy_protocol），其他协议默认关闭。不支持更改
 - `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
-- `rewrite_cookie_name` (String) cookie重写名称，REWRITE模式必填
-- `session_sticky_mode` (String) 会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）。当 algorithm 为 lc / sh 时，sessionStickyMode无需填写，默认为 CLOSE
-- `source_ip_timeout` (Number) 源IP会话保持超时时间。SOURCE_IP模式必填
+- `rewrite_cookie_name` (String) cookie重写名称，REWRITE模式必填，支持更新
+- `session_sticky_mode` (String) 会话保持模式，支持取值：CLOSE（关闭）、INSERT（插入）、REWRITE（重写）。当 algorithm 为 lc / sh 时，sessionStickyMode无需填写，默认为 CLOSE，支持更新
+- `source_ip_timeout` (Number) 源IP会话保持超时时间。SOURCE_IP模式必填，支持更新
 
 ### Read-Only
 

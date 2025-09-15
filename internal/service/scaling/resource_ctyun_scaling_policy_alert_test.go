@@ -6,18 +6,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"strconv"
 	"testing"
 	"time"
 )
 
 func TestAccCtyunScalingPolicyAlert(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -151,12 +145,7 @@ func TestAccCtyunScalingPolicyAlert(t *testing.T) {
 }
 
 func TestAccCtyunScalingPolicyRegular(t *testing.T) {
-	// 设置环境变量以启用TF_ACC测试
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	
 	// 生成随机名称避免冲突
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
@@ -253,11 +242,6 @@ func TestAccCtyunScalingPolicyRegular(t *testing.T) {
 }
 
 func TestAccCtyunScalingPolicyPeriod(t *testing.T) {
-	// 设置环境变量以启用TF_ACC测试
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// 生成随机名称避免冲突
 	rnd := utils.GenerateRandomString()
@@ -370,11 +354,6 @@ func TestAccCtyunScalingPolicyPeriod(t *testing.T) {
 }
 
 func TestAccCtyunScalingPolicyPeriodDay(t *testing.T) {
-	// 设置环境变量以启用TF_ACC测试
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// 生成随机名称避免冲突
 	rnd := utils.GenerateRandomString()
@@ -486,11 +465,6 @@ func TestAccCtyunScalingPolicyPeriodDay(t *testing.T) {
 }
 
 func TestAccCtyunScalingPolicyTarget(t *testing.T) {
-	// 设置环境变量以启用TF_ACC测试
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// 生成随机名称避免冲突
 	rnd := utils.GenerateRandomString()

@@ -1,5 +1,5 @@
 # ctyun_nat_dnat (Resource)
-详细说明请见文档：https://www.ctyun.cn/document/10026759/10166499
+**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166499**
 
 
 
@@ -14,6 +14,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -64,20 +65,20 @@ resource "ctyun_nat_dnat" "dnat_test"{
 
 ### Required
 
-- `dnat_type` (String) dnat规则类型，支持传递instance或custom
-- `external_id` (String) 弹性IP的ID，形如eip-xxxxx
-- `external_port` (Number) 弹性IP公网端口，1 - 1024
-- `internal_port` (Number) 主机内网端口，1 - 65535
+- `dnat_type` (String) dnat规则类型，支持传递instance或custom，支持更新
+- `external_id` (String) 弹性IP的ID，形如eip-xxxxx，支持更新
+- `external_port` (Number) 弹性IP公网端口，1 - 1024，支持更新
+- `internal_port` (Number) 主机内网端口，1 - 65535，支持更新
 - `nat_gateway_id` (String) NAT网关Id
-- `protocol` (String) 协议：tcp/udp
+- `protocol` (String) 协议：tcp/udp，支持更新
 
 ### Optional
 
-- `description` (String) 描述
-- `instance_id` (String) 云主机或物理机实例ID，当且仅当dnat_type为instance时必填
-- `internal_ip` (String) 内部IP，当且仅当dnat_type为custom时必填
-- `region_id` (String) 资源池id，默认使用provider ctyun总region_id 或者环境变量
-- `server_type` (String) 服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM
+- `description` (String) 描述，支持更新
+- `instance_id` (String) 云主机或物理机实例ID，当且仅当dnat_type为instance时必填，支持更新
+- `internal_ip` (String) 内部IP，当且仅当dnat_type为custom时必填，支持更新
+- `region_id` (String) 资源池Id，默认使用provider ctyun总region_id 或者环境变量
+- `server_type` (String) 服务器类型，当且仅当dnat_type为instance时必填，支持：VM / BM，支持更新
 
 ### Read-Only
 

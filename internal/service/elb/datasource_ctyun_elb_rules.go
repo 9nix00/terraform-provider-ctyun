@@ -40,12 +40,12 @@ func (c *ctyunElbRules) Metadata(ctx context.Context, request datasource.Metadat
 
 func (c *ctyunElbRules) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**获取elb rules列表",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026756/10032110**`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 			},
 			"ids": schema.StringAttribute{
 				Optional:    true,
@@ -62,7 +62,7 @@ func (c *ctyunElbRules) Schema(ctx context.Context, request datasource.SchemaReq
 					Attributes: map[string]schema.Attribute{
 						"region_id": schema.StringAttribute{
 							Computed:    true,
-							Description: "区域ID",
+							Description: "资源池ID",
 						},
 						"az_name": schema.StringAttribute{
 							Computed:    true,

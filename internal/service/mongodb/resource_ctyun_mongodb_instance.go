@@ -67,7 +67,7 @@ func (c *CtyunMongodbInstance) Metadata(ctx context.Context, request resource.Me
 
 func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "mongodb provider",
+		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535**`,
 		Attributes: map[string]schema.Attribute{
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -219,9 +219,6 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"host_ip": schema.StringAttribute{
 				Computed:    true,
 				Description: "主机ip",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 			"innodb_buffer_pool_size": schema.StringAttribute{
 				Computed:    true,
@@ -834,7 +831,7 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 func (c *CtyunMongodbInstance) ListLoop(ctx context.Context, params *mongodb.MongodbGetListRequest, header *mongodb.MongodbGetListHeaders, loopCount ...int) (*mongodb.MongodbGetListResponse, error) {
 	var err error
 	var response *mongodb.MongodbGetListResponse
-	count := 60
+	count := 120
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}

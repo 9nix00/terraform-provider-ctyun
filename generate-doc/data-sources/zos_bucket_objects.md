@@ -14,12 +14,12 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
 
 data "ctyun_zos_bucket_objects" "test" {
-
   bucket = "acc.te21fdsfdasfdsdwqedwed23e-asd.1"
 }
 ```
