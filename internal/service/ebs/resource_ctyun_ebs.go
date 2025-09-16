@@ -117,9 +117,13 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "云硬盘使用状态，deleting：删除中，creating：资源创建中，detaching：解绑中，detached：未绑定云主机，attaching：绑定中，attached：已绑定，extending：扩容中，error：错误状态，backup：备份中，backupRestoring：从备份恢复中，expired：包周期已结束，freezing：按需计费，处于冻结状态，可能账户受限或余额不足，available：可用，in-use：已挂载云主机，resizing：扩容中",
 			},
-			"expire_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "到期时间",
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间",
 			},
 			"multi_attach": schema.BoolAttribute{
 				Computed:    true,
@@ -383,7 +387,8 @@ func (c *ctyunEbs) getAndMergeEbs(ctx context.Context, cfg CtyunEbsConfig) (*Cty
 	cfg.Type = types.StringValue(diskType.(string))
 	cfg.Mode = types.StringValue(diskMode.(string))
 	cfg.Status = types.StringValue(resp.DiskStatus)
-	cfg.ExpireTime = types.StringValue(time.UnixMilli(resp.ExpireTime).Format(time.DateTime))
+	cfg.ExpireTime = types.StringValue(time.UnixMilli(resp.ExpireTime).Format(time.RFC3339))
+	cfg.CreateTime = types.StringValue(time.UnixMilli(resp.CreateTime).Format(time.RFC3339))
 	cfg.MultiAttach = types.BoolValue(resp.MultiAttach)
 	cfg.Encrypted = types.BoolValue(resp.IsEncrypt)
 	cfg.KmsUuid = types.StringValue(resp.KmsUUID)
@@ -448,9 +453,10 @@ type CtyunEbsConfig struct {
 	CycleType     types.String `tfsdk:"cycle_type"`
 	CycleCount    types.Int64  `tfsdk:"cycle_count"`
 	MasterOrderId types.String `tfsdk:"master_order_id"`
-	Id            types.String `tfsdk:"id"`           // 磁盘ID
-	Status        types.String `tfsdk:"status"`       // 云硬盘使用状态 deleting/creating/detaching，具体请参考云硬盘使用状态
-	ExpireTime    types.String `tfsdk:"expire_time"`  // 过期时刻，epoch时戳，精度毫秒
+	Id            types.String `tfsdk:"id"`          // 磁盘ID
+	Status        types.String `tfsdk:"status"`      // 云硬盘使用状态 deleting/creating/detaching，具体请参考云硬盘使用状态
+	ExpireTime    types.String `tfsdk:"expire_time"` // 过期时刻
+	CreateTime    types.String `tfsdk:"create_time"`
 	MultiAttach   types.Bool   `tfsdk:"multi_attach"` // 是否共享云硬盘
 	Encrypted     types.Bool   `tfsdk:"encrypted"`    // 是否加密盘
 	KmsUuid       types.String `tfsdk:"kms_uuid"`     // 加密盘密钥UUID，是加密盘时才返回
