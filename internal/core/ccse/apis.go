@@ -165,6 +165,11 @@ type Apis struct {
 	CcseDeleteDaemonSetApi                       *CcseDeleteDaemonSetApi
 	CcseCreateDaemonSetApi                       *CcseCreateDaemonSetApi
 	CcseUpgradeNodePoolApi                       *CcseUpgradeNodePoolApi
+	CcseUpdateNamespaceV2P2Api                   *CcseUpdateNamespaceV2P2Api
+	CcseCreateNamespaceV2P2Api                   *CcseCreateNamespaceV2P2Api
+	CcseDeleteNamespaceV2P2Api                   *CcseDeleteNamespaceV2P2Api
+	CcseGetNamespaceV2P2Api                      *CcseGetNamespaceV2P2Api
+	CcseListNamespaceV2P2Api                     *CcseListNamespaceV2P2Api
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -331,5 +336,10 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		CcseCreateDaemonSetApi:                       NewCcseCreateDaemonSetApi(client),
 		CcseUpgradeNodePoolApi:                       NewCcseUpgradeNodePoolApi(client),
 		CcseRemoveNodeV2Api:                          NewCcseRemoveNodeV2Api(client),
+		CcseCreateNamespaceV2P2Api:                   NewCcseCreateNamespaceV2P2Api(client),
+		CcseUpdateNamespaceV2P2Api:                   NewCcseUpdateNamespaceV2P2Api(client),
+		CcseDeleteNamespaceV2P2Api:                   NewCcseDeleteNamespaceV2P2Api(client),
+		CcseGetNamespaceV2P2Api:                      NewCcseGetNamespaceV2P2Api(client),
+		CcseListNamespaceV2P2Api:                     NewCcseListNamespaceV2P2Api(client),
 	}
 }
