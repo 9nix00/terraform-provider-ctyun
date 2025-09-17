@@ -149,6 +149,7 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 					"subnet_id",
 					"vpc_id",
 					"zone_list",
+					"expire_time",
 				},
 			},
 			{
@@ -311,6 +312,7 @@ func TestAccCtyunRabbitmqInstanceClusterOnDemand(t *testing.T) {
 					"subnet_id",
 					"vpc_id",
 					"zone_list",
+					"expire_time",
 				},
 			},
 			{
