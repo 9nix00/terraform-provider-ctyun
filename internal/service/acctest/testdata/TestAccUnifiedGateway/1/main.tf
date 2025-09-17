@@ -2,7 +2,6 @@ resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-tongyiwangguan"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
-  enable_ipv6 = true
 }
 
 data "ctyun_vpc_route_tables" "rtest" {
@@ -32,7 +31,6 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.8.8",
     "8.8.4.4"
   ]
-  enable_ipv6 = true
 }
 
 # 创建eip
