@@ -51,7 +51,7 @@ provider "ctyun" {
 
 ## 文档参考
 
-详见工程中的[generate-doc](https://github.com/ctyun-it/terraform-provider-ctyun/tree/main/generate-doc)
+详见工程中的[website](https://github.com/ctyun-it/terraform-provider-ctyun/tree/main/website)
 
 
 ## 版权声明
