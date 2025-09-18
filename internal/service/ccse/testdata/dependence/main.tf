@@ -57,6 +57,9 @@ locals {
 }
 
 resource "ctyun_ccse_cluster" "test" {
+  lifecycle {
+    ignore_changes = [base_info.cluster_name]
+  }
   base_info = {
     vpc_id     = local.real_vpc_id
     subnet_id  = local.real_subnet_id
@@ -176,21 +179,29 @@ resource "ctyun_ecs" "ecs_test" {
   is_destroy_instance = false
 }
 
+data ctyun_zones "test" {
+
+}
+
 locals {
-  device_type1 = "physical.s5.2xlarge4"      // az1、有本地盘、弹性、不支持云硬盘
+  device_type1 = "physical.s5.2xlarge4"      // az2、有本地盘、弹性、不支持云硬盘
+  az2 = data.ctyun_zones.test.zones[1]
 }
 
 data "ctyun_ebm_device_raids" "system_raid" {
+  az_name = local.az2
   device_type = local.device_type1
   volume_type = "system"
 }
 
 data "ctyun_ebm_device_raids" "data_raid" {
+  az_name = local.az2
   device_type = local.device_type1
   volume_type = "data"
 }
 
 data "ctyun_ebm_device_images" "test" {
+  az_name = local.az2
   device_type = local.device_type1
   os_type = "linux"
   image_type = "standard"
@@ -208,9 +219,11 @@ data "ctyun_ebm_device_images" "dependence" {
   device_type = local.device_type1
   os_type = "linux"
   image_type = "standard"
+  az_name = local.az2
 }
 
 resource "ctyun_ebm" "ebm_test" {
+  az_name = local.az2
   instance_name = "tf-ebm-for-ccsedisplay"
   hostname = "tf-ebm-for-ccse"
   password = var.password

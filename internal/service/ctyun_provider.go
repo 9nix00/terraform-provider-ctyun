@@ -424,6 +424,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		rabbitmq.NewCtyunRabbitmqVhosts(),
 		rabbitmq.NewCtyunRabbitmqExchanges(),
 		rabbitmq.NewCtyunRabbitmqQueues(),
+		ccse.NewCtyunCcseNamespaces(),
 	)
 }
 

@@ -91,6 +91,7 @@ type CtyunCcseClusterBaseInfo struct {
 	KubeProxy             types.String `tfsdk:"kube_proxy"`
 	ClusterSeries         types.String `tfsdk:"cluster_series"`
 	SeriesType            types.String `tfsdk:"series_type"`
+	NodeScale             types.Int32  `tfsdk:"node_scale"`
 	AutoRenew             types.Bool   `tfsdk:"auto_renew"`            // 自动续订
 	EnableApiServerEip    types.Bool   `tfsdk:"enable_api_server_eip"` // 是否开启ApiServerEip，默认false，若开启将自动创建按需计费类型的eip。
 	EnableSnat            types.Bool   `tfsdk:"enable_snat"`           // 是否开启nat网关，默认false，若开启将自动创建按需计费类型的nat网关。
@@ -553,6 +554,28 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
+					"node_scale": schema.Int32Attribute{
+						Optional:    true,
+						Description: "托管版集群节点规模。series_type=managedbase时，选择节点规模，可选10；series_type=managedpro时，选择节点规模，可选为50，200，1000，2000",
+						Validators: []validator.Int32{
+							int32validator.Any(
+								int32validator.All(
+									validator2.AlsoRequiresEqualInt32(
+										path.MatchRoot("base_info").AtName("series_type"),
+										types.StringValue(business.CcseSeriesTypeManagedbase),
+									),
+									int32validator.OneOf(10),
+								),
+								int32validator.All(
+									validator2.AlsoRequiresEqualInt32(
+										path.MatchRoot("base_info").AtName("series_type"),
+										types.StringValue(business.CcseSeriesTypeManagedpro),
+									),
+									int32validator.OneOf(50, 200, 1000, 2000),
+								),
+							),
+						},
+					},
 				},
 			},
 			"master_host": schema.SingleNestedAttribute{
@@ -900,7 +923,37 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 }
 
 func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	// tf文件中的
+	var plan CtyunCcseClusterConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// state中的
+	var state CtyunCcseClusterConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	//// 更新
+	//err = c.update(ctx, plan, state)
+	//if err != nil {
+	//	return
+	//}
 
+	// 查询远端信息
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -1022,6 +1075,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		Ipvlan:                    plan.BaseInfo.IpVlan.ValueBoolPointer(),
 		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
 		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
+		NodeScale:                 fmt.Sprint(plan.BaseInfo.NodeScale.ValueInt32()),
 	}
 	if plan.BaseInfo.SecurityGroupID.ValueString() != "" {
 		f := false
@@ -1203,11 +1257,17 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	plan.BaseInfo.Timezone = types.StringValue(instance.Timezone)
 	plan.BaseInfo.ClusterVersion = types.StringValue(instance.ClusterVersion)
 	plan.BaseInfo.KubeProxy = types.StringValue(instance.KubeProxyPattern)
+
+	// 0：专有版
+	// 2：托管版
+	// 4：智算版
 	switch instance.ClusterType {
 	case 0:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesStandard)
 	case 2:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesManaged)
+		plan.BaseInfo.NodeScale = types.Int32Value(utils.StringToInt32Must(instance.NodeScale))
+		plan.BaseInfo.SeriesType = types.StringValue(instance.SeriesType)
 	case 4:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesIcce)
 	}
@@ -1397,3 +1457,30 @@ func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClus
 	config = resp.ReturnObj.KubeConfig
 	return
 }
+
+//
+//func (c *ctyunCcseCluster) update(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+//
+//}
+//
+//// updateNodeScale 变更托管版规格
+//func (c *ctyunCcseCluster) updateNodeScale(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+//	autoPay := true
+//	params := &amqp2.AmqpTransChargeTypeRequest{
+//		RegionId:   state.RegionID.ValueString(),
+//		ProdInstId: state.ID.ValueString(),
+//		CycleCnt:   plan.CycleCount.ValueInt32(),
+//		AutoPay:    &autoPay,
+//	}
+//	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
+//	if err != nil {
+//		return
+//	} else if resp.StatusCode != common.NormalStatusCodeString {
+//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+//		return
+//	} else if resp.ReturnObj == nil {
+//		err = common.InvalidReturnObjError
+//		return
+//	}
+//	return
+//}
