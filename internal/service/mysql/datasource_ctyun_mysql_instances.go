@@ -35,7 +35,6 @@ func (c *ctyunMysqlInstances) Configure(ctx context.Context, request datasource.
 
 func (c *ctyunMysqlInstances) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mysql_instances"
-
 }
 
 func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
@@ -341,14 +340,14 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 		err = errors.New("region ID不能为空！")
 		return
 	}
-	if config.PageNow.ValueInt32() == 0 {
-		config.PageNow = types.Int32Value(1)
+	if config.PageNo.ValueInt32() == 0 {
+		config.PageNo = types.Int32Value(1)
 	}
 	if config.PageSize.ValueInt32() == 0 {
 		config.PageSize = types.Int32Value(100)
 	}
 	params := &mysql.TeledbGetListRequest{
-		PageNow:  config.PageNow.ValueInt32(),
+		PageNow:  config.PageNo.ValueInt32(),
 		PageSize: config.PageSize.ValueInt32(),
 	}
 	if !config.TagVOList.IsNull() {
@@ -456,7 +455,7 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 type CtyunMysqlInstancesConfig struct {
 	RegionID       types.String         `tfsdk:"region_id"`      // 区域id
 	ProjectID      types.String         `tfsdk:"project_id"`     //项目id
-	PageNow        types.Int32          `tfsdk:"page_now"`       // 当前页，必填
+	PageNo         types.Int32          `tfsdk:"page_no"`        // 当前页，必填
 	PageSize       types.Int32          `tfsdk:"page_size"`      // 单页记录条数，必填
 	TagVOList      types.List           `tfsdk:"tag_vo_list"`    // 标签列表，选填
 	ResDbEngine    types.String         `tfsdk:"res_db_engine"`  // 数据库引擎，选填

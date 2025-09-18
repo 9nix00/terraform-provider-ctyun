@@ -419,6 +419,12 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseTemplateMarket(),
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
+		mysql2.NewCtyunMysqlAccounts(),
+		mysql2.NewCtyunMysqlBackups(),
+		mysql2.NewCtyunMysqlRecoverableTimePoints(),
+		mysql2.NewCtyunMysqlDatabases(),
+		mysql2.NewCtyunMysqlCharacterSet(),
+		mysql2.NewCtyunMysqlParamTemplates(),
 	)
 }
 
@@ -510,6 +516,13 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		mysql2.NewCtyunMysqlAccount(),
+		mysql2.NewCtyunMysqlBackup(),
+		mysql2.NewCtyunMysqlBackupCancel(),
+		mysql2.NewCtyunMysqlBackupRecovery(),
+		mysql2.NewCtyunMysqlBackupSetting(),
+		mysql2.NewCtyunMysqlDatabase(),
+		mysql2.NewCtyunMysqlParamTemplate(),
 	)
 }
 

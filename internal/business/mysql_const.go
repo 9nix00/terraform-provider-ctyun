@@ -93,6 +93,24 @@ const (
 	StorageTypeSSDGenric = "SSD-genric" //通用型SSD
 	StorageTypeFASTSSD   = "FAST-SSD"   //极速型SSD
 	BackupStorageTypeOS  = "OS"
+
+	MysqlSchemaPrivilegeRw       = "rw"
+	MysqlSchemaPrivilegeDML      = "dml"
+	MysqlSchemaPrivilegeDDL      = "ddl"
+	MysqlSchemaPrivilegeReadOnly = "read_only"
+
+	MysqlBackupTaskStatusSuccess   = 1
+	MysqlBackupTaskStatusWaitStart = 100
+	MysqlBackupTaskStatusSubmit    = 101
+	MysqlBackupTaskStatusCancel    = 102
+	MysqlBackupTaskStatusFailed    = -1
+
+	MysqlBackupRecoveryJobStatusTODO     = 10 // 待处理中
+	MysqlBackupRecoveryJobStatusPreCheck = 0  // 预检查中
+	MysqlBackupRecoveryJobStatusING      = 1  // 运行中
+
+	MysqlBackupRecoveryJobStatusSuccess = 2 // 成功
+	MysqlBackupRecoveryJobStatusFail    = 3 // 失败
 )
 
 var ProdType = []string{
@@ -334,4 +352,33 @@ var StorageType = []string{
 	StorageTypeSAS,
 	StorageTypeSSDGenric,
 	StorageTypeFASTSSD,
+}
+
+var MysqlSchemaPrivileges = []string{
+	MysqlSchemaPrivilegeRw,
+	MysqlSchemaPrivilegeDDL,
+	MysqlSchemaPrivilegeDML,
+	MysqlSchemaPrivilegeReadOnly,
+}
+
+var PrivilegeMap = map[string]bool{"Y": true, "N": false}
+
+var MysqlBackupSettingConfigWeek = map[int32]int32{
+	1: 2,
+	2: 3,
+	3: 4,
+	4: 5,
+	5: 6,
+	6: 7,
+	7: 1,
+}
+
+var MysqlBackupSettingConfigWeekRev = map[int32]int32{
+	1: 7,
+	2: 1,
+	3: 2,
+	4: 3,
+	5: 4,
+	6: 5,
+	7: 6,
 }
