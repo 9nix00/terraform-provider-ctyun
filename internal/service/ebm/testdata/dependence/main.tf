@@ -31,10 +31,14 @@ resource "ctyun_security_group" "security_group_test2" {
   description = "terraform测试使用"
 }
 
+data "ctyun_zones" "test" {
+
+}
+
 locals {
   device_type1 = "physical.s5.2xlarge4"      // az2、有本地盘、弹性、不支持云硬盘
   device_type2 = "physical.s5.2xlarge1"      // az2、无本地盘、弹性、支持云硬盘
-  az2 = "cn-huadong1-jsnj2A-public-ctcloud"
+  az2 = data.ctyun_zones.test.zones[1]
 }
 
 data "ctyun_ebm_device_raids" "system_raid" {

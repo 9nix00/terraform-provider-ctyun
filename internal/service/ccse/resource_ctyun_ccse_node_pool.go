@@ -253,8 +253,23 @@ func (c *ctyunCcseNodePool) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Optional:    true,
 				Description: "用户密码，与key_pair_name有且只能有一个，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthBetween(8, 30),
-					validator2.EcsPassword(),
+					stringvalidator.Any(
+						stringvalidator.All(
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("instance_type"),
+								types.StringValue(business.CcseSlaveInstanceTypeEcs),
+							),
+							validator2.EcsPassword(),
+						),
+
+						stringvalidator.All(
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("instance_type"),
+								types.StringValue(business.CcseSlaveInstanceTypeEbm),
+							),
+							validator2.EbmPassword(),
+						),
+					),
 					stringvalidator.ConflictsWith(
 						path.MatchRoot("key_pair_name"),
 					),

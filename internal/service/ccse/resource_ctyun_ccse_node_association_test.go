@@ -90,7 +90,7 @@ func TestAccCtyunCcseNodeAssociationEbm(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_ccse_node_association." + rnd
-	resourceFile := "resource_ctyun_ccse_node_association.tf"
+	resourceFile := "resource_ctyun_ccse_node_association_ebm.tf"
 
 	clusterID := dependence.clusterID
 	instanceType := "ebm"
@@ -119,6 +119,7 @@ func TestAccCtyunCcseNodeAssociationEbm(t *testing.T) {
 					visibilityPostHostScript,
 					visibilityHostScript,
 					password,
+					dependence.ebmAz,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "cluster_id", clusterID),
@@ -155,6 +156,7 @@ func TestAccCtyunCcseNodeAssociationEbm(t *testing.T) {
 					visibilityPostHostScript,
 					visibilityHostScript,
 					password,
+					dependence.ebmAz,
 				),
 				Destroy: true,
 			},

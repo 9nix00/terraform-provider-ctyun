@@ -14,7 +14,7 @@ func EbmPassword() validator.String {
 }
 
 func (v validatorEbmPassword) Description(_ context.Context) string {
-	return "不满足密码要求"
+	return "不满足ebm密码要求"
 }
 
 func (v validatorEbmPassword) MarkdownDescription(ctx context.Context) string {
@@ -27,7 +27,7 @@ func (v validatorEbmPassword) ValidateString(_ context.Context, request validato
 	password := request.ConfigValue.ValueString()
 	length := len(password)
 	if length < 8 || length > 30 {
-		errMessage := "密码长度必须在8-30"
+		errMessage := "ebm密码长度必须在8-30"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
@@ -47,7 +47,7 @@ func (v validatorEbmPassword) ValidateString(_ context.Context, request validato
 			hasSpecialSymbols = true
 		} else {
 			// 包含不允许的字符
-			errMessage := "密码只能包含大小写字母、数字和指定特殊符号"
+			errMessage := "ebm密码只能包含大小写字母、数字和指定特殊符号"
 			response.Diagnostics.AddError(errMessage, errMessage)
 			return
 		}
@@ -55,21 +55,21 @@ func (v validatorEbmPassword) ValidateString(_ context.Context, request validato
 
 	// 验证必须包含大写字母
 	if !hasUpperLetter {
-		errMessage := "密码必须包含大写字母"
+		errMessage := "ebm密码必须包含大写字母"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
 
 	// 验证必须包含小写字母
 	if !hasLowerLetter {
-		errMessage := "密码必须包含小写字母"
+		errMessage := "ebm密码必须包含小写字母"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
 
 	// 验证至少包含一个数字或者一个特殊字符
 	if !hasDigit && !hasSpecialSymbols {
-		errMessage := "密码必须至少包含一个数字或者一个特殊字符"
+		errMessage := "ebm密码必须至少包含一个数字或者一个特殊字符"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}

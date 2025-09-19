@@ -16,7 +16,7 @@ func EcsPassword() validator.String {
 }
 
 func (v validatorEcsPassword) Description(_ context.Context) string {
-	return "不满足密码要求"
+	return "不满足ecs密码要求"
 }
 
 func (v validatorEcsPassword) MarkdownDescription(ctx context.Context) string {
@@ -30,12 +30,12 @@ func (v validatorEcsPassword) ValidateString(_ context.Context, request validato
 	password := request.ConfigValue.ValueString()
 	length := len(password)
 	if length < 8 || length > 30 {
-		errMessage := "密码长度必须在8-30"
+		errMessage := "ecs密码长度必须在8-30"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
 	if strings.HasPrefix(password, "/") {
-		errMessage := "密码不能以/开头"
+		errMessage := "ecs密码不能以/开头"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
@@ -48,7 +48,7 @@ func (v validatorEcsPassword) ValidateString(_ context.Context, request validato
 
 		// 检查是否连续递增（如a(97)、b(98)、c(99)）
 		if c2 == c1+1 && c3 == c2+1 {
-			errMessage := "密码不能包含3个及以上连续字符，如abc，123"
+			errMessage := "ecs密码不能包含3个及以上连续字符，如abc，123"
 			response.Diagnostics.AddError(errMessage, errMessage)
 			return
 		}
@@ -68,7 +68,7 @@ func (v validatorEcsPassword) ValidateString(_ context.Context, request validato
 		} else if isHasSpecialSymbols(r) {
 			hasSpecialSymbols = true
 		} else {
-			errMessage := "密码只能为数字，大小写字母以及特殊符号"
+			errMessage := "ecs密码只能为数字，大小写字母以及特殊符号"
 			response.Diagnostics.AddError(errMessage, errMessage)
 			return
 		}
@@ -89,7 +89,7 @@ func (v validatorEcsPassword) ValidateString(_ context.Context, request validato
 	}
 
 	if count < 3 {
-		errMessage := "密码必须包含大小写字母、数字、特殊符号中的至少三种"
+		errMessage := "ecs密码必须包含大小写字母、数字、特殊符号中的至少三种"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}
