@@ -190,6 +190,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Computed:    true,
 				Description: "密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password，支持更新",
 				Validators: []validator.String{
+					validator2.EbmPassword(),
 					stringvalidator.ConflictsWith(path.Expressions{
 						path.MatchRoot("key_pair_name"),
 					}...),
