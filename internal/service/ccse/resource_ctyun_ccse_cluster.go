@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
-	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
@@ -28,6 +28,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -40,6 +41,7 @@ var (
 
 type ctyunCcseCluster struct {
 	meta          *common.CtyunMetadata
+	ccseService   *business.CcseService
 	ecsService    *business.EcsService
 	ebmService    *business.EbmService
 	vpcService    *business.VpcService
@@ -64,8 +66,9 @@ type CtyunCcseClusterConfig struct {
 	MasterHost         *CtyunCcseClusterMaster  `tfsdk:"master_host"`
 	InternalKubeConfig types.String             `tfsdk:"internal_kube_config"`
 	ExternalKubeConfig types.String             `tfsdk:"external_kube_config"`
-
-	totalNodeNum int32
+	CreateTime         types.String             `tfsdk:"create_time"`
+	ExpireTime         types.String             `tfsdk:"expire_time"`
+	totalNodeNum       int32
 }
 
 type CtyunCcseClusterBaseInfo struct {
@@ -144,6 +147,14 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "名称",
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间",
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "到期时间",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -941,11 +952,11 @@ func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRe
 	if response.Diagnostics.HasError() {
 		return
 	}
-	//// 更新
-	//err = c.update(ctx, plan, state)
-	//if err != nil {
-	//	return
-	//}
+	// 更新
+	err = c.update(ctx, plan, state)
+	if err != nil {
+		return
+	}
 
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
@@ -1010,6 +1021,7 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.ccseService = business.NewCcseService(c.meta)
 	c.ecsService = business.NewEcsService(c.meta)
 	c.ebmService = business.NewEbmService(c.meta)
 	c.vpcService = business.NewVpcService(c.meta)
@@ -1037,13 +1049,13 @@ func (c *ctyunCcseCluster) checkBeforeCreate(ctx context.Context, plan CtyunCcse
 
 // create 创建
 func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterConfig) (masterOrderID string, err error) {
-	params := &ccse2.CcseCreateClusterRequest{
+	params := &ccse.CcseCreateClusterRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ResPoolId: plan.RegionID.ValueString(),
 	}
 	auto := true
 	// 处理 clusterBaseInfo
-	clusterBaseInfo := ccse2.CcseCreateClusterClusterBaseInfoRequest{
+	clusterBaseInfo := ccse.CcseCreateClusterClusterBaseInfoRequest{
 		ProjectId:                 plan.BaseInfo.ProjectID.ValueString(),
 		VpcUuid:                   plan.BaseInfo.VpcID.ValueString(),
 		SubnetUuid:                plan.BaseInfo.SubnetID.ValueString(),
@@ -1111,7 +1123,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		}
 		var totalSize int32
 		for _, az := range plan.MasterHost.AzInfos {
-			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
+			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse.CcseCreateClusterClusterBaseInfoAzInfosRequest{
 				AzName: az.AzName.ValueString(),
 				Size:   az.Size.ValueInt32(),
 			})
@@ -1119,7 +1131,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		}
 		plan.totalNodeNum += totalSize
 
-		masterHost := ccse2.CcseCreateClusterMasterHostRequest{
+		masterHost := ccse.CcseCreateClusterMasterHostRequest{
 			Cpu:         int32(flavor.FlavorCpu),
 			Mem:         int32(flavor.FlavorRam),
 			ItemDefName: flavorName,
@@ -1127,13 +1139,13 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 			Size:        totalSize,
 		}
 		if plan.MasterHost.SysDisk != nil {
-			masterHost.SysDisk = &ccse2.CcseCreateClusterMasterHostSysDiskRequest{
+			masterHost.SysDisk = &ccse.CcseCreateClusterMasterHostSysDiskRequest{
 				ItemDefName: plan.MasterHost.SysDisk.Type.ValueString(),
 				Size:        plan.MasterHost.SysDisk.Size.ValueInt32(),
 			}
 		}
 		for _, disk := range plan.MasterHost.DataDisks {
-			masterHost.DataDisks = append(masterHost.DataDisks, &ccse2.CcseCreateClusterMasterHostDataDisksRequest{
+			masterHost.DataDisks = append(masterHost.DataDisks, &ccse.CcseCreateClusterMasterHostDataDisksRequest{
 				ItemDefName: disk.Type.ValueString(),
 				Size:        disk.Size.ValueInt32(),
 			})
@@ -1146,7 +1158,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 			return "", err
 		}
 		for _, az := range zones {
-			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
+			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse.CcseCreateClusterClusterBaseInfoAzInfosRequest{
 				AzName: az,
 			})
 		}
@@ -1154,19 +1166,19 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 
 	// 处理slaveHost
 
-	slaveHost := ccse2.CcseCreateClusterSlaveHostRequest{
+	slaveHost := ccse.CcseCreateClusterSlaveHostRequest{
 		Size:       0,
 		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
 	}
 	if plan.SlaveHost.SysDisk != nil {
-		slaveHost.SysDisk = &ccse2.CcseCreateClusterSlaveHostSysDiskRequest{
+		slaveHost.SysDisk = &ccse.CcseCreateClusterSlaveHostSysDiskRequest{
 			ItemDefName: plan.SlaveHost.SysDisk.Type.ValueString(),
 			Size:        plan.SlaveHost.SysDisk.Size.ValueInt32(),
 		}
 	}
 
 	for _, disk := range plan.SlaveHost.DataDisks {
-		slaveHost.DataDisks = append(slaveHost.DataDisks, &ccse2.CcseCreateClusterSlaveHostDataDisksRequest{
+		slaveHost.DataDisks = append(slaveHost.DataDisks, &ccse.CcseCreateClusterSlaveHostDataDisksRequest{
 			ItemDefName: disk.Type.ValueString(),
 			Size:        disk.Size.ValueInt32(),
 		})
@@ -1177,7 +1189,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		if azName == "" {
 			azName = az.AzName.ValueString()
 		}
-		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse2.CcseCreateClusterSlaveHostAzInfosRequest{
+		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse.CcseCreateClusterSlaveHostAzInfosRequest{
 			AzName: az.AzName.ValueString(),
 			Size:   az.Size.ValueInt32(),
 		})
@@ -1228,26 +1240,17 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 
 // getAndMerge 从远端查询
 func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClusterConfig) (err error) {
-	params := &ccse2.CcseGetClusterRequest{
-		RegionId:  plan.RegionID.ValueString(),
-		ClusterId: plan.ID.ValueString(),
-	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseGetClusterApi.Do(ctx, c.meta.SdkCredential, params)
+	instance, err := c.ccseService.GetCcseInfo(ctx, plan.ID.ValueString(), plan.RegionID.ValueString())
 	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
 		return
 	}
 
-	instance := resp.ReturnObj
 	if instance.BizState == business.CcseRefundedBizState || instance.BizState == business.CcseRefundingBizState {
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
 	plan.Name = types.StringValue(instance.ClusterName)
+	plan.CreateTime = types.StringValue(instance.CreatedTime)
+	plan.ExpireTime = types.StringValue(instance.ExpireTime)
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
@@ -1289,7 +1292,7 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 
 // delete 删除
 func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
-	params := &ccse2.CcseDeleteClusterRequest{
+	params := &ccse.CcseDeleteClusterRequest{
 		RegionId:   plan.RegionID.ValueString(),
 		ResPoolId:  plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
@@ -1305,8 +1308,8 @@ func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConf
 }
 
 // listByName 根据名称查询集群
-func (c *ctyunCcseCluster) listByName(ctx context.Context, plan CtyunCcseClusterConfig) (clusters []*ccse2.CcseListClustersReturnObjRecordsResponse, err error) {
-	params := &ccse2.CcseListClustersRequest{
+func (c *ctyunCcseCluster) listByName(ctx context.Context, plan CtyunCcseClusterConfig) (clusters []*ccse.CcseListClustersReturnObjRecordsResponse, err error) {
+	params := &ccse.CcseListClustersRequest{
 		RegionId:    plan.RegionID.ValueString(),
 		ClusterName: plan.BaseInfo.ClusterName.ValueString(),
 	}
@@ -1330,7 +1333,7 @@ func (c *ctyunCcseCluster) checkAfterCreate(ctx context.Context, plan CtyunCcseC
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var clusters []*ccse2.CcseListClustersReturnObjRecordsResponse
+			var clusters []*ccse.CcseListClustersReturnObjRecordsResponse
 			clusters, err = c.listByName(ctx, plan)
 			if err != nil {
 				return false
@@ -1365,7 +1368,7 @@ func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseCl
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var nodes []*ccse2.CcseListClusterNodesReturnObjResponse
+			var nodes []*ccse.CcseListClusterNodesReturnObjResponse
 			nodes, err = c.listNode(ctx, plan)
 			if err != nil {
 				return false
@@ -1393,8 +1396,8 @@ func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseCl
 }
 
 // listNode 获取节点列表
-func (c *ctyunCcseCluster) listNode(ctx context.Context, plan CtyunCcseClusterConfig) (nodes []*ccse2.CcseListClusterNodesReturnObjResponse, err error) {
-	params := &ccse2.CcseListClusterNodesRequest{
+func (c *ctyunCcseCluster) listNode(ctx context.Context, plan CtyunCcseClusterConfig) (nodes []*ccse.CcseListClusterNodesReturnObjResponse, err error) {
+	params := &ccse.CcseListClusterNodesRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ClusterId: plan.ID.ValueString(),
 	}
@@ -1418,7 +1421,7 @@ func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseC
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var clusters []*ccse2.CcseListClustersReturnObjRecordsResponse
+			var clusters []*ccse.CcseListClustersReturnObjRecordsResponse
 			clusters, err = c.listByName(ctx, plan)
 			if err != nil {
 				return false
@@ -1439,7 +1442,7 @@ func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseC
 }
 
 func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClusterConfig, isPublic bool) (config string, err error) {
-	params := &ccse2.CcseGetClusterKubeConfigRequest{
+	params := &ccse.CcseGetClusterKubeConfigRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ClusterId: plan.ID.ValueString(),
 		IsPublic:  isPublic,
@@ -1458,29 +1461,65 @@ func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClus
 	return
 }
 
-//
-//func (c *ctyunCcseCluster) update(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
-//
-//}
-//
-//// updateNodeScale 变更托管版规格
-//func (c *ctyunCcseCluster) updateNodeScale(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
-//	autoPay := true
-//	params := &amqp2.AmqpTransChargeTypeRequest{
-//		RegionId:   state.RegionID.ValueString(),
-//		ProdInstId: state.ID.ValueString(),
-//		CycleCnt:   plan.CycleCount.ValueInt32(),
-//		AutoPay:    &autoPay,
-//	}
-//	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
-//	if err != nil {
-//		return
-//	} else if resp.StatusCode != common.NormalStatusCodeString {
-//		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-//		return
-//	} else if resp.ReturnObj == nil {
-//		err = common.InvalidReturnObjError
-//		return
-//	}
-//	return
-//}
+func (c *ctyunCcseCluster) update(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	err = c.updateManagedSeries(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// updateNodeScale 变更托管版规格
+func (c *ctyunCcseCluster) updateManagedSeries(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	if state.BaseInfo.ClusterSeries.ValueString() != business.CcseClusterSeriesManaged {
+		return
+	}
+	if plan.BaseInfo.SeriesType.Equal(state.BaseInfo.SeriesType) && plan.BaseInfo.NodeScale.Equal(state.BaseInfo.NodeScale) {
+		return
+	}
+	params := &ccse.CcseUpdateClusterSeriesRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ClusterId:  state.ID.ValueString(),
+		SeriesType: plan.BaseInfo.SeriesType.ValueString(),
+		NodeScale:  strconv.Itoa(int(plan.BaseInfo.NodeScale.ValueInt32())),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterSeriesApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return c.checkAfterUpdateManagedSeries(ctx, plan, state)
+}
+
+// checkAfterUpdateManagedSeries 检查变更托管版规格
+func (c *ctyunCcseCluster) checkAfterUpdateManagedSeries(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ccse.CcseGetClusterReturnObjResponse
+			instance, err = c.ccseService.GetCcseInfo(ctx, state.ID.ValueString(), state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if instance.SeriesType != plan.BaseInfo.SeriesType.ValueString() ||
+				utils.StringToInt32Must(instance.NodeScale) != plan.BaseInfo.NodeScale.ValueInt32() {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("更新规格时间过长")
+		return
+	}
+	return
+}

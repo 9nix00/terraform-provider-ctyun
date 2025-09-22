@@ -179,7 +179,7 @@ resource "ctyun_ecs" "ecs_test" {
   is_destroy_instance = false
 }
 
-data ctyun_zones "test" {
+data "ctyun_zones" "test" {
 
 }
 
@@ -216,10 +216,10 @@ locals {
 }
 
 data "ctyun_ebm_device_images" "dependence" {
+  az_name = local.az2
   device_type = local.device_type1
   os_type = "linux"
   image_type = "standard"
-  az_name = local.az2
 }
 
 resource "ctyun_ebm" "ebm_test" {

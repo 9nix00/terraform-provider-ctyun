@@ -57,3 +57,7 @@ output "device_type" {
 output "ebm_mirror_name" {
   value = "CTyunOS23.01@cpu_ccse_img_4.0_09"
 }
+
+output "ebm_az" {
+  value = local.az2
+}
