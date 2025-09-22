@@ -16,6 +16,12 @@ type Dependence struct {
 	eipAddress         string
 	redisVersion       string
 	redisEngineEdition string
+	instanceId         string
+	instance2Id        string
+	userName           string
+	userPassword       string
+	user2Name          string
+	user2Password      string
 }
 
 var dependence Dependence
@@ -39,6 +45,12 @@ func TestMain(m *testing.M) {
 		eipAddress:         outputs["eip_address"].Value,
 		redisVersion:       outputs["redis_version"].Value,
 		redisEngineEdition: outputs["redis_engine_edition"].Value,
+		instanceId:         outputs["redis_instance_id"].Value,
+		instance2Id:        outputs["redis_instance2_id"].Value,
+		userName:           outputs["instance_account_name"].Value,
+		userPassword:       outputs["instance_account_pswd"].Value,
+		user2Name:          outputs["instance2_account_name"].Value,
+		user2Password:      outputs["instance2_account_pswd"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 
@@ -47,7 +59,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("开始清理依赖资源")
 	// 清理依赖资源
-	terraform.DestroyResource(dependenceDir)
+	//terraform.DestroyResource(dependenceDir)
 	fmt.Println("依赖资源清理完毕")
 
 	os.Exit(code)

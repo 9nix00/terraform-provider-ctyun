@@ -9,3 +9,21 @@ func FromRFC3339ToLocal(timeStr string) string {
 	t, _ := time.Parse(time.RFC3339, timeStr)
 	return t.In(time.Local).Format(time.DateTime)
 }
+
+// FromUnixToUTC 将Unix时间戳转换为UTC时间字符串
+// 输入的时间值：1717574263,
+// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
+func FromUnixToUTC(timestamp int64) string {
+	// 检查时间戳是否合理（避免过大的值）
+	if timestamp < 0 || timestamp > 9999999999 {
+		return ""
+	}
+
+	// 将Unix时间戳转换为时间对象
+	t := time.Unix(timestamp, 0).UTC()
+
+	// 格式化为RFC3339格式的UTC时间字符串
+	utcStr := t.Format(time.RFC3339)
+
+	return utcStr
+}

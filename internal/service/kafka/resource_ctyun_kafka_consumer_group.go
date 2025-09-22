@@ -109,6 +109,9 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"ctime": schema.StringAttribute{
 				Computed:    true,

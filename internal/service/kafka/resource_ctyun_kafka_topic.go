@@ -139,6 +139,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"partition_num": schema.Int32Attribute{
 				Required:    true,
@@ -553,7 +556,7 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaGetTopicDetailsApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
-	} else if resp.StatusCode != common.NormalStatusCodeString {
+	} else if resp.StatusCode != nil && *resp.StatusCode != common.NormalStatusCodeString {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil || resp.ReturnObj.Data == nil {
@@ -568,14 +571,14 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 	plan.Id = types.StringValue(id)
 
 	// 设置主题名称
-	plan.TopicName = types.StringValue(topicData.TopicName)
+	plan.TopicName = types.StringValue(*topicData.TopicName)
 	// 设置分区数量
 	plan.PartitionNum = types.Int32Value(int32(len(topicData.PartitionList)))
 	// 设置订阅该主题的消费组列表
 	if len(topicData.GroupSubscribed) > 0 {
 		groupSubscribedStrs := make([]attr.Value, len(topicData.GroupSubscribed))
 		for i, group := range topicData.GroupSubscribed {
-			groupSubscribedStrs[i] = types.StringValue(group)
+			groupSubscribedStrs[i] = types.StringValue(*group)
 		}
 		plan.GroupSubscribed, _ = types.ListValue(types.StringType, groupSubscribedStrs)
 	} else {
@@ -626,7 +629,7 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 
 			// 构建分区详情对象
 			partitionDetailAttrs := map[string]attr.Value{
-				"topic_name":   types.StringValue(partition.TopicName),
+				"topic_name":   types.StringValue(*partition.TopicName),
 				"partition_id": types.Int32Value(partition.PartitionId),
 				"offsets":      offsetsObject,
 				"replicas":     replicaList,

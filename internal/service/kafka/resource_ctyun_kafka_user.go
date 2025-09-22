@@ -100,6 +100,9 @@ func (c *ctyunKafkaUser) Schema(_ context.Context, _ resource.SchemaRequest, res
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"password": schema.StringAttribute{
 				Required:    true,

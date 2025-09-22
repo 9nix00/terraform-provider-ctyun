@@ -97,6 +97,9 @@ func (c *ctyunKafkaAcl) Schema(_ context.Context, _ resource.SchemaRequest, resp
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"use_new_topic": schema.StringAttribute{
 				Optional:    true,
