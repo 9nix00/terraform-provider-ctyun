@@ -16,7 +16,8 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
-    series_type = "managedbase"
+    series_type = "%[7]s"
+    node_scale = %[8]d
   }
 
   slave_host = {

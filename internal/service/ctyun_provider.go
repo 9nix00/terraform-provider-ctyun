@@ -520,6 +520,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqExchange(),
 		rabbitmq.NewCtyunRabbitmqQueue(),
 		ccse.NewCtyunCcseNamespace(),
+		ccse.NewCtyunCcseScalingNodePoolPolicy(),
 	)
 }
 

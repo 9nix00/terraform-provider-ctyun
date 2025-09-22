@@ -110,6 +110,20 @@ resource "ctyun_ccse_cluster" "test" {
 
 locals {
   chart_name = "node-problem-detector"
+  chart_name2 = "cube-cluster-autoscaler"
+}
+
+data "ctyun_ccse_plugin_market" "autoscaler" {
+  chart_name = local.chart_name2
+  chart_version = "1.1.0"
+  values_type = "YAML"
+}
+
+resource "ctyun_ccse_plugin" "example1" {
+  cluster_id = ctyun_ccse_cluster.test.id
+  chart_name = local.chart_name2
+  chart_version = "1.1.0"
+  values_yaml = data.ctyun_ccse_plugin_market.autoscaler.values
 }
 
 data "ctyun_ccse_plugin_market" "test" {

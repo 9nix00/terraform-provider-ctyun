@@ -348,7 +348,7 @@ func (c *ctyunCcseNamespace) checkAfterDelete(ctx context.Context, plan CtyunCcs
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("插件卸载超时")
+		err = fmt.Errorf("命名空间删除超时")
 	}
 	return
 }

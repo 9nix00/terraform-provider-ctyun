@@ -130,6 +130,11 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 
 	clusterName := "tf-" + rnd
 	clusterSeries := "cce.managed"
+	seriesType := "managedbase"
+	nodeScale := 10
+
+	updatedSeriesType := "managedpro"
+	updatedNodeScale := 50
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -142,7 +147,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName),
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, seriesType, nodeScale),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
@@ -151,7 +156,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
@@ -166,7 +171,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Destroy: true,
 			},
@@ -174,6 +179,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 	})
 }
 
+//目前OpenAPI无法创建能自动访问对象存储的VPC
 //func TestAccCtyunClusterStandardEbm(t *testing.T) {
 //	t.Parallel()
 //	rnd := utils.GenerateRandomString()

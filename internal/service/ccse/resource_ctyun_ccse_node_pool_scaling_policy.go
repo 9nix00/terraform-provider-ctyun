@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -19,28 +18,27 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
-	"time"
 )
 
 var (
-	_ resource.Resource                = &ctyunCcseScaling{}
-	_ resource.ResourceWithConfigure   = &ctyunCcseScaling{}
-	_ resource.ResourceWithImportState = &ctyunCcseScaling{}
+	_ resource.Resource                = &ctyunCcseNodePoolScalingPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunCcseNodePoolScalingPolicy{}
+	_ resource.ResourceWithImportState = &ctyunCcseNodePoolScalingPolicy{}
 )
 
-type ctyunCcseScaling struct {
+type ctyunCcseNodePoolScalingPolicy struct {
 	meta *common.CtyunMetadata
 }
 
-func NewCtyunCcseScaling() resource.Resource {
-	return &ctyunCcseScaling{}
+func NewCtyunCcseScalingNodePoolPolicy() resource.Resource {
+	return &ctyunCcseNodePoolScalingPolicy{}
 }
 
-func (c *ctyunCcseScaling) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_ccse_scaling"
+func (c *ctyunCcseNodePoolScalingPolicy) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+	response.TypeName = request.ProviderTypeName + "_ccse_node_pool_scaling_policy"
 }
 
-type CtyunCcseScalingConfig struct {
+type CtyunCcseScalingNodePoolPolicyConfig struct {
 	ID           types.String `tfsdk:"id"`
 	ClusterID    types.String `tfsdk:"cluster_id"`
 	RegionID     types.String `tfsdk:"region_id"`
@@ -50,7 +48,7 @@ type CtyunCcseScalingConfig struct {
 	Name         types.String `tfsdk:"name"`
 }
 
-func (c *ctyunCcseScaling) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10269202**`,
 		Attributes: map[string]schema.Attribute{
@@ -92,9 +90,16 @@ func (c *ctyunCcseScaling) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Computed:    true,
 				Description: "实际配置(YAML格式)",
 			},
-			"node_pool_id": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Computed:    true,
-				Description: "节点池ID",
+				Description: "策略名称，为配置参数中的metadata.name",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"node_pool_name": schema.StringAttribute{
+				Computed:    true,
+				Description: "节点池名称",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -103,14 +108,14 @@ func (c *ctyunCcseScaling) Schema(_ context.Context, _ resource.SchemaRequest, r
 	}
 }
 
-func (c *ctyunCcseScaling) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var plan CtyunCcseScalingConfig
+	var plan CtyunCcseScalingNodePoolPolicyConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -134,14 +139,14 @@ func (c *ctyunCcseScaling) Create(ctx context.Context, request resource.CreateRe
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunCcseScaling) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunCcseScalingConfig
+	var state CtyunCcseScalingNodePoolPolicyConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -159,7 +164,7 @@ func (c *ctyunCcseScaling) Read(ctx context.Context, request resource.ReadReques
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunCcseScaling) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -167,13 +172,13 @@ func (c *ctyunCcseScaling) Update(ctx context.Context, request resource.UpdateRe
 		}
 	}()
 	// tf文件中的
-	var plan CtyunCcseScalingConfig
+	var plan CtyunCcseScalingNodePoolPolicyConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 	// state中的
-	var state CtyunCcseScalingConfig
+	var state CtyunCcseScalingNodePoolPolicyConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -193,14 +198,14 @@ func (c *ctyunCcseScaling) Update(ctx context.Context, request resource.UpdateRe
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunCcseScaling) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var state CtyunCcseScalingConfig
+	var state CtyunCcseScalingNodePoolPolicyConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -210,13 +215,9 @@ func (c *ctyunCcseScaling) Delete(ctx context.Context, request resource.DeleteRe
 	if err != nil {
 		return
 	}
-	err = c.checkAfterDelete(ctx, state)
-	if err != nil {
-		return
-	}
 }
 
-func (c *ctyunCcseScaling) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -225,20 +226,21 @@ func (c *ctyunCcseScaling) Configure(_ context.Context, request resource.Configu
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [name],[clusterID],[regionID]
-func (c *ctyunCcseScaling) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+func (c *ctyunCcseNodePoolScalingPolicy) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunCcseScalingConfig
-	var name, clusterID, regionID string
-	err = terraform_extend.Split(request.ID, &name, &clusterID, &regionID)
+	var cfg CtyunCcseScalingNodePoolPolicyConfig
+	var nodePoolName, clusterID, regionID string
+	err = terraform_extend.Split(request.ID, &nodePoolName, &clusterID, &regionID)
 	if err != nil {
 		return
 	}
-	cfg.Name = types.StringValue(name)
+	cfg.NodePoolName = types.StringValue(nodePoolName)
+	cfg.Name = types.StringValue(fmt.Sprintf("%s-%s", nodePoolName, clusterID))
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.ClusterID = types.StringValue(clusterID)
 	// 查询远端
@@ -250,7 +252,7 @@ func (c *ctyunCcseScaling) ImportState(ctx context.Context, request resource.Imp
 }
 
 // checkBeforeCreate 创建前检查
-func (c *ctyunCcseScaling) checkBeforeCreate(ctx context.Context, plan *CtyunCcseScalingConfig) (err error) {
+func (c *ctyunCcseNodePoolScalingPolicy) checkBeforeCreate(ctx context.Context, plan *CtyunCcseScalingNodePoolPolicyConfig) (err error) {
 	config, err := utils.ParseYamlValue(plan.ValuesYaml.ValueString(), "metadata.name")
 	if err != nil {
 		return
@@ -271,7 +273,7 @@ func (c *ctyunCcseScaling) checkBeforeCreate(ctx context.Context, plan *CtyunCcs
 }
 
 // create 创建
-func (c *ctyunCcseScaling) create(ctx context.Context, plan CtyunCcseScalingConfig) (err error) {
+func (c *ctyunCcseNodePoolScalingPolicy) create(ctx context.Context, plan CtyunCcseScalingNodePoolPolicyConfig) (err error) {
 	params := &ccse.CcseCreateClusterAutoscalerPolicyRequest{
 		ClusterId:           plan.ClusterID.ValueString(),
 		RegionId:            plan.RegionID.ValueString(),
@@ -289,7 +291,7 @@ func (c *ctyunCcseScaling) create(ctx context.Context, plan CtyunCcseScalingConf
 }
 
 // getAndMerge 从远端查询
-func (c *ctyunCcseScaling) getAndMerge(ctx context.Context, plan *CtyunCcseScalingConfig) (err error) {
+func (c *ctyunCcseNodePoolScalingPolicy) getAndMerge(ctx context.Context, plan *CtyunCcseScalingNodePoolPolicyConfig) (err error) {
 	if plan.NodePoolName.ValueString() == "" {
 		var config interface{}
 		config, err = utils.ParseYamlValue(plan.ValuesYaml.ValueString(), "metadata.name")
@@ -310,19 +312,19 @@ func (c *ctyunCcseScaling) getAndMerge(ctx context.Context, plan *CtyunCcseScali
 		return
 	}
 	plan.ActualConfig = types.StringValue(config)
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.Name.ValueString(), plan.ClusterID.ValueString(), plan.RegionID.ValueString()))
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.NodePoolName.ValueString(), plan.ClusterID.ValueString(), plan.RegionID.ValueString()))
 	return
 }
 
 // update 更新
-func (c *ctyunCcseScaling) update(ctx context.Context, plan, state *CtyunCcseScalingConfig) (err error) {
-	params := &ccse.CcseUpdateScalingV2P2Request{
-		ClusterName:         state.ClusterID.ValueString(),
-		ScalingName:         state.Scaling.ValueString(),
+func (c *ctyunCcseNodePoolScalingPolicy) update(ctx context.Context, plan, state *CtyunCcseScalingNodePoolPolicyConfig) (err error) {
+	params := &ccse.CcseUpdateClusterAutoscalerPolicyRequest{
+		ClusterId:           state.ClusterID.ValueString(),
+		Name:                state.Name.ValueString(),
 		RegionId:            state.RegionID.ValueString(),
 		TextPlainDataString: plan.ValuesYaml.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateScalingV2P2Api.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterAutoscalerPolicyApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
@@ -334,7 +336,7 @@ func (c *ctyunCcseScaling) update(ctx context.Context, plan, state *CtyunCcseSca
 }
 
 // delete 删除
-func (c *ctyunCcseScaling) delete(ctx context.Context, plan CtyunCcseScalingConfig) (err error) {
+func (c *ctyunCcseNodePoolScalingPolicy) delete(ctx context.Context, plan CtyunCcseScalingNodePoolPolicyConfig) (err error) {
 	params := &ccse.CcseDeleteClusterAutoscalerPolicyRequest{
 		ClusterId: plan.ClusterID.ValueString(),
 		Name:      plan.Name.ValueString(),
@@ -350,33 +352,8 @@ func (c *ctyunCcseScaling) delete(ctx context.Context, plan CtyunCcseScalingConf
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunCcseScaling) checkAfterDelete(ctx context.Context, plan CtyunCcseScalingConfig) (err error) {
-	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*5, 30)
-	retryer.Start(
-		func(currentTime int) bool {
-			_, err = c.getScaling(ctx, plan)
-			if err != nil {
-				if errors.Is(err, common.ResourceNotExistError) {
-					err = nil
-					executeSuccessFlag = true
-				}
-				return false
-			}
-			return true
-		})
-	if err != nil {
-		return
-	}
-	if !executeSuccessFlag {
-		err = fmt.Errorf("插件卸载超时")
-	}
-	return
-}
-
 // getScaling 查询弹性伸缩策略
-func (c *ctyunCcseScaling) getScaling(ctx context.Context, plan CtyunCcseScalingConfig) (script string, err error) {
+func (c *ctyunCcseNodePoolScalingPolicy) getScaling(ctx context.Context, plan CtyunCcseScalingNodePoolPolicyConfig) (script string, err error) {
 	params := &ccse.CcseGetClusterAutoscalerPolicyRequest{
 		ClusterId: plan.ClusterID.ValueString(),
 		Name:      plan.Name.ValueString(),
@@ -386,7 +363,7 @@ func (c *ctyunCcseScaling) getScaling(ctx context.Context, plan CtyunCcseScaling
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
-		if strings.Contains(resp.Message, "不存在") {
+		if strings.Contains(resp.Message, "not found") {
 			err = common.ResourceNotExistError
 		} else {
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)

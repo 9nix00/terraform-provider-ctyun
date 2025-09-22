@@ -553,6 +553,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"series_type": schema.StringAttribute{
 						Optional:    true,
+						Computed:    true,
 						Description: "托管版集群规格，托管版集群必填。支持managedbase（单实例），managedpro（多实例）。单/多实例指控制面是否高可用，生产环境建议使用多实例",
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.CcseSeriesTypeManagedbase, business.CcseSeriesTypeManagedpro),
@@ -561,12 +562,10 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue(business.CcseClusterSeriesManaged),
 							),
 						},
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplace(),
-						},
 					},
 					"node_scale": schema.Int32Attribute{
 						Optional:    true,
+						Computed:    true,
 						Description: "托管版集群节点规模。series_type=managedbase时，选择节点规模，可选10；series_type=managedpro时，选择节点规模，可选为50，200，1000，2000",
 						Validators: []validator.Int32{
 							int32validator.Any(
@@ -1267,12 +1266,16 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	switch instance.ClusterType {
 	case 0:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesStandard)
+		plan.BaseInfo.NodeScale = types.Int32Value(0)
+		plan.BaseInfo.SeriesType = types.StringValue("")
 	case 2:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesManaged)
 		plan.BaseInfo.NodeScale = types.Int32Value(utils.StringToInt32Must(instance.NodeScale))
 		plan.BaseInfo.SeriesType = types.StringValue(instance.SeriesType)
 	case 4:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesIcce)
+		plan.BaseInfo.NodeScale = types.Int32Value(0)
+		plan.BaseInfo.SeriesType = types.StringValue("")
 	}
 	plan.BaseInfo.StartPort = types.Int32Value(instance.StartPort)
 	plan.BaseInfo.EndPort = types.Int32Value(instance.EndPort)
