@@ -2,8 +2,10 @@ package ebs
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
@@ -60,7 +62,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"type": schema.StringAttribute{
 				Required:    true,
-				Description: "磁盘类型，sata：普通IO，sas：高IO，ssd：超高IO，ssd-genric：通用型SSD，fast-ssd：极速型SSD",
+				Description: "磁盘类型，sata：普通IO，sas：高IO，ssd：超高IO，ssd-genric：通用型SSD，fast-ssd：极速型SSD，不支持ISCSI模式；XSSD-0、XSSD-1、XSSD-2：X系列云硬盘，不支持加密，不支持ISCSI模式或FCSAN模式",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -172,6 +174,20 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraAzName, false),
+			},
+
+			"provisioned_iops": schema.Int64Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "XSSD类型云硬盘的预配置IOPS值，最小值为1，最大值计算公式为“min(单盘最大IOPS，500*容量) - 基础性能IOPS”。 其他类型磁盘不支持此参数 具体取值范围如下：\n\t●XSSD-0：（基础IOPS（min{1800+12×容量， 10000}） + 预配置IOPS） ≤ min{500×容量，100000}\n\t●XSSD-1：（基础IOPS（min{1800+50×容量， 50000}） + 预配置IOPS） ≤ min{500×容量，100000}\n\t●XSSD-2：（基础IOPS（min{3000+50×容量， 100000}） + 预配置IOPS） ≤ min{500×容量，1000000}  */  支持更新",
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
+			},
+			"delete_snap_with_ebs": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "设置快照是否随云硬盘删除，true表示随盘删除，false表示不随盘删除",
 			},
 		},
 	}
@@ -318,6 +334,26 @@ func (c *ctyunEbs) Update(ctx context.Context, request resource.UpdateRequest, r
 		return
 	}
 
+	// 如果有IOPS相关字段，需要在这里添加IOPS更新逻辑
+	if !plan.ProvisionedIops.Equal(state.ProvisionedIops) {
+		err := c.updateIops(ctx, plan, state)
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+			return
+		}
+		state.ProvisionedIops = plan.ProvisionedIops
+	}
+
+	// 如果删除策略字段变更，需要更新删除策略
+	if !plan.DeleteSnapWithEbs.Equal(state.DeleteSnapWithEbs) {
+		err := c.updateDeletePolicy(ctx, plan, state)
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+			return
+		}
+		state.DeleteSnapWithEbs = plan.DeleteSnapWithEbs
+	}
+
 	instance, ctyunRequestError := c.getAndMergeEbs(ctx, state)
 	if ctyunRequestError != nil {
 		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
@@ -326,6 +362,41 @@ func (c *ctyunEbs) Update(ctx context.Context, request resource.UpdateRequest, r
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
 }
 
+func (c *ctyunEbs) updateIops(ctx context.Context, plan, state CtyunEbsConfig) (err error) {
+	regionId := state.RegionId.ValueString()
+	resp, err := c.meta.Apis.SdkCtEbsApis.EbsUpdateIopsEbsApi.Do(ctx, c.meta.SdkCredential, &ctebs2.EbsUpdateIopsEbsRequest{
+		ProvisionedIops: int32(plan.ProvisionedIops.ValueInt64()),
+		DiskID:          state.Id.ValueString(),
+		RegionID:        &regionId,
+	})
+
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+
+	return
+}
+
+func (c *ctyunEbs) updateDeletePolicy(ctx context.Context, plan, state CtyunEbsConfig) (err error) {
+	regionId := state.RegionId.ValueString()
+	resp, err := c.meta.Apis.SdkCtEbsApis.EbsSetDeletePolicyEbsApi.Do(ctx, c.meta.SdkCredential, &ctebs2.EbsSetDeletePolicyEbsRequest{
+		RegionID:          regionId,
+		DiskID:            state.Id.ValueString(),
+		DeleteSnapWithEbs: plan.DeleteSnapWithEbs.ValueBool(),
+	})
+
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+
+	return
+}
 func (c *ctyunEbs) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var state CtyunEbsConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
@@ -446,21 +517,23 @@ func (c *ctyunEbs) acquireAndSetIdIfOrderNotFinished(ctx context.Context, state 
 }
 
 type CtyunEbsConfig struct {
-	Name          types.String `tfsdk:"name"`
-	Mode          types.String `tfsdk:"mode"`
-	Type          types.String `tfsdk:"type"`
-	Size          types.Int64  `tfsdk:"size"`
-	CycleType     types.String `tfsdk:"cycle_type"`
-	CycleCount    types.Int64  `tfsdk:"cycle_count"`
-	MasterOrderId types.String `tfsdk:"master_order_id"`
-	Id            types.String `tfsdk:"id"`          // 磁盘ID
-	Status        types.String `tfsdk:"status"`      // 云硬盘使用状态 deleting/creating/detaching，具体请参考云硬盘使用状态
-	ExpireTime    types.String `tfsdk:"expire_time"` // 过期时刻
-	CreateTime    types.String `tfsdk:"create_time"`
-	MultiAttach   types.Bool   `tfsdk:"multi_attach"` // 是否共享云硬盘
-	Encrypted     types.Bool   `tfsdk:"encrypted"`    // 是否加密盘
-	KmsUuid       types.String `tfsdk:"kms_uuid"`     // 加密盘密钥UUID，是加密盘时才返回
-	ProjectId     types.String `tfsdk:"project_id"`
-	RegionId      types.String `tfsdk:"region_id"`
-	AzName        types.String `tfsdk:"az_name"`
+	Name              types.String `tfsdk:"name"`
+	Mode              types.String `tfsdk:"mode"`
+	Type              types.String `tfsdk:"type"`
+	Size              types.Int64  `tfsdk:"size"`
+	CycleType         types.String `tfsdk:"cycle_type"`
+	CycleCount        types.Int64  `tfsdk:"cycle_count"`
+	MasterOrderId     types.String `tfsdk:"master_order_id"`
+	Id                types.String `tfsdk:"id"`          // 磁盘ID
+	Status            types.String `tfsdk:"status"`      // 云硬盘使用状态 deleting/creating/detaching，具体请参考云硬盘使用状态
+	ExpireTime        types.String `tfsdk:"expire_time"` // 过期时刻
+	CreateTime        types.String `tfsdk:"create_time"`
+	MultiAttach       types.Bool   `tfsdk:"multi_attach"` // 是否共享云硬盘
+	Encrypted         types.Bool   `tfsdk:"encrypted"`    // 是否加密盘
+	KmsUuid           types.String `tfsdk:"kms_uuid"`     // 加密盘密钥UUID，是加密盘时才返回
+	ProjectId         types.String `tfsdk:"project_id"`
+	RegionId          types.String `tfsdk:"region_id"`
+	AzName            types.String `tfsdk:"az_name"`
+	ProvisionedIops   types.Int64  `tfsdk:"provisioned_iops"` // 预配置IOPS值
+	DeleteSnapWithEbs types.Bool   `tfsdk:"delete_snap_with_ebs"`
 }
