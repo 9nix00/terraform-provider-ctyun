@@ -294,9 +294,6 @@ func (c *ctyunRedisInstanceWhitelist) checkAfterUpdate(ctx context.Context, plan
 			executeSuccessFlag = true
 			return false
 		})
-	if err != nil {
-		return
-	}
 	if !executeSuccessFlag {
 		err = fmt.Errorf("更新时间过长")
 	}

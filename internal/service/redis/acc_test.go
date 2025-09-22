@@ -59,7 +59,7 @@ func TestMain(m *testing.M) {
 
 	fmt.Println("开始清理依赖资源")
 	// 清理依赖资源
-	//terraform.DestroyResource(dependenceDir)
+	terraform.DestroyResource(dependenceDir)
 	fmt.Println("依赖资源清理完毕")
 
 	os.Exit(code)
