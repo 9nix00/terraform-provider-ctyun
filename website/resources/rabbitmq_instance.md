@@ -96,11 +96,6 @@ resource "ctyun_rabbitmq_instance" "test" {
 
 ### Read-Only
 
-- `actual_cycle_type` (String) 服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。
-- `create_time` (String) 创建时间，UTC格式
-- `endpoint` (String) 接入点
-- `expire_time` (String) 过期时间，UTC格式，按需时为空
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `name` (String) 名称
-- `ssl_endpoint` (String) SSL接入点
