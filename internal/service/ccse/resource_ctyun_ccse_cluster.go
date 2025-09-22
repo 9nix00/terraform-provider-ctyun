@@ -147,26 +147,44 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "名称",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "到期时间",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "主订单号",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"internal_kube_config": schema.StringAttribute{
 				Computed:    true,
 				Description: "内网连接信息",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"external_kube_config": schema.StringAttribute{
 				Computed:    true,
 				Description: "外网连接信息",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -221,6 +239,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Computed:    true,
 						Description: "安全组ID，需属于所选vpc。使用自定义安全组时，需要配置如下规则，参考<a href=\"https://www.ctyun.cn/document/10083472/10915714\">集群安全组规则配置</a>",
 						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
 							stringplanmodifier.RequiresReplace(),
 						},
 						Validators: []validator.String{
@@ -303,6 +322,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							validator2.Cidr(),
 						},
 						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
@@ -1248,8 +1268,8 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
 	plan.Name = types.StringValue(instance.ClusterName)
-	plan.CreateTime = types.StringValue(instance.CreatedTime)
-	plan.ExpireTime = types.StringValue(instance.ExpireTime)
+	plan.CreateTime = types.StringValue(utils.BeijingToUTCZ(instance.CreatedTime))
+	plan.ExpireTime = types.StringValue(utils.BeijingToUTCZ(instance.ExpireTime))
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)

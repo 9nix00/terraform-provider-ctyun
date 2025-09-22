@@ -77,7 +77,8 @@ resource "ctyun_ccse_cluster" "test" {
     deploy_type   = "single"
     kube_proxy    = "ipvs"
     cluster_series = "cce.managed"
-    series_type = "managedbase"
+    series_type = "managedpro"
+    node_scale = 50
   }
 
 

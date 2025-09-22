@@ -22,3 +22,14 @@ func ConvertToUTCZ(input string) string {
 	// 转换为UTC时区并格式化
 	return t.UTC().Format(time.RFC3339)
 }
+
+// BeijingToUTCZ 东八区转UTC
+func BeijingToUTCZ(input string) string {
+	// 解析输入时间
+	t, err := time.Parse(time.DateOnly+" "+time.TimeOnly, input)
+	if err != nil {
+		return ""
+	}
+	// 转换为UTC时区并格式化
+	return t.UTC().Format(time.RFC3339)
+}
