@@ -22,9 +22,9 @@ const (
 	RedisEditionClusterOriginalProxy    = "ClusterOriginalProxy"    // Proxy集群
 	RedisEditionOriginalMultipleReadLvs = "OriginalMultipleReadLvs" // 读写分离
 
-	RedisStatusRunning      = 0 // 运行中
-	RedisStatusUnsubscribed = 8 // 已退订
-
+	RedisStatusRunning          = 0 // 运行中
+	RedisStatusActivationFailed = 4 // 运行中
+	RedisStatusUnsubscribed     = 8 // 已退订
 )
 
 var RedisEngineVersion = []string{"5.0", "6.0", "7.0"}

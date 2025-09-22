@@ -22,7 +22,7 @@ func TestAccCtyunEip(t *testing.T) {
 	initName := "init"
 	initBandwidth := "2"
 	updatedName := "updated"
-	updatedBandwidth := "1"
+	updatedBandwidth := "3"
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

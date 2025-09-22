@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
@@ -428,6 +429,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseTemplateMarket(),
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
+		rabbitmq.NewCtyunRabbitmqVhosts(),
+		rabbitmq.NewCtyunRabbitmqExchanges(),
+		rabbitmq.NewCtyunRabbitmqQueues(),
 	)
 }
 
@@ -528,6 +532,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		kafka.NewCtyunKafkaTopic(),
 		kafka.NewCtyunKafkaUser(),
 		kafka.NewCtyunKafkaAcl(),
+		rabbitmq.NewCtyunRabbitmqVhost(),
+		rabbitmq.NewCtyunRabbitmqExchange(),
+		rabbitmq.NewCtyunRabbitmqQueue(),
 	)
 }
 
