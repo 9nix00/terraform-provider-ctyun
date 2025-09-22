@@ -77,7 +77,7 @@ resource "ctyun_rabbitmq_instance" "test" {
 
 ### Required
 
-- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需，支持更新。当此值为month时，cycle_count为必填
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum，支持更新
 - `disk_type` (String) 磁盘类型，通常支持SAS、SSD、FAST-SSD
 - `instance_name` (String) 实例名称，支持更新
