@@ -324,7 +324,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"password": schema.StringAttribute{
 				Required:    true,
-				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。支持更新",
+				Description: "实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.)中的三种类型。不能有空格。支持更新",
 				Sensitive:   true,
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(8, 26),
