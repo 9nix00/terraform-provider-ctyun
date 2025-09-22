@@ -16,7 +16,6 @@ import (
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
@@ -325,7 +324,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
-			SdkAmqpApis:     amqp.NewApis(client),
+			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
 			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
 			SdkMongodbApis:  mongodb2.NewApis(client),
