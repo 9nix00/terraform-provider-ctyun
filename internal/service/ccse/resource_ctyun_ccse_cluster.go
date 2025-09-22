@@ -1489,6 +1489,69 @@ func (c *ctyunCcseCluster) update(ctx context.Context, plan, state CtyunCcseClus
 	if err != nil {
 		return
 	}
+	err = c.updateClusterNetwork(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// updateClusterNetwork 更新网络配置
+func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	params := &ccse.CcseUpdateClusterRequest{
+		RegionId:  state.RegionID.ValueString(),
+		ClusterId: state.ID.ValueString(),
+	}
+	var hasChange bool
+	if !plan.BaseInfo.StartPort.Equal(state.BaseInfo.StartPort) {
+		params.StartPort = plan.BaseInfo.StartPort.ValueInt32()
+		hasChange = true
+	}
+	if !plan.BaseInfo.EndPort.Equal(state.BaseInfo.EndPort) {
+		params.EndPort = plan.BaseInfo.EndPort.ValueInt32()
+		hasChange = true
+	}
+	if !hasChange {
+		return nil
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterSeriesApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return c.checkAfterUpdateClusterNetwork(ctx, plan, state)
+}
+
+// checkAfterUpdateClusterNetwork 检查变更托管版规格
+func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ccse.CcseGetClusterReturnObjResponse
+			instance, err = c.ccseService.GetCcseInfo(ctx, state.ID.ValueString(), state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if instance.SeriesType != plan.BaseInfo.SeriesType.ValueString() ||
+				utils.StringToInt32Must(instance.NodeScale) != plan.BaseInfo.NodeScale.ValueInt32() {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("更新规格时间过长")
+		return
+	}
 	return
 }
 
