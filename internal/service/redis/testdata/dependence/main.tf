@@ -83,7 +83,7 @@ locals {
 }
 
 resource "ctyun_redis_instance" "test_redis_instance" {
-  instance_name = "test-redis-instance"
+  instance_name = "test-redis-instance3"
   engine_version = "7.0"
   edition = local.spec.series_code
   vpc_id = local.real_vpc_id
@@ -99,7 +99,7 @@ resource "ctyun_redis_instance" "test_redis_instance" {
 }
 
 resource "ctyun_redis_instance" "test_redis_instance2" {
-  instance_name = "test-redis-instance2"
+  instance_name = "test-redis-instance4"
   engine_version = "7.0"
   edition = local.spec.series_code
   vpc_id = local.real_vpc_id

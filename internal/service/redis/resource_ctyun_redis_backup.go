@@ -8,6 +8,7 @@ import (
 	ctgdcs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -63,6 +64,9 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -81,6 +85,9 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "备注信息，不超过128个字符",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(128),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -102,7 +109,7 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"ip_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "获取备份文件下载链接的输入参数：网络类型，可选值：publicIp(公网IP)、privateIp(私网IP)，默认为privateIp",
+				Description: "获取备份文件下载链接的输入参数：网络类型，可选值：publicIp(公网IP)、privateIp(私网IP)，默认为privateIp 支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("publicIp", "privateIp"),
 				},
@@ -343,7 +350,7 @@ func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBack
 
 	// 设置备份信息
 	plan.Name = types.StringValue(backupData.RestoreName)
-	plan.CreateTime = types.StringValue(backupData.CreateTime)
+	plan.CreateTime = types.StringValue(utils.FromLocalToUTCZ(backupData.CreateTime))
 	plan.Status = types.StringValue(backupData.Status)
 	plan.Type = types.Int32Value(backupData.RawType)
 	if backupData.Remark != "" {

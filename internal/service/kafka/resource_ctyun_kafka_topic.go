@@ -8,6 +8,8 @@ import (
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -146,6 +148,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"partition_num": schema.Int32Attribute{
 				Required:    true,
 				Description: "分区数，取值范围[1, min(100, 实例剩余分区数量)]，实例剩余分区数量=实例分区上限-所有主题分区数之和。支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"factor_num": schema.Int32Attribute{
 				Optional:    true,
@@ -153,22 +158,37 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 				PlanModifiers: []planmodifier.Int32{
 					int32planmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"partition_capacity": schema.Int32Attribute{
 				Optional:    true,
 				Description: "分区容量限制，单位GB，取值-1或范围[1, 100]。-1表示无限制，默认值-1。支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"retention_time": schema.Int32Attribute{
 				Optional:    true,
 				Description: "消息保留时长，单位毫秒，取值-1或范围[3600000, 315360000000]，单位毫秒，-1表示永久保留。 默认值259200000。支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"min_replicas": schema.Int32Attribute{
 				Optional:    true,
 				Description: "最小同步副本数，需小于等于factorNum，单机版默认值1，集群版默认值min(2, factorNum)。支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"max_message": schema.Int32Attribute{
 				Optional:    true,
 				Description: "最大消息大小，单位字节，取值范围[1, 10485760]， 默认值1048588。支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"need_flush": schema.BoolAttribute{
 				Optional:    true,
@@ -177,6 +197,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"timestamp_type": schema.StringAttribute{
 				Optional:    true,
 				Description: "消息时间戳类型。<br><li>CreateTime<br><li>LogAppendTime<br><li>默认值CreateTime 支持更新",
+				Validators: []validator.String{
+					stringvalidator.OneOf("CreateTime", "LogAppendTime"),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -192,6 +215,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"cleanup_policy": schema.StringAttribute{
 				Optional:    true,
 				Description: "日志保留策略。<br><li>delete<br><li>compact<br><li>默认值：delete。支持更新",
+				Validators: []validator.String{
+					stringvalidator.OneOf("delete", "compact"),
+				},
 			},
 			"unclean_leader_election_enable": schema.BoolAttribute{
 				Optional:    true,
@@ -200,10 +226,16 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"segment_ms": schema.Int64Attribute{
 				Optional:    true,
 				Description: "日志滚动时间，单位ms。 取值范围[86400000, 7776000000]，默认值：259200000 支持更新",
+				Validators: []validator.Int64{
+					int64validator.Between(86400000, 7776000000),
+				},
 			},
 			"segment_bytes": schema.Int64Attribute{
 				Optional:    true,
 				Description: "分片大小，单位byte。 取值范围[268435456, 10737418240]，默认值：1073741824 支持更新",
+				Validators: []validator.Int64{
+					int64validator.Between(268435456, 10737418240),
+				},
 			},
 			"remote_storage_enable": schema.BoolAttribute{
 				Optional:    true,
@@ -212,6 +244,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 			"local_retention_ms": schema.Int64Attribute{
 				Optional:    true,
 				Description: "本地保留时长，单位ms。 取值范围[180000, 315360000000] 支持更新",
+				Validators: []validator.Int64{
+					int64validator.Between(180000, 315360000000),
+				},
 			},
 
 			"group_subscribed": schema.ListAttribute{

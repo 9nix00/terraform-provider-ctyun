@@ -109,7 +109,7 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 			},
 			"operate_type": schema.Int32Attribute{
 				Optional:    true,
-				Description: "操作类型，可选值：2：结束运行中的任务，3：删除成功或者失败的任务记录",
+				Description: "操作类型，可选值：2：结束运行中的任务，3：删除成功或者失败的任务记录 支持更新",
 				Validators: []validator.Int32{
 					int32validator.OneOf(2, 3),
 				},
@@ -130,12 +130,18 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"ip_addr": schema.StringAttribute{
 						Required:    true,
 						Description: "连接地址",
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
 						},
 					},
 					"original_cluster": schema.BoolAttribute{
@@ -148,6 +154,9 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"password": schema.StringAttribute{
 						Required:    true,
@@ -156,6 +165,9 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
 						Sensitive: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 				},
 				Required:    true,
@@ -169,12 +181,18 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"ip_addr": schema.StringAttribute{
 						Required:    true,
 						Description: "连接地址",
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
+						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
 						},
 					},
 					"original_cluster": schema.BoolAttribute{
@@ -187,6 +205,9 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 						Validators: []validator.String{
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 					"password": schema.StringAttribute{
 						Required:    true,
@@ -195,6 +216,9 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 							stringvalidator.UTF8LengthAtLeast(1),
 						},
 						Sensitive: true,
+						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.RequiresReplace(),
+						},
 					},
 				},
 				Required:    true,

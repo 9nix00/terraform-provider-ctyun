@@ -40,3 +40,20 @@ func ConvertToUTCZ(input string) string {
 	// 转换为UTC时区并格式化
 	return t.UTC().Format(time.RFC3339)
 }
+
+// FromLocalToUTCZ 将本地时间格式(yyyy-MM-dd HH:mm:ss)转换为UTC时间格式(yyyy-MM-ddTHH:mm:ssZ)
+// input: 输入时间字符串，如"2022-08-20 11:53:51"
+// 返回值: 转换后的UTC时间字符串，如"2022-08-20T11:53:51Z"
+func FromLocalToUTCZ(input string) string {
+	// 定义输入时间格式
+	const inputLayout = "2006-01-02 15:04:05"
+
+	// 解析输入时间
+	t, err := time.Parse(inputLayout, input)
+	if err != nil {
+		return ""
+	}
+
+	// 转换为UTC时区并格式化为RFC3339格式
+	return t.UTC().Format(time.RFC3339)
+}

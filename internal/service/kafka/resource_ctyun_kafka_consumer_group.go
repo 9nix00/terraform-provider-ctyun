@@ -9,6 +9,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -148,6 +149,9 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 					"time": schema.Int64Attribute{
 						Optional:    true,
 						Description: "重置时间点毫秒时间戳，type=1时必填 支持更新",
+						Validators: []validator.Int64{
+							int64validator.AtLeast(1),
+						},
 					},
 					"partition_shift_list": schema.ListNestedAttribute{
 						Optional:    true,
@@ -157,10 +161,16 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 								"partition": schema.Int32Attribute{
 									Optional:    true,
 									Description: "主题分区号 支持更新",
+									Validators: []validator.Int32{
+										int32validator.AtLeast(1),
+									},
 								},
 								"shift_by": schema.Int64Attribute{
 									Optional:    true,
 									Description: "主题分区消费位点向左或向右移动的相对位置，例如当前offset是1000，当shiftBy=-10重置后offset=990，当shiftBy=10重置后offset=1010。支持更新",
+									Validators: []validator.Int64{
+										int64validator.AtLeast(1),
+									},
 								},
 							},
 						},

@@ -62,7 +62,7 @@ func TestAccCtyunRedisBackups(t *testing.T) {
 					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, name), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"id"},
+				ImportStateVerifyIgnore: []string{"id", "download_urls"},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, prodInstId) +

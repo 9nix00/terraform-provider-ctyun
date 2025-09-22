@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -84,10 +85,7 @@ func (c *ctyunRedisParamTemplate) Schema(_ context.Context, _ resource.SchemaReq
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "参数模板名称",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				Description: "参数模板名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
@@ -95,22 +93,28 @@ func (c *ctyunRedisParamTemplate) Schema(_ context.Context, _ resource.SchemaReq
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "参数模板描述",
+				Description: "参数模板描述 支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"cache_mode": schema.StringAttribute{
 				Required:    true,
 				Description: "适合的实例架构版本 ORIGINAL_67：Redis 6.0/7.0类型 ORIGINAL_5：Redis 5.0类型 CLASSIC：经典版",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 				Validators: []validator.String{
 					stringvalidator.OneOf("ORIGINAL_67", "ORIGINAL_5", "CLASSIC"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"sys_template": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "是否为系统模板 true：系统模板 false：自定义模板",
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"params": schema.SetNestedAttribute{
 				Description: "输入的参数列表",
@@ -121,10 +125,19 @@ func (c *ctyunRedisParamTemplate) Schema(_ context.Context, _ resource.SchemaReq
 						"param_name": schema.StringAttribute{
 							Required:    true,
 							Description: "参数名称",
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"current_value": schema.StringAttribute{
 							Required:    true,
-							Description: "目标值",
+							Description: "目标值 支持更新",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},
@@ -356,7 +369,7 @@ func (c *ctyunRedisParamTemplate) updateParamTemplate(ctx context.Context, plan,
 		Id:          state.ID.ValueString(),
 		Name:        plan.Name.ValueString(),
 		Description: plan.Description.ValueString(),
-		CacheMode:   plan.CacheMode.ValueString(),
+		CacheMode:   state.CacheMode.ValueString(),
 		SysTemplate: plan.SysTemplate.ValueBoolPointer(),
 	}
 
