@@ -193,32 +193,32 @@ func (c *ctyunPrivateNats) Read(ctx context.Context, request datasource.ReadRequ
 	} else if resp.StatusCode != 800 {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
 
-	// 解析返回值
+	// 解析返回值，即使ReturnObj为nil也要正确处理
 	var nats []CtyunPrivateNatsModel
-	for _, natObj := range resp.ReturnObj {
-		natItem := CtyunPrivateNatsModel{
-			ID:           types.StringValue(natObj.NatGatewayID),
-			Name:         types.StringValue(natObj.Name),
-			Description:  types.StringValue(natObj.Description),
-			VpcID:        types.StringValue(natObj.VpcID),
-			SubnetID:     types.StringValue(natObj.SubnetID),
-			SubnetName:   types.StringValue(natObj.SubnetName),
-			NatGatewayID: types.StringValue(natObj.NatGatewayID),
-			State:        types.StringValue(natObj.State),
-			Spec:         types.StringValue(natObj.Spec),
-			VpcName:      types.StringValue(natObj.VpcName),
-			ProjectID:    types.StringValue(natObj.ProjectID),
-			ProjectName:  types.StringValue(natObj.ProjectName),
-			AzID:         types.StringValue(natObj.AzID),
-			CreateDate:   types.StringValue(natObj.CreateDate),
+	if resp.ReturnObj != nil {
+		for _, natObj := range resp.ReturnObj {
+			natItem := CtyunPrivateNatsModel{
+				ID:           types.StringValue(natObj.NatGatewayID),
+				Name:         types.StringValue(natObj.Name),
+				Description:  types.StringValue(natObj.Description),
+				VpcID:        types.StringValue(natObj.VpcID),
+				SubnetID:     types.StringValue(natObj.SubnetID),
+				SubnetName:   types.StringValue(natObj.SubnetName),
+				NatGatewayID: types.StringValue(natObj.NatGatewayID),
+				State:        types.StringValue(natObj.State),
+				Spec:         types.StringValue(natObj.Spec),
+				VpcName:      types.StringValue(natObj.VpcName),
+				ProjectID:    types.StringValue(natObj.ProjectID),
+				ProjectName:  types.StringValue(natObj.ProjectName),
+				AzID:         types.StringValue(natObj.AzID),
+				CreateDate:   types.StringValue(natObj.CreateDate),
+			}
+			nats = append(nats, natItem)
 		}
-		nats = append(nats, natItem)
 	}
+
 	config.RegionID = types.StringValue(regionId)
 	config.Nats = nats
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)

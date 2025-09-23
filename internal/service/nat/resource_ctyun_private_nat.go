@@ -213,41 +213,16 @@ func (c *ctyunPrivateNat) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-	// 创建NAT
-	returnObj, createParams, err := c.createNat(ctx, &plan)
+	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
-
-	// 保存订单号
-	masterOrderId := returnObj.MasterOrderID
-	plan.MasterOrderID = types.StringValue(masterOrderId)
-	//response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	//if response.Diagnostics.HasError() {
-	//	return
-	//}
-
-	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
-
-	if err != nil {
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
 		return
-	} else if loopResponse == nil {
-		err = common.InvalidReturnObjError
-		return
-	} else if loopResponse.MasterOrderId.ValueString() != masterOrderId {
-		err = fmt.Errorf("创建nat时订单ID和轮询订单ID不一致，创建时订单ID：%s, 轮询所得订单ID：%s", masterOrderId, loopResponse.MasterOrderId)
-	} else if loopResponse.RegionID.ValueString() != plan.RegionID.ValueString() {
-		err = fmt.Errorf("创建nat时regionId和轮询结果regionId不一致，计划的regionId：%s, 轮询所得regionId：%s", plan.RegionID.ValueString(), loopResponse.RegionID.ValueString())
 	}
 
-	//plan.NatGatewayID = types.StringValue(loop.Uuid[0])
-	if !loopResponse.NatGatewayId.IsNull() {
-		plan.NatGatewayID = loopResponse.NatGatewayId
-	}
-
-	plan.ProjectID = utils.SecStringValue(&createParams.ProjectID)
-
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -256,7 +231,7 @@ func (c *ctyunPrivateNat) Create(ctx context.Context, request resource.CreateReq
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -343,36 +318,13 @@ func (c *ctyunPrivateNat) Delete(ctx context.Context, request resource.DeleteReq
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-
 	// 获取state
 	var state CtyunPrivateNatConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-	resp, err := c.meta.Apis.SdkCtNatApis.CtnatDeletePrivatenatApi.Do(ctx, c.meta.SdkCredential, &ctnat.CtnatDeletePrivatenatRequest{
-		RegionID:     state.RegionID.ValueString(),
-		NatGatewayID: state.NatGatewayID.ValueString(),
-		ClientToken:  uuid.NewString(),
-	})
-	if err != nil {
-		return
-	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	// 根据返回值判断一下是否状态为退订状态(refunded)
-	if len(*resp.ReturnObj.MasterResourceStatus) > 0 {
-		// 若MasterResourceStatus不为空
-		if !(*resp.ReturnObj.MasterResourceStatus == business.NatStatusRefunded) {
-			err = fmt.Errorf("NatGatewayID :%s delete failed, MasterResourceStatus: %s", state.NatGatewayID, *resp.ReturnObj.MasterResourceStatus)
-		}
-	}
-	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
-	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	err = c.delete(ctx, &state)
 	if err != nil {
 		return
 	}
@@ -400,6 +352,38 @@ func (c *ctyunPrivateNat) checkBeforeCreateNat(ctx context.Context, plan CtyunPr
 	return nil
 }
 
+func (c *ctyunPrivateNat) create(ctx context.Context, plan *CtyunPrivateNatConfig) (err error) {
+	// 创建NAT
+	returnObj, createParams, err := c.createNat(ctx, plan)
+	if err != nil {
+		return
+	}
+
+	// 保存订单号
+	masterOrderId := returnObj.MasterOrderID
+	plan.MasterOrderID = types.StringValue(masterOrderId)
+
+	loopResponse, err := c.OrderLoop(ctx, createParams, 600)
+
+	if err != nil {
+		return
+	} else if loopResponse == nil {
+		err = common.InvalidReturnObjError
+		return
+	} else if loopResponse.MasterOrderId.ValueString() != masterOrderId {
+		err = fmt.Errorf("创建nat时订单ID和轮询订单ID不一致，创建时订单ID：%s, 轮询所得订单ID：%s", masterOrderId, loopResponse.MasterOrderId)
+	} else if loopResponse.RegionID.ValueString() != plan.RegionID.ValueString() {
+		err = fmt.Errorf("创建nat时regionId和轮询结果regionId不一致，计划的regionId：%s, 轮询所得regionId：%s", plan.RegionID.ValueString(), loopResponse.RegionID.ValueString())
+	}
+
+	//plan.NatGatewayID = types.StringValue(loop.Uuid[0])
+	if !loopResponse.NatGatewayId.IsNull() {
+		plan.NatGatewayID = loopResponse.NatGatewayId
+	}
+
+	plan.ProjectID = utils.SecStringValue(&createParams.ProjectID)
+	return
+}
 func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatConfig) (returnObj ctnat.CtnatCreatePrivatenatReturnObjResponse, createParams *ctnat.CtnatCreatePrivatenatRequest, err error) {
 	regionID := plan.RegionID.ValueString()
 	vpcID := plan.VpcID.ValueString()
@@ -451,6 +435,7 @@ func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatCo
 
 func (c *ctyunPrivateNat) getAndMergeNat(ctx context.Context, cfg *CtyunPrivateNatConfig) (err error) {
 	cfg.ID = cfg.NatGatewayID
+
 	//查看nat详情： ctnat_list_privatenat_api.go
 	params := &ctnat.CtnatListPrivatenatRequest{
 		RegionID:     cfg.RegionID.ValueString(),
@@ -538,6 +523,7 @@ func (c *ctyunPrivateNat) modifyNatSpec(ctx context.Context, state CtyunPrivateN
 }
 
 func (c *ctyunPrivateNat) updateNatInfo(ctx context.Context, state CtyunPrivateNatConfig, plan CtyunPrivateNatConfig) (err error) {
+
 	if plan.Name.Equal(state.Name) && plan.Description.Equal(state.Description) {
 		return
 	}
@@ -673,6 +659,34 @@ func (c *ctyunPrivateNat) OrderLoop(ctx context.Context, params *ctnat.CtnatCrea
 	return
 }
 
+func (c *ctyunPrivateNat) delete(ctx context.Context, state *CtyunPrivateNatConfig) (err error) {
+
+	resp, err := c.meta.Apis.SdkCtNatApis.CtnatDeletePrivatenatApi.Do(ctx, c.meta.SdkCredential, &ctnat.CtnatDeletePrivatenatRequest{
+		RegionID:     state.RegionID.ValueString(),
+		NatGatewayID: state.NatGatewayID.ValueString(),
+		ClientToken:  uuid.NewString(),
+	})
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	// 根据返回值判断一下是否状态为退订状态(refunded)
+	if len(*resp.ReturnObj.MasterResourceStatus) > 0 {
+		// 若MasterResourceStatus不为空
+		if !(*resp.ReturnObj.MasterResourceStatus == business.NatStatusRefunded) {
+			err = fmt.Errorf("NatGatewayID :%s delete failed, MasterResourceStatus: %s", state.NatGatewayID, *resp.ReturnObj.MasterResourceStatus)
+		}
+	}
+	helper := business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
+	err = helper.RefundLoop(ctx, c.meta.Credential, *resp.ReturnObj.MasterOrderID)
+	return
+}
+
 type CtyunPrivateNatConfig struct {
 	ID              types.String `tfsdk:"id"`
 	RegionID        types.String `tfsdk:"region_id"`         //区域id
@@ -691,6 +705,7 @@ type CtyunPrivateNatConfig struct {
 	NatGatewayID    types.String `tfsdk:"nat_gateway_id"`    //网关 ID
 	VpcName         types.String `tfsdk:"vpc_name"`          //NAT所属的专有网络名字
 	CreationTime    types.String `tfsdk:"create_time"`       //NAT网关的创建时间
+
 }
 
 type LoopOrderPrivateResponse struct {

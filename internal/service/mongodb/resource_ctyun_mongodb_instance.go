@@ -454,6 +454,10 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if err != nil {
 		return
 	}
+	err = c.updateMongodbRootPassword(ctx, &state, &plan)
+	if err != nil {
+		return
+	}
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeMongodbInstance(ctx, &state)
 	if err != nil {
@@ -2346,6 +2350,10 @@ func (c *CtyunMongodbInstance) afterUpdateSpecLoop(ctx context.Context, state *C
 		return errors.New("轮询已达最大次数，实例更新后仍未进入更新状态！")
 	}
 	return nil
+}
+
+func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, c2 *CtyunMongodbInstanceConfig, c3 *CtyunMongodbInstanceConfig) (err error) {
+	return
 }
 
 type CtyunMongodbInstanceConfig struct {
