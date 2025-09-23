@@ -148,7 +148,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `backup_storage_space` (Number) 备份存储空间(单位:G，范围100,32768)，若storage_space和backup_storage_space都不为空，优先升配备份节点存储空间，支持更新
 - `backup_storage_type` (String) 备份空间磁盘存储类型：SSD=超高IO、SATA=普通IO、SAS=高IO
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
-- `password` (String, Sensitive) 实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。RSA加密存储
+- `password` (String, Sensitive) 实例密码，密码为8-26位，需为字母、数字和特殊字符~!@#$%^*_-+{[]}:,.?/的组合，区分大小写
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 - `running_control` (String) 控制是否暂停，启用和重启实例，支持更新，取值范围：freeze, unfreeze, restart

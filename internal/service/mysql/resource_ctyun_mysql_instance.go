@@ -172,9 +172,15 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "实例密码为8-26位，需为字母、数字和特殊字符~!@#%^*_-+:,.?/{[]}的组合，区分大小写。RSA加密存储",
+				Description: "实例密码，密码为8-26位，需为字母、数字和特殊字符~!@#$%^*_-+{[]}:,.?/的组合，区分大小写",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(8, 26),
+					validator2.DBPassword(
+						8,
+						26,
+						3,
+						"MYSQL",
+						"~!@#$%^*_-+{[]}:,.?/",
+					),
 				},
 			},
 			"prod_id": schema.StringAttribute{
