@@ -74,7 +74,7 @@ variable "password" {
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mongodb_specs查询支持的规格。支持更新
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符），支持更新。
-- `password` (String, Sensitive) 实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储
+- `password` (String, Sensitive) 实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+
 - `prod_id` (String) 产品id，开通时用于确定开通单机/集群版/副本集和版本，支持更新。取值范围包括：Single34（3.4单机版）,Single40（4.0单机版）,Replica3R34（3.4副本集三副本）,Replica3R40（4.0副本集三副本）,Replica5R34（3.4副本集五副本）,Replica5R40（4.0副本集五副本）,Replica7R34（3.4副本集七副本）,Replica7R40（4.0副本集七副本）,Cluster34（3.4集群版）,Cluster40（4.0集群版）,Single42（4.2单机版）,Replica3R42（4.2副本集三副本）,Replica5R42（4.2副本集五副本）,Replica7R42（4.2副本集七副本）,Cluster42（4.2集群版）,Single50（5.0单机版）,Replica3R50（5.0副本集三副本）,Replica5R50（5.0副本集五副本）,Replica7R50（5.0副本集七副本）,Cluster50（5.0集群版）,Cluster60（6.0集群版）,Replica3R60（6.0副本集三副本）,Replica5R60（6.0副本集五副本）,Replica7R60（6.0副本集七副本）,Single60（6.0单机版）
 - `security_group_id` (String) 安全组Id
 - `subnet_id` (String) 子网Id
