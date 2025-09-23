@@ -888,6 +888,32 @@ func (c *ctyunRedisInstance) getByName(ctx context.Context, plan CtyunRedisInsta
 	return
 }
 
+// getCycleByName 根据名称查询回收站
+func (c *ctyunRedisInstance) getCycleByName(ctx context.Context, plan CtyunRedisInstanceConfig) (instance *dcs2.Dcs2DescribeCycleBinInstancesReturnObjRowsResponse, err error) {
+	params := &dcs2.Dcs2DescribeCycleBinInstancesRequest{
+		RegionId:     plan.RegionID.ValueString(),
+		ProjectId:    plan.ProjectID.ValueString(),
+		InstanceName: plan.InstanceName.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeCycleBinInstancesApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	if len(resp.ReturnObj.Rows) > 0 {
+		instance = resp.ReturnObj.Rows[0]
+		if instance == nil {
+			err = common.InvalidReturnObjResultsError
+		}
+	}
+	return
+}
+
 // checkAfterCreate 创建后检查
 func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRedisInstanceConfig) (id string, err error) {
 	var executeSuccessFlag bool
@@ -897,6 +923,11 @@ func (c *ctyunRedisInstance) checkAfterCreate(ctx context.Context, plan CtyunRed
 			var instance *dcs2.Dcs2DescribeInstancesReturnObjRowsResponse
 			instance, err = c.getByName(ctx, plan)
 			if err != nil {
+				return false
+			}
+			// 确认失败了
+			if instance != nil && instance.Status == business.RedisStatusActivationFailed {
+				err = fmt.Errorf("%s 开通失败", plan.Name.ValueString())
 				return false
 			}
 			if instance == nil || instance.Status != business.RedisStatusRunning || instance.ProdInstId == "" {
@@ -948,12 +979,12 @@ func (c *ctyunRedisInstance) checkAfterDestroy(ctx context.Context, plan CtyunRe
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var instance *dcs2.Dcs2DescribeInstancesReturnObjRowsResponse
-			instance, err = c.getByName(ctx, plan)
+			var instance *dcs2.Dcs2DescribeCycleBinInstancesReturnObjRowsResponse
+			instance, err = c.getCycleByName(ctx, plan)
 			if err != nil {
 				return false
 			}
-			if instance == nil {
+			if instance != nil {
 				return true
 			}
 			executeSuccessFlag = true

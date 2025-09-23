@@ -1,6 +1,7 @@
 package common
 
 import (
+	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
@@ -88,7 +89,8 @@ type Apis struct {
 	SdkCtPgsqlApis  *pgsql.Apis
 	SdkKafkaApis    *ctgkafka.Apis
 	SdkMongodbApis  *mongodb.Apis
-	SdkAmqpApis     *amqp.Apis
+	AmqpApis        *amqp.Apis
+	SdkAmqpApis     *amqp2.Apis
 	SdkCrsApis      *crs.Apis
 	SdkHpfsApis     *hpfs.Apis
 	SdkScalingApis  *scaling.Apis

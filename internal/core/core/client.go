@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"strconv"
@@ -24,8 +25,12 @@ func ClientConfigForTest() *CtyunClientConfig {
 			PrintLogHttpHook{},
 		},
 		Client: &http.Client{
-			Transport: &http.Transport{},
-			Timeout:   0,
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			},
+			Timeout: 0,
 		},
 	}
 }

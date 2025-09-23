@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
@@ -329,7 +330,8 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
-			SdkAmqpApis:     amqp.NewApis(client),
+			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
+			AmqpApis:        amqp.NewApis(client),
 			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
 			SdkMongodbApis:  mongodb2.NewApis(client),
@@ -431,6 +433,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		nat.NewCtyunPrivateNatCidrs(),
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
+		rabbitmq.NewCtyunRabbitmqVhosts(),
+		rabbitmq.NewCtyunRabbitmqExchanges(),
+		rabbitmq.NewCtyunRabbitmqQueues(),
 	)
 }
 
@@ -534,6 +539,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mongodb.NewCtyunMongodbWhiteList(),
 		mongodb.NewCtyunMongodbBackupResource(),
 		mongodb.NewCtyunMongodbParamTemplateResource(),
+		rabbitmq.NewCtyunRabbitmqVhost(),
+		rabbitmq.NewCtyunRabbitmqExchange(),
+		rabbitmq.NewCtyunRabbitmqQueue(),
 	)
 }
 

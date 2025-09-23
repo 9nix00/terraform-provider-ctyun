@@ -32,3 +32,4 @@ const (
 
 var InvalidReturnObjError = errors.New("invalid return object")
 var InvalidReturnObjResultsError = errors.New("invalid result object results")
+var ResourceNotExistError = errors.New("resource not exist")
