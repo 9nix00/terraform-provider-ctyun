@@ -66,8 +66,8 @@ resource "ctyun_ccse_cluster" "test" {
     cluster_name = local.cluster_name
     cluster_domain = "www.ctyun.com"
     network_plugin = "cubecni"
-    start_port = 30000
-    end_port   = 65535
+    start_port = 20106
+    end_port   = 32767
     elb_prod_code = "standardI"
     pod_subnet_id_list = [local.real_subnet_id]
     cycle_type  = "on_demand"

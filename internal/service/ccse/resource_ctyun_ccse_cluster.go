@@ -23,7 +23,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -278,22 +277,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"start_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务开始端口，可选范围30000-65535",
+						Description: "节点服务开始端口，可选范围20106-32767，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(30000, 65535),
-						},
-						PlanModifiers: []planmodifier.Int32{
-							int32planmodifier.RequiresReplace(),
+							int32validator.Between(20106, 32767),
 						},
 					},
 					"end_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务终止端口，可选范围30000-65535，startPort到endPort范围需大于20",
+						Description: "节点服务终止端口，可选范围20106-32767，startPort到endPort范围需大于20，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(30000, 65535),
-						},
-						PlanModifiers: []planmodifier.Int32{
-							int32planmodifier.RequiresReplace(),
+							int32validator.Between(20106, 32767),
 						},
 					},
 					"elb_prod_code": schema.StringAttribute{
@@ -348,9 +341,6 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue(business.CcsePluginCubecni),
 							),
 							setvalidator.SizeAtMost(10),
-						},
-						PlanModifiers: []planmodifier.Set{
-							setplanmodifier.RequiresReplace(),
 						},
 					},
 					"enable_api_server_eip": schema.BoolAttribute{
@@ -1511,10 +1501,11 @@ func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state
 		params.EndPort = plan.BaseInfo.EndPort.ValueInt32()
 		hasChange = true
 	}
+
 	if !hasChange {
 		return nil
 	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterSeriesApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
@@ -1528,7 +1519,7 @@ func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state
 }
 
 // checkAfterUpdateClusterNetwork 检查变更托管版规格
-func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+func (c *ctyunCcseCluster) checkAfterUpdateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
@@ -1538,8 +1529,10 @@ func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state
 			if err != nil {
 				return false
 			}
-			if instance.SeriesType != plan.BaseInfo.SeriesType.ValueString() ||
-				utils.StringToInt32Must(instance.NodeScale) != plan.BaseInfo.NodeScale.ValueInt32() {
+			if instance.StartPort != plan.BaseInfo.StartPort.ValueInt32() {
+				return true
+			}
+			if instance.EndPort != plan.BaseInfo.EndPort.ValueInt32() {
 				return true
 			}
 			executeSuccessFlag = true
@@ -1549,7 +1542,7 @@ func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("更新规格时间过长")
+		err = fmt.Errorf("更新集群时间过长")
 		return
 	}
 	return
