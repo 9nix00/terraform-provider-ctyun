@@ -199,9 +199,6 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 32),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			// 订购选项
 			"cycle_count": schema.Int32Attribute{
@@ -441,6 +438,12 @@ func (c *CtyunPostgresqlInstance) Update(ctx context.Context, request resource.U
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	if !plan.Password.Equal(state.Password) {
+		err = fmt.Errorf("数据库密码暂时不支持修改")
+		return
+	}
+
 	// flavor转换host_type, spec和OsType, CpuType
 	err = c.checkSpec(ctx, &plan)
 	// 变配开始

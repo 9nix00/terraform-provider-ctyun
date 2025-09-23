@@ -178,9 +178,6 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					stringvalidator.LengthBetween(8, 32),
 					validator2.MongodbPassword(),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
@@ -445,6 +442,12 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	if !plan.Password.Equal(state.Password) {
+		err = fmt.Errorf("数据库密码暂时不支持修改")
+		return
+	}
+
 	// 通过flavor_name获取cpu，memory等规格信息
 	err = c.checkSpec(ctx, &plan)
 	if err != nil {

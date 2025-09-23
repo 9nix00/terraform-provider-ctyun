@@ -176,9 +176,6 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 26),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
@@ -428,7 +425,6 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 		}
 	}()
 	// 读取tf文件中配置
-
 	var plan CtyunMysqlInstanceConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
@@ -441,6 +437,13 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	if !plan.Password.Equal(state.Password) {
+		err = fmt.Errorf("数据库密码暂时不支持修改")
+		return
+	}
+
+	// 校验规格
 	err = c.checkSpec(ctx, &plan)
 	if err != nil {
 		return
