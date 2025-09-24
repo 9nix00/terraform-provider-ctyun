@@ -19,8 +19,8 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_instances" "tbidgqvfbs" {
-  instance_name = "123"
+data "ctyun_kafka_instances" "test" {
+  instance_name = "KAFKA-mdw7fx"
 }
 ```
 
@@ -49,16 +49,11 @@ Read-Only:
 - `disk_type` (String) 磁盘类型
 - `enable_ipv6` (Boolean) 是否启用IPv6，默认为false
 - `engine_version` (String) 实例引擎版本
-- `http_port` (Number) HTTP接入点端口，范围在8000到9100之间，默认为8082
 - `id` (String) 实例id
 - `instance_name` (String) 实例名称
 - `node_num` (Number) 节点数。单机版为1个，集群版3~50个
-- `plain_port` (Number) 公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090
 - `project_id` (String) 企业项目
-- `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
-- `security_group_id` (String) 安全组ID
 - `spec_name` (String) 实例的规格类型
-- `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。
 - `status` (Number) 状态
 - `status_desc` (String) 状态描述
 - `subnet_id` (String) 子网ID

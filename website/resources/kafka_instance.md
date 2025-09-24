@@ -41,10 +41,10 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 ### Required
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
-- `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新
+- `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新，不支持缩容
 - `disk_type` (String) 磁盘类型，建议使用ctyun_kafka_specs查看，通常支持SAS、SSD、FAST-SSD
 - `instance_name` (String) 实例名称，长度4~40个字符，大小写字母开头，只能包含大小写字母、数字及分隔符(-)，大小写字母或数字结尾，实例名称不可重复，支持更新
-- `node_num` (Number) 节点数。单机版为1个，集群版3~50个，支持更新
+- `node_num` (Number) 节点数。单机版为1个，集群版3~50个，支持更新，不支持缩容
 - `security_group_id` (String) 安全组ID
 - `spec_name` (String) 实例的规格类型，建议使用ctyun_kafka_specs查看，也可查看<a href="https://www.ctyun.cn/document/10029624/10030704">产品规格说明</a>，支持更新
 - `subnet_id` (String) 子网ID
