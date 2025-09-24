@@ -1023,6 +1023,9 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
 		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
 	}
+	if plan.BaseInfo.SeriesType.ValueString() == business.CcseSeriesTypeManagedpro {
+		clusterBaseInfo.NodeScale = "50"
+	}
 	if plan.BaseInfo.SecurityGroupID.ValueString() != "" {
 		f := false
 		clusterBaseInfo.AutoGenerateSecurityGroup = &f
