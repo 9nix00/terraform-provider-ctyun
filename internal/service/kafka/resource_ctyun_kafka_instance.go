@@ -150,7 +150,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"node_num": schema.Int32Attribute{
 				Required:    true,
-				Description: "节点数。单机版为1个，集群版3~50个，支持更新",
+				Description: "节点数。单机版为1个，集群版3~50个，支持更新，不支持缩容",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 50),
 				},
@@ -179,7 +179,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"disk_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新",
+				Description: "单个节点的磁盘存储空间，单位为GB，存储空间取值范围100GB ~ 10000，并且为100的倍数。实例总存储空间为diskSize * nodeNum，支持更新，不支持缩容",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 10000),
 				},
