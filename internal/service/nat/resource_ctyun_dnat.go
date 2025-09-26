@@ -206,22 +206,13 @@ func (c *ctyunDnatResource) Create(ctx context.Context, request resource.CreateR
 	}
 
 	// 创建DNAT
-	params, err := c.createDnat(ctx, plan)
+	id, err := c.createDnat(ctx, plan)
 	if err != nil {
 		return
 	}
 
-	// 轮询查询dnat规则是否创建，dnat和snat的轮询策略是重复请求即可
-	loopResponse, err := c.CreateLoop(ctx, params, 600)
-	if err != nil {
-		return
-	}
-
-	if loopResponse == nil {
-		return
-	}
 	// 如果loopResponse不为空，则表示创建成功,保存dnat id和状态
-	plan.DNatID = loopResponse.DNatID
+	plan.DNatID = types.StringValue(id)
 
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	if response.Diagnostics.HasError() {
@@ -421,7 +412,7 @@ func (c *ctyunDnatResource) checkBeforeCreateDnat(ctx context.Context, plan Ctyu
 }
 
 // createDnat 创建dnat规则
-func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig) (createParams *ctvpc.CtvpcCreateDnatEntryRequest, err error) {
+func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig) (id string, err error) {
 	// 定义创建dnat规则的请求参数
 	params := &ctvpc.CtvpcCreateDnatEntryRequest{
 		RegionID:           plan.RegionID.ValueString(),
@@ -450,56 +441,12 @@ func (c *ctyunDnatResource) createDnat(ctx context.Context, plan CtyunDnatConfig
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
+	} else if resp.ReturnObj == nil || resp.ReturnObj.Dnat == nil || resp.ReturnObj.Dnat.DnatID == nil {
 		err = common.InvalidReturnObjError
 		return
 	}
-
-	createParams = params
+	id = *resp.ReturnObj.Dnat.DnatID
 	return
-}
-
-func (c *ctyunDnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcCreateDnatEntryRequest, loopCount ...int) (loopResponse *DnatLoopCreateResponse, err error) {
-	var respError error = nil
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-
-	retryer, _ := business.NewRetryer(time.Second*5, count)
-	result := retryer.Start(
-		func(currentTime int) bool {
-			resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreateDnatEntryApi.Do(ctx, c.meta.SdkCredential, params)
-			if err != nil {
-				respError = err
-				return false
-			} else if resp.StatusCode == common.ErrorStatusCode {
-				respError = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-				return false
-			}
-			status := *resp.ReturnObj.Dnat.Status
-			switch status {
-			case business.NatCreateStatusING:
-				//仍在开通
-				return true
-			case business.NatCreateStatusDone:
-				DNatId := resp.ReturnObj.Dnat.DnatID
-				loopResponse = &DnatLoopCreateResponse{
-					DNatID: utils.SecStringValue(DNatId),
-					Status: types.StringValue(status),
-				}
-				return false
-			default:
-				// 其他状态
-				respError = errors.New("invalid status, status: " + status)
-				return false
-			}
-		},
-	)
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return nil, errors.New("轮询已达最大次数，资源仍未创建成功！")
-	}
-	return loopResponse, respError
 }
 
 func (c *ctyunDnatResource) updateLoop(ctx context.Context, state *CtyunDnatConfig, updatedParams *ctvpc.CtvpcUpdateDnatEntryAttributeRequest, loopCount ...int) (err error) {

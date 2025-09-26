@@ -48,9 +48,9 @@ resource "ctyun_ebs" "ebs_test" {
 
 ### Read-Only
 
-- `create_time` (String) 到期时间
+- `create_time` (String) 创建时间，为UTC格式
 - `encrypted` (Boolean) 是否加密盘
-- `expire_time` (String) 创建时间
+- `expire_time` (String) 到期时间，为UTC格式
 - `id` (String) 磁盘id
 - `kms_uuid` (String) 加密盘密钥UUID，是加密盘时才返回
 - `master_order_id` (String) 订购的受理单id

@@ -53,7 +53,7 @@ func (v validatorRedisPassword) ValidateString(_ context.Context, request valida
 		} else if redisSpecialSymbols(r) {
 			hasSpecialSymbols = true
 		} else {
-			errMessage := "redis密码只能为数字，大小写字母以及特殊符号"
+			errMessage := "redis密码只能为数字，大小写字母以及特殊符号(@%^*_+!$-=.)"
 			response.Diagnostics.AddError(errMessage, errMessage)
 			return
 		}
@@ -74,7 +74,7 @@ func (v validatorRedisPassword) ValidateString(_ context.Context, request valida
 	}
 
 	if count < 3 {
-		errMessage := "redis密码必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型"
+		errMessage := "redis密码必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.)中的三种类型"
 		response.Diagnostics.AddError(errMessage, errMessage)
 		return
 	}

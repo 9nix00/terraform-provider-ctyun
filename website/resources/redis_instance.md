@@ -95,7 +95,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `edition` (String) 实例类型，SeriesInfo中的seriesCode值，可参考<a href="https://www.ctyun.cn/document/10029420/11030280">产品规格说明</a>
 - `engine_version` (String) Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新
 - `instance_name` (String) 实例名称，大小写字母开头。只能包含大小写字母、数字及分隔符(-)。大小写字母或数字结尾。长度4~40个字符。实例名称不可重复。
-- `password` (String, Sensitive) 实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型。不能有空格。支持更新
+- `password` (String, Sensitive) 实例密码。长度8-26字符。必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.)中的三种类型。不能有空格。支持更新
 - `security_group_id` (String) 安全组ID
 - `shard_mem_size` (Number) 分片规格，当version取值为BASIC，取值：1、2、4、8、16、32、64，当version取值为PLUS时，取值：8、16、32、64
 - `subnet_id` (String) 子网ID

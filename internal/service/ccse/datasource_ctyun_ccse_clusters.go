@@ -46,8 +46,6 @@ type CtyunCcseClustersModel struct {
 	EndPort          types.Int32  `tfsdk:"end_port"`
 	ClusterStatus    types.String `tfsdk:"cluster_status"`
 	BizState         types.Int32  `tfsdk:"biz_state"`
-	MasterNodeNum    types.Int32  `tfsdk:"master_node_num"`
-	SlaveNodeNum     types.Int32  `tfsdk:"slave_node_num"`
 }
 
 type CtyunCcseClustersConfig struct {
@@ -152,14 +150,6 @@ func (c *ctyunCcseClusters) Schema(_ context.Context, _ datasource.SchemaRequest
 							Computed:    true,
 							Description: "业务状态，1：运行中，2：已停止，3：已注销，4：已退订，5：扩容中，6：开通中，7：已取消，9：重启中，10：节点重置中，11：升级中，13：缩容中，14：已过期(冻结、过期)，15：节点升规格中，17：创建失败，18：退订中，19：控制面升配中，20：休眠中，21：唤醒中，22：转订购模式中",
 						},
-						"master_node_num": schema.Int32Attribute{
-							Computed:    true,
-							Description: "主节点数量",
-						},
-						"slave_node_num": schema.Int32Attribute{
-							Computed:    true,
-							Description: "备用节点数量",
-						},
 					},
 				},
 			},
@@ -226,8 +216,6 @@ func (c *ctyunCcseClusters) Read(ctx context.Context, request datasource.ReadReq
 			EndPort:          types.Int32Value(cluster.EndPort),
 			ClusterStatus:    types.StringValue(cluster.ClusterStatus),
 			BizState:         types.Int32Value(cluster.BizState),
-			MasterNodeNum:    types.Int32Value(cluster.MasterNodeNum),
-			SlaveNodeNum:     types.Int32Value(cluster.SlaveNodeNum),
 		}
 		switch cluster.ClusterType {
 		case 0:
