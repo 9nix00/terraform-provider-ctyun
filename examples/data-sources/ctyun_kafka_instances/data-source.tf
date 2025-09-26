@@ -11,6 +11,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_instances" "tbidgqvfbs" {
-  instance_name = "123"
+data "ctyun_kafka_instances" "test" {
+  instance_name = "KAFKA-mdw7fx"
 }

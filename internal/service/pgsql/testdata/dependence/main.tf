@@ -102,7 +102,7 @@ resource "ctyun_postgresql_instance" "test" {
   flavor_name           = "s7.large.2"
   storage_type          = "SATA"
   storage_space         = 100
-  name                  = "pgsql-test-1"
+  name                  = "pgsql-test-2"
   password              = var.password
   case_sensitive        = true
   vpc_id                = local.real_vpc_id

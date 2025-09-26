@@ -32,24 +32,19 @@ func (c *ctyunKafkaInstances) Metadata(_ context.Context, request datasource.Met
 }
 
 type CtyunKafkaInstancesModel struct {
-	ID              types.String `tfsdk:"id"`
-	Status          types.Int32  `tfsdk:"status"`
-	StatusDesc      types.String `tfsdk:"status_desc"`
-	ProjectID       types.String `tfsdk:"project_id"`
-	InstanceName    types.String `tfsdk:"instance_name"`
-	EngineVersion   types.String `tfsdk:"engine_version"`
-	SpecName        types.String `tfsdk:"spec_name"`
-	NodeNum         types.Int32  `tfsdk:"node_num"`
-	DiskType        types.String `tfsdk:"disk_type"`
-	DiskSize        types.Int32  `tfsdk:"disk_size"`
-	VpcID           types.String `tfsdk:"vpc_id"`
-	SubnetID        types.String `tfsdk:"subnet_id"`
-	SecurityGroupID types.String `tfsdk:"security_group_id"`
-	EnableIpv6      types.Bool   `tfsdk:"enable_ipv6"`
-	PlainPort       types.Int32  `tfsdk:"plain_port"`
-	SaslPort        types.Int32  `tfsdk:"sasl_port"`
-	SslPort         types.Int32  `tfsdk:"ssl_port"`
-	HttpPort        types.Int32  `tfsdk:"http_port"`
+	ID            types.String `tfsdk:"id"`
+	Status        types.Int32  `tfsdk:"status"`
+	StatusDesc    types.String `tfsdk:"status_desc"`
+	ProjectID     types.String `tfsdk:"project_id"`
+	InstanceName  types.String `tfsdk:"instance_name"`
+	EngineVersion types.String `tfsdk:"engine_version"`
+	SpecName      types.String `tfsdk:"spec_name"`
+	NodeNum       types.Int32  `tfsdk:"node_num"`
+	DiskType      types.String `tfsdk:"disk_type"`
+	DiskSize      types.Int32  `tfsdk:"disk_size"`
+	VpcID         types.String `tfsdk:"vpc_id"`
+	SubnetID      types.String `tfsdk:"subnet_id"`
+	EnableIpv6    types.Bool   `tfsdk:"enable_ipv6"`
 }
 
 type CtyunKafkaInstancesConfig struct {
@@ -64,7 +59,7 @@ type CtyunKafkaInstancesConfig struct {
 
 func (c *ctyunKafkaInstances) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10030700`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Computed:    true,
@@ -148,29 +143,9 @@ func (c *ctyunKafkaInstances) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "子网ID",
 						},
-						"security_group_id": schema.StringAttribute{
-							Computed:    true,
-							Description: "安全组ID",
-						},
 						"enable_ipv6": schema.BoolAttribute{
 							Computed:    true,
 							Description: "是否启用IPv6，默认为false",
-						},
-						"plain_port": schema.Int32Attribute{
-							Computed:    true,
-							Description: "公共接入点(PLAINTEXT)端口，范围在8000到9100之间，默认为8090",
-						},
-						"sasl_port": schema.Int32Attribute{
-							Computed:    true,
-							Description: "安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092",
-						},
-						"ssl_port": schema.Int32Attribute{
-							Computed:    true,
-							Description: "SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。",
-						},
-						"http_port": schema.Int32Attribute{
-							Computed:    true,
-							Description: "HTTP接入点端口，范围在8000到9100之间，默认为8082",
 						},
 					},
 				},
@@ -263,12 +238,6 @@ func (c *ctyunKafkaInstances) Read(ctx context.Context, request datasource.ReadR
 		item.SubnetID = types.StringValue(instance.SubnetId)
 
 		item.EnableIpv6 = types.BoolValue(map[int32]bool{1: true, 0: false}[instance.Ipv6Enable])
-		if len(instance.NodeList) > 0 {
-			item.PlainPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].VpcPort))
-			item.SaslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].SaslPort))
-			item.SslPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].ListenNodePort))
-			item.HttpPort = types.Int32Value(utils.StringToInt32Must(instance.NodeList[0].HttpPort))
-		}
 
 		config.Instances = append(config.Instances, item)
 	}
