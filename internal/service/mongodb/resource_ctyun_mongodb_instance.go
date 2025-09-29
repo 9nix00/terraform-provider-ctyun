@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
@@ -173,14 +174,14 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储",
+				Description: "实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 32),
 					validator2.MongodbPassword(),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				//PlanModifiers: []planmodifier.String{
+				//	stringplanmodifier.RequiresReplace(),
+				//},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
@@ -280,9 +281,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
 							Description: "资源池可用区名称",
-							Validators: []validator.String{
-								stringvalidator.UTF8LengthAtLeast(1),
-							},
+							//Validators: []validator.String{
+							//	stringvalidator.UTF8LengthAtLeast(1),
+							//},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
@@ -455,6 +456,10 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 		return
 	}
 	err = c.updateMongodbRootPassword(ctx, &state, &plan)
+	if err != nil {
+		return
+	}
+	err = c.updateMongodbReadOnly(ctx, &state, &plan)
 	if err != nil {
 		return
 	}
@@ -2352,8 +2357,166 @@ func (c *CtyunMongodbInstance) afterUpdateSpecLoop(ctx context.Context, state *C
 	return nil
 }
 
-func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, c2 *CtyunMongodbInstanceConfig, c3 *CtyunMongodbInstanceConfig) (err error) {
+func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
+	if plan.Password.IsNull() || plan.Password.IsUnknown() {
+		return
+	}
+	encodedPassword := base64.StdEncoding.EncodeToString([]byte(plan.Password.ValueString()))
+
+	params := &mongodb.MongodbUpdatePasswordRequest{
+		ProdInstId: plan.ID.ValueString(),
+		Password:   encodedPassword,
+	}
+	header := &mongodb.MongodbUpdatePasswordRequestHeaders{
+		RegionID: plan.RegionID.ValueString(),
+	}
+	if !plan.ProjectID.IsNull() {
+		header.ProjectID = plan.ProjectID.ValueStringPointer()
+	}
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpdatePasswordApi.Do(ctx, c.meta.Credential, params, header)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return
+	}
+	state.Password = plan.Password
 	return
+}
+
+func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) error {
+	// 确认实例处于运行状态
+	_, err := c.PreCheckUpdateLoop(ctx, state, 60)
+	if err != nil {
+		return err
+	}
+
+	// 获取当前只读节点数量
+	currentReadOnlyCount, err := c.getCurrentReadOnlyNodeCount(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	// 计算需要新增的只读节点数量
+	targetReadOnlyCount := plan.ShardNum.ValueInt32() // 假设使用ShardNum作为目标只读节点数，你可以根据实际需求调整
+	addReadOnlyCount := targetReadOnlyCount - currentReadOnlyCount
+
+	if addReadOnlyCount <= 0 {
+		return nil // 不需要添加只读节点
+	}
+
+	// 构造升级参数
+	nodeType := "readOnly"
+	updateParams := &mongodb.MongodbUpgradeRequest{
+		InstId:   state.ID.ValueString(),
+		NodeType: &nodeType,
+	}
+
+	updateHeader := &mongodb.MongodbUpgradeRequestHeader{}
+	if !state.ProjectID.IsNull() {
+		updateHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	// 获取可用区列表
+	azList, err := c.getRegionAzInfoList(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	var azInfoList []mongodb.AvailabilityZoneInfo
+	azNum := len(azList)
+
+	if azNum <= 0 {
+		return errors.New("未查询到可用区信息")
+	}
+
+	// 根据可用区数量平均分配只读节点
+	if azNum >= 3 {
+		// 三个或以上可用区，按平均分配
+		distNodeNum := [3]int32{
+			(addReadOnlyCount + 2) / 3,
+			(addReadOnlyCount + 1) / 3,
+			addReadOnlyCount / 3,
+		}
+
+		for idx, azItem := range azList {
+			if idx >= 3 {
+				break
+			}
+
+			if distNodeNum[idx] <= 0 {
+				continue
+			}
+
+			var azInfo mongodb.AvailabilityZoneInfo
+			azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
+			azInfo.AvailabilityZoneCount = distNodeNum[idx]
+			azInfo.NodeType = &nodeType
+			azInfoList = append(azInfoList, azInfo)
+		}
+	} else if azNum == 2 {
+		// 两个可用区，按平均分配
+		distNodeNum := []int32{
+			(addReadOnlyCount + 1) / 2,
+			addReadOnlyCount / 2,
+		}
+
+		for idx, azItem := range azList {
+			if distNodeNum[idx] <= 0 {
+				continue
+			}
+
+			var azInfo mongodb.AvailabilityZoneInfo
+			azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
+			azInfo.AvailabilityZoneCount = distNodeNum[idx]
+			azInfo.NodeType = &nodeType
+			azInfoList = append(azInfoList, azInfo)
+		}
+	} else {
+		// 单个可用区
+		var azInfo mongodb.AvailabilityZoneInfo
+		azInfo.AvailabilityZoneName = azList[0].AvailabilityZoneName
+		azInfo.AvailabilityZoneCount = addReadOnlyCount
+		azInfo.NodeType = &nodeType
+		azInfoList = append(azInfoList, azInfo)
+	}
+
+	updateParams.AzList = azInfoList
+
+	// 调用API添加只读节点
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpgradeApi.Do(ctx, c.meta.Credential, updateParams, updateHeader)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		return errors.New("添加只读节点失败，API返回为空")
+	} else if resp.StatusCode != 200 {
+		return fmt.Errorf("API返回错误，消息: %s", resp.Message)
+	}
+
+	// 等待操作完成
+	err = c.afterUpdateSpecLoop(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 获取当前只读节点数量
+func (c *CtyunMongodbInstance) getCurrentReadOnlyNodeCount(ctx context.Context, config *CtyunMongodbInstanceConfig) (int32, error) {
+	detail, err := c.getMongoDetailInfo(ctx, config)
+	if err != nil {
+		return 0, err
+	}
+
+	var readOnlyCount int32
+	for _, node := range detail.NodeInfoVOS {
+		if strings.Contains(node.Role, "readOnly") {
+			readOnlyCount++
+		}
+	}
+
+	return readOnlyCount, nil
 }
 
 type CtyunMongodbInstanceConfig struct {
