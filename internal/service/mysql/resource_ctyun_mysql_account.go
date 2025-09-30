@@ -55,8 +55,8 @@ func (c *CtyunMysqlAccount) ImportState(ctx context.Context, request resource.Im
 		}
 	}()
 	var cfg CtyunMysqlAccountConfig
-	var ID, regionId, projectId, accountName, instId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &accountName, &instId)
+	var ID, regionId, projectId, Name, instId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &Name, &instId)
 	if err != nil {
 		return
 	}
@@ -64,7 +64,7 @@ func (c *CtyunMysqlAccount) ImportState(ctx context.Context, request resource.Im
 	cfg.ID = types.StringValue(ID)
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
-	cfg.AccountName = types.StringValue(accountName)
+	cfg.Name = types.StringValue(Name)
 	cfg.InstID = types.StringValue(instId)
 
 	err = c.getAndMergeMysqlAccount(ctx, &cfg)
@@ -112,7 +112,7 @@ func (c *CtyunMysqlAccount) Schema(ctx context.Context, request resource.SchemaR
 					validator2.Project(),
 				},
 			},
-			"account_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "数据库账号名称",
 				PlanModifiers: []planmodifier.String{
@@ -185,7 +185,7 @@ func (c *CtyunMysqlAccount) Create(ctx context.Context, request resource.CreateR
 	if err != nil {
 		return
 	}
-	plan.ID = types.StringValue(plan.InstID.ValueString() + "-" + plan.AccountName.ValueString())
+	plan.ID = types.StringValue(plan.InstID.ValueString() + "-" + plan.Name.ValueString())
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -273,7 +273,7 @@ func (c *CtyunMysqlAccount) Delete(ctx context.Context, request resource.DeleteR
 
 	params := &mysql.TeledbDeleteAccountRequest{
 		OuterProdInstId: config.InstID.ValueString(),
-		AccountName:     config.AccountName.ValueString(),
+		AccountName:     config.Name.ValueString(),
 	}
 	header := &mysql.TeledbDeleteAccountRequestHeader{
 		InstID:   config.InstID.ValueString(),
@@ -287,7 +287,7 @@ func (c *CtyunMysqlAccount) Delete(ctx context.Context, request resource.DeleteR
 	if err != nil {
 		return
 	} else if resp == nil {
-		err = fmt.Errorf("删除mysql实例id=%s的%s用户失败，接口返回nil，具体原因请联系研发确认！", config.InstID.ValueString(), config.AccountName.ValueString())
+		err = fmt.Errorf("删除mysql实例id=%s的%s用户失败，接口返回nil，具体原因请联系研发确认！", config.InstID.ValueString(), config.Name.ValueString())
 		return
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("delete mysql user failed, API return error. Message: %s Error: %s", resp.Message, *resp.Error)
@@ -301,7 +301,7 @@ func (c *CtyunMysqlAccount) Delete(ctx context.Context, request resource.DeleteR
 func (c *CtyunMysqlAccount) CreateMysqlAccount(ctx context.Context, config *CtyunMysqlAccountConfig) error {
 	params := &mysql.TeledbCreateAccountRequest{
 		OuterProdInstId: config.InstID.ValueString(),
-		AccountName:     config.AccountName.ValueString(),
+		AccountName:     config.Name.ValueString(),
 		AccountPassword: c.encodeBase64(config.Password.ValueString()),
 	}
 	header := &mysql.TeledbCreateAccountRequestHeader{
@@ -331,7 +331,7 @@ func (c *CtyunMysqlAccount) CreateMysqlAccount(ctx context.Context, config *Ctyu
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = fmt.Errorf("为mysql实例(id=%s)创建用户%s时失败，接口返回为nil。请与研发联系确认问题原因。", config.InstID.ValueString(), config.AccountName.ValueString())
+		err = fmt.Errorf("为mysql实例(id=%s)创建用户%s时失败，接口返回为nil。请与研发联系确认问题原因。", config.InstID.ValueString(), config.Name.ValueString())
 		return err
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("create mysql account failed, API return error. Message: %s Error: %s", resp.Message, *resp.Error)
@@ -404,12 +404,12 @@ func (c *CtyunMysqlAccount) getMysqlAccountInfo(ctx context.Context, config *Cty
 		return nil, err
 	}
 	for _, accountPrivilege := range resp.ReturnObj {
-		accountName := accountPrivilege.AccountName
-		if accountName == config.AccountName.ValueString() {
+		Name := accountPrivilege.AccountName
+		if Name == config.Name.ValueString() {
 			return &accountPrivilege, nil
 		}
 	}
-	return nil, fmt.Errorf("mysql实例(id=%s)不存在account_name=%s的权限配置", config.InstID.ValueString(), config.AccountName.ValueString())
+	return nil, fmt.Errorf("mysql实例(id=%s)不存在account_name=%s的权限配置", config.InstID.ValueString(), config.Name.ValueString())
 }
 
 func (c *CtyunMysqlAccount) updateMysqlAccount(ctx context.Context, state *CtyunMysqlAccountConfig, plan *CtyunMysqlAccountConfig) error {
@@ -442,7 +442,7 @@ func (c *CtyunMysqlAccount) updatePassword(ctx context.Context, state *CtyunMysq
 	}
 	params := &mysql.TeledbResetPasswordRequest{
 		OuterProdInstId: state.InstID.ValueString(),
-		AccountName:     state.AccountName.ValueString(),
+		AccountName:     state.Name.ValueString(),
 		AccountPassword: c.encodeBase64(plan.Password.ValueString()),
 	}
 	header := &mysql.TeledbResetPasswordRequestHeader{
@@ -560,7 +560,7 @@ func (c *CtyunMysqlAccount) requestGrantAndUpdateSchemaPrivilege(ctx context.Con
 	}
 	params := &mysql.TeledbGrantPrivilegeRequest{
 		OuterProdInstId: state.InstID.ValueString(),
-		AccountName:     state.AccountName.ValueString(),
+		AccountName:     state.Name.ValueString(),
 	}
 	header := &mysql.TeledbGrantPrivilegeRequestHeader{
 		InstID:   state.InstID.ValueString(),
@@ -597,7 +597,7 @@ func (c *CtyunMysqlAccount) revokeSchemaPrivilege(ctx context.Context, state *Ct
 	}
 	params := &mysql.TeledbRevokeSchemaRequest{
 		OuterProdInstId: state.InstID.ValueString(),
-		AccountName:     state.AccountName.ValueString(),
+		AccountName:     state.Name.ValueString(),
 		DatabaseVOList:  nil,
 	}
 	var schemaList []mysql.DatabaseVO
@@ -618,7 +618,7 @@ func (c *CtyunMysqlAccount) revokeSchemaPrivilege(ctx context.Context, state *Ct
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = fmt.Errorf("撤销mysql实例id=%s的%s账户%#v库权限失败，请联系研发确认问题原因。", state.InstID.ValueString(), state.AccountName.ValueString(), privilegeMap)
+		err = fmt.Errorf("撤销mysql实例id=%s的%s账户%#v库权限失败，请联系研发确认问题原因。", state.InstID.ValueString(), state.Name.ValueString(), privilegeMap)
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return err
@@ -629,7 +629,7 @@ func (c *CtyunMysqlAccount) revokeSchemaPrivilege(ctx context.Context, state *Ct
 func (c *CtyunMysqlAccount) updateRemark(ctx context.Context, config *CtyunMysqlAccountConfig, desc string) error {
 	params := &mysql.TeledbUpdateAccountRemarkRequest{
 		OuterProdInstId: config.InstID.ValueString(),
-		AccountName:     config.AccountName.ValueString(),
+		AccountName:     config.Name.ValueString(),
 		Remark:          config.Description.ValueStringPointer(),
 	}
 	header := &mysql.TeledbUpdateAccountRemarkRequestHeader{
@@ -643,7 +643,7 @@ func (c *CtyunMysqlAccount) updateRemark(ctx context.Context, config *CtyunMysql
 	if err != nil {
 		return err
 	} else if resp == nil {
-		err = fmt.Errorf("更新mysql数据库(id=%s)的%s用户备注失败，接口返回nil。请与研发联系确认问题原因", config.InstID.ValueString(), config.AccountName.ValueString())
+		err = fmt.Errorf("更新mysql数据库(id=%s)的%s用户备注失败，接口返回nil。请与研发联系确认问题原因", config.InstID.ValueString(), config.Name.ValueString())
 		return err
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
@@ -656,7 +656,7 @@ type CtyunMysqlAccountConfig struct {
 	InstID              types.String `tfsdk:"inst_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
 	RegionID            types.String `tfsdk:"region_id"`
-	AccountName         types.String `tfsdk:"account_name"`
+	Name                types.String `tfsdk:"Name"`
 	Password            types.String `tfsdk:"password"`
 	SchemaPrivilegeList types.List   `tfsdk:"schema_privilege_list"`
 	Description         types.String `tfsdk:"description"`

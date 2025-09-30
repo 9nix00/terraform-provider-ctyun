@@ -37,12 +37,12 @@ func TestMain(m *testing.M) {
 		subnetID:         outputs["subnet_id"].Value,
 		securityGroupID:  outputs["security_group_id1"].Value,
 		securityGroupID2: outputs["security_group_id2"].Value,
-		//eipID:            "",
-		eipID: outputs["eip_id"].Value,
+		eipID:            "",
+		//eipID: outputs["eip_id"].Value,
 		//eipAddress: "",
-		PgsqlID: outputs["pgsql_id"].Value,
-		//PgsqlID: "",
-		azName: outputs["az_name"].Value,
+		//PgsqlID: outputs["pgsql_id"].Value,
+		PgsqlID: "7242dc75cb91414a997d7bdddcf3f393",
+		azName:  outputs["az_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

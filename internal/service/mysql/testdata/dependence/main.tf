@@ -74,12 +74,12 @@ locals {
 }
 
 
-# resource "ctyun_eip" "eip_test" {
-#   name                = "tf-eip-for-mysql"
-#   bandwidth           = 1
-#   cycle_type          = "on_demand"
-#   demand_billing_type = "upflowc"
-# }
+resource "ctyun_eip" "eip_test" {
+  name                = "tf-eip-for-mysql"
+  bandwidth           = 1
+  cycle_type          = "on_demand"
+  demand_billing_type = "upflowc"
+}
 
 data "ctyun_zones" "test" {
 
@@ -105,20 +105,20 @@ data "ctyun_mysql_backups" "backup_test" {
   page_size = 10
 }
 
-# resource "ctyun_mysql_instance" "mysql_test" {
-#   cycle_type            = "on_demand"
-#   vpc_id                = local.real_vpc_id
-#   flavor_name         = "c7.large.2"
-#   prod_id               = "Single57"
-#   subnet_id             = local.real_subnet_id
-#   security_group_id     = local.real_security_group_id
-#   name                  = local.mysql_name
-#   storage_type          = "SATA"
-#   storage_space         = 100
-#   availability_zone_info = [
-#     { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
-#   ]
-# }
+resource "ctyun_mysql_instance" "mysql_test" {
+  cycle_type            = "on_demand"
+  vpc_id                = local.real_vpc_id
+  flavor_name         = "c7.large.2"
+  prod_id               = "Single57"
+  subnet_id             = local.real_subnet_id
+  security_group_id     = local.real_security_group_id
+  name                  = local.mysql_name
+  storage_type          = "SATA"
+  storage_space         = 100
+  availability_zone_info = [
+    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
+  ]
+}
 
 locals {
   # 生成当前时间戳的哈希值

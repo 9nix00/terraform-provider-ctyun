@@ -14,12 +14,16 @@ import (
 func TestAccCtyunMysqlAccount(t *testing.T) {
 	//t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_account." + rnd
 	resourceFile := "resource_ctyun_mysql_account.tf"
 
+	dataSourceName := "data.ctyun_mysql_accounts." + dnd
+	datasourceFile := "datasource_ctyun_mysql_accounts.tf"
+
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	mysqlInstanceID := "e5ad1c553e394bc891c5bf8fc58be191"
+	mysqlInstanceID := dependence.mysqlID
 	accountPassword := "e&R6Hy?LR=Yq@Eg2"
 	accountName := "test_account_" + rnd
 
@@ -69,7 +73,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "account_name", accountName),
+					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "description", "Initial description"),
 					resource.TestCheckResourceAttr(resourceName, "schema_privilege_list.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "schema_privilege_list.0.grant_schema", testDB1),
@@ -86,7 +90,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "account_name", accountName),
+					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "description", "Updated description"),
 					resource.TestCheckResourceAttr(resourceName, "schema_privilege_list.#", "2"),
 					resource.TestCheckResourceAttr(resourceName, "schema_privilege_list.0.grant_schema", testDB1),
@@ -109,12 +113,25 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 						rs.Primary.ID,
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
-						rs.Primary.Attributes["account_name"],
+						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["inst_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"password", "description"}, // 不需要忽略任何字段
+			},
+			{
+
+				Config: utils.LoadTestCase(resourceFile,
+					rnd, mysqlInstanceID, projectID,
+					accountName, accountPassword+"_new",
+					updatedPrivilegesStr, "Updated description",
+				) + utils.LoadTestCase(datasourceFile, dnd, mysqlInstanceID, accountName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.#", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.0.name", accountName),
+					resource.TestCheckResourceAttrSet(dataSourceName, "mysql_accounts.0.schema_privilege_list"),
+				),
 			},
 			{
 

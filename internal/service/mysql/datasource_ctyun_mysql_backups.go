@@ -14,6 +14,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ datasource.DataSource              = &ctyunMysqlBackups{}
+	_ datasource.DataSourceWithConfigure = &ctyunMysqlBackups{}
+)
+
 type ctyunMysqlBackups struct {
 	meta *common.CtyunMetadata
 }
@@ -56,7 +61,7 @@ func (c *ctyunMysqlBackups) Schema(ctx context.Context, request datasource.Schem
 				Optional:    true,
 				Description: "MySQL实例名称",
 			},
-			"backup_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份名称",
 			},
@@ -215,8 +220,8 @@ func (c *ctyunMysqlBackups) Read(ctx context.Context, request datasource.ReadReq
 	if !config.InstName.IsNull() {
 		params.ProdInstName = config.InstName.ValueStringPointer()
 	}
-	if !config.BackupName.IsNull() {
-		params.BackupName = config.BackupName.ValueStringPointer()
+	if !config.Name.IsNull() {
+		params.BackupName = config.Name.ValueStringPointer()
 	}
 	if !config.BackupID.IsNull() {
 		params.BlockId = config.BackupID.ValueInt64Pointer()
@@ -315,7 +320,7 @@ type CtyunMysqlBackupsConfig struct {
 	InstID     types.String  `tfsdk:"inst_id"`
 	InstName   types.String  `tfsdk:"inst_name"`
 	ProjectID  types.String  `tfsdk:"project_id"`
-	BackupName types.String  `tfsdk:"backup_name"`
+	Name       types.String  `tfsdk:"name"`
 	BackupID   types.Int64   `tfsdk:"backup_id"`
 	StartTime  types.String  `tfsdk:"start_time"`
 	EndTime    types.String  `tfsdk:"end_time"`

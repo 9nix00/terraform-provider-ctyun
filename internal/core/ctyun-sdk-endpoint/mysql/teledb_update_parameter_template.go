@@ -75,8 +75,8 @@ type TeledbUpdateParameterTemplateRequest struct {
 }
 
 type TeledbUpdateParameterTemplateRequestHeader struct {
-	ProjectID *string `json:"projectID,omitempty"`
-	RegionID  string  `json:"region_id"` // 资源池ID，必填
+	ProjectID *string `json:"Project-Id,omitempty"`
+	RegionID  string  `json:"regionId"` // 资源池ID，必填
 }
 type TeledbUpdateParameterTemplateResponse struct {
 	StatusCode int32   `json:"statusCode"`      // 接口状态码

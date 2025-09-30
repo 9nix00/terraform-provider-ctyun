@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
-	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -17,7 +16,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strconv"
 	"strings"
 )
 
@@ -47,34 +45,7 @@ func (c *CtyunMysqlParamTemplate) Configure(ctx context.Context, request resourc
 }
 
 func (c *CtyunMysqlParamTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	var cfg CtyunMysqlParamTemplateConfig
-	var IDStr, regionId, projectId, description, engine, name string
-	err = terraform_extend.Split(request.ID, &IDStr, &regionId, &projectId, &description, &engine, &name)
-	if err != nil {
-		return
-	}
-	ID, err := strconv.ParseInt(IDStr, 10, 64)
-	if err != nil {
-		fmt.Println("id转换失败，输入有误:", err)
-		return
-	}
-	cfg.ID = types.Int64Value(ID)
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.ProjectID = types.StringValue(projectId)
-	cfg.Description = types.StringValue(description)
-	cfg.Engine = types.StringValue(engine)
-	cfg.Name = types.StringValue(name)
-	err = c.getAndMergeMysqlParameterTemplate(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+
 }
 
 func (c *CtyunMysqlParamTemplate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -413,6 +384,9 @@ func (c *CtyunMysqlParamTemplate) updateMysqlParameterTemplate(ctx context.Conte
 	//	return err
 	//}
 	oldParameters, err := c.getOldParameterValue(ctx, state)
+	if err != nil {
+		return err
+	}
 	updateParameters, err := utils.TypesMapToStringMap(ctx, plan.TemplateParameters)
 	if err != nil {
 		return err

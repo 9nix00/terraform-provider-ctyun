@@ -24,7 +24,7 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	mysqlInstanceID := "e5ad1c553e394bc891c5bf8fc58be191"
+	mysqlInstanceID := dependence.mysqlID
 
 	// 数据库配置
 	dbName := "test_db_" + rnd

@@ -61,7 +61,7 @@ func (c *ctyunMysqlAccounts) Schema(ctx context.Context, request datasource.Sche
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"account_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
 				Description: "数据库账号名称",
 				Validators: []validator.String{
@@ -168,10 +168,10 @@ func (c *ctyunMysqlAccounts) getMysqlAccountInfo(ctx context.Context, config *Ct
 		return nil, err
 	}
 	var accountPrivilegeList []mysql.TeledbGetAccountInfoResponseReturnObj
-	if !config.AccountName.IsNull() {
+	if !config.Name.IsNull() {
 		for _, accountPrivilege := range resp.ReturnObj {
 			accountName := accountPrivilege.AccountName
-			if accountName == config.AccountName.ValueString() {
+			if accountName == config.Name.ValueString() {
 				accountPrivilegeList = append(accountPrivilegeList, accountPrivilege)
 				return accountPrivilegeList, nil
 			}
@@ -180,7 +180,7 @@ func (c *ctyunMysqlAccounts) getMysqlAccountInfo(ctx context.Context, config *Ct
 		return resp.ReturnObj, nil
 	}
 
-	return nil, fmt.Errorf("mysql实例(id=%s)不存在account_name=%s的权限配置", config.InstID.ValueString(), config.AccountName.ValueString())
+	return nil, fmt.Errorf("mysql实例(id=%s)不存在account_name=%s的权限配置", config.InstID.ValueString(), config.Name.ValueString())
 }
 
 func (c *ctyunMysqlAccounts) getPrivilege(item mysql.SchemaPrivilegeVO) string {
@@ -209,6 +209,6 @@ type CtyunMysqlAccountsConfig struct {
 	InstID        types.String                      `tfsdk:"inst_id"`
 	ProjectID     types.String                      `tfsdk:"project_id"`
 	RegionID      types.String                      `tfsdk:"region_id"`
-	AccountName   types.String                      `tfsdk:"account_name"`
+	Name          types.String                      `tfsdk:"name"`
 	MysqlAccounts []CtyunMysqlAccountPrivilegeModel `tfsdk:"mysql_accounts"`
 }

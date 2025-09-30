@@ -95,9 +95,9 @@ type TeledbGetBackupListRequest struct {
 	PageSize        int32   `json:"pageSize"`               // 分页大小，必填
 }
 type TeledbGetBackupListRequestHeader struct {
-	ProjectID string `json:"projectID"`
-	InstID    string `json:"instId"`    // 实例ID，必填
-	RegionID  string `json:"region_id"` // 资源池ID，必填
+	ProjectID string `json:"project-id"`
+	InstID    string `json:"instId"`   // 实例ID，必填
+	RegionID  string `json:"regionId"` // 资源池ID，必填
 }
 type TeledbGetBackupListResponse struct {
 	StatusCode int32                                 `json:"statusCode"`      // 接口状态码

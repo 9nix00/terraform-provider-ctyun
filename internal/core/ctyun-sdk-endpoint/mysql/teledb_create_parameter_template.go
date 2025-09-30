@@ -3,13 +3,15 @@ package mysql
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
 )
 
 type TeledbCreateParameterTemplateApi struct {
 	ctyunsdk.CtyunRequestBuilder
-	client *ctyunsdk.CtyunClient
+	template core.CtyunRequestTemplate
+	client   *ctyunsdk.CtyunClient
 }
 
 func NewTeledbCreateParameterTemplateApi(client *ctyunsdk.CtyunClient) *TeledbCreateParameterTemplateApi {
@@ -36,7 +38,6 @@ func (this *TeledbCreateParameterTemplateApi) Do(ctx context.Context, credential
 		return
 	}
 	builder.AddHeader("regionId", header.RegionID)
-
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameCtdas, builder)
 	if err != nil {
 		return
@@ -55,8 +56,8 @@ type TeledbCreateParameterTemplateRequest struct {
 	Description        *string `json:"description,omitempty"` // 账户密码（安全考虑需要用base64加密后传输）
 }
 type TeledbCreateParameterTemplateRequestHeader struct {
-	ProjectID *string `json:"projectID,omitempty"`
-	RegionID  string  `json:"region_id"` // 资源池ID，必填
+	ProjectID *string `json:"Project-Id,omitempty"`
+	RegionID  string  `json:"regionId"` // 资源池ID，必填
 }
 type TeledbCreateParameterTemplateResponse struct {
 	StatusCode int32   `json:"statusCode"`      // 接口状态码

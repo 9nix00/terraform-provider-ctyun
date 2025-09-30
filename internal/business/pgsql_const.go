@@ -74,7 +74,51 @@ const (
 
 	PgsqlStorageTypeBackUp = "backup"
 	PgsqlStorageTypeMaster = "master"
+
+	PgsqlAccountTypeNormal   = "normal"
+	PgsqlAccountTypeAdvanced = "advanced"
+
+	PgsqlBackupTypeAuto     = 1
+	PgsqlBackupTypeManual   = 2
+	PgsqlBackupTypeRecovery = 3
+
+	PgsqlBackupTypeAutoStr     = "auto"
+	PgsqlBackupTypeManualStr   = "manual"
+	PgsqlBackupTypeRecoveryStr = "recovery"
+
+	PgsqlBackupResultING     = 0
+	PgsqlBackupResultING1    = 2
+	PgsqlBackupResultSuccess = 3
+	PgsqlBackupResultFail    = 5
+
+	PgsqlBackupResultINGStr     = "ing"
+	PgsqlBackupResultSuccessStr = "success"
+	PgsqlBackupResultFailStr    = "fail"
 )
+
+var PgsqlBackupTypeMap = map[string]int32{
+	PgsqlBackupTypeAutoStr:     PgsqlBackupTypeAuto,
+	PgsqlBackupTypeManualStr:   PgsqlBackupTypeManual,
+	PgsqlBackupTypeRecoveryStr: PgsqlBackupTypeRecovery,
+}
+
+var PgsqlBackupTypeMapConv = map[int32]string{
+	PgsqlBackupTypeAuto:     PgsqlBackupTypeAutoStr,
+	PgsqlBackupTypeManual:   PgsqlBackupTypeManualStr,
+	PgsqlBackupTypeRecovery: PgsqlBackupTypeRecoveryStr,
+}
+
+var PgsqlBackupResultMap = map[string]int32{
+	PgsqlBackupResultINGStr:     PgsqlBackupResultING,
+	PgsqlBackupResultSuccessStr: PgsqlBackupResultSuccess,
+	PgsqlBackupResultFailStr:    PgsqlBackupResultFail,
+}
+var PgsqlBackupResultMapConv = map[int32]string{
+	PgsqlBackupResultING:     PgsqlBackupResultINGStr,
+	PgsqlBackupResultING1:    PgsqlBackupResultINGStr,
+	PgsqlBackupResultFail:    PgsqlBackupResultFailStr,
+	PgsqlBackupResultSuccess: PgsqlBackupResultSuccessStr,
+}
 
 var PgsqlBillModes = []string{
 	BillModeCycle,
@@ -304,4 +348,9 @@ var PgsqlInstanceSeriesDict = map[string]string{
 	"S": "1",
 	"C": "2",
 	"M": "3",
+}
+
+var PgsqlAccountTypes = []string{
+	PgsqlAccountTypeAdvanced,
+	PgsqlAccountTypeNormal,
 }

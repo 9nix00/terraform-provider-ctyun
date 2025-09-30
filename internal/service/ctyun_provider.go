@@ -425,6 +425,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlDatabases(),
 		mysql2.NewCtyunMysqlCharacterSet(),
 		mysql2.NewCtyunMysqlParamTemplates(),
+		pgsql.NewCtyunPgsqlAccounts(),
+		pgsql.NewCtyunPgsqlBackups(),
+		pgsql.NewCtyunPostgresqlDatabases(),
 	)
 }
 
@@ -523,6 +526,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mysql2.NewCtyunMysqlBackupSetting(),
 		mysql2.NewCtyunMysqlDatabase(),
 		mysql2.NewCtyunMysqlParamTemplate(),
+		pgsql.NewCtyunPostgresqlAccount(),
+		pgsql.NewCtyunPostgresqlBackup(),
+		pgsql.NewCtyunPgsqlDatabase(),
 	)
 }
 

@@ -60,9 +60,9 @@ type TeledbGetPrivilegeDetailRequest struct {
 	AccountName     string `json:"accountName"`     // 数据库账户名， 必填
 }
 type TeledbGetPrivilegeDetailRequestHeader struct {
-	ProjectID string `json:"projectID"`
-	InstID    string `json:"instId"`    // 实例ID，必填
-	RegionID  string `json:"region_id"` // 资源池ID，必填
+	ProjectID string `json:"project-id"`
+	InstID    string `json:"instId"`   // 实例ID，必填
+	RegionID  string `json:"regionId"` // 资源池ID，必填
 }
 type TeledbGetPrivilegeDetailResponse struct {
 	StatusCode int32                                       `json:"statusCode"`      // 接口状态码

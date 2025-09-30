@@ -71,8 +71,8 @@ type TeledbGetParameterTemplateListRequest struct {
 	PageSize           int32   `json:"pageSize"`
 }
 type TeledbGetParameterTemplateListRequestHeader struct {
-	ProjectID *string `json:"projectID"`
-	RegionID  string  `json:"region_id"` // 资源池ID，必填
+	ProjectID *string `json:"Project-Id"`
+	RegionID  string  `json:"regionId"` // 资源池ID，必填
 }
 type TeledbGetParameterTemplateListResponse struct {
 	StatusCode int32                                            `json:"statusCode"`      // 接口状态码

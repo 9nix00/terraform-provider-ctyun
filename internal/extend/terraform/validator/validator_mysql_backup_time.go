@@ -29,12 +29,12 @@ func (v validatorBackupTime) ValidateString(ctx context.Context, request validat
 	// 1. 检查基本格式
 	if len(timeStr) != 5 {
 		errMessage := "长度有误，长度必须为5"
-		response.Diagnostics.AddError(errMessage, errMessage)
+		response.Diagnostics.AddError(BackupTimeError, errMessage)
 		return
 	}
 	if timeStr[2] != ':' {
 		errMessage := "输入时间有误，必须为00:00格式"
-		response.Diagnostics.AddError(errMessage, errMessage)
+		response.Diagnostics.AddError(BackupTimeError, errMessage)
 		return
 	}
 

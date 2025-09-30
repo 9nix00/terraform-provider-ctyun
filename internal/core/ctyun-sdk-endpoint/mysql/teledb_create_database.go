@@ -45,7 +45,7 @@ func (this *TeledbCreateDatabaseApi) Do(ctx context.Context, credential ctyunsdk
 		return
 	}
 	if req.DBName == "" {
-		err = fmt.Errorf("backup_name is required")
+		err = fmt.Errorf("database_name is required")
 		return
 	}
 

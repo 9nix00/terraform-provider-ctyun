@@ -71,8 +71,8 @@ type TeledbGetParameterTemplateDetailRequest struct {
 }
 
 type TeledbGetParameterTemplateDetailRequestHeader struct {
-	ProjectID *string `json:"projectID"`
-	RegionID  string  `json:"region_id"` // 资源池ID，必填
+	ProjectID *string `json:"Project-Id"`
+	RegionID  string  `json:"regionId"` // 资源池ID，必填
 }
 
 type TeledbGetParameterTemplateDetailResponse struct {

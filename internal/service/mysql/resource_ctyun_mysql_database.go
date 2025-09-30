@@ -115,6 +115,10 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.MysqlDatabaseName(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,

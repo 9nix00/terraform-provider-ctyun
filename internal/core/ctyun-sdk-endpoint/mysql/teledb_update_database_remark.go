@@ -56,9 +56,9 @@ type TeledbUpdateDatabaseRemarkRequest struct {
 	Remark          *string `json:"remark"`
 }
 type TeledbUpdateDatabaseRemarkRequestHeader struct {
-	ProjectID string `json:"projectID"`
-	InstID    string `json:"instId"`    // 实例ID，必填
-	RegionID  string `json:"region_id"` // 资源池ID，必填
+	ProjectID string `json:"Project-Id"`
+	InstID    string `json:"instId"`   // 实例ID，必填
+	RegionID  string `json:"regionId"` // 资源池ID，必填
 }
 type TeledbUpdateDatabaseRemarkResponse struct {
 	StatusCode int32   `json:"statusCode"`      // 接口状态码

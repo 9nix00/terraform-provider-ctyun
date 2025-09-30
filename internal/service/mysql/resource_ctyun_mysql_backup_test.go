@@ -26,7 +26,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	mysqlInstanceID := "e5ad1c553e394bc891c5bf8fc58be191"
+	mysqlInstanceID := dependence.mysqlID
 	// 备份描述信息
 	description := "Test backup created by Terraform"
 
@@ -59,7 +59,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceName, "task_type", "full"),
-					resource.TestCheckResourceAttrSet(resourceName, "backup_name"),
+					resource.TestCheckResourceAttrSet(resourceName, "name"),
 					wait10Seconds,
 				),
 			},
@@ -88,7 +88,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 			// 验证 backups datasource
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
-					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.backup_name", resourceName)),
+					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(backupsDatasourceName, "backup_list.#"),
 					resource.TestCheckResourceAttr(backupsDatasourceName, "backup_list.0.inst_id", mysqlInstanceID),
@@ -98,7 +98,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 			{
 
 				Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
-					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.backup_name", resourceName)) +
+					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)) +
 					utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backup_list.0.records.0.backup_record_id", backupsDatasourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(cancelResourceName, "inst_id", mysqlInstanceID),

@@ -65,7 +65,7 @@ func (c *CtyunMysqlBackup) ImportState(ctx context.Context, request resource.Imp
 	cfg.ID = types.StringValue(ID)
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
-	cfg.BackupName = types.StringValue(ID)
+	cfg.Name = types.StringValue(ID)
 	cfg.InstID = types.StringValue(instId)
 	err = c.getAndMergeMysqlBackup(ctx, &cfg)
 	if err != nil {
@@ -109,7 +109,7 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"backup_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "备份名称",
 				PlanModifiers: []planmodifier.String{
@@ -164,7 +164,7 @@ func (c *CtyunMysqlBackup) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-	plan.ID = types.StringValue(plan.BackupName.ValueString())
+	plan.ID = types.StringValue(plan.Name.ValueString())
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -223,10 +223,10 @@ func (c *CtyunMysqlBackup) Delete(ctx context.Context, request resource.DeleteRe
 }
 
 func (c *CtyunMysqlBackup) CreateMysqlBackup(ctx context.Context, config *CtyunMysqlBackupConfig) error {
-	config.BackupName = types.StringValue(config.InstID.ValueString() + strings.ReplaceAll(uuid.NewString(), "-", ""))
+	config.Name = types.StringValue(config.InstID.ValueString() + strings.ReplaceAll(uuid.NewString(), "-", ""))
 	params := &mysql.TeledbCreateBackupRequest{
 		OuterProdInstId: config.InstID.ValueString(),
-		BackupName:      config.BackupName.ValueString(),
+		BackupName:      config.Name.ValueString(),
 		TaskType:        config.TaskType.ValueString(),
 	}
 	if !config.Description.IsNull() {
@@ -253,7 +253,7 @@ func (c *CtyunMysqlBackup) CreateMysqlBackup(ctx context.Context, config *CtyunM
 		return err
 	}
 	// todo 临时将backupName替代blockID
-	config.ID = types.StringValue(config.BackupName.ValueString())
+	config.ID = types.StringValue(config.Name.ValueString())
 	return nil
 }
 
@@ -265,11 +265,11 @@ func (c *CtyunMysqlBackup) getAndMergeMysqlBackup(ctx context.Context, config *C
 	}
 	backupList := resp.List
 	if len(backupList) == 0 {
-		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s未查询到备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s未查询到备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
 	if len(backupList) > 1 {
-		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s查询到多条备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
 	return nil
@@ -292,11 +292,11 @@ func (c *CtyunMysqlBackup) deleteBackupSetAndFile(ctx context.Context, config Ct
 	}
 	backupList := resp.List
 	if len(backupList) == 0 {
-		err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)未查询到备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+		err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)未查询到备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
 	if len(backupList) > 1 {
-		err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)查询到多条备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+		err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
 
@@ -319,7 +319,7 @@ func (c *CtyunMysqlBackup) deleteBackupSetAndFile(ctx context.Context, config Ct
 	if err != nil {
 		return err
 	} else if deleteResp == nil {
-		err = fmt.Errorf("mysql实例(id=%s)删除备份集(backup_name=%s)失败，接口返回nil。请联系研发确认问题原因。", config.InstID.ValueString(), config.BackupName.ValueString())
+		err = fmt.Errorf("mysql实例(id=%s)删除备份集(backup_name=%s)失败，接口返回nil。请联系研发确认问题原因。", config.InstID.ValueString(), config.Name.ValueString())
 		return err
 	} else if deleteResp.StatusCode != 0 {
 		err = fmt.Errorf("delete backup set error, API return error. Message: %s Error: %s", deleteResp.Message, *deleteResp.Error)
@@ -331,7 +331,7 @@ func (c *CtyunMysqlBackup) deleteBackupSetAndFile(ctx context.Context, config Ct
 func (c *CtyunMysqlBackup) getBackupRecordList(ctx context.Context, config *CtyunMysqlBackupConfig) (*mysql.TeledbGetBackupListResponseReturnObj, error) {
 	params := &mysql.TeledbGetBackupListRequest{
 		OuterProdInstId: config.InstID.ValueString(),
-		BackupName:      config.BackupName.ValueStringPointer(),
+		BackupName:      config.Name.ValueStringPointer(),
 		PageNow:         1,
 		PageSize:        10,
 	}
@@ -408,11 +408,11 @@ func (c *CtyunMysqlBackup) backupIngLoop(ctx context.Context, config CtyunMysqlB
 			}
 			backupList := resp.List
 			if len(backupList) == 0 {
-				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)未查询到备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)未查询到备份集", config.Name.ValueString(), config.InstID.ValueString())
 				return false
 			}
 			if len(backupList) > 1 {
-				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)查询到多条备份集", config.BackupName.ValueString(), config.InstID.ValueString())
+				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
 				return false
 			}
 
@@ -447,7 +447,7 @@ type CtyunMysqlBackupConfig struct {
 	InstID      types.String `tfsdk:"inst_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	RegionID    types.String `tfsdk:"region_id"`
-	BackupName  types.String `tfsdk:"backup_name"` // 备份名称在4位到64位之间，不区分大小写，可以包含中文、字母、数字、中划线或下划线，不能包含其他特殊字符
+	Name        types.String `tfsdk:"Name"` // 备份名称在4位到64位之间，不区分大小写，可以包含中文、字母、数字、中划线或下划线，不能包含其他特殊字符
 	Description types.String `tfsdk:"description"`
 	TaskType    types.String `tfsdk:"task_type"`
 	ID          types.String `tfsdk:"id"`

@@ -188,7 +188,7 @@ func (c *CtyunMysqlParamTemplates) Read(ctx context.Context, request datasource.
 func (c *CtyunMysqlParamTemplates) getParamTemplates(ctx context.Context, config *CtyunMysqlParamTemplatesConfig) error {
 	params := mysql.TeledbGetParameterTemplateListRequest{
 		PageNow:  1,
-		PageSize: 100,
+		PageSize: 10,
 	}
 	if !config.Name.IsNull() {
 		params.ParameterGroupName = config.Name.ValueStringPointer()
@@ -201,6 +201,12 @@ func (c *CtyunMysqlParamTemplates) getParamTemplates(ctx context.Context, config
 	}
 	if !config.ProjectID.IsNull() {
 		header.ProjectID = config.ProjectID.ValueStringPointer()
+	}
+	if !config.PageNo.IsNull() {
+		params.PageNow = config.PageNo.ValueInt32()
+	}
+	if !config.PageSize.IsNull() {
+		params.PageSize = config.PageSize.ValueInt32()
 	}
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbGetParameterTemplateListApi.Do(ctx, c.meta.Credential, &params, &header)
 	if err != nil {
