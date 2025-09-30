@@ -20,6 +20,7 @@ type Dependence struct {
 	keyPairName2    string
 	securityGroupID string
 	ecsID           string
+	flavorName      string
 }
 
 var dependence Dependence
@@ -39,6 +40,7 @@ func TestMain(m *testing.M) {
 		imageID:         outputs["image_id"].Value,
 		flavorID:        outputs["flavor_id"].Value,
 		flavorID2:       outputs["flavor_id2"].Value,
+		flavorName:      outputs["flavor_name"].Value,
 		affinityGroupID: outputs["affinity_group_id"].Value,
 		keyPairName:     outputs["key_pair_name"].Value,
 		keyPairName2:    outputs["key_pair_name2"].Value,
