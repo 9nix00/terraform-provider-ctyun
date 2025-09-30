@@ -66,7 +66,7 @@ func (c *CtyunPostgresqlInstance) Metadata(ctx context.Context, request resource
 
 func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "pgsql provider",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10153165`,
 		Attributes: map[string]schema.Attribute{
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -195,12 +195,15 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储",
+				Description: "实例密码，8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(8, 32),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					validator2.DBPassword(
+						8,
+						32,
+						3,
+						"PGSQL",
+						"!@#$%^&*()_+-=",
+					),
 				},
 			},
 			// 订购选项
@@ -441,6 +444,12 @@ func (c *CtyunPostgresqlInstance) Update(ctx context.Context, request resource.U
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	if !plan.Password.Equal(state.Password) {
+		err = fmt.Errorf("数据库密码暂时不支持修改")
+		return
+	}
+
 	// flavor转换host_type, spec和OsType, CpuType
 	err = c.checkSpec(ctx, &plan)
 	// 变配开始

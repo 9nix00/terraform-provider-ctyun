@@ -4,16 +4,10 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunHpfsClusters(t *testing.T) {
-
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	dnd := utils.GenerateRandomString()
 	datasourceName := "data.ctyun_hpfs_clusters." + dnd

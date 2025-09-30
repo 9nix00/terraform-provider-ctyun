@@ -67,7 +67,7 @@ type CtyunVpceServiceRule struct {
 
 func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10042658/10217013**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10042658/10217013`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -108,16 +108,16 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "支持拉丁字母、数字，下划线，连字符，英文字母开头，不能以http:/https:开头，长度2-32，支持更新",
+				Description: "支持拉丁字母、数字，下划线，连字符，中文/英文字母开头，不能以http:/https:开头，长度2-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
-					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}-]+$"), "终端节点服务名称不符合规则"),
 				},
 			},
 			"instance_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时，必填。，支持更新",
+				Description: "服务后端实例类型，vm:虚机类型,bm:物理机,vip:vip类型,lb:负载均衡类型,当type为interface时必填。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("vm", "bm", "vip", "lb"),
 					validator2.AlsoRequiresEqualString(
@@ -133,7 +133,7 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "服务后端实例ID,当type为interface时，必填，支持更新",
+				Description: "服务后端实例ID，当type为interface时必填，支持更新",
 				Validators: []validator.String{
 					validator2.AlsoRequiresEqualString(
 						path.MatchRoot("type"),
@@ -311,16 +311,18 @@ func (c *ctyunVpceService) Update(ctx context.Context, request resource.UpdateRe
 		return
 	}
 
-	// 更新规则
-	err = c.updateRule(ctx, plan, state)
-	if err != nil {
-		return
-	}
+	if plan.Type.ValueString() == business.VpceServiceTypeInterface {
+		// 更新规则
+		err = c.updateRule(ctx, plan, state)
+		if err != nil {
+			return
+		}
 
-	// 更新后端服务
-	err = c.updateBackend(ctx, plan, state)
-	if err != nil {
-		return
+		// 更新后端服务
+		err = c.updateBackend(ctx, plan, state)
+		if err != nil {
+			return
+		}
 	}
 
 	// 查询远端信息
@@ -568,7 +570,8 @@ func (c *ctyunVpceService) calcWhitelist(ctx context.Context, plan *CtyunVpceSer
 
 // addWhitelist 添加白名单
 func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
-	for _, email := range plan.whitelist {
+	for i, _ := range plan.whitelist {
+		email := plan.whitelist[i]
 		params := &ctvpc.CtvpcCreateEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
 			RegionID:          plan.RegionID.ValueString(),
@@ -589,7 +592,8 @@ func (c *ctyunVpceService) addWhitelist(ctx context.Context, plan CtyunVpceServi
 
 // delWhitelist 删除白名单
 func (c *ctyunVpceService) delWhitelist(ctx context.Context, plan CtyunVpceServiceConfig) (err error) {
-	for _, email := range plan.whitelist {
+	for i, _ := range plan.whitelist {
+		email := plan.whitelist[i]
 		params := &ctvpc.CtvpcDeleteEndpointServiceWhitelistRequest{
 			ClientToken:       uuid.NewString(),
 			RegionID:          plan.RegionID.ValueString(),

@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"strconv"
 	"testing"
+	"time"
 )
 
 // 单机、按需、有az、备份盘
@@ -334,7 +335,7 @@ func TestAccCtyunMongodbInstanceReplicaSATANoAzList(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 	name := "tf-mongodb-single-" + utils.GenerateRandomString()
 	password := "Kyk123=" + utils.GenerateRandomString()
-	prodId := "Replica5R34"
+	prodId := "Replica3R34"
 	readPort := 12345
 	storageType := "SAS"
 	storageSpace := 100
@@ -615,6 +616,12 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpec(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -1005,6 +1012,12 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateShardSpec(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "shard_num", strconv.Itoa(shardNum)),
 					resource.TestCheckResourceAttr(resourceName, "mongos_num", strconv.Itoa(mongosNum)),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			// 扩容
@@ -1024,6 +1037,12 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateShardSpec(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{
@@ -1104,6 +1123,12 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateNode(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "shard_num", strconv.Itoa(shardNum)),
 					resource.TestCheckResourceAttr(resourceName, "mongos_num", strconv.Itoa(mongosNum)),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			// 扩容
@@ -1125,6 +1150,12 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateNode(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "shard_num", strconv.Itoa(updatedShardNum)),
 					resource.TestCheckResourceAttr(resourceName, "mongos_num", strconv.Itoa(mongosNum)),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			// 更新mongos数量
@@ -1145,6 +1176,12 @@ func TestAccCtyunMongodbInstanceClusterNoAzUpdateNode(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "shard_num", strconv.Itoa(updatedShardNum)),
 					resource.TestCheckResourceAttr(resourceName, "mongos_num", strconv.Itoa(updatedMongosNum)),
+					resource.ComposeAggregateTestCheckFunc(
+						func(s *terraform.State) error {
+							time.Sleep(30 * time.Second)
+							return nil
+						},
+					),
 				),
 			},
 			{

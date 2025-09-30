@@ -90,12 +90,12 @@ func (c *ctyunScaling) ImportState(ctx context.Context, request resource.ImportS
 
 func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性伸缩组管理、弹性伸缩组云主机管理，支持弹性伸缩组的创建、更新和删除。组内云主机的插入删除。具体细节可参考文档：https://www.ctyun.cn/document/10027725",
+		MarkdownDescription: `-> 详细说明请见文档：：https://www.ctyun.cn/document/10027725`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

@@ -1,14 +1,10 @@
 # Terraform Provider Ctyun
 
-天翼云Terraform实现
-
-
-
 ## 依赖项
 
 - 开发依赖项
-  - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-  - [Go](https://golang.org/doc/install) >= 1.21
+  - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.10.5
+  - [Go](https://golang.org/doc/install) >= 1.23
 
 
 
@@ -29,7 +25,7 @@ terraform {
   required_providers {
     ctyun = {
       source = "ctyun-it/ctyun"
-      version = "1.0.1"
+      version = "1.2.0"
     }
   }
 }
@@ -55,4 +51,9 @@ provider "ctyun" {
 
 ## 文档参考
 
-详见工程中的[generate-doc](https://github.com/ctyun-it/terraform-provider-ctyun/tree/main/generate-doc)
+详见工程中的[docs](https://github.com/ctyun-it/terraform-provider-ctyun/tree/main/docs)
+
+
+## 版权声明
+
+Copyright@2024  China Telecom Cloud Technology Co., Ltd. （天翼云科技有限公司）

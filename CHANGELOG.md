@@ -1,7 +1,8 @@
 # Changelog
 
+## 1.2.0 - September 25, 2025
 
-## New Resources
+### New Resources
 
 * ctyun_ebm
 * ctyun_ebm_interface
@@ -67,7 +68,7 @@
 * ctyun_ebs_snapshot_policy
 * ctyun_ebs_snapshot_policy_association
 
-## New Data Sources
+### New Data Sources
 
 * ctyun_ebm_device_types
 * ctyun_ebms
@@ -111,7 +112,6 @@
 * ctyun_rabbitmq_specs
 * ctyun_rabbitmq_instances
 * ctyun_postgresql_instances
-* ctyun_postgresql_security_groups
 * ctyun_postgresql_specs
 * ctyun_zones
 * ctyun_ccse_plugin_market
@@ -139,13 +139,13 @@
 * ctyun_ebs_backups
 * ctyun_ebs_backup_policies
 
-## Enhancements
+### Enhancements
 
 
-## Bug Fixes
+### Bug Fixes
 
 * resource/ctyun_ecs fix config
 * resource/ctyun_bandwidth fix create
 
-## Deprecations
+### Deprecations
 

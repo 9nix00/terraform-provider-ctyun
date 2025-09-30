@@ -21,7 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
-	types "github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
 	"time"
 )
@@ -46,7 +46,7 @@ func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},

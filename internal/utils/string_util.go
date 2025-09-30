@@ -2,6 +2,7 @@ package utils
 
 import (
 	"encoding/json"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
 	"strings"
@@ -76,7 +77,8 @@ func StrPointerArrayToStrArray(array []*string) []string {
 func StrArrayToStrPointerArray(array []string) []*string {
 	ret := []*string{}
 	for _, str := range array {
-		ret = append(ret, &str)
+		s := str
+		ret = append(ret, &s)
 	}
 	return ret
 }
@@ -141,4 +143,12 @@ func StringToInt32Must(s string) int32 {
 func JsonString(obj interface{}) string {
 	b, _ := json.Marshal(obj)
 	return string(b)
+}
+
+func StringArrayToValueArray(array []string) []attr.Value {
+	var ret []attr.Value
+	for _, str := range array {
+		ret = append(ret, types.StringValue(str))
+	}
+	return ret
 }

@@ -87,43 +87,33 @@ locals {
   real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
 }
 
-# resource "ctyun_eip" "eip_test" {
-#   name                = "tf-eip-for-pgsql"
-#   bandwidth           = 1
-#   cycle_type          = "on_demand"
-#   demand_billing_type = "upflowc"
-# }
-#
+resource "ctyun_eip" "eip_test" {
+  name                = "tf-eip-for-pgsql"
+  bandwidth           = 1
+  cycle_type          = "on_demand"
+  demand_billing_type = "upflowc"
+}
 
 
-# resource "ctyun_postgresql_instance" "test" {
-#   cycle_type            = "on_demand"
-#   prod_id               = "Single1222"
-#   flavor_name           = "s7.large.2"
-#   storage_type          = "SATA"
-#   storage_space         = 100
-#   name                  = "pgsql-test-1"
-#   password              = "Kqj=${local.random_string}"
-#   case_sensitive        = true
-#   vpc_id                = local.real_vpc_id
-#   subnet_id             = local.real_subnet_id
-#   security_group_id     = local.real_security_group_id1
-#   backup_storage_type  = "OS"
-# }
 
-locals {
-  # 生成当前时间戳的哈希值
-  hash = sha256(timestamp())
+resource "ctyun_postgresql_instance" "test" {
+  cycle_type            = "on_demand"
+  prod_id               = "Single1222"
+  flavor_name           = "s7.large.2"
+  storage_type          = "SATA"
+  storage_space         = 100
+  name                  = "pgsql-test-2"
+  password              = var.password
+  case_sensitive        = true
+  vpc_id                = local.real_vpc_id
+  subnet_id             = local.real_subnet_id
+  security_group_id     = local.real_security_group_id1
+  backup_storage_type  = "OS"
+}
 
-  # 从哈希结果中截取字符（转为小写并移除特殊字符）
-  random_string = substr(
-    replace(
-      lower(local.hash),
-      "/[^a-z0-9]/",
-      ""  # 移除所有非字母数字的字符
-    ),
-    0, 10  # 截取前16个字符
-  )
+variable "password" {
+  type      = string
+  sensitive = true
 }
 
 data "ctyun_zones" "az" {

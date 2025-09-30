@@ -42,7 +42,7 @@ func NewCtyunMysqlAssociationEip() resource.Resource {
 
 func (c *CtyunPgsqlAssociationEip) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10174601`,
 		Attributes: map[string]schema.Attribute{
 			"eip_id": schema.StringAttribute{
 				Required:    true,
@@ -213,8 +213,6 @@ func (c *CtyunPgsqlAssociationEip) Configure(ctx context.Context, request resour
 	c.eipService = business.NewEipService(c.meta)
 }
 func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (c *CtyunPgsqlAssociationEip) PgsqlBindEip(ctx context.Context, config *CtyunPgsqlAssociationEipConfig) (err error) {

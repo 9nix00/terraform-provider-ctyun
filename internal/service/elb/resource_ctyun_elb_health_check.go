@@ -51,12 +51,12 @@ func (c *CtyunElbHealthCheck) Metadata(_ context.Context, request resource.Metad
 
 func (c *CtyunElbHealthCheck) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "弹性负载均衡--健康检查创建/删除/更新，文档地址：https://www.ctyun.cn/document/10026756/10032101",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026756/10032101`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "区域ID",
+				Description: "资源池ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

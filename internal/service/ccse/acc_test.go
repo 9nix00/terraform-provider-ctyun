@@ -25,6 +25,7 @@ type Dependence struct {
 	ebmMirrorID     string
 	ebmMirrorName   string
 	deviceType      string
+	ebmAz           string
 }
 
 var dependence Dependence
@@ -57,6 +58,7 @@ func TestMain(m *testing.M) {
 		ebmMirrorID:     outputs["ebm_mirror_id"].Value,
 		ebmMirrorName:   outputs["ebm_mirror_name"].Value,
 		deviceType:      outputs["device_type"].Value,
+		ebmAz:           outputs["ebm_az"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 

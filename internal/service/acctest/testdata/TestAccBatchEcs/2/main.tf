@@ -59,7 +59,6 @@ resource "ctyun_ecs" "ecs_test" {
   cycle_type       = "on_demand"
   subnet_id        = ctyun_subnet.subnet_test.id
   key_pair_name    = ctyun_keypair.keypair_test.name
-  # password            = "P@ss2wsx${count.index + 1}"
   lifecycle {
     ignore_changes = [vpc_id, subnet_id]
   }

@@ -31,23 +31,30 @@ resource "ctyun_security_group" "security_group_test2" {
   description = "terraform测试使用"
 }
 
+data "ctyun_zones" "test" {
+
+}
+
 locals {
-  device_type1 = "physical.s5.2xlarge4"      // az1、有本地盘、弹性、不支持云硬盘
+  device_type1 = "physical.s5.2xlarge4"      // az2、有本地盘、弹性、不支持云硬盘
   device_type2 = "physical.s5.2xlarge1"      // az2、无本地盘、弹性、支持云硬盘
-  az2 = "cn-huadong1-jsnj2A-public-ctcloud"
+  az2 = data.ctyun_zones.test.zones[1]
 }
 
 data "ctyun_ebm_device_raids" "system_raid" {
+  az_name = local.az2
   device_type = local.device_type1
   volume_type = "system"
 }
 
 data "ctyun_ebm_device_raids" "data_raid" {
+  az_name = local.az2
   device_type = local.device_type1
   volume_type = "data"
 }
 
 data "ctyun_ebm_device_images" "test" {
+  az_name = local.az2
   device_type = local.device_type1
   os_type = "linux"
   image_type = "standard"
@@ -86,7 +93,7 @@ resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
-  password = "P@2s${local.random_string}"
+  password = var.password
   eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type2
@@ -98,18 +105,7 @@ resource "ctyun_ebm" "ebm_test" {
   subnet_id = ctyun_subnet.subnet_test.id
 }
 
-
-locals {
-  # 生成当前时间戳的哈希值
-  hash = sha256(timestamp())
-
-  # 从哈希结果中截取字符（转为小写并移除特殊字符）
-  random_string = substr(
-    replace(
-      lower(local.hash),
-      "/[^a-z0-9]/",
-      ""  # 移除所有非字母数字的字符
-    ),
-    0, 10  # 截取前16个字符
-  )
+variable "password" {
+  type      = string
+  sensitive = true
 }

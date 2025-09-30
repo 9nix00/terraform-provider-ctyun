@@ -25,7 +25,7 @@ func (v validatorSecurityGroup) ValidateString(ctx context.Context, request vali
 	pattern := `^sg-[a-z0-9]{10}$`
 	matched, _ := regexp.MatchString(pattern, value)
 	if !matched {
-		response.Diagnostics.AddError(IpError, IpError)
+		response.Diagnostics.AddError(SecurityGroupError, SecurityGroupError)
 		return
 	}
 }

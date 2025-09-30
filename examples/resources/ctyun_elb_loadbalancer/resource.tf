@@ -1,3 +1,15 @@
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-elb"
@@ -17,7 +29,6 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.4.4"
   ]
 }
-
 
 resource "ctyun_elb_loadbalancer" "elb_test" {
   subnet_id     = ctyun_subnet.subnet_test.id

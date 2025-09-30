@@ -43,7 +43,7 @@ func (c *CtyunElbLoadBalancerResource) Metadata(_ context.Context, request resou
 
 func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "**文档详情：https://www.ctyun.cn/document/10026756/10138703",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026756/10138703`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -526,7 +526,6 @@ func (c *CtyunElbLoadBalancerResource) getAndMergeElb(ctx context.Context, confi
 		return
 	}
 	elbObj := resp.ReturnObj[0]
-	// todo 我认为这里返回list是不合理的，id应该一一对应，我这里写成取第1个对象
 	if config.RegionID.ValueString() != elbObj.RegionID {
 		err = fmt.Errorf("elb详情regionid(%s)与plan的reigonid(%s)不一致！", elbObj.RegionID, config.RegionID.ValueString())
 		return

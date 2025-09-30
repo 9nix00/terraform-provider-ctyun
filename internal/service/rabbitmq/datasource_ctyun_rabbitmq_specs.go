@@ -74,7 +74,7 @@ type CtyunRabbitmqSpecsConfig struct {
 
 func (c *ctyunRabbitmqSpecs) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029625/10032819**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10029625/10032819`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Computed:    true,
@@ -220,7 +220,7 @@ func (c *ctyunRabbitmqSpecs) Read(ctx context.Context, request datasource.ReadRe
 	// 组装请求体
 	params := &amqp.AmqpProdDetailRequest{regionId}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {

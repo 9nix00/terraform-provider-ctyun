@@ -6,6 +6,7 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
@@ -72,21 +73,7 @@ variable "password" {
 resource "ctyun_elb_target" "elb_target_test" {
   target_group_id = ctyun_elb_target_group.target_group_test.id
   instance_type = "VM"
-  instance_id = "%[4]s"
+  instance_id = ctyun_ecs.ecs_test.id
   protocol_port = 12345
 }
 
-locals {
-  # 生成当前时间戳的哈希值
-  hash = sha256(timestamp())
-
-  # 从哈希结果中截取字符（转为小写并移除特殊字符）
-  random_string = substr(
-    replace(
-      lower(local.hash),
-      "/[^a-z0-9]/",
-      ""  # 移除所有非字母数字的字符
-    ),
-    0, 10  # 截取前16个字符
-  )
-}

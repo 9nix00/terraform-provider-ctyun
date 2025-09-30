@@ -6,10 +6,11 @@ terraform {
   }
 }
 
+# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_instances" "tbidgqvfbs" {
-  instance_name = "123"
+data "ctyun_kafka_instances" "test" {
+  instance_name = "KAFKA-mdw7fx"
 }
