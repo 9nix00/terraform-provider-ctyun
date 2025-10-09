@@ -33,7 +33,8 @@ type Apis struct {
 	MongodbUpdateParamTemplateDescApi *MongodbUpdateParamTemplateDescApi // 添加修改参数组描述API
 	MongodbDescribeParamTemplatesApi  *MongodbDescribeParamTemplatesApi  // 添加查询参数组列表API
 	MongodbUpdatePasswordApi          *MongodbUpdatePasswordApi          // 重置实例中root账号的密码
-	MongodbQueryInstNodesApi          *MongodbQueryInstNodesApi          // 重置实例中root账号的密码
+	MongodbQueryInstNodesApi          *MongodbQueryInstNodesApi          // 查询实例节点信息
+	MongodbRestartDbApi               *MongodbRestartDbApi               // 重启实例
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -75,7 +76,8 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		MongodbDeleteParamTemplateApi:     NewMongodbDeleteParamTemplateApi(client),     // 初始化删除参数组API
 		MongodbUpdateParamTemplateDescApi: NewMongodbUpdateParamTemplateDescApi(client), // 初始化修改参数组描述API
 		MongodbDescribeParamTemplatesApi:  NewMongodbDescribeParamTemplatesApi(client),  // 初始化查询参数组列表API
-		MongodbUpdatePasswordApi:          NewMongodbUpdatePasswordApi(client),          // 初始化查询参数组列表API
-		MongodbQueryInstNodesApi:          NewMongodbQueryInstNodesApi(client),          // 初始化查询参数组列表API
+		MongodbUpdatePasswordApi:          NewMongodbUpdatePasswordApi(client),          // 初始化重置实例中root账号的密码API
+		MongodbQueryInstNodesApi:          NewMongodbQueryInstNodesApi(client),          // 初始化查询实例节点信息API
+		MongodbRestartDbApi:               NewMongodbRestartDbApi(client),               // 初始化重启实例API
 	}
 }

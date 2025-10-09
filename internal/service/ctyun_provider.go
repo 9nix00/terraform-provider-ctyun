@@ -541,6 +541,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		mongodb.NewCtyunMongodbWhiteList(),
 		mongodb.NewCtyunMongodbBackupResource(),
 		mongodb.NewCtyunMongodbParamTemplateResource(),
+		mongodb.NewCtyunMongodbRestartDb(),
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
 		rabbitmq.NewCtyunRabbitmqQueue(),
