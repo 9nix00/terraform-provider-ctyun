@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -28,7 +29,7 @@ type CtyunPgsqlWhiteList struct {
 }
 
 func (c *CtyunPgsqlWhiteList) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_mysql_white_list"
+	response.TypeName = request.ProviderTypeName + "_postgresql_white_list"
 }
 func NewCtyunPgsqlWhiteList() resource.Resource {
 	return &CtyunPgsqlWhiteList{}
@@ -91,6 +92,17 @@ func (c *CtyunPgsqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			"ip_list": schema.SetAttribute{
 				Required:    true,
 				Description: "ip列表,数量限制：1-1000",
+				ElementType: types.StringType,
+				Validators: []validator.Set{
+					setvalidator.SizeBetween(1, 1000),
+				},
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
+			},
+			"ip_list_result": schema.SetAttribute{
+				Computed:    true,
+				Description: "变更后最终的ip列表,数量限制：1-1000",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeBetween(1, 1000),
@@ -206,7 +218,7 @@ func (c *CtyunPgsqlWhiteList) getAndMergePostgresqlWhiteList(ctx context.Context
 		err = fmt.Errorf(diags[0].Detail())
 		return err
 	}
-	config.IpList = ips
+	config.IpListResult = ips
 	return nil
 }
 
@@ -234,9 +246,10 @@ func (c *CtyunPgsqlWhiteList) getWhiteIpList(ctx context.Context, config *CtyunP
 }
 
 type CtyunPostgresqlWhiteListConfig struct {
-	InstID    types.String `tfsdk:"inst_id"`
-	RegionID  types.String `tfsdk:"region_id"`
-	ProjectID types.String `tfsdk:"project_id"`
-	Mode      types.String `tfsdk:"mode"`
-	IpList    types.Set    `tfsdk:"ip_list"`
+	InstID       types.String `tfsdk:"inst_id"`
+	RegionID     types.String `tfsdk:"region_id"`
+	ProjectID    types.String `tfsdk:"project_id"`
+	Mode         types.String `tfsdk:"mode"`
+	IpList       types.Set    `tfsdk:"ip_list"`
+	IpListResult types.Set    `tfsdk:"ip_list_result"`
 }

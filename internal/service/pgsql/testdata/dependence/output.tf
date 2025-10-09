@@ -24,3 +24,7 @@ output "security_group_id2" {
 output "az_name" {
   value = data.ctyun_zones.az.zones[0]
 }
+
+# output "param_templates"{
+#   value = data.ctyun_postgresql_param_templates.param_templates.parameter_templates[0].id
+# }

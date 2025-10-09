@@ -87,35 +87,41 @@ locals {
   real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-pgsql"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
+# resource "ctyun_eip" "eip_test" {
+#   name                = "tf-eip-for-pgsql"
+#   bandwidth           = 1
+#   cycle_type          = "on_demand"
+#   demand_billing_type = "upflowc"
+# }
 
 
 
-resource "ctyun_postgresql_instance" "test" {
-  cycle_type            = "on_demand"
-  prod_id               = "Single1222"
-  flavor_name           = "s7.large.2"
-  storage_type          = "SATA"
-  storage_space         = 100
-  name                  = "pgsql-test-2"
-  password              = var.password
-  case_sensitive        = true
-  vpc_id                = local.real_vpc_id
-  subnet_id             = local.real_subnet_id
-  security_group_id     = local.real_security_group_id1
-  backup_storage_type  = "OS"
-}
+# resource "ctyun_postgresql_instance" "test" {
+#   cycle_type            = "on_demand"
+#   prod_id               = "Single1222"
+#   flavor_name           = "s7.large.2"
+#   storage_type          = "SATA"
+#   storage_space         = 100
+#   name                  = "pgsql-test-2"
+#   password              = var.password
+#   case_sensitive        = true
+#   vpc_id                = local.real_vpc_id
+#   subnet_id             = local.real_subnet_id
+#   security_group_id     = local.real_security_group_id1
+#   backup_storage_type  = "OS"
+# }
 
-variable "password" {
-  type      = string
-  sensitive = true
-}
+# variable "password" {
+#   type      = string
+#   sensitive = true
+# }
 
 data "ctyun_zones" "az" {
 
 }
+
+# data "ctyun_postgresql_param_templates" "param_templates" {
+#
+# }
+
+

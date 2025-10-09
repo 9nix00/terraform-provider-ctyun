@@ -29,11 +29,11 @@ func (this *PgsqlGetParameterTemplateDetailApi) Do(ctx context.Context, credenti
 		return
 	}
 	if header.ProjectID != nil {
-		builder.AddHeader("project-id", *header.ProjectID)
+		builder.AddHeader("Project-Id", *header.ProjectID)
 	}
 
 	builder.AddHeader("regionId", header.RegionID)
-	builder.AddParam("id", fmt.Sprintf("%d", req.TemplateId))
+	builder.AddParam("templateId", fmt.Sprintf("%d", req.TemplateId))
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {
@@ -63,10 +63,10 @@ type PgsqlGetParameterTemplateDetailResponse struct {
 	ReturnObj  []PgsqlGetParameterTemplateDetailResponseReturnObj `json:"returnObj"`
 }
 type PgsqlGetParameterTemplateDetailResponseReturnObj struct {
-	ParameterName  string   `json:"parameterName"`
-	ParameterValue string   `json:"parameterValue"`
+	ParameterName  string   `json:"paramName"`
+	ParameterValue string   `json:"paramValue"`
 	Description    string   `json:"description"`
-	ValueType      string   `json:"valuetype"`
+	ValueType      string   `json:"valueType"`
 	Restart        int32    `json:"restart"`
 	Unit           string   `json:"unit"`
 	MinVal         string   `json:"minVal"`

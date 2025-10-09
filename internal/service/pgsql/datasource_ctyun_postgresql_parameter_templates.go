@@ -121,7 +121,7 @@ func (c *CtyunPgsqlParamTemplates) Schema(ctx context.Context, request datasourc
 										ElementType: types.StringType,
 										Description: "枚举值列表",
 									},
-									"restart": schema.Int64Attribute{
+									"restart": schema.Int32Attribute{
 										Computed:    true,
 										Description: "是否需要重启生效（0-否 1-是）",
 									},
@@ -167,7 +167,7 @@ func (c *CtyunPgsqlParamTemplates) Read(ctx context.Context, request datasource.
 		err = errors.New("region ID不能为空！")
 		return
 	}
-
+	config.RegionID = types.StringValue(regionId)
 	templateList, err := c.getPgsqlParameterTemplateList(ctx, config)
 	var parameterTemplates []ParameterTemplateInfo
 	for _, templateItem := range templateList {
@@ -223,8 +223,8 @@ func (c *CtyunPgsqlParamTemplates) getPgsqlParameterTemplateList(ctx context.Con
 	if !config.PageSize.IsNull() {
 		params.PageSize = config.PageSize.ValueInt32()
 	}
-	if !config.pageNo.IsNull() {
-		params.PageNow = config.pageNo.ValueInt32()
+	if !config.PageNo.IsNull() {
+		params.PageNow = config.PageNo.ValueInt32()
 	}
 	if !config.Name.IsNull() {
 		params.Name = config.Name.ValueStringPointer()
@@ -297,7 +297,7 @@ type ParameterTemplateInfo struct {
 type CtyunPostgresqlParameterTemplatesConfig struct {
 	RegionID           types.String            `tfsdk:"region_id"`
 	ProjectID          types.String            `tfsdk:"project_id"`
-	pageNo             types.Int32             `tfsdk:"page_no"`
+	PageNo             types.Int32             `tfsdk:"page_no"`
 	PageSize           types.Int32             `tfsdk:"page_size"`
 	Name               types.String            `tfsdk:"name"`
 	ParameterTemplates []ParameterTemplateInfo `tfsdk:"parameter_templates"`

@@ -17,6 +17,7 @@ type Dependence struct {
 	eipID            string
 	PgsqlID          string
 	azName           string
+	//paramTemplates   string
 }
 
 var dependence Dependence
@@ -43,6 +44,7 @@ func TestMain(m *testing.M) {
 		//PgsqlID: outputs["pgsql_id"].Value,
 		PgsqlID: "7242dc75cb91414a997d7bdddcf3f393",
 		azName:  outputs["az_name"].Value,
+		//paramTemplates: outputs["param_templates"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

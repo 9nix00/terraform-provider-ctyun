@@ -44,10 +44,10 @@ func (this *PgsqlGetParameterTemplateListApi) Do(ctx context.Context, credential
 	}
 
 	builder.AddParam("pageSize", fmt.Sprintf("%d", req.PageSize))
-	builder.AddParam("pageNow", fmt.Sprintf("%d", req.PageNow))
+	builder.AddParam("pageNum", fmt.Sprintf("%d", req.PageNow))
 
 	if req.Name != nil {
-		builder.AddParam("parameterGroupName", *req.Name)
+		builder.AddParam("name", *req.Name)
 	}
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)

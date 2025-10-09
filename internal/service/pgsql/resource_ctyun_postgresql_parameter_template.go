@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 )
 
 var (
@@ -28,7 +31,7 @@ type CtyunPgsqlParamTemplate struct {
 }
 
 func (c *CtyunPgsqlParamTemplate) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_mysql_param_template"
+	response.TypeName = request.ProviderTypeName + "_postgresql_param_template"
 }
 func NewCtyunPgsqlParamTemplate() resource.Resource {
 	return &CtyunPgsqlParamTemplate{}
@@ -43,7 +46,39 @@ func (c *CtyunPgsqlParamTemplate) Configure(ctx context.Context, request resourc
 }
 
 func (c *CtyunPgsqlParamTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var cfg CtyunPgsqlParameterTemplateConfig
+	var ID, regionId, projectId, name, sourceTemplateId, description string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &name, &sourceTemplateId, &description)
+	if err != nil {
+		return
+	}
 
+	id, err := strconv.Atoi(ID)
+	if err != nil {
+		return
+	}
+	sourceTemplateIdInt, err := strconv.Atoi(sourceTemplateId)
+	if err != nil {
+		return
+	}
+	cfg.ID = types.Int64Value(int64(id))
+	cfg.RegionID = types.StringValue(regionId)
+	cfg.ProjectID = types.StringValue(projectId)
+	cfg.Name = types.StringValue(name)
+	cfg.SourceTemplateId = types.Int64Value(int64(sourceTemplateIdInt))
+
+	cfg.Description = types.StringValue(description)
+	err = c.getAndMergePostgresqlParameterTemplate(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *CtyunPgsqlParamTemplate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -86,6 +121,9 @@ func (c *CtyunPgsqlParamTemplate) Schema(ctx context.Context, request resource.S
 			"source_template_id": schema.Int64Attribute{
 				Required:    true,
 				Description: "参考的参数模板ID，可以根据data.ctyun_postgresql_param_templates查询",
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -94,12 +132,9 @@ func (c *CtyunPgsqlParamTemplate) Schema(ctx context.Context, request resource.S
 					stringvalidator.UTF8LengthBetween(1, 1024),
 				},
 			},
-			"id": schema.StringAttribute{
+			"id": schema.Int64Attribute{
 				Computed:    true,
 				Description: "参数模板id",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"template_parameters": schema.MapAttribute{
 				Optional:    true,
@@ -322,6 +357,7 @@ func (c *CtyunPgsqlParamTemplate) updatePgsqlParameters(ctx context.Context, sta
 		if err != nil {
 			return err
 		}
+		state.Description = plan.Description
 	}
 
 	oldParameters, err := c.getTemplateParametersValue(ctx, state)
@@ -360,6 +396,7 @@ func (c *CtyunPgsqlParamTemplate) updatePgsqlParameters(ctx context.Context, sta
 		} else if resp == nil {
 			err = fmt.Errorf("更新参数模板状态失败，模板id=%d", state.ID.ValueInt64())
 		}
+		state.TemplateParameters = plan.TemplateParameters
 	}
 	return nil
 }

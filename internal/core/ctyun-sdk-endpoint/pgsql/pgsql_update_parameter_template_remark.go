@@ -16,7 +16,7 @@ func NewPgsqlUpdateParameterTemplateRemarkApi(client *ctyunsdk.CtyunClient) *Pgs
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: " /PG/v1/template/modifyDesc",
+			UrlPath: "/PG/v1/template/modifyDesc",
 		},
 	}
 }

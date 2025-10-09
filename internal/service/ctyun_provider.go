@@ -433,6 +433,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		rabbitmq.NewCtyunRabbitmqVhosts(),
 		rabbitmq.NewCtyunRabbitmqExchanges(),
 		rabbitmq.NewCtyunRabbitmqQueues(),
+		pgsql.NewCtyunPgsqlParamTemplates(),
 	)
 }
 
@@ -537,6 +538,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
 		rabbitmq.NewCtyunRabbitmqQueue(),
+		pgsql.NewCtyunPgsqlParamTemplate(),
+		pgsql.NewCtyunPgsqlWhiteList(),
 	)
 }
 
