@@ -10,6 +10,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -60,7 +61,7 @@ type CtyunCcseNodeAssociationConfig struct {
 
 func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10318452`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -158,8 +159,23 @@ func (c *ctyunCcseNodeAssociation) Schema(_ context.Context, _ resource.SchemaRe
 				Required:    true,
 				Description: "用户密码，需要满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\\且不能以斜线号/开头",
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthBetween(8, 30),
-					validator2.EcsPassword(),
+					stringvalidator.Any(
+						stringvalidator.All(
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("instance_type"),
+								types.StringValue(business.CcseSlaveInstanceTypeEcs),
+							),
+							validator2.EcsPassword(),
+						),
+
+						stringvalidator.All(
+							validator2.AlsoRequiresEqualString(
+								path.MatchRoot("instance_type"),
+								types.StringValue(business.CcseSlaveInstanceTypeEbm),
+							),
+							validator2.EbmPassword(),
+						),
+					),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

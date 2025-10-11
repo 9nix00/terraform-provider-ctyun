@@ -133,7 +133,7 @@ type CtyunCcseClusterDisk struct {
 
 func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -1022,6 +1022,9 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		Ipvlan:                    plan.BaseInfo.IpVlan.ValueBoolPointer(),
 		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
 		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
+	}
+	if plan.BaseInfo.SeriesType.ValueString() == business.CcseSeriesTypeManagedpro {
+		clusterBaseInfo.NodeScale = "50"
 	}
 	if plan.BaseInfo.SecurityGroupID.ValueString() != "" {
 		f := false
