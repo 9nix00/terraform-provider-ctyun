@@ -68,7 +68,7 @@ func (c *ctyunSnatResource) Metadata(ctx context.Context, request resource.Metad
 
 func (c *ctyunSnatResource) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166496`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10166496`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -184,18 +184,11 @@ func (c *ctyunSnatResource) Create(ctx context.Context, request resource.CreateR
 	}
 
 	// 创建
-	createParams, err := c.createSnat(ctx, plan)
+	id, err := c.createSnat(ctx, plan)
 	if err != nil {
 		return
 	}
-	// 轮询创建请求，直到创建成功
-	loopResp, err := c.CreateLoop(ctx, createParams, 600)
-	if err != nil {
-		return
-	} else if loopResp == nil {
-		return
-	}
-	plan.SNatID = loopResp.SNatID
+	plan.SNatID = types.StringValue(id)
 	time.Sleep(5 * time.Second)
 	// 添加description
 	err = c.updateDescription(ctx, plan)
@@ -407,7 +400,7 @@ func (c *ctyunSnatResource) checkBeforeCreateSnat(ctx context.Context, plan Ctyu
 }
 
 // createSnat创建Snat
-func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig) (createParams *ctvpc.CtvpcCreateSnatEntryRequest, err error) {
+func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig) (id string, err error) {
 	regionId := plan.RegionID.ValueString()
 	natGatewayId := plan.NatGatewayID.ValueString()
 	sourceSubnetId := plan.SourceSubnetID.ValueString()
@@ -433,11 +426,11 @@ func (c *ctyunSnatResource) createSnat(ctx context.Context, plan CtyunSnatConfig
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return
-	} else if resp.ReturnObj == nil {
+	} else if resp.ReturnObj == nil || resp.ReturnObj.Snat == nil || resp.ReturnObj.Snat.SnatID == nil {
 		err = common.InvalidReturnObjError
 		return
 	}
-	createParams = params
+	id = *resp.ReturnObj.Snat.SnatID
 	return
 }
 
@@ -525,54 +518,6 @@ func (c *ctyunSnatResource) addAndDeleteSnatEips(ctx context.Context, state Ctyu
 	}
 	time.Sleep(5 * time.Second)
 	return nil
-}
-
-func (c *ctyunSnatResource) CreateLoop(ctx context.Context, params *ctvpc.CtvpcCreateSnatEntryRequest, loopCount ...int) (loopResponse *SNatLoopCreateResponse, respError error) {
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-
-	retryer, _ := business.NewRetryer(time.Second*5, count)
-	result := retryer.Start(
-		func(currentTime int) bool {
-			resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreateSnatEntryApi.Do(ctx, c.meta.SdkCredential, params)
-			if err != nil {
-				respError = err
-				return false
-			} else if resp.StatusCode == common.ErrorStatusCode {
-				respError = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-				return false
-			}
-			status := *resp.ReturnObj.Snat.Status
-			switch status {
-			case business.NatCreateStatusING:
-				// 仍在开通中，继续轮询
-				return true
-
-			case business.NatCreateStatusDone:
-				//开通完成
-				snatId := resp.ReturnObj.Snat.SnatID
-				// 返回的id不正确，继续查询
-				if !strings.HasPrefix(utils.SecString(snatId), "ngwsr") {
-					return true
-				}
-				loopResponse = &SNatLoopCreateResponse{
-					SNatID: utils.SecStringValue(snatId),
-					Status: types.StringValue(status),
-				}
-				return false
-			default:
-				//其他状态
-				respError = errors.New("invalid status code, status: " + status)
-				return false
-			}
-		},
-	)
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return nil, errors.New("轮询已达最大次数，SNat规则仍未创建成功！")
-	}
-	return loopResponse, respError
 }
 
 func (c *ctyunSnatResource) updateLoop(ctx context.Context, state *CtyunSnatConfig, updatedParams *ctvpc.CtvpcUpdateSnatEntryAttributeRequest, loopCount ...int) (err error) {

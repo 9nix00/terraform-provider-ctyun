@@ -40,7 +40,7 @@ func (c *ctyunEbs) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696`,
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -120,12 +120,14 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Description: "云硬盘使用状态，deleting：删除中，creating：资源创建中，detaching：解绑中，detached：未绑定云主机，attaching：绑定中，attached：已绑定，extending：扩容中，error：错误状态，backup：备份中，backupRestoring：从备份恢复中，expired：包周期已结束，freezing：按需计费，处于冻结状态，可能账户受限或余额不足，available：可用，in-use：已挂载云主机，resizing：扩容中",
 			},
 			"create_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "到期时间",
+				Computed:      true,
+				Description:   "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"expire_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间",
+				Computed:      true,
+				Description:   "到期时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"multi_attach": schema.BoolAttribute{
 				Optional:    true,

@@ -12,4 +12,5 @@ resource "ctyun_ebm" "%[1]s" {
   system_volume_raid_uuid = "%[10]s"
   data_volume_raid_uuid = "%[11]s"
   subnet_id = "%[12]s"
+  az_name = "%[13]s"
 }
