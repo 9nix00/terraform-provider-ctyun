@@ -35,7 +35,7 @@ type CtyunRedisAccountModel struct {
 
 type CtyunRedisAccountsConfig struct {
 	RegionID   types.String             `tfsdk:"region_id"`
-	ProdInstId types.String             `tfsdk:"prod_inst_id"`
+	InstanceId types.String             `tfsdk:"instance_id"`
 	Accounts   []CtyunRedisAccountModel `tfsdk:"accounts"`
 }
 
@@ -48,7 +48,7 @@ func (c *ctyunRedisAccounts) Schema(_ context.Context, _ datasource.SchemaReques
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 			},
@@ -94,16 +94,16 @@ func (c *ctyunRedisAccounts) Read(ctx context.Context, request datasource.ReadRe
 		return
 	}
 	config.RegionID = types.StringValue(regionId)
-	prodInstId := config.ProdInstId.ValueString()
-	if prodInstId == "" {
-		err = fmt.Errorf("prodInstId不能为空")
+	instanceId := config.InstanceId.ValueString()
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
 		return
 	}
 
 	// 组装请求体
 	params := &dcs2.Dcs2DescribeAccountsRequest{
 		RegionId:   regionId,
-		ProdInstId: prodInstId,
+		ProdInstId: instanceId,
 	}
 
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeAccountsApi.Do(ctx, c.meta.SdkCredential, params)

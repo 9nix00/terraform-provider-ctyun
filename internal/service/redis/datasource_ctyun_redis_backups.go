@@ -38,7 +38,7 @@ type CtyunRedisBackupModel struct {
 
 type CtyunRedisBackupsConfig struct {
 	RegionID   types.String            `tfsdk:"region_id"`
-	ProdInstId types.String            `tfsdk:"prod_inst_id"`
+	InstanceId types.String            `tfsdk:"instance_id"`
 	Name       types.String            `tfsdk:"name"`
 	Rows       []CtyunRedisBackupModel `tfsdk:"rows"`
 }
@@ -52,7 +52,7 @@ func (c *ctyunRedisBackups) Schema(_ context.Context, _ datasource.SchemaRequest
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 			},
@@ -114,16 +114,16 @@ func (c *ctyunRedisBackups) Read(ctx context.Context, request datasource.ReadReq
 		return
 	}
 	config.RegionID = types.StringValue(regionId)
-	prodInstId := config.ProdInstId.ValueString()
-	if prodInstId == "" {
-		err = fmt.Errorf("prodInstId不能为空")
+	instanceId := config.InstanceId.ValueString()
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
 		return
 	}
 
 	// 组装请求体
 	params := &dcs2.Dcs2DescribeBackupsRequest{
 		RegionId:    regionId,
-		ProdInstId:  prodInstId,
+		ProdInstId:  instanceId,
 		RestoreName: config.Name.ValueString(),
 	}
 

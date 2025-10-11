@@ -46,7 +46,7 @@ type CtyunKafkaConsumerGroupConfig struct {
 	ID            types.Int32  `tfsdk:"id"`
 	Name          types.String `tfsdk:"name"`
 	RegionID      types.String `tfsdk:"region_id"`
-	ProdInstId    types.String `tfsdk:"prod_inst_id"`
+	InstanceId    types.String `tfsdk:"instance_id"`
 	Description   types.String `tfsdk:"description"`
 	Ctime         types.String `tfsdk:"ctime"`
 	State         types.String `tfsdk:"state"`
@@ -84,7 +84,7 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 					),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID。支持更新",
 				Validators: []validator.String{
@@ -313,13 +313,13 @@ func (c *ctyunKafkaConsumerGroup) ImportState(ctx context.Context, request resou
 		}
 	}()
 	var cfg CtyunKafkaConsumerGroupConfig
-	var prodInstId, regionID, groupName string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionID, &groupName)
+	var instanceId, regionID, groupName string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &groupName)
 	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.Name = types.StringValue(groupName)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -334,7 +334,7 @@ func (c *ctyunKafkaConsumerGroup) create(ctx context.Context, plan CtyunKafkaCon
 	params := &ctgkafka.CtgkafkaConsumerGroupCreateV3Request{
 		RegionId:    plan.RegionID.ValueString(),
 		GroupName:   plan.Name.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		Description: plan.Description.ValueString(),
 	}
 
@@ -356,7 +356,7 @@ func (c *ctyunKafkaConsumerGroup) update(ctx context.Context, plan, state CtyunK
 
 	params := &ctgkafka.CtgkafkaConsumerGroupUpdateRequest{
 		RegionId:    state.RegionID.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		GroupName:   plan.Name.ValueString(),
 		Description: plan.Description.ValueString(),
 	}
@@ -386,7 +386,7 @@ func (c *ctyunKafkaConsumerGroup) reset(ctx context.Context, plan, state CtyunKa
 
 	params := &ctgkafka.CtgkafkaConsumerGroupResetV3Request{
 		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ProdInstId.ValueString(),
+		ProdInstId: state.InstanceId.ValueString(),
 		GroupName:  plan.Name.ValueString(),
 		TopicName:  plan.ResetConfig.TopicName.ValueString(),
 		RawType:    plan.ResetConfig.Type.ValueInt32(),
@@ -423,7 +423,7 @@ func (c *ctyunKafkaConsumerGroup) reset(ctx context.Context, plan, state CtyunKa
 func (c *ctyunKafkaConsumerGroup) destroy(ctx context.Context, plan CtyunKafkaConsumerGroupConfig) (err error) {
 	params := &ctgkafka.CtgkafkaConsumerGroupDeleteV3Request{
 		RegionId:   plan.RegionID.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		GroupName:  plan.Name.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaConsumerGroupDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
@@ -471,7 +471,7 @@ func (c *ctyunKafkaConsumerGroup) checkAfterCreate(ctx context.Context, plan Cty
 func (c *ctyunKafkaConsumerGroup) getAndMerge(ctx context.Context, plan *CtyunKafkaConsumerGroupConfig) (err error) {
 	params := &ctgkafka.CtgkafkaConsumerGroupQueryV3Request{
 		RegionId:   plan.RegionID.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		GroupName:  plan.Name.ValueString(),
 	}
 

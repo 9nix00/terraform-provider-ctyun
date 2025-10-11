@@ -108,13 +108,17 @@ resource "ctyun_kafka_instance" "test_kafka_instance" {
 
 resource "ctyun_kafka_topic" "test_kafka_topic" {
   name = "test_topic"
-  prod_inst_id = ctyun_kafka_instance.test_kafka_instance.id
+  instance_id = ctyun_kafka_instance.test_kafka_instance.id
   partition_num  = 1
 }
 
 resource "ctyun_kafka_user" "test_kafka_user" {
   name = "test_kafka_user"
-  prod_inst_id = ctyun_kafka_instance.test_kafka_instance.id
-  password  = "sad231Dwwww"
+  instance_id = ctyun_kafka_instance.test_kafka_instance.id
+  password  = var.password
 }
 
+variable "password" {
+  type      = string
+  sensitive = true
+}

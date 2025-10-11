@@ -38,7 +38,7 @@ type CtyunKafkaUsersModel struct {
 
 type CtyunKafkaUsersConfig struct {
 	Name       types.String           `tfsdk:"name"`
-	ProdInstId types.String           `tfsdk:"prod_inst_id"`
+	InstanceId types.String           `tfsdk:"instance_id"`
 	PageNum    types.String           `tfsdk:"page_num"`
 	PageSize   types.String           `tfsdk:"page_size"`
 	Total      types.Int32            `tfsdk:"total"`
@@ -62,7 +62,7 @@ func (c *ctyunKafkaUsers) Schema(_ context.Context, _ datasource.SchemaRequest, 
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				Validators: []validator.String{
@@ -140,7 +140,7 @@ func (c *ctyunKafkaUsers) Read(ctx context.Context, request datasource.ReadReque
 	// 组装请求体
 	params := &ctgkafka.CtgkafkaSaslUserQueryV3Request{
 		RegionId:   config.RegionId.ValueString(),
-		ProdInstId: config.ProdInstId.ValueString(),
+		ProdInstId: config.InstanceId.ValueString(),
 		Username:   config.Name.ValueString(),
 		PageNum:    config.PageNum.ValueString(),
 		PageSize:   config.PageSize.ValueString(),

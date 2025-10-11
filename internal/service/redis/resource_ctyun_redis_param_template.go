@@ -68,8 +68,9 @@ func (c *ctyunRedisParamTemplate) Schema(_ context.Context, _ resource.SchemaReq
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10156164**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "模板ID",
+				Computed:      true,
+				Description:   "模板ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

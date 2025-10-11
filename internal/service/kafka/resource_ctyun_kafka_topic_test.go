@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"strconv"
 	"testing"
 
@@ -13,10 +12,7 @@ import (
 )
 
 func TestAccCtyunKafkaTopics(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -26,7 +22,7 @@ func TestAccCtyunKafkaTopics(t *testing.T) {
 	datasourceFile := "datasource_ctyun_kafka_topics.tf"
 
 	initName := "init-kafka-topic-" + rnd
-	prodInstId := dependence.instanceID
+	instanceId := dependence.instanceID
 	initPartitionNum := 1
 	updatePartitionNum := 2
 
@@ -42,14 +38,14 @@ func TestAccCtyunKafkaTopics(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, initPartitionNum),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, initPartitionNum),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 				),
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePartitionNum),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePartitionNum),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "partition_num", strconv.Itoa(updatePartitionNum)),
@@ -57,8 +53,8 @@ func TestAccCtyunKafkaTopics(t *testing.T) {
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePartitionNum) +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePartitionNum) +
+					utils.LoadTestCase(datasourceFile, dnd, initName, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "topics.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "topics.0.name", initName),
@@ -70,15 +66,15 @@ func TestAccCtyunKafkaTopics(t *testing.T) {
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
-					prodInstId := ds.Attributes["prod_inst_id"]
+					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, name), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, name), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id"},
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePartitionNum) + utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config:  utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePartitionNum) + utils.LoadTestCase(datasourceFile, dnd, initName, instanceId),
 				Destroy: true,
 			},
 		},

@@ -39,7 +39,7 @@ func (c *ctyunRedisBackup) Metadata(_ context.Context, request resource.Metadata
 
 type CtyunRedisBackupConfig struct {
 	ID           types.String `tfsdk:"id"`
-	ProdInstId   types.String `tfsdk:"prod_inst_id"`
+	InstanceId   types.String `tfsdk:"instance_id"`
 	RegionId     types.String `tfsdk:"region_id"`
 	Remark       types.String `tfsdk:"remark"`
 	Name         types.String `tfsdk:"name"`
@@ -55,10 +55,11 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10142282**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -95,8 +96,9 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Description: "备份名，格式为YYYYMMDDHHMMSS",
 			},
 			"create_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间（格式：yyyy-MM-dd HH:mm:ss）",
+				Computed:      true,
+				Description:   "创建时间",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -227,13 +229,13 @@ func (c *ctyunRedisBackup) ImportState(ctx context.Context, request resource.Imp
 	}()
 
 	var cfg CtyunRedisBackupConfig
-	var prodInstId, regionId, restoreName string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionId, &restoreName)
+	var instanceId, regionId, restoreName string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionId, &restoreName)
 	if err != nil {
 		return
 	}
 
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.RegionId = types.StringValue(regionId)
 	cfg.Name = types.StringValue(restoreName)
 
@@ -249,7 +251,7 @@ func (c *ctyunRedisBackup) ImportState(ctx context.Context, request resource.Imp
 func (c *ctyunRedisBackup) create(ctx context.Context, plan CtyunRedisBackupConfig) (name string, err error) {
 	params := &ctgdcs2.Dcs2CreateBackupRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Remark:     plan.Remark.ValueString(),
 	}
 
@@ -296,7 +298,7 @@ func (c *ctyunRedisBackup) checkAfterCreate(ctx context.Context, plan CtyunRedis
 func (c *ctyunRedisBackup) destroy(ctx context.Context, plan CtyunRedisBackupConfig) (err error) {
 	params := &ctgdcs2.Dcs2DeleteBackupRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		RestoreName: plan.Name.ValueString(),
 	}
 
@@ -317,7 +319,7 @@ func (c *ctyunRedisBackup) destroy(ctx context.Context, plan CtyunRedisBackupCon
 func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBackupConfig) (err error) {
 	params := &ctgdcs2.Dcs2DescribeBackupsRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		RestoreName: plan.Name.ValueString(),
 	}
 
@@ -370,7 +372,7 @@ func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBack
 	}
 
 	// 设置ID
-	plan.ID = types.StringValue(fmt.Sprintf("%s/%s/%s", plan.ProdInstId.ValueString(), plan.RegionId.ValueString(), backupData.RestoreName))
+	plan.ID = types.StringValue(fmt.Sprintf("%s/%s/%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), backupData.RestoreName))
 
 	return
 }
@@ -379,7 +381,7 @@ func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBack
 func (c *ctyunRedisBackup) getBackupTasks(ctx context.Context, plan *CtyunRedisBackupConfig) (status string, err error) {
 	params := &ctgdcs2.Dcs2DescribeBackupTasksRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		RestoreName: plan.Name.ValueString(),
 	}
 
@@ -419,7 +421,7 @@ func (c *ctyunRedisBackup) getBackupRdbDownLoadUrl(ctx context.Context, plan *Ct
 	}
 	params := &ctgdcs2.Dcs2GetRdbDownLoadUrlRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		RestoreName: plan.Name.ValueString(),
 		IpType:      ipType,
 	}

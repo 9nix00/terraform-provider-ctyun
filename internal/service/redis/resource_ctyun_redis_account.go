@@ -38,7 +38,7 @@ func (c *ctyunRedisAccount) Metadata(_ context.Context, request resource.Metadat
 type CtyunRedisAccountConfig struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
-	ProdInstId  types.String `tfsdk:"prod_inst_id"`
+	InstanceId  types.String `tfsdk:"instance_id"`
 	RegionId    types.String `tfsdk:"region_id"`
 	Password    types.String `tfsdk:"password"`
 	Description types.String `tfsdk:"description"`
@@ -50,8 +50,9 @@ func (c *ctyunRedisAccount) Schema(_ context.Context, _ resource.SchemaRequest, 
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10403139**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -67,7 +68,7 @@ func (c *ctyunRedisAccount) Schema(_ context.Context, _ resource.SchemaRequest, 
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID。",
 				Validators: []validator.String{
@@ -232,7 +233,7 @@ func (c *ctyunRedisAccount) Configure(_ context.Context, request resource.Config
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID]/[regionID]/[账户名称]/[权限]
+// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID]/[regionID]/[账户名称]
 func (c *ctyunRedisAccount) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -241,16 +242,14 @@ func (c *ctyunRedisAccount) ImportState(ctx context.Context, request resource.Im
 		}
 	}()
 	var cfg CtyunRedisAccountConfig
-	var prodInstId, regionID, accountName, password, privilege string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionID, &accountName, &password, &privilege)
+	var instanceId, regionID, accountName string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &accountName)
 	if err != nil {
 		return
 	}
 	cfg.RegionId = types.StringValue(regionID)
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.Name = types.StringValue(accountName)
-	cfg.Password = types.StringValue(password)
-	cfg.Privilege = types.StringValue(privilege)
 
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -264,7 +263,7 @@ func (c *ctyunRedisAccount) ImportState(ctx context.Context, request resource.Im
 func (c *ctyunRedisAccount) create(ctx context.Context, plan CtyunRedisAccountConfig) (err error) {
 	params := &ctgdcs2.Dcs2CreateAccountRequest{
 		RegionId:           plan.RegionId.ValueString(),
-		ProdInstId:         plan.ProdInstId.ValueString(),
+		ProdInstId:         plan.InstanceId.ValueString(),
 		AccountName:        plan.Name.ValueString(),
 		AccountPassword:    plan.Password.ValueString(),
 		AccountDescription: plan.Description.ValueString(),
@@ -291,7 +290,7 @@ func (c *ctyunRedisAccount) update(ctx context.Context, plan, state CtyunRedisAc
 	if plan.Password.ValueString() != state.Password.ValueString() {
 		passwordParams := &ctgdcs2.Dcs2ModifyAccountPasswordRequest{
 			RegionId:           state.RegionId.ValueString(),
-			ProdInstId:         state.ProdInstId.ValueString(),
+			ProdInstId:         state.InstanceId.ValueString(),
 			AccountName:        plan.Name.ValueString(),
 			AccountPassword:    plan.Password.ValueString(),
 			OldAccountPassword: state.Password.ValueString(),
@@ -311,7 +310,7 @@ func (c *ctyunRedisAccount) update(ctx context.Context, plan, state CtyunRedisAc
 	if plan.Description.ValueString() != state.Description.ValueString() {
 		descriptionParams := &ctgdcs2.Dcs2ModifyAccountDescriptionRequest{
 			RegionId:           state.RegionId.ValueString(),
-			ProdInstId:         state.ProdInstId.ValueString(),
+			ProdInstId:         state.InstanceId.ValueString(),
 			AccountName:        plan.Name.ValueString(),
 			AccountDescription: plan.Description.ValueString(),
 		}
@@ -330,7 +329,7 @@ func (c *ctyunRedisAccount) update(ctx context.Context, plan, state CtyunRedisAc
 	if plan.Privilege.ValueString() != state.Privilege.ValueString() {
 		privilegeParams := &ctgdcs2.Dcs2GrantAccountPrivilegeRequest{
 			RegionId:         state.RegionId.ValueString(),
-			ProdInstId:       state.ProdInstId.ValueString(),
+			ProdInstId:       state.InstanceId.ValueString(),
 			AccountName:      plan.Name.ValueString(),
 			AccountPrivilege: plan.Privilege.ValueString(),
 		}
@@ -352,7 +351,7 @@ func (c *ctyunRedisAccount) update(ctx context.Context, plan, state CtyunRedisAc
 func (c *ctyunRedisAccount) destroy(ctx context.Context, plan CtyunRedisAccountConfig) (err error) {
 	params := &ctgdcs2.Dcs2DeleteAccountRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		AccountName: plan.Name.ValueString(),
 	}
 
@@ -373,7 +372,7 @@ func (c *ctyunRedisAccount) destroy(ctx context.Context, plan CtyunRedisAccountC
 func (c *ctyunRedisAccount) getAndMerge(ctx context.Context, plan *CtyunRedisAccountConfig) (err error) {
 	params := &ctgdcs2.Dcs2DescribeAccountsRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 	}
 
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeAccountsApi.Do(ctx, c.meta.SdkCredential, params)
@@ -415,7 +414,7 @@ func (c *ctyunRedisAccount) getAndMerge(ctx context.Context, plan *CtyunRedisAcc
 		plan.Description = types.StringValue(accountData.AccountDescription)
 	}
 
-	id := fmt.Sprintf("%s/%s/%s/%s/%s", plan.ProdInstId.ValueString(), plan.RegionId.ValueString(), plan.Name.ValueString(), plan.Password.ValueString(), plan.Privilege.ValueString())
+	id := fmt.Sprintf("%s,%s,%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), plan.Name.ValueString())
 	plan.Id = types.StringValue(id)
 	return
 }

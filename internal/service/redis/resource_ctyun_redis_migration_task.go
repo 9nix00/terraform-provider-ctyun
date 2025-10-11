@@ -63,8 +63,9 @@ func (c *ctyunRedisMigrationTask) Schema(_ context.Context, _ resource.SchemaReq
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10518385**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "任务ID",
+				Computed:      true,
+				Description:   "任务ID",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,

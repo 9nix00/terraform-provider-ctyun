@@ -4,18 +4,13 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"testing"
 )
 
 func TestAccCtyunKafkaUsers(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -25,9 +20,9 @@ func TestAccCtyunKafkaUsers(t *testing.T) {
 	datasourceFile := "datasource_ctyun_kafka_users.tf"
 
 	initName := "init-kafka-user-" + rnd
-	prodInstId := dependence.instanceID
-	initPassword := "sad231Dwwww"
-	updatePassword := "sad231Dwwasd"
+	instanceId := dependence.instanceID
+	initPassword := "kafka-User-" + utils.GenerateRandomString()
+	updatePassword := "kafka-User-" + utils.GenerateRandomString()
 	topicName := dependence.topicName
 	aclInfo := fmt.Sprintf(`permission_info = [{
 operation = "READ"
@@ -53,14 +48,14 @@ topic = "%s"}]`, topicName, topicName)
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, initPassword, aclInfo),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, initPassword, aclInfo),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 				),
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, aclInfoUpdate),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "password", updatePassword),
@@ -69,8 +64,8 @@ topic = "%s"}]`, topicName, topicName)
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate) +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, aclInfoUpdate) +
+					utils.LoadTestCase(datasourceFile, dnd, initName, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "users.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "users.0.name", initName),
@@ -82,17 +77,17 @@ topic = "%s"}]`, topicName, topicName)
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
-					prodInstId := ds.Attributes["prod_inst_id"]
+					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
 					password := ds.Attributes["password"]
-					return fmt.Sprintf("%s,%s,%s,%s", prodInstId, regionId, name, password), nil
+					return fmt.Sprintf("%s,%s,%s,%s", instanceId, regionId, name, password), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id", "permission_info"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, aclInfoUpdate) +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, aclInfoUpdate) +
+					utils.LoadTestCase(datasourceFile, dnd, initName, instanceId),
 				Destroy: true,
 			},
 		},

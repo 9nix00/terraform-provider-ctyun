@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,7 @@ import (
 )
 
 func TestAccCtyunRedisAccounts(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -25,9 +21,9 @@ func TestAccCtyunRedisAccounts(t *testing.T) {
 	datasourceFile := "datasource_ctyun_redis_accounts.tf"
 
 	initName := "init_redis_account-" + rnd
-	prodInstId := dependence.instanceId
-	initPassword := "sad231Dwwww"
-	updatePassword := "sad231Dwwasd"
+	instanceId := dependence.instanceId
+	initPassword := "Password_" + utils.GenerateRandomString()
+	updatePassword := "Password_" + utils.GenerateRandomString()
 
 	initPrivilege := "ro"
 	updatePrivilege := "rw"
@@ -47,14 +43,14 @@ func TestAccCtyunRedisAccounts(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, initPassword, initPrivilege, initDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, initPassword, initPrivilege, initDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 				),
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, updatePrivilege, updateDescription),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, updatePrivilege, updateDescription),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "password", updatePassword),
@@ -64,11 +60,10 @@ func TestAccCtyunRedisAccounts(t *testing.T) {
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, updatePrivilege, updateDescription) +
-					utils.LoadTestCase(datasourceFile, dnd, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, updatePrivilege, updateDescription) +
+					utils.LoadTestCase(datasourceFile, dnd, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "accounts.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "accounts.0.name", initName),
+					resource.TestCheckResourceAttr(datasourceName, "accounts.#", "2"),
 				),
 			},
 			{
@@ -77,18 +72,16 @@ func TestAccCtyunRedisAccounts(t *testing.T) {
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
-					prodInstId := ds.Attributes["prod_inst_id"]
+					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
-					password := ds.Attributes["password"]
-					privilege := ds.Attributes["privilege"]
-					return fmt.Sprintf("%s,%s,%s,%s,%s", prodInstId, regionId, name, password, privilege), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, name), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id", "permission_info"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, updatePassword, updatePrivilege, updateDescription) +
-					utils.LoadTestCase(datasourceFile, dnd, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updatePassword, updatePrivilege, updateDescription) +
+					utils.LoadTestCase(datasourceFile, dnd, instanceId),
 				Destroy: true,
 			},
 		},

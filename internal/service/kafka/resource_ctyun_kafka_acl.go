@@ -42,7 +42,7 @@ func (c *ctyunKafkaAcl) Metadata(_ context.Context, request resource.MetadataReq
 type CtyunKafkaAclConfig struct {
 	Id          types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`
-	ProdInstId  types.String `tfsdk:"prod_inst_id"`
+	InstanceId  types.String `tfsdk:"instance_id"`
 	RegionId    types.String `tfsdk:"region_id"`
 	UseNewTopic types.String `tfsdk:"use_new_topic"`
 	Topics      types.Set    `tfsdk:"topics"`
@@ -62,8 +62,9 @@ func (c *ctyunKafkaAcl) Schema(_ context.Context, _ resource.SchemaRequest, resp
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/11078051**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -79,7 +80,7 @@ func (c *ctyunKafkaAcl) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID。",
 				Validators: []validator.String{
@@ -280,13 +281,13 @@ func (c *ctyunKafkaAcl) ImportState(ctx context.Context, request resource.Import
 		}
 	}()
 	var cfg CtyunKafkaAclConfig
-	var prodInstId, regionID, Name, useNewTopic string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionID, &Name, &useNewTopic)
+	var instanceId, regionID, Name, useNewTopic string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &Name, &useNewTopic)
 	if err != nil {
 		return
 	}
 	cfg.RegionId = types.StringValue(regionID)
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.Name = types.StringValue(Name)
 	cfg.UseNewTopic = types.StringValue(useNewTopic)
 	// 查询远端
@@ -315,7 +316,7 @@ func (c *ctyunKafkaAcl) calcRules(ctx context.Context, plan *CtyunKafkaAclConfig
 func (c *ctyunKafkaAcl) create(ctx context.Context, plan CtyunKafkaAclConfig) (err error) {
 	params := &ctgkafka.CtgkafkaAclStrategyCreateRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		Name:        plan.Name.ValueString(),
 		UseNewTopic: plan.UseNewTopic.ValueString(),
 	}
@@ -350,7 +351,7 @@ func (c *ctyunKafkaAcl) create(ctx context.Context, plan CtyunKafkaAclConfig) (e
 func (c *ctyunKafkaAcl) updateAutoMatch(ctx context.Context, plan CtyunKafkaAclConfig) (err error) {
 	params := &ctgkafka.CtgkafkaAclStrategyTurnAutoMatchRequest{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		Name:        plan.Name.ValueString(),
 		UseNewTopic: plan.UseNewTopic.ValueString(),
 	}
@@ -370,7 +371,7 @@ func (c *ctyunKafkaAcl) updateAutoMatch(ctx context.Context, plan CtyunKafkaAclC
 func (c *ctyunKafkaAcl) destroy(ctx context.Context, plan CtyunKafkaAclConfig) (err error) {
 	params := &ctgkafka.CtgkafkaAclStrategyDeleteRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Name:       plan.Name.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaAclStrategyDeleteApi.Do(ctx, c.meta.SdkCredential, params)
@@ -390,7 +391,7 @@ func (c *ctyunKafkaAcl) destroy(ctx context.Context, plan CtyunKafkaAclConfig) (
 func (c *ctyunKafkaAcl) getAndMerge(ctx context.Context, plan *CtyunKafkaAclConfig) (err error) {
 	params := &ctgkafka.CtgkafkaAclStrategyDetailRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Name:       plan.Name.ValueString(),
 	}
 
@@ -406,7 +407,7 @@ func (c *ctyunKafkaAcl) getAndMerge(ctx context.Context, plan *CtyunKafkaAclConf
 	}
 
 	// 设置基本属性
-	plan.Id = types.StringValue(fmt.Sprintf("%s,%s,%s,%s", plan.ProdInstId, plan.RegionId, plan.Name, plan.UseNewTopic))
+	plan.Id = types.StringValue(fmt.Sprintf("%s,%s,%s,%s", plan.InstanceId, plan.RegionId, plan.Name, plan.UseNewTopic))
 
 	if resp.ReturnObj.TopicNum > 0 {
 		// 设置topics

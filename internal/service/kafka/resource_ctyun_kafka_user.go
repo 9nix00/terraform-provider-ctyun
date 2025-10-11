@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -43,7 +44,7 @@ func (c *ctyunKafkaUser) Metadata(_ context.Context, request resource.MetadataRe
 type CtyunKafkaUserConfig struct {
 	Id                 types.Int32  `tfsdk:"id"`
 	UserName           types.String `tfsdk:"name"`
-	ProdInstId         types.String `tfsdk:"prod_inst_id"`
+	InstanceId         types.String `tfsdk:"instance_id"`
 	RegionId           types.String `tfsdk:"region_id"`
 	Password           types.String `tfsdk:"password"`
 	Description        types.String `tfsdk:"description"`
@@ -65,8 +66,9 @@ func (c *ctyunKafkaUser) Schema(_ context.Context, _ resource.SchemaRequest, res
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10145597**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int32Attribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.Int32{int32planmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -82,7 +84,7 @@ func (c *ctyunKafkaUser) Schema(_ context.Context, _ resource.SchemaRequest, res
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID。",
 				Validators: []validator.String{
@@ -124,8 +126,9 @@ func (c *ctyunKafkaUser) Schema(_ context.Context, _ resource.SchemaRequest, res
 				},
 			},
 			"create_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间",
+				Computed:      true,
+				Description:   "创建时间",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 
 			"permission_info": schema.SetNestedAttribute{
@@ -312,13 +315,13 @@ func (c *ctyunKafkaUser) ImportState(ctx context.Context, request resource.Impor
 		}
 	}()
 	var cfg CtyunKafkaUserConfig
-	var prodInstId, regionID, userName, password string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionID, &userName, &password)
+	var instanceId, regionID, userName, password string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &userName, &password)
 	if err != nil {
 		return
 	}
 	cfg.RegionId = types.StringValue(regionID)
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.UserName = types.StringValue(userName)
 	cfg.Password = types.StringValue(password)
 	// 查询远端
@@ -333,7 +336,7 @@ func (c *ctyunKafkaUser) ImportState(ctx context.Context, request resource.Impor
 func (c *ctyunKafkaUser) create(ctx context.Context, plan CtyunKafkaUserConfig) (err error) {
 	params := &ctgkafka.CtgkafkaSaslUserCreateV3Request{
 		RegionId:    plan.RegionId.ValueString(),
-		ProdInstId:  plan.ProdInstId.ValueString(),
+		ProdInstId:  plan.InstanceId.ValueString(),
 		Username:    plan.UserName.ValueString(),
 		Password:    plan.Password.ValueString(),
 		Description: plan.Description.ValueString(),
@@ -357,7 +360,7 @@ func (c *ctyunKafkaUser) create(ctx context.Context, plan CtyunKafkaUserConfig) 
 func (c *ctyunKafkaUser) update(ctx context.Context, plan, state CtyunKafkaUserConfig) (err error) {
 	params := &ctgkafka.CtgkafkaUserUpdateRequest{
 		RegionId:    state.RegionId.ValueString(),
-		ProdInstId:  state.ProdInstId.ValueString(),
+		ProdInstId:  state.InstanceId.ValueString(),
 		Username:    plan.UserName.ValueString(),
 		NewPassword: plan.Password.ValueString(),
 		Description: plan.Description.ValueString(),
@@ -380,7 +383,7 @@ func (c *ctyunKafkaUser) update(ctx context.Context, plan, state CtyunKafkaUserC
 func (c *ctyunKafkaUser) destroy(ctx context.Context, plan CtyunKafkaUserConfig) (err error) {
 	params := &ctgkafka.CtgkafkaSaslUserDeleteV3Request{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Username:   plan.UserName.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaSaslUserDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
@@ -400,7 +403,7 @@ func (c *ctyunKafkaUser) destroy(ctx context.Context, plan CtyunKafkaUserConfig)
 func (c *ctyunKafkaUser) getAndMerge(ctx context.Context, plan *CtyunKafkaUserConfig) (err error) {
 	params := &ctgkafka.CtgkafkaSaslUserQueryV3Request{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Username:   plan.UserName.ValueString(),
 	}
 
@@ -508,7 +511,7 @@ func (c *ctyunKafkaUser) updateUserTopicsAcl(ctx context.Context, plan CtyunKafk
 
 	params := &ctgkafka.CtgkafkaUpdateUserTopicsAclRequest{
 		RegionId:             plan.RegionId.ValueString(),
-		ProdInstId:           plan.ProdInstId.ValueString(),
+		ProdInstId:           plan.InstanceId.ValueString(),
 		AclOperationInfoList: aclOperationInfoList,
 	}
 
@@ -617,7 +620,7 @@ func (c *ctyunKafkaUser) getAndMergeUserTopicsAcl(ctx context.Context, plan *Cty
 func (c *ctyunKafkaUser) queryUserTopicsAcl(ctx context.Context, plan *CtyunKafkaUserConfig, operation string, topic string) ([]*ctgkafka.CtgkafkaSaslUserTopicsAclReturnObjDataResponse, error) {
 	params := &ctgkafka.CtgkafkaSaslUserTopicsAclRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Username:   plan.UserName.ValueString(),
 		Operation:  operation,
 		Topic:      topic,

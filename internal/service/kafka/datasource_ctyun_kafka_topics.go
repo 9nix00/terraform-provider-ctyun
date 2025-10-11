@@ -31,7 +31,7 @@ func (c *ctyunKafkaTopics) Metadata(_ context.Context, request datasource.Metada
 }
 
 type CtyunKafkaTopicsModel struct {
-	ProdInstId   types.String `tfsdk:"prod_inst_id"`
+	InstanceId   types.String `tfsdk:"instance_id"`
 	Name         types.String `tfsdk:"name"`
 	PartitionNum types.Int32  `tfsdk:"partition_num"`
 	Factor       types.Int32  `tfsdk:"factor"`
@@ -40,7 +40,7 @@ type CtyunKafkaTopicsModel struct {
 type CtyunKafkaTopicsConfig struct {
 	Name       types.String            `tfsdk:"name"`
 	Labels     types.String            `tfsdk:"labels"`
-	ProdInstId types.String            `tfsdk:"prod_inst_id"`
+	InstanceId types.String            `tfsdk:"instance_id"`
 	PageNum    types.Int32             `tfsdk:"page_num"`
 	PageSize   types.Int32             `tfsdk:"page_size"`
 	Total      types.Int32             `tfsdk:"total"`
@@ -69,7 +69,7 @@ func (c *ctyunKafkaTopics) Schema(_ context.Context, _ datasource.SchemaRequest,
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				Validators: []validator.String{
@@ -118,7 +118,7 @@ func (c *ctyunKafkaTopics) Schema(_ context.Context, _ datasource.SchemaRequest,
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"prod_inst_id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例ID",
 						},
@@ -164,7 +164,7 @@ func (c *ctyunKafkaTopics) Read(ctx context.Context, request datasource.ReadRequ
 	// 组装请求体
 	params := &ctgkafka.CtgkafkaTopicQueryV3Request{
 		RegionId:   config.RegionId.ValueString(),
-		ProdInstId: config.ProdInstId.ValueString(),
+		ProdInstId: config.InstanceId.ValueString(),
 		TopicName:  config.Name.ValueString(),
 		Labels:     config.Labels.ValueString(),
 		PageNum:    config.PageNum.ValueInt32(),
@@ -194,7 +194,7 @@ func (c *ctyunKafkaTopics) Read(ctx context.Context, request datasource.ReadRequ
 	// 解析主题列表
 	for _, data := range resp.ReturnObj.Data {
 		item := CtyunKafkaTopicsModel{
-			ProdInstId:   types.StringValue(data.ProdInstId),
+			InstanceId:   types.StringValue(data.ProdInstId),
 			Name:         types.StringValue(data.Name),
 			PartitionNum: types.Int32Value(data.PartitionNum),
 			Factor:       types.Int32Value(data.Factor),

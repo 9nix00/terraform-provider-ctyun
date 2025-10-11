@@ -36,7 +36,7 @@ type CtyunRedisInstanceWhitelistModel struct {
 
 type CtyunRedisInstanceWhitelistsConfig struct {
 	RegionId   types.String                       `tfsdk:"region_id"`
-	ProdInstId types.String                       `tfsdk:"prod_inst_id"`
+	InstanceId types.String                       `tfsdk:"instance_id"`
 	Rows       []CtyunRedisInstanceWhitelistModel `tfsdk:"rows"`
 }
 
@@ -49,7 +49,7 @@ func (c *ctyunRedisInstanceWhitelists) Schema(_ context.Context, _ datasource.Sc
 				Optional:    true,
 				Description: "资源池ID",
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				Validators: []validator.String{
@@ -96,16 +96,16 @@ func (c *ctyunRedisInstanceWhitelists) Read(ctx context.Context, request datasou
 	}
 	config.RegionId = types.StringValue(regionId)
 
-	prodInstId := config.ProdInstId.ValueString()
-	if prodInstId == "" {
-		err = fmt.Errorf("prodInstId不能为空")
+	instanceId := config.InstanceId.ValueString()
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
 		return
 	}
 
 	// 组装请求体
 	params := &ctgdcs2.Dcs2DescribeSecurityIpsRequest{
 		RegionId:   regionId,
-		ProdInstId: prodInstId,
+		ProdInstId: instanceId,
 	}
 
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeSecurityIpsApi.Do(ctx, c.meta.SdkCredential, params)

@@ -46,7 +46,7 @@ func (c *ctyunKafkaTopic) Metadata(_ context.Context, request resource.MetadataR
 type CtyunKafkaTopicConfig struct {
 	Id                          types.String `tfsdk:"id"`
 	TopicName                   types.String `tfsdk:"name"`
-	ProdInstId                  types.String `tfsdk:"prod_inst_id"`
+	InstanceId                  types.String `tfsdk:"instance_id"`
 	RegionId                    types.String `tfsdk:"region_id"`
 	PartitionNum                types.Int32  `tfsdk:"partition_num"`
 	FactorNum                   types.Int32  `tfsdk:"factor_num"`
@@ -106,8 +106,9 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029624/10144604**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -123,7 +124,7 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID。",
 				Validators: []validator.String{
@@ -451,13 +452,13 @@ func (c *ctyunKafkaTopic) ImportState(ctx context.Context, request resource.Impo
 		}
 	}()
 	var cfg CtyunKafkaTopicConfig
-	var prodInstId, regionID, topicName string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionID, &topicName)
+	var instanceId, regionID, topicName string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &topicName)
 	if err != nil {
 		return
 	}
 	cfg.RegionId = types.StringValue(regionID)
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.TopicName = types.StringValue(topicName)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
@@ -471,7 +472,7 @@ func (c *ctyunKafkaTopic) ImportState(ctx context.Context, request resource.Impo
 func (c *ctyunKafkaTopic) create(ctx context.Context, plan CtyunKafkaTopicConfig) (err error) {
 	params := &ctgkafka.CtgkafkaTopicCreateV3Request{
 		RegionId:                    plan.RegionId.ValueString(),
-		ProdInstId:                  plan.ProdInstId.ValueString(),
+		ProdInstId:                  plan.InstanceId.ValueString(),
 		TopicName:                   plan.TopicName.ValueString(),
 		PartitionNum:                plan.PartitionNum.ValueInt32(),
 		FactorNum:                   plan.FactorNum.ValueInt32(),
@@ -508,7 +509,7 @@ func (c *ctyunKafkaTopic) create(ctx context.Context, plan CtyunKafkaTopicConfig
 func (c *ctyunKafkaTopic) update(ctx context.Context, plan, state CtyunKafkaTopicConfig) (err error) {
 	params := &ctgkafka.CtgkafkaUpdateTopicRequest{
 		RegionId:   state.RegionId.ValueString(),
-		ProdInstId: state.ProdInstId.ValueString(),
+		ProdInstId: state.InstanceId.ValueString(),
 		TopicName:  plan.TopicName.ValueString(),
 	}
 
@@ -564,7 +565,7 @@ func (c *ctyunKafkaTopic) update(ctx context.Context, plan, state CtyunKafkaTopi
 func (c *ctyunKafkaTopic) destroy(ctx context.Context, plan CtyunKafkaTopicConfig) (err error) {
 	params := &ctgkafka.CtgkafkaTopicDeleteV3Request{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		TopicName:  plan.TopicName.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaTopicDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
@@ -584,7 +585,7 @@ func (c *ctyunKafkaTopic) destroy(ctx context.Context, plan CtyunKafkaTopicConfi
 func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopicConfig) (err error) {
 	params := &ctgkafka.CtgkafkaGetTopicDetailsRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		TopicName:  plan.TopicName.ValueString(),
 	}
 
@@ -592,7 +593,7 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 	if err != nil {
 		return
 	} else if resp.StatusCode != nil && *resp.StatusCode != common.NormalStatusCodeString {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	} else if resp.ReturnObj == nil || resp.ReturnObj.Data == nil {
 		err = common.InvalidReturnObjError
@@ -602,7 +603,7 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 	topicData := resp.ReturnObj.Data
 
 	// 设置ID（使用组合键）
-	id := fmt.Sprintf("%s/%s/%s", plan.ProdInstId.ValueString(), plan.RegionId.ValueString(), plan.TopicName.ValueString())
+	id := fmt.Sprintf("%s,%s,%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), plan.TopicName.ValueString())
 	plan.Id = types.StringValue(id)
 
 	// 设置主题名称

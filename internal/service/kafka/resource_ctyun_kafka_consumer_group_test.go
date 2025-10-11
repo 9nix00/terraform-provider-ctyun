@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,7 @@ import (
 )
 
 func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -25,7 +21,7 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 	datasourceFile := "datasource_ctyun_kafka_consumer_groups.tf"
 
 	initName := "init-kafka_consumer_group-" + rnd
-	prodInstId := dependence.instanceID
+	instanceID := dependence.instanceID
 	topicName := dependence.topicName
 
 	resetConfig := fmt.Sprintf(`reset_config = {
@@ -45,7 +41,7 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc", ""),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceID, "desc", ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -53,7 +49,7 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 			},
 			// 更新
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", resetConfig),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceID, "desc-update", resetConfig),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
 					resource.TestCheckResourceAttr(resourceName, "description", "desc-update"),
@@ -62,8 +58,8 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceID, "desc-update", "") +
+					utils.LoadTestCase(datasourceFile, dnd, initName, instanceID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "consumer_groups.0.name", initName),
@@ -75,9 +71,9 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
-					prodInstId := ds.Attributes["prod_inst_id"]
+					instanceId := ds.Attributes["instance_id"]
 					groupName := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, groupName), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, groupName), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -85,8 +81,8 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, initName, prodInstId, "desc-update", "") +
-					utils.LoadTestCase(datasourceFile, dnd, initName, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceID, "desc-update", "") +
+					utils.LoadTestCase(datasourceFile, dnd, initName, instanceID),
 				Destroy: true,
 			},
 		},

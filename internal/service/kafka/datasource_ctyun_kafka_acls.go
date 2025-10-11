@@ -39,7 +39,7 @@ type CtyunKafkaAclsModel struct {
 
 type CtyunKafkaAclsConfig struct {
 	Name       types.String          `tfsdk:"name"`
-	ProdInstId types.String          `tfsdk:"prod_inst_id"`
+	InstanceId types.String          `tfsdk:"instance_id"`
 	PageNum    types.String          `tfsdk:"page_num"`
 	PageSize   types.String          `tfsdk:"page_size"`
 	Total      types.Int32           `tfsdk:"total"`
@@ -63,7 +63,7 @@ func (c *ctyunKafkaAcls) Schema(_ context.Context, _ datasource.SchemaRequest, r
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				Validators: []validator.String{
@@ -145,7 +145,7 @@ func (c *ctyunKafkaAcls) Read(ctx context.Context, request datasource.ReadReques
 	// 组装请求体
 	params := &ctgkafka.CtgkafkaAclStrategyListRequest{
 		RegionId:   config.RegionId.ValueString(),
-		ProdInstId: config.ProdInstId.ValueString(),
+		ProdInstId: config.InstanceId.ValueString(),
 		Name:       config.Name.ValueString(),
 		PageNum:    config.PageNum.ValueString(),
 		PageSize:   config.PageSize.ValueString(),

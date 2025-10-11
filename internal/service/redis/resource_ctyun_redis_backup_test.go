@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,6 @@ import (
 )
 
 func TestAccCtyunRedisBackups(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -24,7 +19,7 @@ func TestAccCtyunRedisBackups(t *testing.T) {
 	resourceFile := "resource_ctyun_redis_backup.tf"
 	datasourceFile := "datasource_ctyun_redis_backups.tf"
 
-	prodInstId := dependence.instanceId
+	instanceId := dependence.instanceId
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -38,15 +33,15 @@ func TestAccCtyunRedisBackups(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 创建
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "name"),
 				),
 			},
 			// 查询
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, prodInstId) +
-					utils.LoadTestCase(datasourceFile, dnd, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, instanceId) +
+					utils.LoadTestCase(datasourceFile, dnd, instanceId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "rows.#", "1"),
 				),
@@ -57,16 +52,16 @@ func TestAccCtyunRedisBackups(t *testing.T) {
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
-					prodInstId := ds.Attributes["prod_inst_id"]
+					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", prodInstId, regionId, name), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, name), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id", "download_urls"},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, prodInstId) +
-					utils.LoadTestCase(datasourceFile, dnd, prodInstId),
+				Config: utils.LoadTestCase(resourceFile, rnd, instanceId) +
+					utils.LoadTestCase(datasourceFile, dnd, instanceId),
 				Destroy: true,
 			},
 		},

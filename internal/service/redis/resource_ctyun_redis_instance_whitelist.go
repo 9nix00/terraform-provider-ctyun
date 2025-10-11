@@ -38,7 +38,7 @@ func (c *ctyunRedisInstanceWhitelist) Metadata(_ context.Context, request resour
 
 type CtyunRedisInstanceWhitelistConfig struct {
 	ID         types.String `tfsdk:"id"`
-	ProdInstId types.String `tfsdk:"prod_inst_id"`
+	InstanceId types.String `tfsdk:"instance_id"`
 	RegionId   types.String `tfsdk:"region_id"`
 	Name       types.String `tfsdk:"name"`
 	Ip         types.String `tfsdk:"ip"`
@@ -49,10 +49,11 @@ func (c *ctyunRedisInstanceWhitelist) Schema(_ context.Context, _ resource.Schem
 		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源唯一标识符",
+				Computed:      true,
+				Description:   "资源唯一标识符",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -220,13 +221,13 @@ func (c *ctyunRedisInstanceWhitelist) ImportState(ctx context.Context, request r
 	}()
 
 	var cfg CtyunRedisInstanceWhitelistConfig
-	var prodInstId, regionId, name string
-	err = terraform_extend.Split(request.ID, &prodInstId, &regionId, &name)
+	var instanceId, regionId, name string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionId, &name)
 	if err != nil {
 		return
 	}
 
-	cfg.ProdInstId = types.StringValue(prodInstId)
+	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.RegionId = types.StringValue(regionId)
 	cfg.Name = types.StringValue(name)
 	// 查询远端
@@ -241,7 +242,7 @@ func (c *ctyunRedisInstanceWhitelist) ImportState(ctx context.Context, request r
 func (c *ctyunRedisInstanceWhitelist) createWhitelist(ctx context.Context, plan CtyunRedisInstanceWhitelistConfig) (err error) {
 	params := &ctgdcs2.Dcs2ModifySecurityIpsRequest{
 		RegionId:   plan.RegionId.ValueString(),
-		ProdInstId: plan.ProdInstId.ValueString(),
+		ProdInstId: plan.InstanceId.ValueString(),
 		Group:      plan.Name.ValueString(),
 		Mode:       "append",
 		Ip:         plan.Ip.ValueString(),
@@ -261,7 +262,7 @@ func (c *ctyunRedisInstanceWhitelist) createWhitelist(ctx context.Context, plan 
 func (c *ctyunRedisInstanceWhitelist) updateWhitelist(ctx context.Context, plan, state CtyunRedisInstanceWhitelistConfig) (err error) {
 	params := &ctgdcs2.Dcs2ModifySecurityIpsRequest{
 		RegionId:   state.RegionId.ValueString(),
-		ProdInstId: state.ProdInstId.ValueString(),
+		ProdInstId: state.InstanceId.ValueString(),
 		Group:      state.Name.ValueString(),
 		Mode:       "cover",
 		Ip:         plan.Ip.ValueString(),
@@ -304,7 +305,7 @@ func (c *ctyunRedisInstanceWhitelist) checkAfterUpdate(ctx context.Context, plan
 func (c *ctyunRedisInstanceWhitelist) deleteWhitelist(ctx context.Context, state CtyunRedisInstanceWhitelistConfig) (err error) {
 	params := &ctgdcs2.Dcs2ModifySecurityIpsRequest{
 		RegionId:   state.RegionId.ValueString(),
-		ProdInstId: state.ProdInstId.ValueString(),
+		ProdInstId: state.InstanceId.ValueString(),
 		Group:      state.Name.ValueString(),
 		Mode:       "delete",
 		Ip:         "",
@@ -325,7 +326,7 @@ func (c *ctyunRedisInstanceWhitelist) getAndMerge(ctx context.Context, state *Ct
 	// 调用API查询白名单信息
 	params := &ctgdcs2.Dcs2DescribeSecurityIpsRequest{
 		RegionId:   state.RegionId.ValueString(),
-		ProdInstId: state.ProdInstId.ValueString(),
+		ProdInstId: state.InstanceId.ValueString(),
 	}
 
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeSecurityIpsApi.Do(ctx, c.meta.SdkCredential, params)
@@ -361,7 +362,7 @@ func (c *ctyunRedisInstanceWhitelist) getAndMerge(ctx context.Context, state *Ct
 	state.Name = types.StringValue(whitelistData.Group)
 
 	// 设置ID
-	state.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", state.ProdInstId.ValueString(), state.RegionId.ValueString(), state.Name.ValueString()))
+	state.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", state.InstanceId.ValueString(), state.RegionId.ValueString(), state.Name.ValueString()))
 
 	return
 }
