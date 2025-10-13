@@ -6,27 +6,28 @@ import (
 	"net/http"
 )
 
-// CcseDeleteClusterApi
+// CcseDestroyClusterApi
 /* 调用该接口退订Kubernetes集群。
- */type CcseDeleteClusterApi struct {
+ */type CcseDestroyClusterApi struct {
 	template core.CtyunRequestTemplate
 	client   *core.CtyunClient
 }
 
-func NewCcseDeleteClusterApi(client *core.CtyunClient) *CcseDeleteClusterApi {
-	return &CcseDeleteClusterApi{
+func NewCcseDestroyClusterApi(client *core.CtyunClient) *CcseDestroyClusterApi {
+	return &CcseDestroyClusterApi{
 		client: client,
 		template: core.CtyunRequestTemplate{
 			EndpointName: EndpointName,
-			Method:       http.MethodPost,
-			UrlPath:      "/v2/cce/clusters/delete",
+			Method:       http.MethodDelete,
+			UrlPath:      "/v2/cce/clusters/{clusterId}/destruct",
 			ContentType:  "application/json",
 		},
 	}
 }
 
-func (a *CcseDeleteClusterApi) Do(ctx context.Context, credential core.Credential, req *CcseDeleteClusterRequest) (*CcseDeleteClusterResponse, error) {
+func (a *CcseDestroyClusterApi) Do(ctx context.Context, credential core.Credential, req *CcseDestroyClusterRequest) (*CcseDestroyClusterResponse, error) {
 	builder := core.NewCtyunRequestBuilder(a.template)
+	builder = builder.ReplaceUrl("clusterId", req.ProdInstId)
 	builder.WithCredential(credential)
 	ctReq := builder.Build()
 	ctReq.AddHeader("regionId", req.RegionId)
@@ -38,7 +39,7 @@ func (a *CcseDeleteClusterApi) Do(ctx context.Context, credential core.Credentia
 	if err != nil {
 		return nil, err
 	}
-	var resp CcseDeleteClusterResponse
+	var resp CcseDestroyClusterResponse
 	err = response.Parse(&resp)
 	if err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (a *CcseDeleteClusterApi) Do(ctx context.Context, credential core.Credentia
 	return &resp, nil
 }
 
-type CcseDeleteClusterRequest struct {
+type CcseDestroyClusterRequest struct {
 	RegionId string /*  资源池ID，您可以查看<a href="https://www.ctyun.cn/document/10083472/11004422" target="_blank">云容器引擎资源池</a>
 	另外您通过<a href="https://www.ctyun.cn/document/10026730/10028695" target="_blank">地域和可用区</a>来了解资源池
 	获取：
@@ -57,28 +58,18 @@ type CcseDeleteClusterRequest struct {
 	获取：
 	<span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=25&api=5851&data=87&vid=81" target="_blank">资源池列表查询</a>
 	*/
-	ProdInstId           string `json:"prodInstId,omitempty"` /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
-	RetainEcs            *bool  `json:"retainEcs,omitempty"`
-	RetainEbm            *bool  `json:"retainEbm,omitempty"`
-	RetainSecurityGroup  *bool  `json:"retainSecurityGroup,omitempty"`
-	RetainElb            *bool  `json:"retainElb,omitempty"`
-	RetainApiServiceEip  *bool  `json:"retainApiServiceEip,omitempty"`
-	RetainNat            *bool  `json:"retainNat,omitempty"`
-	RetainLtsData        *bool  `json:"retainLtsData,omitempty"`
-	RetainLtsVPCE        *bool  `json:"retainLtsVPCE,omitempty"`
-	RetainPrometheusData *bool  `json:"retainPrometheusData,omitempty"`
-	RetainPrometheusVPCE *bool  `json:"retainPrometheusVPCE,omitempty"`
+	ProdInstId string `json:"prodInstId,omitempty"` /*  集群ID，获取方式请参见<a href="https://www.ctyun.cn/document/10083472/11002105">如何获取接口URI中参数</a>。  */
 }
 
-type CcseDeleteClusterResponse struct {
-	StatusCode int32                               `json:"statusCode,omitempty"` /*  状态码  */
-	Message    string                              `json:"message,omitempty"`    /*  提示信息  */
-	ReturnObj  *CcseDeleteClusterReturnObjResponse `json:"returnObj"`            /*  返回对象  */
-	Error      string                              `json:"error,omitempty"`      /*  返回错误码  */
-	RequestId  string                              `json:"requestId"`
+type CcseDestroyClusterResponse struct {
+	StatusCode int32                                `json:"statusCode,omitempty"` /*  状态码  */
+	Message    string                               `json:"message,omitempty"`    /*  提示信息  */
+	ReturnObj  *CcseDestroyClusterReturnObjResponse `json:"returnObj"`            /*  返回对象  */
+	Error      string                               `json:"error,omitempty"`      /*  返回错误码  */
+	RequestId  string                               `json:"requestId"`
 }
 
-type CcseDeleteClusterReturnObjResponse struct {
+type CcseDestroyClusterReturnObjResponse struct {
 	OrderId string `json:"orderId,omitempty"` /*  订单ID  */
 	OrderNo string `json:"orderNo,omitempty"` /*  订单编码  */
 }

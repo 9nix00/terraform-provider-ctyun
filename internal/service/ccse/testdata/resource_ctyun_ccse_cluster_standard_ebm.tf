@@ -8,7 +8,7 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     network_plugin = "calico"
     pod_cidr = "172.26.0.0/16"
     pod_subnet_id_list = ["%[5]s"]
-    start_port = 20106
+    start_port = 30106
     end_port   = 32767
     elb_prod_code = "standardI"
     cycle_type  = "on_demand"

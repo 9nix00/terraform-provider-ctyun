@@ -1,5 +1,5 @@
 data "ctyun_vpcs" "vpc_test" {
-       page_size = 50
+  page_size = 50
 }
 
 locals {
@@ -44,6 +44,31 @@ locals {
   real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
 }
 
+
+data "ctyun_security_groups" "security_group_test" {
+  vpc_id = local.real_vpc_id
+}
+
+locals {
+  security_groups = [for security_group in data.ctyun_security_groups.security_group_test.security_groups : security_group if security_group.name == "tf-sg-for-paas"]
+  data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
+}
+
+resource "ctyun_security_group" "security_group_test" {
+  count    = local.data_vpc_id == "" ? 1 : 0
+  vpc_id      = local.real_vpc_id
+  name        = "tf-sg-for-paas"
+  description = "terraform测试使用"
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+locals {
+  real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
+}
+
+
 data "ctyun_ecs_flavors" "ecs_flavor_test" {
   cpu    = 4
   ram    = 8
@@ -66,7 +91,7 @@ resource "ctyun_ccse_cluster" "test" {
     cluster_name = local.cluster_name
     cluster_domain = "www.ctyun.com"
     network_plugin = "cubecni"
-    start_port = 20106
+    start_port = 30001
     end_port   = 32767
     elb_prod_code = "standardI"
     pod_subnet_id_list = [local.real_subnet_id]

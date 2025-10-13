@@ -6,6 +6,10 @@ output "subnet_id" {
   value = local.real_subnet_id
 }
 
+output "security_group_id" {
+  value = local.real_security_group_id
+}
+
 output "flavor_name" {
   value = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].name
 }
@@ -38,9 +42,9 @@ output "ecs_id" {
   value = ctyun_ecs.ecs_test.id
 }
 
-# output "ebm_id" {
-#   value = ctyun_ebm.ebm_test.id
-# }
+output "ebm_id" {
+  value = ctyun_ebm.ebm_test.id
+}
 
 output "ecs_mirror_id" {
   value = "3d2c356a-685a-4e8c-b904-bb0725bfc220"

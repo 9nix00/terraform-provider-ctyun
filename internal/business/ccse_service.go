@@ -24,7 +24,11 @@ func (c CcseService) GetCcseInfo(ctx context.Context, id, regionID string) (inst
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		if resp.Error == common.OpenapiCCSENotExist {
+			err = common.ResourceNotExistError
+		} else {
+			err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		}
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError

@@ -7,6 +7,8 @@ import (
 const EndpointName = "ccse"
 
 type Apis struct {
+	CcseDestroyClusterApi                        *CcseDestroyClusterApi
+	CcseGetPublicImageListApi                    *CcseGetPublicImageListApi
 	CcseUpdateClusterSeriesApi                   *CcseUpdateClusterSeriesApi
 	CcseQueryClusterSubUserApi                   *CcseQueryClusterSubUserApi
 	CcseGetClusterTempKubeConfigApi              *CcseGetClusterTempKubeConfigApi
@@ -179,6 +181,8 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		Url:  endpointUrl,
 	})
 	return &Apis{
+		CcseDestroyClusterApi:                        NewCcseDestroyClusterApi(client),
+		CcseGetPublicImageListApi:                    NewCcseGetPublicImageListApi(client),
 		CcseUpdateClusterSeriesApi:                   NewCcseUpdateClusterSeriesApi(client),
 		CcseQueryClusterSubUserApi:                   NewCcseQueryClusterSubUserApi(client),
 		CcseGetClusterTempKubeConfigApi:              NewCcseGetClusterTempKubeConfigApi(client),
