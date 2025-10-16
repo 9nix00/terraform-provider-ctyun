@@ -17,9 +17,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMongodbRestartDb{}
-	_ resource.ResourceWithConfigure   = &CtyunMongodbRestartDb{}
-	_ resource.ResourceWithImportState = &CtyunMongodbRestartDb{}
+	_ resource.Resource              = &CtyunMongodbRestartDb{}
+	_ resource.ResourceWithConfigure = &CtyunMongodbRestartDb{}
 )
 
 func NewCtyunMongodbRestartDb() resource.Resource {
@@ -145,21 +144,6 @@ func (c *CtyunMongodbRestartDb) Update(ctx context.Context, req resource.UpdateR
 
 func (c *CtyunMongodbRestartDb) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 
-}
-
-func (c *CtyunMongodbRestartDb) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	var cfg CtyunMongodbRestartDbConfig
-	if err != nil {
-		return
-	}
-	cfg.InstanceID = types.StringValue(req.ID)
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
 }
 
 func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, plan *CtyunMongodbRestartDbConfig) (err error) {

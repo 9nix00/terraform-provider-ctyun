@@ -67,6 +67,17 @@ func TestAccCtyunPrivateSNat(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "snats.0.source_subnet_id", updatedSubnetId),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					natGatewayId := ds.Attributes["nat_gateway_id"]
+					return fmt.Sprintf("%s,%s", id, natGatewayId), nil
+				},
+			},
 			// 1.4 资源销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, natGatewayID, updatedSubnetId, updatedSnatIps),

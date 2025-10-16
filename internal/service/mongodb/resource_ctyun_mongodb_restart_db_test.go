@@ -15,9 +15,7 @@ func TestAccMongodbRestartDb_basic(t *testing.T) {
 	resourceName := "ctyun_mongodb_restart_db." + rnd
 	resourceFile := "resource_ctyun_mongodb_restart_db.tf"
 
-	instance_id := "fafae8192ba049c9bc9de83f1cd8361b"
-	instance_id2 := "1538d18eb4a94c11a99e584133594665"
-	instance_id3 := "f68c4532bd4e4659986162f966fc34e0"
+	instance_id := dependence.mongodbID
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -36,20 +34,6 @@ func TestAccMongodbRestartDb_basic(t *testing.T) {
 				),
 			},
 
-			// 基本功能验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instance_id2),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-				),
-			},
-			// 基本功能验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instance_id3),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-				),
-			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, instance_id),
 				Destroy: true,

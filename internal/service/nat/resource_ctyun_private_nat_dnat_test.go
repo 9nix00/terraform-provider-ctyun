@@ -141,6 +141,14 @@ func TestAccCtyunPrivateDNat2(t *testing.T) {
 				),
 			},
 			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"nat_gateway_id",
+				},
+			},
+			{
 				// 3 datasource 验证
 				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, externalIp, updatedProtocol, updatedExternalPort, updatedInternalPort, dependence.portId, description) +
 					utils.LoadTestCase(datasourceFile, dnd, natGatewayId),

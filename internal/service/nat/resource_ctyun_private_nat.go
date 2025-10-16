@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -345,6 +346,26 @@ func (c *ctyunPrivateNat) ImportState(ctx context.Context, request resource.Impo
 	//从输入获取资源ID
 	//使用ID调用API查询远端数据
 	//用查询到的数据赋值State
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	var config CtyunPrivateNatConfig
+	var id, regionID string
+	err = terraform_extend.Split(request.ID, &id, &regionID)
+	if err != nil {
+		return
+	}
+	config.RegionID = types.StringValue(regionID)
+	config.NatGatewayID = types.StringValue(id)
+	err = c.getAndMergeNat(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 // 在创建nat实例之前，进行检查

@@ -48,14 +48,15 @@ func (c *ctyunPrivateSnatResource) ImportState(ctx context.Context, request reso
 	}()
 
 	var config CtyunPrivateSnatConfig
-	var id string
-	err = terraform_extend.Split(request.ID, &id)
+	var id, natGatewayId string
+	err = terraform_extend.Split(request.ID, &id, &natGatewayId)
 	if err != nil {
 		return
 	}
 	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
+	config.SNatID = types.StringValue(id)
 	config.RegionID = types.StringValue(regionId)
-
+	config.NatGatewayID = types.StringValue(natGatewayId)
 	err = c.getAndMergeSnat(ctx, &config)
 	if err != nil {
 		return

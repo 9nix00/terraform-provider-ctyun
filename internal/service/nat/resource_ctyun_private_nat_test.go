@@ -234,6 +234,20 @@ func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"nat_gateway_id",
+				},
+			},
 			// 销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount, subnetID),

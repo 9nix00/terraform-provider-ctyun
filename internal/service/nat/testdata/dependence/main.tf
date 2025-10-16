@@ -119,5 +119,5 @@ resource "ctyun_port" "port" {
 
 resource "ctyun_ecs_port_association" "ecs_port_for_association_test" {
   instance_id          =  ctyun_ecs.ecs_test.id
-  network_interface_id = ctyun_port.port.id
+  port_id = ctyun_port.port.id
 }

@@ -342,6 +342,13 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					stringvalidator.OneOf("shard", "mongos"),
 				},
 			},
+			"read_only_count": schema.Int32Attribute{
+				Required:    true,
+				Description: "从节点数量",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 5),
+				},
+			},
 		},
 	}
 }
@@ -389,7 +396,12 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 			return
 		}
 	}
-
+	if !plan.ReadOnlyCount.IsNull() {
+		err = c.updateMongodbReadOnly(ctx, &plan)
+		if err != nil {
+			return
+		}
+	}
 	err = c.getAndMergeMongodbInstance(ctx, &plan)
 	if err != nil {
 		return
@@ -459,10 +471,13 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if err != nil {
 		return
 	}
-	err = c.updateMongodbReadOnly(ctx, &state, &plan)
-	if err != nil {
-		return
+	if plan.ReadOnlyCount.IsNull() {
+		err = c.updateMongodbReadOnly(ctx, &plan)
+		if err != nil {
+			return
+		}
 	}
+
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeMongodbInstance(ctx, &state)
 	if err != nil {
@@ -2091,6 +2106,9 @@ func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMong
 		}
 		state.MongosNum = plan.MongosNum
 		state.ShardNum = plan.ShardNum
+	} else if mongodbType == business.MongodbProdTypeReadOnly {
+		// 4.0以上版本，需要指定prodPerformanceSpec
+
 	}
 	upgradeParams.AzList = azInfo
 	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpgradeApi.Do(ctx, c.meta.Credential, &upgradeParams, &upgradeHeader)
@@ -2384,21 +2402,21 @@ func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, st
 	return
 }
 
-func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) error {
+func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, plan *CtyunMongodbInstanceConfig) error {
 	// 确认实例处于运行状态
-	_, err := c.PreCheckUpdateLoop(ctx, state, 60)
+	_, err := c.PreCheckUpdateLoop(ctx, plan, 60)
 	if err != nil {
 		return err
 	}
 
 	// 获取当前只读节点数量
-	currentReadOnlyCount, err := c.getCurrentReadOnlyNodeCount(ctx, state)
+	currentReadOnlyCount, err := c.getCurrentReadOnlyNodeCount(ctx, plan)
 	if err != nil {
 		return err
 	}
 
 	// 计算需要新增的只读节点数量
-	targetReadOnlyCount := plan.ShardNum.ValueInt32() // 假设使用ShardNum作为目标只读节点数，你可以根据实际需求调整
+	targetReadOnlyCount := plan.ReadOnlyCount.ValueInt32() // 假设使用ShardNum作为目标只读节点数，你可以根据实际需求调整
 	addReadOnlyCount := targetReadOnlyCount - currentReadOnlyCount
 
 	if addReadOnlyCount <= 0 {
@@ -2406,19 +2424,19 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state 
 	}
 
 	// 构造升级参数
-	nodeType := "readOnly"
+	nodeType := "readonly"
 	updateParams := &mongodb.MongodbUpgradeRequest{
-		InstId:   state.ID.ValueString(),
+		InstId:   plan.ID.ValueString(),
 		NodeType: &nodeType,
 	}
 
 	updateHeader := &mongodb.MongodbUpgradeRequestHeader{}
-	if !state.ProjectID.IsNull() {
-		updateHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	if !plan.ProjectID.IsNull() {
+		updateHeader.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
 	// 获取可用区列表
-	azList, err := c.getRegionAzInfoList(ctx, state)
+	azList, err := c.getRegionAzInfoList(ctx, plan)
 	if err != nil {
 		return err
 	}
@@ -2451,7 +2469,7 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state 
 			var azInfo mongodb.AvailabilityZoneInfo
 			azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
 			azInfo.AvailabilityZoneCount = distNodeNum[idx]
-			azInfo.NodeType = &nodeType
+			//azInfo.NodeType = &nodeType
 			azInfoList = append(azInfoList, azInfo)
 		}
 	} else if azNum == 2 {
@@ -2469,7 +2487,7 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state 
 			var azInfo mongodb.AvailabilityZoneInfo
 			azInfo.AvailabilityZoneName = azItem.AvailabilityZoneName
 			azInfo.AvailabilityZoneCount = distNodeNum[idx]
-			azInfo.NodeType = &nodeType
+			//azInfo.NodeType = &nodeType
 			azInfoList = append(azInfoList, azInfo)
 		}
 	} else {
@@ -2477,7 +2495,7 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state 
 		var azInfo mongodb.AvailabilityZoneInfo
 		azInfo.AvailabilityZoneName = azList[0].AvailabilityZoneName
 		azInfo.AvailabilityZoneCount = addReadOnlyCount
-		azInfo.NodeType = &nodeType
+		//azInfo.NodeType = &nodeType
 		azInfoList = append(azInfoList, azInfo)
 	}
 
@@ -2494,7 +2512,7 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, state 
 	}
 
 	// 等待操作完成
-	err = c.afterUpdateSpecLoop(ctx, state)
+	err = c.afterUpdateSpecLoop(ctx, plan)
 	if err != nil {
 		return err
 	}
@@ -2550,13 +2568,13 @@ type CtyunMongodbInstanceConfig struct {
 	BackupStorageSpace      types.Int32  `tfsdk:"backup_storage_space"`      // 备用节点磁盘空间
 	BackupStorageType       types.String `tfsdk:"backup_storage_type"`       // 备份节点存储类型
 	UpgradeNodeType         types.String `tfsdk:"upgrade_node_type"`         // 集群版mongodb升配规格时，
-
-	prodPerformanceSpec string
-	instanceSeries      string
-	hostType            string
-	osType              string
-	cpuType             string
-	replicaNum          int32
+	ReadOnlyCount           types.Int32  `tfsdk:"read_only_count"`
+	prodPerformanceSpec     string
+	instanceSeries          string
+	hostType                string
+	osType                  string
+	cpuType                 string
+	replicaNum              int32
 }
 
 type NodeInfoListModel struct {

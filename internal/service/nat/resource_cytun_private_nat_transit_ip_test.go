@@ -51,6 +51,22 @@ func TestAccCtyunPrivateNatTransitIp(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
 				),
 			},
+
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					region_id := ds.Attributes["region_id"]
+					nat_gateway_id := ds.Attributes["nat_gateway_id"]
+					address1 := ds.Attributes["address"]
+					return fmt.Sprintf("%s,%s,%s", region_id, nat_gateway_id, address1), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"nat_gateway_id",
+				},
+			},
 			{
 				// 3. datasource 验证
 				Config: utils.LoadTestCase(resourceFile, rnd, natGatewayId, updatedAddress) +

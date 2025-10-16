@@ -12,6 +12,70 @@ import (
 	"time"
 )
 
+// 集群版，传azList，更新mongos 和shard spec
+func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpecReadOnly(t *testing.T) {
+	t.Parallel()
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_mongodb_instance." + rnd
+	resourceFile := "resource_ctyun_mongodb_instance_single_read_only.tf"
+	// 创建参数
+	cycleType := "on_demand"
+	vpcID := dependence.vpcID
+	flavorName := "s7.large.2"
+	subnetID := dependence.subnetID
+	securityGroupID := dependence.securityGroupID
+	name := "tf-mongodb-single-" + utils.GenerateRandomString()
+	password := "Kyk123=" + utils.GenerateRandomString()
+	prodId := "Cluster34"
+	readPort := 12345
+	storageType := "SAS"
+	storageSpace := 100
+	backupStorageType := "OS"
+	//azName := dependence.azName
+	//azInfo := fmt.Sprintf(`[{"availability_zone_name":"%s","availability_zone_count":2,"node_type":"mongos"},
+	//			{"availability_zone_name":"%s","availability_zone_count":6,"node_type":"shard"},
+	//			{"availability_zone_name":"%s","availability_zone_count":3,"node_type":"config"}]`, azName, azName, azName)
+
+	//更新参数
+
+	readOnlyCount := 2
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 创建一个单节点的mongodb实例
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, flavorName, subnetID, securityGroupID, name, password, prodId, readPort, storageType, storageSpace,
+					backupStorageType, readOnlyCount),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					//resource.TestCheckResourceAttr(resourceName, "password", password),
+					resource.TestCheckResourceAttr(resourceName, "read_port", strconv.Itoa(readPort)),
+					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
+					resource.TestCheckResourceAttr(resourceName, "storage_space", strconv.Itoa(storageSpace)),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", backupStorageType),
+					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
+					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
+					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+				),
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, flavorName, subnetID, securityGroupID, name, password, prodId, readPort, storageType, storageSpace,
+					backupStorageType, readOnlyCount),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 // 单机、按需、有az、备份盘
 func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 	t.Parallel()

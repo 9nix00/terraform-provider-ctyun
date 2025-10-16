@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -126,7 +127,7 @@ func (c *ctyunPrivateNatTransitIpResource) Create(ctx context.Context, request r
 	}
 
 	// 设置ID
-	id := fmt.Sprintf("%s:%s:%s", plan.RegionID.ValueString(), plan.NatGatewayID.ValueString(), plan.Address.ValueString())
+	id := fmt.Sprintf("%s,%s,%s", plan.RegionID.ValueString(), plan.NatGatewayID.ValueString(), plan.Address.ValueString())
 	plan.ID = types.StringValue(id)
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 	if response.Diagnostics.HasError() {
@@ -217,12 +218,10 @@ func (c *ctyunPrivateNatTransitIpResource) ImportState(ctx context.Context, requ
 	// 导入格式为 regionID:natGatewayID:address
 	importId := request.ID
 	var regionId, natGatewayId, address string
-	_, err := fmt.Sscanf(importId, "%s:%s:%s", &regionId, &natGatewayId, &address)
+	err := terraform_extend.Split(request.ID, &regionId, &natGatewayId, &address)
 	if err != nil {
-		response.Diagnostics.AddError("导入ID格式错误", "导入ID格式应为 regionID:natGatewayID:address")
 		return
 	}
-
 	var cfg CtyunPrivateNatTransitIpConfig
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.NatGatewayID = types.StringValue(natGatewayId)
