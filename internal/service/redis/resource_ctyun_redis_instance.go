@@ -50,32 +50,42 @@ func (c *ctyunRedisInstance) Metadata(_ context.Context, request resource.Metada
 }
 
 type CtyunRedisInstanceConfig struct {
-	ID                  types.String `tfsdk:"id"`
-	Name                types.String `tfsdk:"name"`
-	MasterOrderID       types.String `tfsdk:"master_order_id"`
-	RegionID            types.String `tfsdk:"region_id"`
-	ProjectID           types.String `tfsdk:"project_id"`
-	CycleCount          types.Int32  `tfsdk:"cycle_count"`
-	CycleType           types.String `tfsdk:"cycle_type"`        // on_demand 和 month
-	AzName              types.String `tfsdk:"az_name"`           /*  主可用区名称，您可以查看<a href="https://www.ctyun.cn/document/10026730/10028695">地域和可用区</a>来了解可用区<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=17764&isNormal=1&vid=270">查询可用区信息</a> name字段  */
-	SecondaryAzName     types.String `tfsdk:"secondary_az_name"` /*  备可用区名称(双/多副本建议填写)<br>默认与主可用区相同  */
-	EngineVersion       types.String `tfsdk:"engine_version"`    /*  Redis引擎版本<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中的engineTypeItems(引擎版本可选值)  */
-	Version             types.String `tfsdk:"version"`           /*  版本类型。<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中的version值<br>可选值：<li>BASIC：基础版<li>PLUS：增强版<li>Classic：经典版  */
-	Edition             types.String `tfsdk:"edition"`           /*  实例类型<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a>  使用表SeriesInfo中的seriesCode值  */
-	HostType            types.String `tfsdk:"host_type"`         /*  主机类型<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表resItems中resType==ecs的items(主机类型可选值)  */
-	DataDiskType        types.String `tfsdk:"data_disk_type"`
-	ShardMemSize        types.Int32  `tfsdk:"shard_mem_size"` /*  单分片内存(GB)<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中shardMemSizeItems(单分片内存可选值)，若shardMemSizeItems为空则无需填写  */
-	ShardCount          types.Int32  `tfsdk:"shard_count"`
-	CopiesCount         types.Int32  `tfsdk:"copies_count"`           /*  副本数量，取值范围2-6。<li>OriginalMultipleReadLvs：必填</li><li>StandardDual/DirectCluster/ClusterOriginalProxy：选填</li><li>其他实例类型：无需填写</li>  */
-	InstanceName        types.String `tfsdk:"instance_name"`          /*  实例名称<li>字母开头</li><li>可包含字母/数字/中划线</li><li>长度1-39<li>实例名称不可重复</li>  */
-	VpcID               types.String `tfsdk:"vpc_id"`                 /*  虚拟私有云ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10028310">产品定义-虚拟私有云</a>来了解虚拟私有云<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=4814&data=94&vid=88">查询VPC列表</a> vpcID字段。<br><span style="background-color: rgb(97, 175, 254);color: rgb(255,255,255);padding: 2px; margin:2px">创</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=4811&data=94&vid=88">创建VPC</a>  */
-	SubnetID            types.String `tfsdk:"subnet_id"`              /*  子网ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10098380">基本概念</a>来查找子网的相关定义<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=8659&data=94&vid=88">查询子网列表</a> subnetID字段。  */
-	SecurityGroupID     types.String `tfsdk:"security_group_id"`      /*  安全组ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10028520">安全组概述</a>了解安全组相关信息<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/searchCtapi/ctApiDebug?product=18&api=4817&vid=88">查询用户安全组列表</a> id字段。  */
-	Password            types.String `tfsdk:"password"`               /*  实例密码<li>长度8-26字符</li><li>必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型</li><li>不能有空格</li>  */
-	AutoRenew           types.Bool   `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
-	AutoRenewCycleCount types.Int32  `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
-	MaintenanceTime     types.String `tfsdk:"maintenance_time"`
-	ProtectionStatus    types.Bool   `tfsdk:"protection_status"`
+	ID                  types.String                    `tfsdk:"id"`
+	Name                types.String                    `tfsdk:"name"`
+	MasterOrderID       types.String                    `tfsdk:"master_order_id"`
+	RegionID            types.String                    `tfsdk:"region_id"`
+	ProjectID           types.String                    `tfsdk:"project_id"`
+	CycleCount          types.Int32                     `tfsdk:"cycle_count"`
+	CycleType           types.String                    `tfsdk:"cycle_type"` // on_demand 和 month
+	ActualCycleType     types.String                    `tfsdk:"actual_cycle_type"`
+	AzName              types.String                    `tfsdk:"az_name"`           /*  主可用区名称，您可以查看<a href="https://www.ctyun.cn/document/10026730/10028695">地域和可用区</a>来了解可用区<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=17764&isNormal=1&vid=270">查询可用区信息</a> name字段  */
+	SecondaryAzName     types.String                    `tfsdk:"secondary_az_name"` /*  备可用区名称(双/多副本建议填写)<br>默认与主可用区相同  */
+	EngineVersion       types.String                    `tfsdk:"engine_version"`    /*  Redis引擎版本<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中的engineTypeItems(引擎版本可选值)  */
+	Version             types.String                    `tfsdk:"version"`           /*  版本类型。<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中的version值<br>可选值：<li>BASIC：基础版<li>PLUS：增强版<li>Classic：经典版  */
+	Edition             types.String                    `tfsdk:"edition"`           /*  实例类型<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a>  使用表SeriesInfo中的seriesCode值  */
+	HostType            types.String                    `tfsdk:"host_type"`         /*  主机类型<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表resItems中resType==ecs的items(主机类型可选值)  */
+	DataDiskType        types.String                    `tfsdk:"data_disk_type"`
+	ShardMemSize        types.Int32                     `tfsdk:"shard_mem_size"` /*  单分片内存(GB)<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=49&api=7726&isNormal=1&vid=270">资源池可创建规格</a> 使用表SeriesInfo中shardMemSizeItems(单分片内存可选值)，若shardMemSizeItems为空则无需填写  */
+	ShardCount          types.Int32                     `tfsdk:"shard_count"`
+	CopiesCount         types.Int32                     `tfsdk:"copies_count"`           /*  副本数量，取值范围2-6。<li>OriginalMultipleReadLvs：必填</li><li>StandardDual/DirectCluster/ClusterOriginalProxy：选填</li><li>其他实例类型：无需填写</li>  */
+	InstanceName        types.String                    `tfsdk:"instance_name"`          /*  实例名称<li>字母开头</li><li>可包含字母/数字/中划线</li><li>长度1-39<li>实例名称不可重复</li>  */
+	VpcID               types.String                    `tfsdk:"vpc_id"`                 /*  虚拟私有云ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10028310">产品定义-虚拟私有云</a>来了解虚拟私有云<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=4814&data=94&vid=88">查询VPC列表</a> vpcID字段。<br><span style="background-color: rgb(97, 175, 254);color: rgb(255,255,255);padding: 2px; margin:2px">创</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=4811&data=94&vid=88">创建VPC</a>  */
+	SubnetID            types.String                    `tfsdk:"subnet_id"`              /*  子网ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10098380">基本概念</a>来查找子网的相关定义<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/ctapiDocument/search?sid=18&api=8659&data=94&vid=88">查询子网列表</a> subnetID字段。  */
+	SecurityGroupID     types.String                    `tfsdk:"security_group_id"`      /*  安全组ID，您可以查看<a href="https://www.ctyun.cn/document/10026755/10028520">安全组概述</a>了解安全组相关信息<br><span style="background-color: rgb(73, 204, 144);color: rgb(255,255,255);padding: 2px; margin:2px">查</span> <a href="https://eop.ctyun.cn/ebp/searchCtapi/ctApiDebug?product=18&api=4817&vid=88">查询用户安全组列表</a> id字段。  */
+	Password            types.String                    `tfsdk:"password"`               /*  实例密码<li>长度8-26字符</li><li>必须同时包含大写字母、小写字母、数字、英文格式特殊符号(@%^*_+!$-=.) 中的三种类型</li><li>不能有空格</li>  */
+	AutoRenew           types.Bool                      `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
+	AutoRenewCycleCount types.Int32                     `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
+	MaintenanceTime     types.String                    `tfsdk:"maintenance_time"`
+	ProtectionStatus    types.Bool                      `tfsdk:"protection_status"`
+	BackupPolicy        *CtyunRedisInstanceBackupPolicy `tfsdk:"backup_policy"`
+	SslEnabled          types.Bool                      `tfsdk:"ssl_enabled"`
+	TemplateID          types.String                    `tfsdk:"template_id"`
+}
+
+type CtyunRedisInstanceBackupPolicy struct {
+	Period       types.String `tfsdk:"period"`
+	Time         types.Int32  `tfsdk:"time"`
+	RetentionDay types.Int32  `tfsdk:"retentionDay"`
 }
 
 func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -127,9 +137,6 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
 				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
@@ -145,9 +152,10 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					),
 					int32validator.OneOf(1, 2, 3, 4, 5, 6, 12, 24, 36),
 				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
-				},
+			},
+			"actual_cycle_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。",
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
@@ -379,6 +387,41 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "退订保护开关，默认为不保护，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
+			"backup_policy": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "实例的备份策略配置",
+				Attributes: map[string]schema.Attribute{
+					"period": schema.StringAttribute{
+						Required:    true,
+						Description: "备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份",
+					},
+					"time_window": schema.Int32Attribute{
+						Required:    true,
+						Description: "每日备份执行时间（0-23）",
+						Validators: []validator.Int32{
+							int32validator.Between(0, 23),
+						},
+					},
+					"retention_day": schema.Int32Attribute{
+						Required:    true,
+						Description: "备份保留天数（1-7）",
+						Validators: []validator.Int32{
+							int32validator.Between(1, 7),
+						},
+					},
+				},
+			},
+			"ssl_enabled": schema.BoolAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "ssl 加密设置，默认false",
+				Default:     booldefault.StaticBool(false),
+			},
+			"template_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "参数模板ID，用于应用参数模板",
+				Validators:  []validator.String{},
+			},
 		},
 	}
 }
@@ -476,7 +519,9 @@ func (c *ctyunRedisInstance) Update(ctx context.Context, request resource.Update
 	if err != nil {
 		return
 	}
+	state.CycleType, state.CycleCount = plan.CycleType, plan.CycleCount
 	state.Password = plan.Password
+	state.TemplateID = plan.TemplateID
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -767,6 +812,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 	if len(instance.AzList) > 1 {
 		plan.SecondaryAzName = types.StringValue(instance.AzList[1].AzEngName)
 	}
+	plan.ActualCycleType = types.StringValue(map[int32]string{0: business.OrderCycleTypeMonth, 1: business.OrderCycleTypeOnDemand}[instance.PayType])
 
 	plan.MaintenanceTime = types.StringValue(instance.MaintenanceTime)
 	plan.ProtectionStatus = utils.SecBoolValue(instance.ProtectionStatus)
@@ -798,7 +844,24 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 		case "autoRenewPeriod":
 		}
 	}
-
+	policy, err := c.getBackupPolicy(ctx, *plan)
+	if err != nil {
+		return
+	}
+	if policy == nil {
+		plan.BackupPolicy = nil
+	} else {
+		plan.BackupPolicy = &CtyunRedisInstanceBackupPolicy{
+			Period:       types.StringValue(policy.PreferredBackupPeriod),
+			Time:         types.Int32Value(utils.StringToInt32Must(policy.PreferredBackupTime)),
+			RetentionDay: types.Int32Value(policy.BackupRetentionPeriod),
+		}
+	}
+	ssl, err := c.getSSL(ctx, *plan)
+	if err != nil {
+		return
+	}
+	plan.SslEnabled = utils.SecBoolValue(ssl.SslSwitch)
 	return
 }
 
@@ -817,6 +880,75 @@ func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisI
 	}
 	err = c.updateEngineVersion(ctx, plan, state)
 	if err != nil {
+		return
+	}
+	err = c.updateCycle(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateBackupPolicy(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateSSL(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateParamTemplateID(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// updateCycle 包周期到期转按需和按需转包周期
+func (c *ctyunRedisInstance) updateCycle(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	if plan.CycleType.Equal(state.CycleType) {
+		return
+	}
+	if plan.CycleType.ValueString() == business.OnDemandCycleType {
+		err = c.transToPrePaid(ctx, state)
+	} else {
+		err = c.transChargeType(ctx, plan, state)
+	}
+	return
+}
+
+// transToPrePaid 包周期到期转按需
+func (c *ctyunRedisInstance) transToPrePaid(ctx context.Context, state CtyunRedisInstanceConfig) (err error) {
+	params := &dcs2.Dcs2TransToPrePaidRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2TransToPrePaidApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// transChargeType 按需转包周期
+func (c *ctyunRedisInstance) transChargeType(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	params := &dcs2.Dcs2TransChargeTypeRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+		CycleCnt:   plan.CycleCount.ValueInt32(),
+		AutoPay:    true,
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2TransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return
 	}
 	return
@@ -1014,6 +1146,118 @@ func (c *ctyunRedisInstance) updateAttr(ctx context.Context, plan CtyunRedisInst
 		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
 	}
+	return
+}
+
+// updateParamTemplateID 更新参数模板ID
+func (c *ctyunRedisInstance) updateParamTemplateID(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	if plan.TemplateID.Equal(state.TemplateID) {
+		return
+	}
+	return c.applyParamTemplate(ctx, plan)
+}
+
+// applyParamTemplate 应用参数模板
+func (c *ctyunRedisInstance) applyParamTemplate(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	params := &dcs2.Dcs2ApplyTemplateToInstanceRequest{
+		RegionId:    plan.RegionID.ValueString(),
+		TemplateId:  plan.TemplateID.ValueString(),
+		ProdInstIds: []string{plan.ID.ValueString()},
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2ApplyTemplateToInstanceApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	return
+}
+
+// updateSSL 更新ssl配置
+func (c *ctyunRedisInstance) updateSSL(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	if plan.SslEnabled.Equal(state.SslEnabled) {
+		return
+	}
+	params := &dcs2.Dcs2ModifyInstanceSSLRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+		SslEnabled: map[bool]string{true: "Enable", false: "Disable"}[plan.SslEnabled.ValueBool()],
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2ModifyInstanceSSLApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	return
+}
+
+// updateBackupPolicy 更新Redis自动备份策略
+func (c *ctyunRedisInstance) updateBackupPolicy(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+	params := &dcs2.Dcs2ModifyBackupPolicyRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+
+	if plan.BackupPolicy == nil && state.BackupPolicy != nil {
+		params.EnableAutoBackup = false
+	} else if plan.BackupPolicy != nil && (state.BackupPolicy == nil ||
+		!state.BackupPolicy.Time.Equal(plan.BackupPolicy.Time) ||
+		!state.BackupPolicy.Period.Equal(plan.BackupPolicy.RetentionDay) ||
+		!state.BackupPolicy.RetentionDay.Equal(plan.BackupPolicy.RetentionDay)) {
+		params.EnableAutoBackup = true
+		params.PreferredBackupPeriod = plan.BackupPolicy.Period.ValueString()
+		params.PreferredBackupTime = fmt.Sprint(plan.BackupPolicy.Time.ValueInt32())
+		params.BackupRetentionPeriod = fmt.Sprint(plan.BackupPolicy.RetentionDay.ValueInt32())
+	} else {
+		return
+	}
+
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2ModifyBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	return
+}
+
+// getSSL 查询SSL配置
+func (c *ctyunRedisInstance) getSSL(ctx context.Context, plan CtyunRedisInstanceConfig) (ssl *dcs2.Dcs2DescribeInstanceSSLReturnObjResponse, err error) {
+	params := &dcs2.Dcs2DescribeInstanceSSLRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeInstanceSSLApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	ssl = resp.ReturnObj
+	return
+}
+
+// getBackupPolicy 查询备份策略
+func (c *ctyunRedisInstance) getBackupPolicy(ctx context.Context, plan CtyunRedisInstanceConfig) (policy *dcs2.Dcs2DescribeBackupPolicyReturnObjResponse, err error) {
+	params := &dcs2.Dcs2DescribeBackupPolicyRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	policy = resp.ReturnObj
 	return
 }
 
