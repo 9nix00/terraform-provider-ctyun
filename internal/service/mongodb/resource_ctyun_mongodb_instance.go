@@ -345,7 +345,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				},
 			},
 			"read_only_count": schema.Int32Attribute{
-				Required:    true,
+				Optional:    true,
 				Description: "从节点数量",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 5),
@@ -460,8 +460,6 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if response.Diagnostics.HasError() {
 		return
 	}
-
-
 
 	// 通过flavor_name获取cpu，memory等规格信息
 	err = c.checkSpec(ctx, &plan)

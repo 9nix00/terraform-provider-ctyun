@@ -100,10 +100,15 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码（8-26位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为~!@#%^*_=+），RSA公钥加密存储,支持更新",
+				Description: "实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(8, 26),
-					validator2.MongodbPassword(),
+					validator2.DBPassword(
+						8,
+						26,
+						4,
+						"MongoDB",
+						"~!@#%^*_=+",
+					),
 				},
 			},
 			"database": schema.StringAttribute{
