@@ -9,13 +9,13 @@ output "subnet_id" {
 output "security_group_id" {
   value = local.real_security_group_id
 }
-# output "mongodb_id"{
-#   value = ctyun_mongodb_instance.mongodb_eip.id
-# }
-#
-# output "mongodb_host_ip"{
-#   value = ctyun_mongodb_instance.mongodb_eip.host_ip
-# }
+output "mongodb_id"{
+  value = ctyun_mongodb_instance.mongodb_eip.id
+}
+
+output "mongodb_host_ip"{
+  value = ctyun_mongodb_instance.mongodb_eip.host_ip
+}
 
 output "eip_id" {
   value = ctyun_eip.eip_test.id

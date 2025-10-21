@@ -338,16 +338,14 @@ func (c *ctyunPrivateDnatResource) ImportState(ctx context.Context, request reso
 	}()
 
 	var cfg CtyunPrivateDnatConfig
-	var id string
-	err = terraform_extend.Split(request.ID, &id)
+	var id, natGatewayId, regionId string
+	err = terraform_extend.Split(request.ID, &id, &natGatewayId, &regionId)
 	if err != nil {
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(cfg.RegionID.ValueString(), common.ExtraRegionId)
 	cfg.RegionID = types.StringValue(regionId)
-
-	natGatewayId := cfg.NatGatewayID.ValueString()
 	cfg.NatGatewayID = types.StringValue(natGatewayId)
+	cfg.DnatID = types.StringValue(id)
 	err = c.getAndMergePrivateDnat(ctx, &cfg)
 	if err != nil {
 		return

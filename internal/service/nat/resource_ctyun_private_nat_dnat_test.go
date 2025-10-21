@@ -144,8 +144,12 @@ func TestAccCtyunPrivateDNat2(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"nat_gateway_id",
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					natGatewayID := ds.Attributes["nat_gateway_id"]
+					return fmt.Sprintf("%s,%ss,%s", id, regionId, natGatewayID), nil
 				},
 			},
 			{
