@@ -80,12 +80,14 @@ type CtyunRedisInstanceConfig struct {
 	BackupPolicy        *CtyunRedisInstanceBackupPolicy `tfsdk:"backup_policy"`
 	SslEnabled          types.Bool                      `tfsdk:"ssl_enabled"`
 	TemplateID          types.String                    `tfsdk:"template_id"`
+	ProtectedConn       types.String                    `tfsdk:"protected_conn"`
+	TlsVersion          types.String                    `tfsdk:"tls_version"`
 }
 
 type CtyunRedisInstanceBackupPolicy struct {
 	Period       types.String `tfsdk:"period"`
 	Time         types.Int32  `tfsdk:"time"`
-	RetentionDay types.Int32  `tfsdk:"retentionDay"`
+	RetentionDay types.Int32  `tfsdk:"retention_day"`
 }
 
 func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -206,6 +208,11 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Description: "Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.RedisEngineVersion...),
+					validator2.CrossFieldString(
+						path.MatchRoot("version"),
+						[]any{"PLUS"},
+						[]string{"6.0", "7.0"},
+					),
 				},
 			},
 			"data_disk_type": schema.StringAttribute{
@@ -351,7 +358,20 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					),
 				},
 				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.RequiresReplace(),
+					boolplanmodifier.RequiresReplaceIf(
+						func(ctx context.Context, request planmodifier.BoolRequest, response *boolplanmodifier.RequiresReplaceIfFuncResponse) {
+							var planCycleType string
+							request.Plan.GetAttribute(ctx, path.Root("cycle_type"), &planCycleType)
+
+							var stateCycleType string
+							request.State.GetAttribute(ctx, path.Root("cycle_type"), &stateCycleType)
+							if stateCycleType == planCycleType || stateCycleType == business.OrderCycleTypeOnDemand {
+								response.RequiresReplace = true
+							}
+							return
+						},
+						"不支持修改自动续订参数", "不支持修改自动续订参数",
+					),
 				},
 			},
 			"auto_renew_cycle_count": schema.Int32Attribute{
@@ -369,7 +389,20 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 					int32validator.OneOf(1, 2, 3, 5, 6, 7, 12, 24, 36),
 				},
 				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
+					int32planmodifier.RequiresReplaceIf(
+						func(ctx context.Context, request planmodifier.Int32Request, response *int32planmodifier.RequiresReplaceIfFuncResponse) {
+							var planCycleType string
+							request.Plan.GetAttribute(ctx, path.Root("cycle_type"), &planCycleType)
+
+							var stateCycleType string
+							request.State.GetAttribute(ctx, path.Root("cycle_type"), &stateCycleType)
+							if stateCycleType == planCycleType || stateCycleType == business.OrderCycleTypeOnDemand {
+								response.RequiresReplace = true
+							}
+							return
+						},
+						"不支持修改自动续订参数", "不支持修改自动续订参数",
+					),
 				},
 			},
 			"maintenance_time": schema.StringAttribute{
@@ -395,7 +428,7 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 						Required:    true,
 						Description: "备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份",
 					},
-					"time_window": schema.Int32Attribute{
+					"time": schema.Int32Attribute{
 						Required:    true,
 						Description: "每日备份执行时间（0-23）",
 						Validators: []validator.Int32{
@@ -414,13 +447,36 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"ssl_enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "ssl 加密设置，默认false",
+				Description: "ssl加密设置，设置该值会触发重启，只有version为BASIC且engine_version为6.0、7.0且edition为StandardSingle、StandardDual、DirectClusterSingle或DirectCluster时才能设置，支持更新",
 				Default:     booldefault.StaticBool(false),
+				Validators: []validator.Bool{
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("engine_version"),
+						types.StringValue("5.0")),
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("edition"),
+						types.StringValue(business.RedisEditionClusterOriginalProxy),
+						types.StringValue(business.RedisEditionOriginalMultipleReadLvs),
+					),
+					validator2.ConflictsWithEqualBool(
+						path.MatchRoot("version"),
+						types.StringValue("PLUS")),
+				},
+			},
+			"protected_conn": schema.StringAttribute{
+				Computed:    true,
+				Description: "受保护的连接地址",
+			},
+			"tls_version": schema.StringAttribute{
+				Computed:    true,
+				Description: "TLS版本",
 			},
 			"template_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "参数模板ID，用于应用参数模板",
-				Validators:  []validator.String{},
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(45, 45),
+				},
 			},
 		},
 	}
@@ -456,11 +512,29 @@ func (c *ctyunRedisInstance) Create(ctx context.Context, request resource.Create
 	}
 	plan.ID = types.StringValue(id)
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-
 	err = c.updateAttr(ctx, plan)
 	if err != nil {
 		return
 	}
+	if plan.SslEnabled.ValueBool() {
+		err = c.updateSSL(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
+	if plan.TemplateID.ValueString() != "" {
+		err = c.applyParamTemplate(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
+	if plan.BackupPolicy != nil {
+		err = c.setBackupPolicy(ctx, plan)
+		if err != nil {
+			return
+		}
+	}
+
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
@@ -789,22 +863,10 @@ func (c *ctyunRedisInstance) create(ctx context.Context, plan CtyunRedisInstance
 
 // getAndMerge 从远端查询
 func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisInstanceConfig) (err error) {
-	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
-	params := &dcs2.Dcs2DescribeInstancesOverviewRequest{
-		RegionId:   regionID,
-		ProdInstId: id,
-	}
-	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeInstancesOverviewApi.Do(ctx, c.meta.SdkCredential, params)
+	instance, err := c.getByID(ctx, *plan)
 	if err != nil {
 		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-	instance := resp.ReturnObj.UserInfo
 
 	if len(instance.AzList) > 0 {
 		plan.AzName = types.StringValue(instance.AzList[0].AzEngName)
@@ -813,7 +875,10 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 		plan.SecondaryAzName = types.StringValue(instance.AzList[1].AzEngName)
 	}
 	plan.ActualCycleType = types.StringValue(map[int32]string{0: business.OrderCycleTypeMonth, 1: business.OrderCycleTypeOnDemand}[instance.PayType])
-
+	if plan.CycleType.ValueString() == business.OrderCycleTypeOnDemand {
+		plan.AutoRenew = types.BoolValue(false)
+		plan.AutoRenewCycleCount = types.Int32Null()
+	}
 	plan.MaintenanceTime = types.StringValue(instance.MaintenanceTime)
 	plan.ProtectionStatus = utils.SecBoolValue(instance.ProtectionStatus)
 	plan.EngineVersion = types.StringValue(instance.EngineVersion)
@@ -837,8 +902,8 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 			plan.SubnetID = types.StringValue(p.AttrVal)
 		case "securityGroupUuid":
 			plan.SecurityGroupID = types.StringValue(p.AttrVal)
-		case "autoRenewStatus":
-			plan.AutoRenew = types.BoolValue(map[string]bool{"false": false, "true": true}[p.AttrVal])
+		//case "autoRenewStatus":
+		//	plan.AutoRenew = types.BoolValue(map[string]bool{"false": false, "true": true}[p.AttrVal])
 		case "projectId":
 			plan.ProjectID = types.StringValue(p.AttrVal)
 		case "autoRenewPeriod":
@@ -848,7 +913,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 	if err != nil {
 		return
 	}
-	if policy == nil {
+	if policy == nil || !policy.EnableAutoBackup {
 		plan.BackupPolicy = nil
 	} else {
 		plan.BackupPolicy = &CtyunRedisInstanceBackupPolicy{
@@ -857,11 +922,19 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 			RetentionDay: types.Int32Value(policy.BackupRetentionPeriod),
 		}
 	}
-	ssl, err := c.getSSL(ctx, *plan)
-	if err != nil {
+	ssl, err2 := c.getSSL(ctx, *plan)
+	if err2 != nil {
+		err = err2
 		return
 	}
-	plan.SslEnabled = utils.SecBoolValue(ssl.SslSwitch)
+	if ssl != nil {
+		plan.SslEnabled = utils.SecBoolValue(ssl.SslSwitch)
+		plan.TlsVersion = types.StringValue(ssl.TlsVersion)
+		plan.ProtectedConn = types.StringValue(ssl.ProtectedConn)
+	} else {
+		plan.TlsVersion = types.StringNull()
+		plan.ProtectedConn = types.StringNull()
+	}
 	return
 }
 
@@ -890,13 +963,18 @@ func (c *ctyunRedisInstance) update(ctx context.Context, plan, state CtyunRedisI
 	if err != nil {
 		return
 	}
-	err = c.updateSSL(ctx, plan, state)
-	if err != nil {
-		return
+
+	if !plan.SslEnabled.Equal(state.SslEnabled) {
+		err = c.updateSSL(ctx, plan)
+		if err != nil {
+			return
+		}
 	}
-	err = c.updateParamTemplateID(ctx, plan, state)
-	if err != nil {
-		return
+	if !plan.TemplateID.Equal(state.TemplateID) && plan.TemplateID.ValueString() != "" {
+		err = c.applyParamTemplate(ctx, plan)
+		if err != nil {
+			return
+		}
 	}
 	return
 }
@@ -907,9 +985,10 @@ func (c *ctyunRedisInstance) updateCycle(ctx context.Context, plan, state CtyunR
 		return
 	}
 	if plan.CycleType.ValueString() == business.OnDemandCycleType {
-		err = c.transToPrePaid(ctx, state)
+		err = c.transToPrePaid(ctx, plan)
 	} else {
-		err = c.transChargeType(ctx, plan, state)
+		err = c.transChargeType(ctx, plan)
+		time.Sleep(30 * time.Second)
 	}
 	return
 }
@@ -934,12 +1013,17 @@ func (c *ctyunRedisInstance) transToPrePaid(ctx context.Context, state CtyunRedi
 }
 
 // transChargeType 按需转包周期
-func (c *ctyunRedisInstance) transChargeType(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
+func (c *ctyunRedisInstance) transChargeType(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
 	params := &dcs2.Dcs2TransChargeTypeRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
 		CycleCnt:   plan.CycleCount.ValueInt32(),
 		AutoPay:    true,
+	}
+	if params.CycleCnt > 12 {
+		params.CycleType = "5"
+	} else {
+		params.CycleType = "3"
 	}
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2TransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -1012,11 +1096,37 @@ func (c *ctyunRedisInstance) getByName(ctx context.Context, plan CtyunRedisInsta
 		return
 	}
 	if len(resp.ReturnObj.Rows) > 0 {
-		instance = resp.ReturnObj.Rows[0]
+		for _, r := range resp.ReturnObj.Rows {
+			if r.InstanceName == plan.InstanceName.ValueString() {
+				instance = r
+				break
+			}
+		}
 		if instance == nil {
 			err = common.InvalidReturnObjResultsError
 		}
 	}
+	return
+}
+
+// getById
+func (c *ctyunRedisInstance) getByID(ctx context.Context, plan CtyunRedisInstanceConfig) (instance *dcs2.Dcs2DescribeInstancesOverviewReturnObjUserInfoResponse, err error) {
+	id, regionID := plan.ID.ValueString(), plan.RegionID.ValueString()
+	params := &dcs2.Dcs2DescribeInstancesOverviewRequest{
+		RegionId:   regionID,
+		ProdInstId: id,
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2DescribeInstancesOverviewApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	instance = resp.ReturnObj.UserInfo
 	return
 }
 
@@ -1149,14 +1259,6 @@ func (c *ctyunRedisInstance) updateAttr(ctx context.Context, plan CtyunRedisInst
 	return
 }
 
-// updateParamTemplateID 更新参数模板ID
-func (c *ctyunRedisInstance) updateParamTemplateID(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
-	if plan.TemplateID.Equal(state.TemplateID) {
-		return
-	}
-	return c.applyParamTemplate(ctx, plan)
-}
-
 // applyParamTemplate 应用参数模板
 func (c *ctyunRedisInstance) applyParamTemplate(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
 	params := &dcs2.Dcs2ApplyTemplateToInstanceRequest{
@@ -1175,13 +1277,10 @@ func (c *ctyunRedisInstance) applyParamTemplate(ctx context.Context, plan CtyunR
 }
 
 // updateSSL 更新ssl配置
-func (c *ctyunRedisInstance) updateSSL(ctx context.Context, plan, state CtyunRedisInstanceConfig) (err error) {
-	if plan.SslEnabled.Equal(state.SslEnabled) {
-		return
-	}
+func (c *ctyunRedisInstance) updateSSL(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
 	params := &dcs2.Dcs2ModifyInstanceSSLRequest{
-		RegionId:   state.RegionID.ValueString(),
-		ProdInstId: state.ID.ValueString(),
+		RegionId:   plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
 		SslEnabled: map[bool]string{true: "Enable", false: "Disable"}[plan.SslEnabled.ValueBool()],
 	}
 	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2ModifyInstanceSSLApi.Do(ctx, c.meta.SdkCredential, params)
@@ -1190,6 +1289,41 @@ func (c *ctyunRedisInstance) updateSSL(ctx context.Context, plan, state CtyunRed
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
+	}
+	return c.checkAfterUpdateSSL(ctx, plan)
+}
+
+// checkAfterUpdateSSL 设置ssl后检查
+func (c *ctyunRedisInstance) checkAfterUpdateSSL(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *dcs2.Dcs2DescribeInstancesReturnObjRowsResponse
+			instance, err = c.getByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if instance.Status != business.RedisStatusRunning {
+				return true
+			}
+
+			var ssl *dcs2.Dcs2DescribeInstanceSSLReturnObjResponse
+			ssl, err = c.getSSL(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if ssl == nil || plan.SslEnabled.ValueBool() != *ssl.SslSwitch {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("设置SSL加密时间过长")
 	}
 	return
 }
@@ -1225,6 +1359,26 @@ func (c *ctyunRedisInstance) updateBackupPolicy(ctx context.Context, plan, state
 	return
 }
 
+// setBackupPolicy 设置Redis自动备份策略
+func (c *ctyunRedisInstance) setBackupPolicy(ctx context.Context, plan CtyunRedisInstanceConfig) (err error) {
+	params := &dcs2.Dcs2ModifyBackupPolicyRequest{
+		RegionId:              plan.RegionID.ValueString(),
+		ProdInstId:            plan.ID.ValueString(),
+		EnableAutoBackup:      true,
+		PreferredBackupPeriod: plan.BackupPolicy.Period.ValueString(),
+		PreferredBackupTime:   fmt.Sprint(plan.BackupPolicy.Time.ValueInt32()),
+		BackupRetentionPeriod: fmt.Sprint(plan.BackupPolicy.RetentionDay.ValueInt32()),
+	}
+	resp, err := c.meta.Apis.SdkDcs2Apis.Dcs2ModifyBackupPolicyApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	return
+}
+
 // getSSL 查询SSL配置
 func (c *ctyunRedisInstance) getSSL(ctx context.Context, plan CtyunRedisInstanceConfig) (ssl *dcs2.Dcs2DescribeInstanceSSLReturnObjResponse, err error) {
 	params := &dcs2.Dcs2DescribeInstanceSSLRequest{
@@ -1236,7 +1390,11 @@ func (c *ctyunRedisInstance) getSSL(ctx context.Context, plan CtyunRedisInstance
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		if resp.Error == "DCS2_9005" {
+			err = nil
+		} else {
+			err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		}
 		return
 	}
 	ssl = resp.ReturnObj
