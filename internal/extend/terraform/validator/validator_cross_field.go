@@ -33,11 +33,27 @@ func CrossFieldBool(expression path.Expression, sourceValues []any, targetValues
 	return &validatorCrossField{sourceExpression: expression, sourceValues: ToAttrValueSlice(sourceValues), targetValues: ToAttrValueSlice(targetValues)}
 }
 
+func CrossFieldString(expression path.Expression, sourceValues []any, targetValues []string) validator.String {
+	return &validatorCrossField{sourceExpression: expression, sourceValues: ToAttrValueSlice(sourceValues), targetValues: ToAttrValueSlice(targetValues)}
+}
+
 func CrossFieldInt32(expression path.Expression, sourceValues []any, targetValues []int32) validator.Int32 {
 	return &validatorCrossField{sourceExpression: expression, sourceValues: ToAttrValueSlice(sourceValues), targetValues: ToAttrValueSlice(targetValues)}
 }
 
 func (v validatorCrossField) ValidateInt32(ctx context.Context, req validator.Int32Request, resp *validator.Int32Response) {
+	validateReq := validatorCrossFieldRequest{
+		Config:         req.Config,
+		ConfigValue:    req.ConfigValue,
+		Path:           req.Path,
+		PathExpression: req.PathExpression,
+	}
+	validateResp := &validatorCrossFieldResponse{}
+	v.Validate(ctx, validateReq, validateResp)
+	resp.Diagnostics.Append(validateResp.Diagnostics...)
+}
+
+func (v validatorCrossField) ValidateString(ctx context.Context, req validator.StringRequest, resp *validator.StringResponse) {
 	validateReq := validatorCrossFieldRequest{
 		Config:         req.Config,
 		ConfigValue:    req.ConfigValue,
