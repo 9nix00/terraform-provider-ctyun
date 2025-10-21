@@ -1279,8 +1279,8 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
 	plan.Name = types.StringValue(instance.ClusterName)
-	plan.CreateTime = types.StringValue(utils.BeijingToUTCZ(instance.CreatedTime))
-	plan.ExpireTime = types.StringValue(utils.BeijingToUTCZ(instance.ExpireTime))
+	plan.CreateTime = types.StringValue(utils.FromLocalToUTCZ(instance.CreatedTime))
+	plan.ExpireTime = types.StringValue(utils.FromLocalToUTCZ(instance.ExpireTime))
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)

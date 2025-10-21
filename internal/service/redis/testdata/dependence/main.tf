@@ -81,3 +81,53 @@ data "ctyun_redis_specs" "test"{
 locals {
   spec = data.ctyun_redis_specs.test.series_infos[0]
 }
+
+resource "ctyun_redis_instance" "test_redis_instance" {
+  instance_name = "test-redis-instance7"
+  engine_version = "7.0"
+  edition = local.spec.series_code
+  vpc_id = local.real_vpc_id
+  subnet_id = local.real_subnet_id
+  security_group_id = local.real_security_group_id
+  password=var.password
+  cycle_type = "month"
+  cycle_count = 1
+  auto_renew = true
+  auto_renew_cycle_count = 12
+  shard_mem_size = 8
+
+}
+
+resource "ctyun_redis_instance" "test_redis_instance2" {
+  instance_name = "test-redis-instance6"
+  engine_version = "7.0"
+  edition = local.spec.series_code
+  vpc_id = local.real_vpc_id
+  subnet_id = local.real_subnet_id
+  security_group_id = local.real_security_group_id
+  password=var.password
+  cycle_type = "month"
+  cycle_count = 1
+  auto_renew = true
+  auto_renew_cycle_count = 12
+  shard_mem_size = 8
+}
+
+resource "ctyun_redis_account" "test_instance1_account" {
+  name = "instance1_account"
+  instance_id = ctyun_redis_instance.test_redis_instance.id
+  password  = var.password
+  privilege = "rw"
+}
+
+resource "ctyun_redis_account" "test_instance2_account" {
+  name = "instance2_account"
+  instance_id = ctyun_redis_instance.test_redis_instance2.id
+  password  = var.password
+  privilege = "rw"
+}
+
+variable "password" {
+  type      = string
+  sensitive = true
+}

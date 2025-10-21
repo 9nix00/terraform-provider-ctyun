@@ -16,7 +16,6 @@ import (
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
@@ -326,7 +325,6 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
-			AmqpApis:        amqp.NewApis(client),
 			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
 			SdkMongodbApis:  mongodb2.NewApis(client),
@@ -389,6 +387,11 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ccse.NewCtyunCcseNodePools(),
 		redis.NewCtyunRedisSpecs(),
 		redis.NewCtyunRedisInstances(),
+		redis.NewCtyunRedisAccounts(),
+		redis.NewCtyunRedisBackups(),
+		redis.NewCtyunRedisInstanceWhitelists(),
+		redis.NewCtyunRedisParamTemplates(),
+		redis.NewCtyunRedisMigrationTasks(),
 		elb.NewCtyunElbHealthChecks(),
 		elb.NewCtyunElbTargetGroups(),
 		elb.NewCtyunElbAcls(),
@@ -401,6 +404,10 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlSpecs(),
 		kafka.NewCtyunKafkaInstances(),
 		kafka.NewCtyunKafkaSpecs(),
+		kafka.NewCtyunKafkaConsumerGroups(),
+		kafka.NewCtyunKafkaTopics(),
+		kafka.NewCtyunKafkaUsers(),
+		kafka.NewCtyunKafkaAcls(),
 		rabbitmq.NewCtyunRabbitmqInstances(),
 		rabbitmq.NewCtyunRabbitmqSpecs(),
 		ccse.NewCtyunCcsePluginMarket(),
@@ -482,6 +489,11 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ccse.NewCtyunCcseNodePool(),
 		redis.NewCtyunRedisInstance(),
 		redis.NewCtyunRedisAssociationEip(),
+		redis.NewCtyunRedisAccount(),
+		redis.NewCtyunRedisBackup(),
+		redis.NewCtyunRedisInstanceWhitelist(),
+		redis.NewCtyunRedisParamTemplate(),
+		redis.NewCtyunRedisMigrationTask(),
 		elb.NewCtyunElbLoadBalancer(),
 		elb.NewCtyunElbHealthCheck(),
 		elb.NewCtyunElbTargetGroup(),
@@ -517,6 +529,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		kafka.NewCtyunKafkaConsumerGroup(),
+		kafka.NewCtyunKafkaTopic(),
+		kafka.NewCtyunKafkaUser(),
+		kafka.NewCtyunKafkaAcl(),
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
 		rabbitmq.NewCtyunRabbitmqQueue(),
