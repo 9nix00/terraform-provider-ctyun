@@ -201,7 +201,6 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					validator2.SecurityGroupValidate(),
 				},
 			},
-
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
 				Description: "订购周期类型，取值范围：month：按月，on_demand：按需，支持更新。当此值为month时，cycle_count为必填",
@@ -651,7 +650,7 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	plan.ExpireTime = types.StringValue(eTime)
 	plan.Endpoint = types.StringValue(instance.Endpoint)
 	plan.SslEndpoint = types.StringValue(instance.SslEndpoint)
-	plan.ActualCycleType = types.StringValue(map[string]string{"1": business.OrderCycleTypeMonth, "2": business.OrderCycleTypeYear}[instance.BillMode])
+	plan.ActualCycleType = types.StringValue(map[string]string{"1": business.OrderCycleTypeMonth, "2": business.OrderCycleTypeOnDemand}[instance.BillMode])
 	return
 }
 

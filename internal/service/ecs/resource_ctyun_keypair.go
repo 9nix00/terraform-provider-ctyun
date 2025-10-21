@@ -2,8 +2,9 @@ package ecs
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
+	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
@@ -50,8 +51,9 @@ func (c *ctyunKeypair) Schema(_ context.Context, _ resource.SchemaRequest, respo
 				},
 			},
 			"public_key": schema.StringAttribute{
-				Required:    true,
-				Description: "公钥",
+				Optional:    true,
+				Computed:    true,
+				Description: "公钥，填写时会导入密钥对，不填写时会创建密钥对",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -59,9 +61,19 @@ func (c *ctyunKeypair) Schema(_ context.Context, _ resource.SchemaRequest, respo
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
+			"private_key": schema.StringAttribute{
+				Computed:    true,
+				Description: "私钥，创建密钥对场景下才有值",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 			"finger_print": schema.StringAttribute{
 				Computed:    true,
 				Description: "密钥对的指纹，采用MD5信息摘要算法",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -92,42 +104,31 @@ func (c *ctyunKeypair) Schema(_ context.Context, _ resource.SchemaRequest, respo
 }
 
 func (c *ctyunKeypair) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunKeypairConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	regionId := plan.RegionId.ValueString()
-	projectId := plan.ProjectId.ValueString()
-	createResponse, err := c.meta.Apis.CtEcsApis.KeypairImportApi.Do(ctx, c.meta.Credential, &ctecs.KeypairImportRequest{
-		RegionId:    regionId,
-		KeyPairName: plan.Name.ValueString(),
-		PublicKey:   plan.PublicKey.ValueString(),
-		ProjectId:   projectId,
-	})
+	// 实际创建
+	if plan.PublicKey.ValueString() == "" {
+		err = c.createKeyPair(ctx, &plan)
+	} else {
+		err = c.importKeyPair(ctx, plan)
+		plan.PrivateKey = types.StringNull()
+	}
+
+	err = c.getAndMergeKeypair(ctx, &plan)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-
-	plan.Name = types.StringValue(createResponse.KeyPairName)
-	plan.RegionId = types.StringValue(regionId)
-	plan.ProjectId = types.StringValue(projectId)
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	instance, ctyunRequestError := c.getAndMergeKeypair(ctx, plan)
-	if ctyunRequestError != nil {
-		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
 }
 
 func (c *ctyunKeypair) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
@@ -137,16 +138,12 @@ func (c *ctyunKeypair) Read(ctx context.Context, request resource.ReadRequest, r
 		return
 	}
 
-	instance, err := c.getAndMergeKeypair(ctx, state)
+	err := c.getAndMergeKeypair(ctx, &state)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	if instance == nil {
-		response.State.RemoveResource(ctx)
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+	response.Diagnostics.Append(response.State.Set(ctx, state)...)
 }
 
 func (c *ctyunKeypair) Update(_ context.Context, _ resource.UpdateRequest, _ *resource.UpdateResponse) {
@@ -159,10 +156,11 @@ func (c *ctyunKeypair) Delete(ctx context.Context, request resource.DeleteReques
 		return
 	}
 
-	_, err := c.meta.Apis.CtEcsApis.KeypairDeleteApi.Do(ctx, c.meta.Credential, &ctecs.KeypairDeleteRequest{
-		RegionId:    state.RegionId.ValueString(),
+	params := ctecs2.CtecsDeleteKeypairV41Request{
+		RegionID:    state.RegionId.ValueString(),
 		KeyPairName: state.Name.ValueString(),
-	})
+	}
+	_, err := c.meta.Apis.SdkCtEcsApis.CtecsDeleteKeypairV41Api.Do(ctx, c.meta.SdkCredential, &params)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -178,16 +176,15 @@ func (c *ctyunKeypair) ImportState(ctx context.Context, request resource.ImportS
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-
 	cfg.Name = types.StringValue(keyPairName)
 	cfg.RegionId = types.StringValue(regionId)
 
-	instance, err := c.getAndMergeKeypair(ctx, cfg)
+	err = c.getAndMergeKeypair(ctx, &cfg)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *ctyunKeypair) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
@@ -199,26 +196,32 @@ func (c *ctyunKeypair) Configure(_ context.Context, request resource.ConfigureRe
 }
 
 // getAndMergeKeypair 查询密钥对
-func (c *ctyunKeypair) getAndMergeKeypair(ctx context.Context, cfg CtyunKeypairConfig) (*CtyunKeypairConfig, error) {
-	listResponse, err := c.meta.Apis.CtEcsApis.KeypairDetailApi.Do(ctx, c.meta.Credential, &ctecs.KeypairDetailRequest{
-		RegionId:    cfg.RegionId.ValueString(),
-		KeyPairName: cfg.Name.ValueString(),
-		PageNo:      1,
-		PageSize:    1,
-	})
-	if err != nil {
-		return nil, err
+func (c *ctyunKeypair) getAndMergeKeypair(ctx context.Context, plan *CtyunKeypairConfig) (err error) {
+	params := ctecs2.CtecsDetailsKeypairV41Request{
+		RegionID:    plan.RegionId.ValueString(),
+		KeyPairName: plan.Name.ValueString(),
+		ProjectID:   plan.ProjectId.ValueString(),
 	}
-	if len(listResponse.Results) == 0 {
-		return nil, nil
+	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsDetailsKeypairV41Api.Do(ctx, c.meta.SdkCredential, &params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	} else if len(resp.ReturnObj.Results) == 0 {
+		err = common.ResourceNotExistError
+		return
 	}
 
-	keypairResponse := listResponse.Results[0]
-	cfg.PublicKey = types.StringValue(keypairResponse.PublicKey)
-	cfg.Name = types.StringValue(keypairResponse.KeyPairName)
-	cfg.FingerPrint = types.StringValue(keypairResponse.FingerPrint)
-	cfg.Id = types.StringValue(keypairResponse.KeyPairId)
-	return &cfg, nil
+	keypairResponse := resp.ReturnObj.Results[0]
+	plan.PublicKey = types.StringValue(keypairResponse.PublicKey)
+	plan.Name = types.StringValue(keypairResponse.KeyPairName)
+	plan.FingerPrint = types.StringValue(keypairResponse.FingerPrint)
+	plan.Id = types.StringValue(keypairResponse.KeyPairID)
+	return
 }
 
 type CtyunKeypairConfig struct {
@@ -228,4 +231,49 @@ type CtyunKeypairConfig struct {
 	FingerPrint types.String `tfsdk:"finger_print"`
 	ProjectId   types.String `tfsdk:"project_id"`
 	RegionId    types.String `tfsdk:"region_id"`
+	PrivateKey  types.String `tfsdk:"private_key"`
+}
+
+// createKeyPari 删除密钥对
+func (c *ctyunKeypair) createKeyPair(ctx context.Context, plan *CtyunKeypairConfig) (error error) {
+	params := ctecs2.CtecsCreateKeypairV41Request{
+		RegionID:    plan.RegionId.ValueString(),
+		KeyPairName: plan.Name.ValueString(),
+		ProjectID:   plan.ProjectId.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsCreateKeypairV41Api.Do(ctx, c.meta.SdkCredential, &params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	plan.PublicKey = types.StringValue(resp.ReturnObj.PublicKey)
+	plan.PrivateKey = types.StringValue(resp.ReturnObj.PrivateKey)
+	return
+}
+
+// importKeyPair 导入密钥对
+func (c *ctyunKeypair) importKeyPair(ctx context.Context, plan CtyunKeypairConfig) (err error) {
+	params := ctecs2.CtecsImportKeypairV41Request{
+		RegionID:    plan.RegionId.ValueString(),
+		KeyPairName: plan.Name.ValueString(),
+		PublicKey:   plan.PublicKey.ValueString(),
+		ProjectID:   plan.ProjectId.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtEcsApis.CtecsImportKeypairV41Api.Do(ctx, c.meta.SdkCredential, &params)
+	if err != nil {
+		return
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+
 }

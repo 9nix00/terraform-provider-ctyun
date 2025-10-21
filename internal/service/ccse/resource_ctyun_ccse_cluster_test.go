@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"strconv"
 	"testing"
 	"time"
 
@@ -24,6 +25,9 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 	clusterName := "tf-" + utils.GenerateRandomString()
 	clusterSeries := "cce.standard"
 
+	initStartPort, initEndPort := 31000, 32000
+	updateStartPort, updateEndPort := 31001, 32001
+	sg := fmt.Sprintf(`security_group_id = "%s"`, dependence.securityGroupID)
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -35,18 +39,23 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName),
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, initStartPort, initEndPort, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
+					resource.TestCheckResourceAttr(resourceName, "base_info.start_port", strconv.Itoa(initStartPort)),
+					resource.TestCheckResourceAttr(resourceName, "base_info.end_port", strconv.Itoa(initEndPort)),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttrSet(resourceName, "master_order_id"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updateStartPort, updateEndPort, sg) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "base_info.start_port", strconv.Itoa(updateStartPort)),
+					resource.TestCheckResourceAttr(resourceName, "base_info.end_port", strconv.Itoa(updateEndPort)),
+					resource.TestCheckResourceAttr(resourceName, "base_info.security_group_id", dependence.securityGroupID),
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_series", clusterSeries),
@@ -110,7 +119,7 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 				},
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updateStartPort, updateEndPort, sg) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Destroy: true,
 			},
@@ -130,6 +139,11 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 
 	clusterName := "tf-" + rnd
 	clusterSeries := "cce.managed"
+	seriesType := "managedbase"
+	nodeScale := 10
+
+	updatedSeriesType := "managedpro"
+	updatedNodeScale := 50
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -142,7 +156,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName),
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, seriesType, nodeScale),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
@@ -151,7 +165,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
@@ -166,7 +180,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Destroy: true,
 			},
@@ -174,6 +188,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 	})
 }
 
+//目前OpenAPI无法创建能自动访问对象存储的VPC
 //func TestAccCtyunClusterStandardEbm(t *testing.T) {
 //	t.Parallel()
 //	rnd := utils.GenerateRandomString()

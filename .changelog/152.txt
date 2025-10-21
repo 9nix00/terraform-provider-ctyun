@@ -22,7 +22,6 @@ ctyun_kafka_users
 release-note:new-data-source
 ctyun_kafka_acls
 
-
 release-note:new-resource
 ctyun_redis_account
 

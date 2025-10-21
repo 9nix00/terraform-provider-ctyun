@@ -45,11 +45,8 @@ func ConvertToUTCZ(input string) string {
 // input: 输入时间字符串，如"2022-08-20 11:53:51"
 // 返回值: 转换后的UTC时间字符串，如"2022-08-20T11:53:51Z"
 func FromLocalToUTCZ(input string) string {
-	// 定义输入时间格式
-	const inputLayout = "2006-01-02 15:04:05"
-
 	// 解析输入时间
-	t, err := time.Parse(inputLayout, input)
+	t, err := time.Parse(time.DateOnly+" "+time.TimeOnly, input)
 	if err != nil {
 		return ""
 	}

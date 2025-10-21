@@ -7,6 +7,7 @@ import (
 const EndpointName = "ctgkafka"
 
 type Apis struct {
+	CtgkafkaTransToPostPaidApi             *CtgkafkaTransToPostPaidApi
 	CtgkafkaTopicQueryV3Api                *CtgkafkaTopicQueryV3Api
 	CtgkafkaCreatePostPayOrderApi          *CtgkafkaCreatePostPayOrderApi
 	CtgkafkaCreateOrderApi                 *CtgkafkaCreateOrderApi
@@ -112,6 +113,7 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		Url:  endpointUrl,
 	})
 	return &Apis{
+		CtgkafkaTransToPostPaidApi:             NewCtgkafkaTransToPostPaidApi(client),
 		CtgkafkaTopicQueryV3Api:                NewCtgkafkaTopicQueryV3Api(client),
 		CtgkafkaCreatePostPayOrderApi:          NewCtgkafkaCreatePostPayOrderApi(client),
 		CtgkafkaCreateOrderApi:                 NewCtgkafkaCreateOrderApi(client),
