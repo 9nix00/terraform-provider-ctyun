@@ -174,14 +174,16 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码（8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=），RSA公钥加密存储 支持更新",
+				Description: "实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
 				Validators: []validator.String{
-					stringvalidator.LengthBetween(8, 32),
-					validator2.MongodbPassword(),
+					validator2.DBPassword(
+						8,
+						26,
+						4,
+						"MongoDB",
+						"~!@#%^*_=+",
+					),
 				},
-				//PlanModifiers: []planmodifier.String{
-				//	stringplanmodifier.RequiresReplace(),
-				//},
 			},
 			"prod_id": schema.StringAttribute{
 				Required:    true,
@@ -281,9 +283,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
 							Description: "资源池可用区名称",
-							//Validators: []validator.String{
-							//	stringvalidator.UTF8LengthAtLeast(1),
-							//},
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
@@ -458,6 +460,9 @@ func (c *CtyunMongodbInstance) Update(ctx context.Context, request resource.Upda
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+
+
 	// 通过flavor_name获取cpu，memory等规格信息
 	err = c.checkSpec(ctx, &plan)
 	if err != nil {

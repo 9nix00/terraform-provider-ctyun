@@ -25,7 +25,7 @@ func (v validatorSubnet) ValidateString(ctx context.Context, request validator.S
 	pattern := `^subnet-[a-z0-9]{10}$`
 	matched, _ := regexp.MatchString(pattern, value)
 	if !matched {
-		response.Diagnostics.AddError(IpError, IpError)
+		response.Diagnostics.AddError(SubnetError, SubnetError)
 		return
 	}
 }
