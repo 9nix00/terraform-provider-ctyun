@@ -18,7 +18,7 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := dependence.securityGroupID
+	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
 	name1 := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	updateProdID := "Master2Slave57"
@@ -50,7 +50,7 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "MasterSlave57"),
 				),
 			},
@@ -63,7 +63,7 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},
@@ -85,7 +85,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := dependence.securityGroupID
+	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -117,7 +117,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single57"),
 				),
 			},
@@ -130,7 +130,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},
@@ -143,7 +143,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},
@@ -165,7 +165,7 @@ func TestAccCtyunMysqlNoAzInfoInstance2(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := dependence.securityGroupID
+	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
 
 	name2 := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
@@ -196,7 +196,7 @@ func TestAccCtyunMysqlNoAzInfoInstance2(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},
@@ -210,7 +210,7 @@ func TestAccCtyunMysqlNoAzInfoInstance2(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Master2Slave57"),
 				),
 			},

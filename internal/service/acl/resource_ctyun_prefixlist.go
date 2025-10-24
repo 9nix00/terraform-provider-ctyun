@@ -88,18 +88,88 @@ func (c *CtyunPrefix) Create(ctx context.Context, request resource.CreateRequest
 }
 
 func (c *CtyunPrefix) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var state CtyunPrefixConfig
+	// 读取state状态
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// 查询远端
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		response.State.RemoveResource(ctx)
+		err = nil
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (c *CtyunPrefix) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	// 读取tf文件中配置
+
+	var plan CtyunPrefixConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	// 读取state中的配置
+	var state CtyunPrefixConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.update(ctx, &state, &plan)
+	if err != nil {
+		return
+	}
+
+	// 更新远端后，查询远端并同步一下本地信息
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 
 func (c *CtyunPrefix) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+
+	// 获取state
+	var config CtyunPrefixConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &config)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.delete(ctx, config)
+	if err != nil {
+		return
+	}
 }
 
 func (c *CtyunPrefix) getAndMerge(ctx context.Context, config *CtyunPrefixConfig) error {
@@ -166,6 +236,46 @@ func (c *CtyunPrefix) create(ctx context.Context, config *CtyunPrefixConfig) err
 	return nil
 }
 
+func (c *CtyunPrefix) update(ctx context.Context, state *CtyunPrefixConfig, plan *CtyunPrefixConfig) error {
+	params := &ctvpc.CtvpcPrefixlistUpdateRequest{
+		RegionID:     state.RegionID.ValueString(),
+		PrefixListID: state.ID.ValueString(),
+		Name:         plan.Name.ValueStringPointer(),
+	}
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() && !plan.Description.Equal(state.Description) {
+		params.Description = plan.Description.ValueStringPointer()
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcPrefixlistUpdateApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("更新prefix失败，接口返回nil，请联系研发确认问题原因！")
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return err
+	}
+	return nil
+}
+
+func (c *CtyunPrefix) delete(ctx context.Context, config CtyunPrefixConfig) error {
+	params := &ctvpc.CtvpcPrefixlistDeleteRequest{
+		RegionID:     config.RegionID.ValueString(),
+		PrefixListID: config.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcPrefixlistDeleteApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("删除prefix失败（prefixlist id=%s），接口返回nil，请联系研发确认问题原因！", config.ID.ValueString())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return err
+	}
+	return nil
+}
+
 type CtyunPrefixModel struct {
 	Cidr        types.String `ctyun:"cidr"`
 	Description types.String `ctyun:"description"`
@@ -177,7 +287,7 @@ type CtyunPrefixConfig struct {
 	RegionID        types.String `tfsdk:"region_id"`
 	Limit           types.Int32  `tfsdk:"limit"`
 	AddressType     types.String `tfsdk:"address_type"`
-	PrefixListRules types.List   `tfsdk:"prefix_list_rules"`
+	PrefixListRules types.Set    `tfsdk:"prefix_list_rules"`
 	CreateTime      types.String `tfsdk:"create_time"`
 	UpdateTime      types.String `tfsdk:"update_time"`
 }
