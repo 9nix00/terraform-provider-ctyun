@@ -437,6 +437,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		rabbitmq.NewCtyunRabbitmqVhosts(),
 		rabbitmq.NewCtyunRabbitmqExchanges(),
 		rabbitmq.NewCtyunRabbitmqQueues(),
+		vpc.NewCtyunVips(),
+		vpc.NewCtyunDhcpOptionSets(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpcs(),
 	)
 }
 
@@ -515,6 +518,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		pgsql.NewCtyunPostgresqlInstance(),
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
+		pgsql.NewCtyunPostgresqlCollectorPolicy(),
+		pgsql.NewCtyunPostgresqlSecurityGroup(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),
@@ -545,6 +550,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
 		rabbitmq.NewCtyunRabbitmqQueue(),
+		vpc.NewCtyunVip(),
+		vpc.NewCtyunVipAssociation(),
+		vpc.NewCtyunDhcpOptionSet(),
 	)
 }
 
