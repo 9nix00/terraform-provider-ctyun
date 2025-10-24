@@ -29,6 +29,8 @@ func TestAccCtyunEbm(t *testing.T) {
 	updatedPassword := "P@sstf-" + utils.GenerateRandomString()
 	updatedStatus := "stopped"
 
+	k, v := "key", "value"
+	uv := "uValue"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -52,6 +54,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.dataRaid,
 					dependence.subnetID,
 					dependence.az2,
+					k, v,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", initName),
@@ -74,6 +77,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.dataRaid,
 					dependence.subnetID,
 					dependence.az2,
+					k, uv,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_name", updatedName),
@@ -95,6 +99,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.dataRaid,
 					dependence.subnetID,
 					dependence.az2,
+					k, uv,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id", dependence.az2),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "instances.#", "1"),
@@ -140,6 +145,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.dataRaid,
 					dependence.subnetID,
 					dependence.az2,
+					k, uv,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id", dependence.az2),
 			},
 			{
@@ -154,6 +160,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					dependence.dataRaid,
 					dependence.subnetID,
 					dependence.az2,
+					k, uv,
 				) + utils.LoadTestCase(datasourceFile, dnd, resourceName+".id", dependence.az2),
 				Destroy: true,
 			},

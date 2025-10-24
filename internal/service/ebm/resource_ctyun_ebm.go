@@ -85,6 +85,7 @@ type CtyunEbmConfig struct {
 	SubnetID             types.String `tfsdk:"subnet_id"`
 	PortID               types.String `tfsdk:"port_id"`
 	InterfaceID          types.String `tfsdk:"interface_id"`
+	Metadata             types.Map    `tfsdk:"metadata"`
 }
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -412,6 +413,11 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				},
 				Default: stringdefault.StaticString(business.EbmStatusRunning),
 			},
+			"metadata": schema.MapAttribute{
+				Optional:    true,
+				ElementType: types.StringType,
+				Description: "物理机元数据信息，键值对形式 支持更新",
+			},
 		},
 	}
 }
@@ -457,6 +463,11 @@ func (c *ctyunEbm) Create(ctx context.Context, request resource.CreateRequest, r
 	plan.InstanceID = types.StringValue(loop.Uuid[0])
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
+		return
+	}
+
+	err = c.createMetadata(ctx, plan)
+	if err != nil {
 		return
 	}
 	// 创建机器后状态默认为启动状态，可根据用户要求的状态，去执行对应的操作，比如关机
@@ -542,6 +553,10 @@ func (c *ctyunEbm) Update(ctx context.Context, request resource.UpdateRequest, r
 	}
 	// 修改实例名称
 	err = c.updateInstanceName(ctx, state, plan)
+	if err != nil {
+		return
+	}
+	err = c.updateMetadata(ctx, state, plan)
 	if err != nil {
 		return
 	}
@@ -1036,6 +1051,22 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 			cfg.SystemDiskID = types.StringValue(diskInfo.DiskID)
 		}
 	}
+	metadata, err := c.getMetadata(ctx, *cfg)
+	if err != nil {
+		return err
+	}
+
+	if len(metadata) > 0 {
+		metadataMap := make(map[string]types.String)
+		for k, v := range metadata {
+			metadataMap[k] = types.StringValue(v)
+		}
+		m, _ := types.MapValueFrom(ctx, types.StringType, metadataMap)
+		cfg.Metadata = m
+	} else {
+		// 如果没有元数据，则设置为null
+		cfg.Metadata = types.MapNull(types.StringType)
+	}
 
 	cfg.ID = cfg.InstanceID
 
@@ -1349,4 +1380,70 @@ func (c *ctyunEbm) checkAfterDelete(ctx context.Context, state CtyunEbmConfig) (
 		err = fmt.Errorf("裸金属 %s 的主网卡 %s 残留", state.InstanceID.ValueString(), portID)
 	}
 	return
+}
+
+// createMetadata 为物理机创建元数据
+func (c *ctyunEbm) createMetadata(ctx context.Context, plan CtyunEbmConfig) error {
+	if plan.Metadata.IsNull() || len(plan.Metadata.Elements()) == 0 {
+		return nil
+	}
+
+	var metadataMap map[string]string
+	plan.Metadata.ElementsAs(ctx, &metadataMap, false)
+	resp, err := c.meta.Apis.CtEbmApis.EbmMetadataBatchCreateApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmMetadataBatchCreateRequest{
+		RegionID:     plan.RegionID.ValueString(),
+		AzName:       plan.AzName.ValueString(),
+		InstanceUUID: plan.InstanceID.ValueString(),
+		Metadata:     metadataMap,
+	})
+	if err != nil {
+		return err
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+	}
+	return nil
+}
+
+// updateMetadata 更新物理机元数据
+func (c *ctyunEbm) updateMetadata(ctx context.Context, state, plan CtyunEbmConfig) error {
+	// 如果metadata没有变化，则无需更新
+	if state.Metadata.Equal(plan.Metadata) {
+		return nil
+	}
+
+	err := c.deleteMetadata(ctx, state)
+	if err != nil {
+		return err
+	}
+	return c.createMetadata(ctx, plan)
+}
+
+// deleteMetadata 删除物理机元数据
+func (c *ctyunEbm) deleteMetadata(ctx context.Context, state CtyunEbmConfig) error {
+	resp, err := c.meta.Apis.CtEbmApis.EbmMetadataDeleteAllApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmMetadataDeleteAllRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
+	})
+	if err != nil {
+		return err
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+	}
+	return nil
+}
+
+// getMetadata 查询物理机元数据
+func (c *ctyunEbm) getMetadata(ctx context.Context, state CtyunEbmConfig) (map[string]string, error) {
+	resp, err := c.meta.Apis.CtEbmApis.EbmMetadataListApi.Do(ctx, c.meta.SdkCredential, &ctebm.EbmMetadataListRequest{
+		RegionID:     state.RegionID.ValueString(),
+		AzName:       state.AzName.ValueString(),
+		InstanceUUID: state.InstanceID.ValueString(),
+	})
+	if err != nil {
+		return nil, err
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		return nil, fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+	}
+	return resp.ReturnObj.Metadata, nil
 }

@@ -8,7 +8,7 @@ import (
 	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
+	crs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
@@ -34,6 +34,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
 	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebm"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ecs"
@@ -325,7 +326,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
 			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
-			SdkCrsApis:      crs.NewApis(fmt.Sprintf(endpointUrl, crs.EndpointName), coreClient),
+			SdkCrsApis:      crs2.NewApis(fmt.Sprintf(endpointUrl, crs2.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
 			SdkMongodbApis:  mongodb2.NewApis(client),
 			SdkHpfsApis:     hpfs2.NewApis(fmt.Sprintf(endpointUrl, hpfs2.EndpointName), coreClient),
@@ -447,6 +448,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlParameters(),
 		ccse.NewCtyunCcseNamespaces(),
 		ccse.NewCtyunCcseImages(),
+		crs.NewCtyunCrsOpensourceImages(),
 	)
 }
 
@@ -570,6 +572,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqQueue(),
 		ccse.NewCtyunCcseNamespace(),
 		ccse.NewCtyunCcseScalingNodePoolPolicy(),
+		crs.NewCtyunCrsVpcAttach(),
 	)
 }
 
