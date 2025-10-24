@@ -22,8 +22,13 @@ func TestAccCtyunVip_basic(t *testing.T) {
 	vipType := "v4"
 
 	resource.Test(t, resource.TestCase{
-		PreCheck:                 func() { utils.TestAccPreCheck(t) },
-		CheckDestroy:             testAccCheckVipDestroy,
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
@@ -64,18 +69,4 @@ func TestAccCtyunVip_basic(t *testing.T) {
 			},
 		},
 	})
-}
-
-func testAccCheckVipDestroy(s *terraform.State) error {
-	// 检查所有资源是否已被销毁
-	for _, rs := range s.RootModule().Resources {
-		if rs.Type != "ctyun_vip" {
-			continue
-		}
-
-		// TODO: 可以调用API检查资源是否真的被销毁
-		// 由于这是一个测试环境，我们暂时只检查资源是否从状态中移除
-	}
-
-	return nil
 }
