@@ -3,6 +3,7 @@ package common
 import (
 	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/cda"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
@@ -25,9 +26,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	"sync"
 )
@@ -95,4 +98,7 @@ type Apis struct {
 	SdkHpfsApis     *hpfs.Apis
 	SdkScalingApis  *scaling.Apis
 	SdkSfsApi       *sfs.Apis
+	SdkEcApis       *ec.Apis
+	SdkCdaApis      *cda.Apis
+	SdkSdwanApis    *sdwan.Apis
 }
