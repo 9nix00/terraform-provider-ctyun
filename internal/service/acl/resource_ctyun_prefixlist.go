@@ -120,7 +120,14 @@ func (c *CtyunPrefix) getAndMerge(ctx context.Context, config *CtyunPrefixConfig
 		err = common.InvalidReturnObjError
 		return err
 	}
-
+	returnObj := resp.ReturnObj
+	config.Name = types.StringValue(*returnObj.Name)
+	config.Limit = types.Int32Value(returnObj.Limit)
+	config.AddressType = types.StringValue(business.PrefixAddressTyperRevMap[returnObj.AddressType])
+	config.Description = types.StringValue(*returnObj.Description)
+	config.CreateTime = types.StringValue(*returnObj.CreatedAt)
+	config.UpdateTime = types.StringValue(*returnObj.UpdatedAt)
+	return nil
 }
 
 func (c *CtyunPrefix) create(ctx context.Context, config *CtyunPrefixConfig) error {
@@ -171,4 +178,6 @@ type CtyunPrefixConfig struct {
 	Limit           types.Int32  `tfsdk:"limit"`
 	AddressType     types.String `tfsdk:"address_type"`
 	PrefixListRules types.List   `tfsdk:"prefix_list_rules"`
+	CreateTime      types.String `tfsdk:"create_time"`
+	UpdateTime      types.String `tfsdk:"update_time"`
 }
