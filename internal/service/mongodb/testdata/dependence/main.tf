@@ -78,7 +78,7 @@ resource "ctyun_eip" "eip_test" {
   cycle_type          = "on_demand"
   demand_billing_type = "upflowc"
 }
-#
+
 resource "ctyun_mongodb_instance" "mongodb_eip" {
   cycle_type             = "on_demand"
   vpc_id                 = local.real_vpc_id

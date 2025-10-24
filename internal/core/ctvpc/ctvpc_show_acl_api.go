@@ -62,14 +62,15 @@ type CtvpcShowAclResponse struct {
 }
 
 type CtvpcShowAclReturnObjResponse struct {
-	AclID       *string   `json:"aclID,omitempty"`       /*  id  */
-	Name        *string   `json:"name,omitempty"`        /*  名称  */
-	Description *string   `json:"description,omitempty"` /*  描述  */
-	VpcID       *string   `json:"vpcID,omitempty"`       /*  VPC  */
-	Enabled     *string   `json:"enabled,omitempty"`     /*  disable,enable  */
-	InPolicyID  []*string `json:"inPolicyID"`            /*  入规则id数组  */
-	OutPolicyID []*string `json:"outPolicyID"`           /*  出规则id数组  */
-	CreatedAt   *string   `json:"createdAt,omitempty"`   /*  创建时间  */
-	UpdatedAt   *string   `json:"updatedAt,omitempty"`   /*  更新时间  */
-	SubnetIDs   []*string `json:"subnetIDs"`             /*  acl 绑定的子网 id  */
+	AclID           *string   `json:"aclID,omitempty"`       /*  id  */
+	Name            *string   `json:"name,omitempty"`        /*  名称  */
+	Description     *string   `json:"description,omitempty"` /*  描述  */
+	VpcID           *string   `json:"vpcID,omitempty"`       /*  VPC  */
+	Enabled         *string   `json:"enabled,omitempty"`     /*  disable,enable  */
+	InPolicyID      []*string `json:"inPolicyID"`            /*  入规则id数组  */
+	OutPolicyID     []*string `json:"outPolicyID"`           /*  出规则id数组  */
+	CreatedAt       *string   `json:"createdAt,omitempty"`   /*  创建时间  */
+	UpdatedAt       *string   `json:"updatedAt,omitempty"`   /*  更新时间  */
+	SubnetIDs       []*string `json:"subnetIDs"`             /*  acl 绑定的子网 id  */
+	ApplyToPublicLb *bool     `json:"applyToPublicLb"`       /* 是否应用到公网负载均衡器 */
 }

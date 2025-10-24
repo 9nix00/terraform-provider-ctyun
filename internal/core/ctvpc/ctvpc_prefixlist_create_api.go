@@ -54,7 +54,8 @@ type CtvpcPrefixlistCreateRequest struct {
 }
 
 type CtvpcPrefixlistCreatePrefixListRulesRequest struct {
-	Cidr string `json:"cidr,omitempty"` /*  前缀列表条目,cidr  */
+	Cidr        string  `json:"cidr,omitempty"`        /*  前缀列表条目,cidr  */
+	Description *string `json:"description,omitempty"` /*  前缀列表条目描述，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 0 - 512  */
 }
 
 type CtvpcPrefixlistCreateResponse struct {
