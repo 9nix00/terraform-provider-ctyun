@@ -21,6 +21,10 @@ type Apis struct {
 	PgsqlBoundEipListApi                  *PgsqlBoundEipListApi
 	PgsqlDeleteSecurityGroupApi           *PgsqlDeleteSecurityGroupApi
 	PgsqlGetNodeListApi                   *PgsqlGetNodeListApi
+	PostgresqlCollectorPolicyApi          *PostgresqlCollectorPolicyApi
+	PostgresqlGetCollectorPolicyApi       *PostgresqlGetCollectorPolicyApi
+	PostgresqlAddSecurityGroupApi         *PostgresqlAddSecurityGroupApi
+	PostgresqlChangeSecurityGroupApi      *PostgresqlChangeSecurityGroupApi
 	PgsqlCreateAccountApi                 *PgsqlCreateAccountApi
 	PgsqlDeleteAccountApi                 *PgsqlDeleteAccountApi
 	PgsqlGrantPrivilegeApi                *PgsqlGrantPrivilegeApi
@@ -81,6 +85,10 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		PgsqlBoundEipListApi:                  NewPgsqlBoundEipListApi(client),
 		PgsqlDeleteSecurityGroupApi:           NewPgsqlDeleteSecurityGroupApi(client),
 		PgsqlGetNodeListApi:                   NewPgsqlGetNodeListApi(client),
+		PostgresqlCollectorPolicyApi:          NewPostgresqlCollectorPolicyApi(client),
+		PostgresqlGetCollectorPolicyApi:       NewPostgresqlGetCollectorPolicyApi(client),
+		PostgresqlAddSecurityGroupApi:         NewPostgresqlAddSecurityGroupApi(client),
+		PostgresqlChangeSecurityGroupApi:      NewPostgresqlChangeSecurityGroupApi(client),
 		PgsqlCreateAccountApi:                 NewPgsqlCreateAccountApi(client),
 		PgsqlDeleteAccountApi:                 NewPgsqlDeleteAccountApi(client),
 		PgsqlGrantPrivilegeApi:                NewPgsqlGrantPrivilegeApi(client),

@@ -32,7 +32,8 @@ var (
 )
 
 type ctyunVpceService struct {
-	meta *common.CtyunMetadata
+	meta        *common.CtyunMetadata
+	tagsService *business.TagsService
 }
 
 func NewCtyunVpceService() resource.Resource {
@@ -57,6 +58,7 @@ type CtyunVpceServiceConfig struct {
 	WhitelistEmail types.Set    `tfsdk:"whitelist_email"`
 	whitelist      []string
 	rules          []CtyunVpceServiceRule
+	Tags           types.Set `tfsdk:"tags"`
 }
 
 type CtyunVpceServiceRule struct {
@@ -206,6 +208,41 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 								int32validator.Between(1, 65535),
 							},
 						},
+						"tags": schema.SetNestedAttribute{
+							Optional:    true,
+							Computed:    true,
+							Description: "标签列表。最多10个标签，标签键不可重复，键值长度1~32字符，不能换行或以空格开头/结尾。",
+							Validators: []validator.Set{
+								setvalidator.SizeAtMost(10),
+							},
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: map[string]schema.Attribute{
+									"id": schema.StringAttribute{
+										Computed:    true,
+										Description: "标签id。",
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 32),
+										},
+									},
+									"key": schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: "标签键。支持更新",
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 32),
+										},
+									},
+									"value": schema.StringAttribute{
+										Optional:    true,
+										Computed:    true,
+										Description: "标签值。支持更新",
+										Validators: []validator.String{
+											stringvalidator.LengthBetween(1, 32),
+										},
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -245,7 +282,12 @@ func (c *ctyunVpceService) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-
+	if !plan.Tags.IsNull() {
+		err = c.bundTags(ctx, &plan)
+		if err != nil {
+			return
+		}
+	}
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
@@ -797,6 +839,14 @@ func (c *ctyunVpceService) updateBackend(ctx context.Context, plan, state CtyunV
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return
+	}
+	return
+}
+
+func (c *ctyunVpceService) bundTags(ctx context.Context, plan *CtyunVpceServiceConfig) (err error) {
+	err = c.tagsService.BundTags(ctx, plan.RegionID.ValueString(), business.ResourceTypeNat, plan.ID.ValueString(), &plan.Tags)
+	if err != nil {
 		return
 	}
 	return

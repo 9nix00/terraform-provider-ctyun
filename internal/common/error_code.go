@@ -21,6 +21,7 @@ const (
 	EcsAffinityGroupNotBound         = "Ecs.AffinityGroup.NotBound"
 	OpenapiRouterTableAccessFailed   = "Openapi.RouterTable.AccessFailed"
 	OpenapiVpceEndpointNotFound      = "Openapi.VpceEndpoint.NotFound"
+	OpenapiVpcPortNotFound           = "Openapi.Parameter.Error"
 	OpenapiCCSENotExist              = "CCE_2024"
 	CtiamNoPermission                = "CTIAM_0005"
 	CtiamNoPrivilege                 = "CTIAM_1044"

@@ -10,6 +10,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	sdkCtImage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
@@ -67,6 +69,8 @@ func (c CtyunMetadata) GetExtraIfEmpty(target, extraKey string) string {
 }
 
 type Apis struct {
+	SdkCtImageApis  *sdkCtImage.Apis
+	SdkCtNatApis    *ctnat.Apis
 	CtEbsApis       *ctebs.Apis
 	CtEbsBackupApis *ctebsbackup.Apis
 	CtEcsApis       *ctecs.Apis
