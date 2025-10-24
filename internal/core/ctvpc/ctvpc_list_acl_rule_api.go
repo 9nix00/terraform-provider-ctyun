@@ -67,13 +67,13 @@ type CtvpcListAclRuleReturnObjResponse struct {
 	Description *string                                      `json:"description,omitempty"` /*  描述  */
 	VpcID       *string                                      `json:"vpcID,omitempty"`       /*  VPC  */
 	Enabled     *string                                      `json:"enabled,omitempty"`     /*  disable,enable  */
-	InPolicyID  *string                                      `json:"inPolicyID,omitempty"`  /*  入规则id数组  */
-	OutPolicyID *string                                      `json:"outPolicyID,omitempty"` /*  出规则id数组  */
+	InPolicyID  []string                                     `json:"inPolicyID,omitempty"`  /*  入规则id数组  */
+	OutPolicyID []string                                     `json:"outPolicyID,omitempty"` /*  出规则id数组  */
 	InRules     []*CtvpcListAclRuleReturnObjInRulesResponse  `json:"inRules"`               /*  出规则id数组  */
 	OutRules    []*CtvpcListAclRuleReturnObjOutRulesResponse `json:"outRules"`              /*  出规则id数组  */
 	CreatedAt   *string                                      `json:"createdAt,omitempty"`   /*  创建时间  */
 	UpdatedAt   *string                                      `json:"updatedAt,omitempty"`   /*  更新时间  */
-	SubnetIDs   []*string                                    `json:"subnetIDs"`             /*  acl 绑定的子网 id  */
+	SubnetIDs   []string                                     `json:"subnetIDs"`             /*  acl 绑定的子网 id  */
 }
 
 type CtvpcListAclRuleReturnObjInRulesResponse struct {

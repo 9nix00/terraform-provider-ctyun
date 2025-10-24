@@ -506,10 +506,15 @@ func (c *CtyunMongodbInstance) Delete(ctx context.Context, request resource.Dele
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	// 删除之前，轮询确认实例状态为running
+	_, err = c.PreCheckUpdateLoop(ctx, &state)
+	if err != nil {
+		return
+	}
 	deleteParams := &mongodb.MongodbRefundRequest{
 		InstId: state.ID.ValueString(),
 	}
+
 	deleteHeader := &mongodb.MongodbRefundRequestHeader{}
 	if state.ProjectID.ValueString() != "" {
 		deleteHeader.ProjectID = state.ProjectID.ValueString()
@@ -526,12 +531,12 @@ func (c *CtyunMongodbInstance) Delete(ctx context.Context, request resource.Dele
 	if err != nil {
 		return
 	}
-	//time.Sleep(30 * time.Second)
-	//err = c.destroy(ctx, state)
-	//if err != nil {
-	//	return
-	//}
-	//err = c.destroyLoop(ctx, state)
+	time.Sleep(30 * time.Second)
+	err = c.destroy(ctx, state)
+	if err != nil {
+		return
+	}
+	err = c.destroyLoop(ctx, state)
 	response.Diagnostics.AddWarning("删除MongoDB集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -1381,7 +1386,7 @@ func (c *CtyunMongodbInstance) generateAzInfo(ctx context.Context, config *Ctyun
 			var azInfo mongodb.AvailabilityZoneInfoRequest
 			azInfo.NodeType = nodeType
 			azInfo.AvailabilityZoneName = azList[0].AvailabilityZoneName
-			azInfo.AvailabilityZoneCount = business.MongodbReplicaNodeDistMap[config.replicaNum]
+			azInfo.AvailabilityZoneCount = config.replicaNum
 			AzInfoList = append(AzInfoList, azInfo)
 		}
 		return
@@ -1705,6 +1710,9 @@ func (c *CtyunMongodbInstance) upgradeStorage(ctx context.Context, state *CtyunM
 	if !plan.StorageSpace.IsNull() && !plan.StorageSpace.Equal(state.StorageSpace) {
 		// 确定实例处于running状态
 		_, err = c.PreCheckUpdateLoop(ctx, state, 60)
+		if err != nil {
+			return err
+		}
 		nodeType := "master"
 		updateParams := &mongodb.MongodbUpgradeRequest{
 			InstId:          state.ID.ValueString(),
@@ -1880,6 +1888,11 @@ func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMong
 	spec := plan.prodPerformanceSpec
 	updateParams.ProdPerformanceSpec = &spec
 	updateParams.AzList = azInfo
+	// 升配spec之前，确认实例在running状态
+	_, err := c.PreCheckUpdateLoop(ctx, state, 60)
+	if err != nil {
+		return err
+	}
 	// 调用升配接口
 	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpgradeApi.Do(ctx, c.meta.Credential, updateParams, updateHeader)
 	if err != nil {
@@ -2114,6 +2127,11 @@ func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMong
 
 	}
 	upgradeParams.AzList = azInfo
+	// 升配spec之前，确认实例在running状态
+	_, err = c.PreCheckUpdateLoop(ctx, state, 60)
+	if err != nil {
+		return err
+	}
 	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpgradeApi.Do(ctx, c.meta.Credential, &upgradeParams, &upgradeHeader)
 	if err != nil {
 		return err
@@ -2538,6 +2556,69 @@ func (c *CtyunMongodbInstance) getCurrentReadOnlyNodeCount(ctx context.Context, 
 	}
 
 	return readOnlyCount, nil
+}
+
+func (c *CtyunMongodbInstance) destroy(ctx context.Context, state CtyunMongodbInstanceConfig) error {
+	params := mongodb.MongodbDestroyRequest{
+		InstId: state.ID.ValueString(),
+	}
+	header := mongodb.MongodbDestroyRequestHeader{}
+	if !state.ProjectID.IsNull() && !state.ProjectID.IsUnknown() {
+		header.ProjectID = state.ProjectID.ValueString()
+	}
+	resp, err := c.meta.Apis.SdkMongodbApis.MongodbDestroyApi.Do(ctx, c.meta.Credential, &params, &header)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("mongodb实例(id=%s)销毁失败，接口返回nil，请联系研发确认问题原因！", state.ID.ValueString())
+		return err
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return err
+	}
+	return nil
+}
+
+func (c *CtyunMongodbInstance) destroyLoop(ctx context.Context, config CtyunMongodbInstanceConfig, loopCount ...int) error {
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	listParams := &mongodb.MongodbGetListRequest{
+		PageNow:      1,
+		PageSize:     100,
+		ProdInstName: config.Name.ValueStringPointer(),
+	}
+	listHeader := &mongodb.MongodbGetListHeaders{
+		RegionID: config.RegionID.ValueString(),
+	}
+	if config.ProjectID.ValueString() != "" {
+		listHeader.ProjectID = config.ProjectID.ValueStringPointer()
+	}
+
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return err
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbGetListApi.Do(ctx, c.meta.Credential, listParams, listHeader)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 800 {
+				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+				return false
+			}
+			if len(resp.ReturnObj.List) == 0 {
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，实例仍未删除成功！")
+	}
+	return err
 }
 
 type CtyunMongodbInstanceConfig struct {

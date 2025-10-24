@@ -2,10 +2,11 @@ package ccse
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
-	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
@@ -23,11 +24,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -40,6 +41,7 @@ var (
 
 type ctyunCcseCluster struct {
 	meta          *common.CtyunMetadata
+	ccseService   *business.CcseService
 	ecsService    *business.EcsService
 	ebmService    *business.EbmService
 	vpcService    *business.VpcService
@@ -64,8 +66,9 @@ type CtyunCcseClusterConfig struct {
 	MasterHost         *CtyunCcseClusterMaster  `tfsdk:"master_host"`
 	InternalKubeConfig types.String             `tfsdk:"internal_kube_config"`
 	ExternalKubeConfig types.String             `tfsdk:"external_kube_config"`
-
-	totalNodeNum int32
+	CreateTime         types.String             `tfsdk:"create_time"`
+	ExpireTime         types.String             `tfsdk:"expire_time"`
+	totalNodeNum       int32
 }
 
 type CtyunCcseClusterBaseInfo struct {
@@ -91,6 +94,7 @@ type CtyunCcseClusterBaseInfo struct {
 	KubeProxy             types.String `tfsdk:"kube_proxy"`
 	ClusterSeries         types.String `tfsdk:"cluster_series"`
 	SeriesType            types.String `tfsdk:"series_type"`
+	NodeScale             types.Int32  `tfsdk:"node_scale"`
 	AutoRenew             types.Bool   `tfsdk:"auto_renew"`            // 自动续订
 	EnableApiServerEip    types.Bool   `tfsdk:"enable_api_server_eip"` // 是否开启ApiServerEip，默认false，若开启将自动创建按需计费类型的eip。
 	EnableSnat            types.Bool   `tfsdk:"enable_snat"`           // 是否开启nat网关，默认false，若开启将自动创建按需计费类型的nat网关。
@@ -143,18 +147,44 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			"name": schema.StringAttribute{
 				Computed:    true,
 				Description: "名称",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "到期时间",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "主订单号",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"internal_kube_config": schema.StringAttribute{
 				Computed:    true,
 				Description: "内网连接信息",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"external_kube_config": schema.StringAttribute{
 				Computed:    true,
 				Description: "外网连接信息",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -209,7 +239,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 						Computed:    true,
 						Description: "安全组ID，需属于所选vpc。使用自定义安全组时，需要配置如下规则，参考<a href=\"https://www.ctyun.cn/document/10083472/10915714\">集群安全组规则配置</a>",
 						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplace(),
+							stringplanmodifier.UseStateForUnknown(),
 						},
 						Validators: []validator.String{
 							validator2.SecurityGroupValidate(),
@@ -247,22 +277,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"start_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务开始端口，可选范围30000-65535",
+						Description: "节点服务开始端口，可选范围20106-32767，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(30000, 65535),
-						},
-						PlanModifiers: []planmodifier.Int32{
-							int32planmodifier.RequiresReplace(),
+							int32validator.Between(20106, 32767),
 						},
 					},
 					"end_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务终止端口，可选范围30000-65535，startPort到endPort范围需大于20",
+						Description: "节点服务终止端口，可选范围20106-32767，startPort到endPort范围需大于20，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(30000, 65535),
-						},
-						PlanModifiers: []planmodifier.Int32{
-							int32planmodifier.RequiresReplace(),
+							int32validator.Between(20106, 32767),
 						},
 					},
 					"elb_prod_code": schema.StringAttribute{
@@ -291,6 +315,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 							validator2.Cidr(),
 						},
 						PlanModifiers: []planmodifier.String{
+							stringplanmodifier.UseStateForUnknown(),
 							stringplanmodifier.RequiresReplace(),
 						},
 					},
@@ -316,9 +341,6 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue(business.CcsePluginCubecni),
 							),
 							setvalidator.SizeAtMost(10),
-						},
-						PlanModifiers: []planmodifier.Set{
-							setplanmodifier.RequiresReplace(),
 						},
 					},
 					"enable_api_server_eip": schema.BoolAttribute{
@@ -541,6 +563,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"series_type": schema.StringAttribute{
 						Optional:    true,
+						Computed:    true,
 						Description: "托管版集群规格，托管版集群必填。支持managedbase（单实例），managedpro（多实例）。单/多实例指控制面是否高可用，生产环境建议使用多实例",
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.CcseSeriesTypeManagedbase, business.CcseSeriesTypeManagedpro),
@@ -549,8 +572,22 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								types.StringValue(business.CcseClusterSeriesManaged),
 							),
 						},
-						PlanModifiers: []planmodifier.String{
-							stringplanmodifier.RequiresReplace(),
+					},
+					"node_scale": schema.Int32Attribute{
+						Optional:    true,
+						Computed:    true,
+						Description: "托管版集群节点规模。series_type=managedbase时，选择节点规模，可选10；series_type=managedpro时，选择节点规模，可选为50，200，1000，2000",
+						Validators: []validator.Int32{
+							validator2.CrossFieldInt32(
+								path.MatchRoot("base_info").AtName("series_type"),
+								[]any{business.CcseSeriesTypeManagedbase},
+								[]int32{10},
+							),
+							validator2.CrossFieldInt32(
+								path.MatchRoot("base_info").AtName("series_type"),
+								[]any{business.CcseSeriesTypeManagedpro},
+								[]int32{50, 200, 1000, 2000},
+							),
 						},
 					},
 				},
@@ -889,7 +926,7 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		if strings.Contains(err.Error(), "退订状态") {
+		if errors.Is(err, common.ResourceNotExistError) {
 			err = nil
 			response.State.RemoveResource(ctx)
 		}
@@ -900,7 +937,43 @@ func (c *ctyunCcseCluster) Read(ctx context.Context, request resource.ReadReques
 }
 
 func (c *ctyunCcseCluster) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	// tf文件中的
+	var plan CtyunCcseClusterConfig
+	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+	// state中的
+	var state CtyunCcseClusterConfig
+	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 
+	// 更新前检查
+	err = c.checkBeforeUpdate(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	// 更新
+	err = c.update(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	state.BaseInfo.PodSubnetIdList = plan.BaseInfo.PodSubnetIdList
+	// 查询远端信息
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
 func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -915,15 +988,33 @@ func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRe
 	if response.Diagnostics.HasError() {
 		return
 	}
-	// 删除
-	err = c.delete(ctx, state)
+
+	cluster, err := c.ccseService.GetCcseInfo(ctx, state.ID.ValueString(), state.RegionID.ValueString())
 	if err != nil {
 		return
 	}
-	err = c.checkAfterDelete(ctx, state)
+	if cluster.BizState != business.CcseRefundedBizState {
+		err = c.refund(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.checkAfterRefund(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	// 按需集群不需要主动调用销毁
+	if state.BaseInfo.CycleType.ValueString() != business.OnDemandCycleType {
+		err = c.destroy(ctx, state)
+		if err != nil {
+			return
+		}
+	}
+	err = c.checkAfterDestroy(ctx, state)
 	if err != nil {
 		return
 	}
+
 	response.Diagnostics.AddWarning("删除CCSE集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
@@ -957,6 +1048,7 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.ccseService = business.NewCcseService(c.meta)
 	c.ecsService = business.NewEcsService(c.meta)
 	c.ebmService = business.NewEbmService(c.meta)
 	c.vpcService = business.NewVpcService(c.meta)
@@ -984,13 +1076,13 @@ func (c *ctyunCcseCluster) checkBeforeCreate(ctx context.Context, plan CtyunCcse
 
 // create 创建
 func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterConfig) (masterOrderID string, err error) {
-	params := &ccse2.CcseCreateClusterRequest{
+	params := &ccse.CcseCreateClusterRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ResPoolId: plan.RegionID.ValueString(),
 	}
 	auto := true
 	// 处理 clusterBaseInfo
-	clusterBaseInfo := ccse2.CcseCreateClusterClusterBaseInfoRequest{
+	clusterBaseInfo := ccse.CcseCreateClusterClusterBaseInfoRequest{
 		ProjectId:                 plan.BaseInfo.ProjectID.ValueString(),
 		VpcUuid:                   plan.BaseInfo.VpcID.ValueString(),
 		SubnetUuid:                plan.BaseInfo.SubnetID.ValueString(),
@@ -1022,6 +1114,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		Ipvlan:                    plan.BaseInfo.IpVlan.ValueBoolPointer(),
 		NetworkPolicy:             plan.BaseInfo.NetworkPolicy.ValueBoolPointer(),
 		NginxIngressLBNetWork:     plan.BaseInfo.NginxIngressLBNetWork.ValueString(),
+		NodeScale:                 fmt.Sprint(plan.BaseInfo.NodeScale.ValueInt32()),
 	}
 	if plan.BaseInfo.SeriesType.ValueString() == business.CcseSeriesTypeManagedpro {
 		clusterBaseInfo.NodeScale = "50"
@@ -1060,7 +1153,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		}
 		var totalSize int32
 		for _, az := range plan.MasterHost.AzInfos {
-			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
+			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse.CcseCreateClusterClusterBaseInfoAzInfosRequest{
 				AzName: az.AzName.ValueString(),
 				Size:   az.Size.ValueInt32(),
 			})
@@ -1068,7 +1161,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		}
 		plan.totalNodeNum += totalSize
 
-		masterHost := ccse2.CcseCreateClusterMasterHostRequest{
+		masterHost := ccse.CcseCreateClusterMasterHostRequest{
 			Cpu:         int32(flavor.FlavorCpu),
 			Mem:         int32(flavor.FlavorRam),
 			ItemDefName: flavorName,
@@ -1076,13 +1169,13 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 			Size:        totalSize,
 		}
 		if plan.MasterHost.SysDisk != nil {
-			masterHost.SysDisk = &ccse2.CcseCreateClusterMasterHostSysDiskRequest{
+			masterHost.SysDisk = &ccse.CcseCreateClusterMasterHostSysDiskRequest{
 				ItemDefName: plan.MasterHost.SysDisk.Type.ValueString(),
 				Size:        plan.MasterHost.SysDisk.Size.ValueInt32(),
 			}
 		}
 		for _, disk := range plan.MasterHost.DataDisks {
-			masterHost.DataDisks = append(masterHost.DataDisks, &ccse2.CcseCreateClusterMasterHostDataDisksRequest{
+			masterHost.DataDisks = append(masterHost.DataDisks, &ccse.CcseCreateClusterMasterHostDataDisksRequest{
 				ItemDefName: disk.Type.ValueString(),
 				Size:        disk.Size.ValueInt32(),
 			})
@@ -1095,7 +1188,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 			return "", err
 		}
 		for _, az := range zones {
-			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse2.CcseCreateClusterClusterBaseInfoAzInfosRequest{
+			clusterBaseInfo.AzInfos = append(clusterBaseInfo.AzInfos, &ccse.CcseCreateClusterClusterBaseInfoAzInfosRequest{
 				AzName: az,
 			})
 		}
@@ -1103,19 +1196,19 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 
 	// 处理slaveHost
 
-	slaveHost := ccse2.CcseCreateClusterSlaveHostRequest{
+	slaveHost := ccse.CcseCreateClusterSlaveHostRequest{
 		Size:       0,
 		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
 	}
 	if plan.SlaveHost.SysDisk != nil {
-		slaveHost.SysDisk = &ccse2.CcseCreateClusterSlaveHostSysDiskRequest{
+		slaveHost.SysDisk = &ccse.CcseCreateClusterSlaveHostSysDiskRequest{
 			ItemDefName: plan.SlaveHost.SysDisk.Type.ValueString(),
 			Size:        plan.SlaveHost.SysDisk.Size.ValueInt32(),
 		}
 	}
 
 	for _, disk := range plan.SlaveHost.DataDisks {
-		slaveHost.DataDisks = append(slaveHost.DataDisks, &ccse2.CcseCreateClusterSlaveHostDataDisksRequest{
+		slaveHost.DataDisks = append(slaveHost.DataDisks, &ccse.CcseCreateClusterSlaveHostDataDisksRequest{
 			ItemDefName: disk.Type.ValueString(),
 			Size:        disk.Size.ValueInt32(),
 		})
@@ -1126,7 +1219,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		if azName == "" {
 			azName = az.AzName.ValueString()
 		}
-		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse2.CcseCreateClusterSlaveHostAzInfosRequest{
+		slaveHost.AzInfos = append(slaveHost.AzInfos, &ccse.CcseCreateClusterSlaveHostAzInfosRequest{
 			AzName: az.AzName.ValueString(),
 			Size:   az.Size.ValueInt32(),
 		})
@@ -1177,26 +1270,17 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 
 // getAndMerge 从远端查询
 func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClusterConfig) (err error) {
-	params := &ccse2.CcseGetClusterRequest{
-		RegionId:  plan.RegionID.ValueString(),
-		ClusterId: plan.ID.ValueString(),
-	}
-	resp, err := c.meta.Apis.SdkCcseApis.CcseGetClusterApi.Do(ctx, c.meta.SdkCredential, params)
+	instance, err := c.ccseService.GetCcseInfo(ctx, plan.ID.ValueString(), plan.RegionID.ValueString())
 	if err != nil {
-		return
-	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
 		return
 	}
 
-	instance := resp.ReturnObj
 	if instance.BizState == business.CcseRefundedBizState || instance.BizState == business.CcseRefundingBizState {
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
 	plan.Name = types.StringValue(instance.ClusterName)
+	plan.CreateTime = types.StringValue(utils.FromLocalToUTCZ(instance.CreatedTime))
+	plan.ExpireTime = types.StringValue(utils.FromLocalToUTCZ(instance.ExpireTime))
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)
@@ -1206,13 +1290,22 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	plan.BaseInfo.Timezone = types.StringValue(instance.Timezone)
 	plan.BaseInfo.ClusterVersion = types.StringValue(instance.ClusterVersion)
 	plan.BaseInfo.KubeProxy = types.StringValue(instance.KubeProxyPattern)
+	// 0：专有版
+	// 2：托管版
+	// 4：智算版
 	switch instance.ClusterType {
-	case 0:
+	case business.CcseClusterSeriesStandardInt:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesStandard)
-	case 2:
+		plan.BaseInfo.NodeScale = types.Int32Value(0)
+		plan.BaseInfo.SeriesType = types.StringValue("")
+	case business.CcseClusterSeriesManagedInt:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesManaged)
-	case 4:
+		plan.BaseInfo.NodeScale = types.Int32Value(utils.StringToInt32Must(instance.NodeScale))
+		plan.BaseInfo.SeriesType = types.StringValue(instance.SeriesType)
+	case business.CcseClusterSeriesIcceInt:
 		plan.BaseInfo.ClusterSeries = types.StringValue(business.CcseClusterSeriesIcce)
+		plan.BaseInfo.NodeScale = types.Int32Value(0)
+		plan.BaseInfo.SeriesType = types.StringValue("")
 	}
 	plan.BaseInfo.StartPort = types.Int32Value(instance.StartPort)
 	plan.BaseInfo.EndPort = types.Int32Value(instance.EndPort)
@@ -1230,13 +1323,25 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 	return
 }
 
-// delete 删除
-func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
-	params := &ccse2.CcseDeleteClusterRequest{
-		RegionId:   plan.RegionID.ValueString(),
-		ResPoolId:  plan.RegionID.ValueString(),
-		ProdInstId: plan.ID.ValueString(),
+// refund 退订
+func (c *ctyunCcseCluster) refund(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+	f := false
+	params := &ccse.CcseDeleteClusterRequest{
+		RegionId:             plan.RegionID.ValueString(),
+		ResPoolId:            plan.RegionID.ValueString(),
+		ProdInstId:           plan.ID.ValueString(),
+		RetainEbm:            &f,
+		RetainPrometheusData: &f,
+		RetainPrometheusVPCE: &f,
+		RetainLtsData:        &f,
+		RetainEcs:            &f,
+		RetainElb:            &f,
+		RetainApiServiceEip:  &f,
+		RetainLtsVPCE:        &f,
+		RetainNat:            &f,
+		RetainSecurityGroup:  &f,
 	}
+
 	resp, err := c.meta.Apis.SdkCcseApis.CcseDeleteClusterApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
@@ -1247,9 +1352,26 @@ func (c *ctyunCcseCluster) delete(ctx context.Context, plan CtyunCcseClusterConf
 	return
 }
 
+// / destroy 销毁
+func (c *ctyunCcseCluster) destroy(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+	params := &ccse.CcseDestroyClusterRequest{
+		RegionId:   plan.RegionID.ValueString(),
+		ResPoolId:  plan.RegionID.ValueString(),
+		ProdInstId: plan.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseDestroyClusterApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
+		return
+	}
+	return
+}
+
 // listByName 根据名称查询集群
-func (c *ctyunCcseCluster) listByName(ctx context.Context, plan CtyunCcseClusterConfig) (clusters []*ccse2.CcseListClustersReturnObjRecordsResponse, err error) {
-	params := &ccse2.CcseListClustersRequest{
+func (c *ctyunCcseCluster) listByName(ctx context.Context, plan CtyunCcseClusterConfig) (clusters []*ccse.CcseListClustersReturnObjRecordsResponse, err error) {
+	params := &ccse.CcseListClustersRequest{
 		RegionId:    plan.RegionID.ValueString(),
 		ClusterName: plan.BaseInfo.ClusterName.ValueString(),
 	}
@@ -1273,12 +1395,12 @@ func (c *ctyunCcseCluster) checkAfterCreate(ctx context.Context, plan CtyunCcseC
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var clusters []*ccse2.CcseListClustersReturnObjRecordsResponse
+			var clusters []*ccse.CcseListClustersReturnObjRecordsResponse
 			clusters, err = c.listByName(ctx, plan)
 			if err != nil {
 				return false
 			}
-			if len(clusters) == 0 || clusters[0].BizState != 1 || clusters[0].Id == "" {
+			if len(clusters) == 0 || clusters[0].Id == "" || clusters[0].BizState != business.CcseRunningBizState {
 				return true
 			}
 
@@ -1308,7 +1430,7 @@ func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseCl
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var nodes []*ccse2.CcseListClusterNodesReturnObjResponse
+			var nodes []*ccse.CcseListClusterNodesReturnObjResponse
 			nodes, err = c.listNode(ctx, plan)
 			if err != nil {
 				return false
@@ -1336,8 +1458,8 @@ func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseCl
 }
 
 // listNode 获取节点列表
-func (c *ctyunCcseCluster) listNode(ctx context.Context, plan CtyunCcseClusterConfig) (nodes []*ccse2.CcseListClusterNodesReturnObjResponse, err error) {
-	params := &ccse2.CcseListClusterNodesRequest{
+func (c *ctyunCcseCluster) listNode(ctx context.Context, plan CtyunCcseClusterConfig) (nodes []*ccse.CcseListClusterNodesReturnObjResponse, err error) {
+	params := &ccse.CcseListClusterNodesRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ClusterId: plan.ID.ValueString(),
 	}
@@ -1355,18 +1477,18 @@ func (c *ctyunCcseCluster) listNode(ctx context.Context, plan CtyunCcseClusterCo
 	return
 }
 
-// checkAfterDelete 删除后检查
-func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+// checkAfterRefund 退订后检查
+func (c *ctyunCcseCluster) checkAfterRefund(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			var clusters []*ccse2.CcseListClustersReturnObjRecordsResponse
+			var clusters []*ccse.CcseListClustersReturnObjRecordsResponse
 			clusters, err = c.listByName(ctx, plan)
 			if err != nil {
 				return false
 			}
-			if len(clusters) != 0 && clusters[0].BizState != 4 {
+			if len(clusters) != 0 && clusters[0].BizState != business.CcseRefundedBizState {
 				return true
 			}
 			executeSuccessFlag = true
@@ -1376,13 +1498,39 @@ func (c *ctyunCcseCluster) checkAfterDelete(ctx context.Context, plan CtyunCcseC
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("删除时间过长")
+		err = fmt.Errorf("退订时间过长")
+	}
+	return
+}
+
+// checkAfterDestroy 销毁后检查
+func (c *ctyunCcseCluster) checkAfterDestroy(ctx context.Context, plan CtyunCcseClusterConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var clusters []*ccse.CcseListClustersReturnObjRecordsResponse
+			clusters, err = c.listByName(ctx, plan)
+			if err != nil {
+				return false
+			}
+			if len(clusters) != 0 {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("销毁时间过长")
 	}
 	return
 }
 
 func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClusterConfig, isPublic bool) (config string, err error) {
-	params := &ccse2.CcseGetClusterKubeConfigRequest{
+	params := &ccse.CcseGetClusterKubeConfigRequest{
 		RegionId:  plan.RegionID.ValueString(),
 		ClusterId: plan.ID.ValueString(),
 		IsPublic:  isPublic,
@@ -1398,5 +1546,154 @@ func (c *ctyunCcseCluster) getKubeConfig(ctx context.Context, plan CtyunCcseClus
 		return
 	}
 	config = resp.ReturnObj.KubeConfig
+	return
+}
+
+func (c *ctyunCcseCluster) update(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	err = c.updateManagedSeries(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	err = c.updateClusterNetwork(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// updateClusterNetwork 更新网络配置
+func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	params := &ccse.CcseUpdateClusterRequest{
+		RegionId:  state.RegionID.ValueString(),
+		ClusterId: state.ID.ValueString(),
+		Cubecni:   &ccse.CcseUpdateClusterCubecniRequest{},
+	}
+	var hasChange bool
+	if !plan.BaseInfo.StartPort.Equal(state.BaseInfo.StartPort) {
+		params.StartPort = plan.BaseInfo.StartPort.ValueInt32()
+		hasChange = true
+	}
+	if !plan.BaseInfo.EndPort.Equal(state.BaseInfo.EndPort) {
+		params.EndPort = plan.BaseInfo.EndPort.ValueInt32()
+		hasChange = true
+	}
+	if !plan.BaseInfo.SecurityGroupID.Equal(state.BaseInfo.EndPort) {
+		params.SecurityGroupId = plan.BaseInfo.SecurityGroupID.ValueString()
+		hasChange = true
+	}
+
+	add, _ := utils.DifferenceStrArray(plan.BaseInfo.PodSubnetIdList, state.BaseInfo.PodSubnetIdList)
+	if len(add) != 0 {
+		params.Cubecni.AppendSubnets = add
+		hasChange = true
+	}
+
+	if !hasChange {
+		return nil
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return c.checkAfterUpdateClusterNetwork(ctx, plan, state)
+}
+
+// checkBeforeUpdate 更新前检查
+func (c *ctyunCcseCluster) checkBeforeUpdate(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	_, del := utils.DifferenceStrArray(plan.BaseInfo.PodSubnetIdList, state.BaseInfo.PodSubnetIdList)
+	if len(del) != 0 {
+		err = fmt.Errorf("不可以删除Pod子网")
+	}
+	return
+}
+
+// checkAfterUpdateClusterNetwork 检查变更托管版规格
+func (c *ctyunCcseCluster) checkAfterUpdateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ccse.CcseGetClusterReturnObjResponse
+			instance, err = c.ccseService.GetCcseInfo(ctx, state.ID.ValueString(), state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if instance.StartPort != plan.BaseInfo.StartPort.ValueInt32() {
+				return true
+			}
+			if instance.EndPort != plan.BaseInfo.EndPort.ValueInt32() {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("更新集群时间过长")
+		return
+	}
+	return
+}
+
+// updateNodeScale 变更托管版规格
+func (c *ctyunCcseCluster) updateManagedSeries(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	if state.BaseInfo.ClusterSeries.ValueString() != business.CcseClusterSeriesManaged {
+		return
+	}
+	if plan.BaseInfo.SeriesType.Equal(state.BaseInfo.SeriesType) && plan.BaseInfo.NodeScale.Equal(state.BaseInfo.NodeScale) {
+		return
+	}
+	params := &ccse.CcseUpdateClusterSeriesRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ClusterId:  state.ID.ValueString(),
+		SeriesType: plan.BaseInfo.SeriesType.ValueString(),
+		NodeScale:  strconv.Itoa(int(plan.BaseInfo.NodeScale.ValueInt32())),
+	}
+	resp, err := c.meta.Apis.SdkCcseApis.CcseUpdateClusterSeriesApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return c.checkAfterUpdateManagedSeries(ctx, plan, state)
+}
+
+// checkAfterUpdateManagedSeries 检查变更托管版规格
+func (c *ctyunCcseCluster) checkAfterUpdateManagedSeries(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var instance *ccse.CcseGetClusterReturnObjResponse
+			instance, err = c.ccseService.GetCcseInfo(ctx, state.ID.ValueString(), state.RegionID.ValueString())
+			if err != nil {
+				return false
+			}
+			if instance.SeriesType != plan.BaseInfo.SeriesType.ValueString() ||
+				utils.StringToInt32Must(instance.NodeScale) != plan.BaseInfo.NodeScale.ValueInt32() {
+				return true
+			}
+			executeSuccessFlag = true
+			return false
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		err = fmt.Errorf("更新规格时间过长")
+		return
+	}
 	return
 }

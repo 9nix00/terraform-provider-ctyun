@@ -46,11 +46,12 @@ func (a *CtvpcUpdateAclAttributeApi) Do(ctx context.Context, credential core.Cre
 }
 
 type CtvpcUpdateAclAttributeRequest struct {
-	RegionID  string  `json:"regionID,omitempty"`  /*  资源池ID  */
-	AclID     string  `json:"aclID,omitempty"`     /*  aclID  */
-	ProjectID *string `json:"projectID,omitempty"` /*  企业项目 ID，默认为'0'  */
-	Name      string  `json:"name,omitempty"`      /*  支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32  */
-	Enabled   *string `json:"enabled,omitempty"`   /*  是否启用disable,enable  */
+	RegionID    string  `json:"regionID,omitempty"`  /*  资源池ID  */
+	AclID       string  `json:"aclID,omitempty"`     /*  aclID  */
+	ProjectID   *string `json:"projectID,omitempty"` /*  企业项目 ID，默认为'0'  */
+	Name        string  `json:"name,omitempty"`      /*  支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32  */
+	Enabled     *string `json:"enabled,omitempty"`   /*  是否启用disable,enable  */
+	Description *string `json:"description"`
 }
 
 type CtvpcUpdateAclAttributeResponse struct {

@@ -17,6 +17,11 @@ type Dependence struct {
 	eipID            string
 	PgsqlID          string
 	azName           string
+	paramTemplateID  string
+	charsetName      string
+	collateName      string
+	collateType      string
+	accountName      string
 }
 
 var dependence Dependence
@@ -32,17 +37,23 @@ func TestMain(m *testing.M) {
 		terraform.DestroyResource(dependenceDir)
 		os.Exit(1)
 	}
+
 	dependence = Dependence{
 		vpcID:            outputs["vpc_id"].Value,
 		subnetID:         outputs["subnet_id"].Value,
 		securityGroupID:  outputs["security_group_id1"].Value,
 		securityGroupID2: outputs["security_group_id2"].Value,
-		//eipID:            "",
-		eipID: outputs["eip_id"].Value,
+		eipID:            "",
+		//eipID: outputs["eip_id"].Value,
 		//eipAddress: "",
-		PgsqlID: outputs["pgsql_id"].Value,
-		//PgsqlID: "",
-		azName: outputs["az_name"].Value,
+		//PgsqlID: outputs["pgsql_id"].Value,
+		PgsqlID:         "24c876ba30c04b59a5417a0a39500797",
+		azName:          outputs["az_name"].Value,
+		paramTemplateID: outputs["param_template_id"].Value,
+		charsetName:     outputs["charset_name"].Value,
+		collateName:     outputs["collate_name"].Value,
+		collateType:     outputs["collate_type"].Value,
+		accountName:     outputs["account_name"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

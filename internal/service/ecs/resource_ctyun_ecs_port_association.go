@@ -8,6 +8,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -214,7 +215,7 @@ func (c *ctyunEcsPortAssociation) getAndMerge(ctx context.Context, state *CtyunE
 	// 检查弹性网卡是否仍然绑定到该云主机
 	if describeResponse.ReturnObj != nil {
 		for _, networkCard := range describeResponse.ReturnObj.NetworkCardList {
-			if networkCard != nil && networkCard.NetworkCardID == state.PortID.ValueString() {
+			if networkCard != nil && utils.SecString(networkCard.NetworkCardID) == state.PortID.ValueString() {
 				return nil
 			}
 		}

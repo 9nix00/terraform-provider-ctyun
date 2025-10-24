@@ -17,6 +17,9 @@ type Dependence struct {
 	eipAddress      string
 	mysqlID         string
 	azName          string
+	taskID          string
+	templateID      string
+	backupTimeStamp string
 }
 
 var dependence Dependence
@@ -36,10 +39,16 @@ func TestMain(m *testing.M) {
 		vpcID:           outputs["vpc_id"].Value,
 		subnetID:        outputs["subnet_id"].Value,
 		securityGroupID: outputs["security_group_id"].Value,
-		eipID:           outputs["eip_id"].Value,
-		eipAddress:      outputs["eip_address"].Value,
-		mysqlID:         outputs["mysql_id"].Value,
-		azName:          outputs["az_name"].Value,
+		//eipID:           outputs["eip_id"].Value,
+		eipID: "",
+		//eipAddress: outputs["eip_address"].Value,
+		mysqlID: outputs["mysql_id"].Value,
+		//mysqlID: "ab2df2c959074f1287864ff20497a247",
+		azName: outputs["az_name"].Value,
+		taskID: outputs["task_id"].Value,
+		//taskID:          "",
+		templateID:      outputs["template_id"].Value,
+		backupTimeStamp: outputs["backup_timestamp"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

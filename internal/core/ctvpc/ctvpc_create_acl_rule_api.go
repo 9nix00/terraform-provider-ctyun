@@ -63,6 +63,7 @@ type CtvpcCreateAclRuleRulesRequest struct {
 	DestinationIpAddress string  `json:"destinationIpAddress,omitempty"` /*  类型,ingress, egress  */
 	Action               string  `json:"action,omitempty"`               /*  accept, drop  */
 	Enabled              string  `json:"enabled,omitempty"`              /*  disable, enable  */
+	Description          string  `json:"description,omitempty"`          /*  描述  */
 }
 
 type CtvpcCreateAclRuleResponse struct {
