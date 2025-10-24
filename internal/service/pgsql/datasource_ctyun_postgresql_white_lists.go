@@ -39,7 +39,7 @@ func (c *CtyunPostgresqlWhiteLists) Metadata(ctx context.Context, request dataso
 
 func (c *CtyunPostgresqlWhiteLists) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10161484",
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
 				Required:    true,
@@ -64,9 +64,10 @@ func (c *CtyunPostgresqlWhiteLists) Schema(ctx context.Context, request datasour
 				Optional:    true,
 				Description: "白名单ip,支持模糊查询",
 			},
-			"white_list": schema.StringAttribute{
+			"white_list": schema.SetAttribute{
 				Computed:    true,
 				Description: "当前白名单列表",
+				ElementType: types.StringType,
 			},
 		},
 	}
@@ -90,12 +91,15 @@ func (c *CtyunPostgresqlWhiteLists) Read(ctx context.Context, request datasource
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
+
 	params := &pgsql.PgsqlGetWhiteListRequest{
 		ProdInstId: config.InstID.ValueString(),
 	}
 	if !config.Ip.IsNull() {
 		params.IP = config.Ip.ValueStringPointer()
 	}
+
 	header := &pgsql.PgsqlGetWhiteListRequestHeader{
 		RegionID: config.RegionID.ValueString(),
 	}
@@ -112,7 +116,17 @@ func (c *CtyunPostgresqlWhiteLists) Read(ctx context.Context, request datasource
 		err = fmt.Errorf(" API return error. Message: %s Error: %s", resp.Message, *resp.Error)
 		return
 	}
-	config.WhiteList = resp.ReturnObj
+
+	ips, diags := types.SetValueFrom(ctx, types.StringType, resp.ReturnObj)
+	if diags.HasError() {
+		err = fmt.Errorf(diags[0].Detail())
+		return
+	}
+	config.WhiteList = ips
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
 }
 
 type CtyunPostgresqlWhiteListsConfig struct {
@@ -120,5 +134,5 @@ type CtyunPostgresqlWhiteListsConfig struct {
 	RegionID  types.String `tfsdk:"region_id"`
 	ProjectID types.String `tfsdk:"project_id"`
 	Ip        types.String `tfsdk:"ip"`
-	WhiteList []string     `tfsdk:"white_list"`
+	WhiteList types.Set    `tfsdk:"white_list"`
 }

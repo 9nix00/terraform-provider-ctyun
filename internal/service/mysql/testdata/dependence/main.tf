@@ -74,12 +74,12 @@ locals {
 }
 
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-mysql"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
+# resource "ctyun_eip" "eip_test" {
+#   name                = "tf-eip-for-mysql"
+#   bandwidth           = 1
+#   cycle_type          = "on_demand"
+#   demand_billing_type = "upflowc"
+# }
 
 data "ctyun_zones" "test" {
 
@@ -98,7 +98,8 @@ data "ctyun_mysql_specs" "mysql_specs"{
 
 
 data "ctyun_mysql_backups" "backup_test" {
-  inst_id   = "e5ad1c553e394bc891c5bf8fc58be191"
+  depends_on = [ctyun_mysql_backup.backup_test]
+  inst_id   = ctyun_mysql_instance.mysql_test.id
   page_no   = 1
   page_size = 10
 }
@@ -109,13 +110,32 @@ resource "ctyun_mysql_instance" "mysql_test" {
   flavor_name         = "c7.large.2"
   prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
-  security_group_id     = local.real_security_group_id
+  security_group_id     = [local.real_security_group_id]
   name                  = local.mysql_name
   storage_type          = "SATA"
   storage_space         = 100
-  availability_zone_info = [
-    { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
-  ]
+  # availability_zone_info = [
+  #   { "availability_zone_name" : local.az_name, "availability_zone_count" : 1, "node_type" : "master" }
+  # ]
+}
+
+resource "ctyun_mysql_backup" "backup_test" {
+  inst_id     = ctyun_mysql_instance.mysql_test.id
+  project_id  = "0"
+  description = "terraform单元测试"
+  task_type   = "full"
+}
+
+data "ctyun_mysql_recoverable_time_points" "time_point_test" {
+  depends_on = [ctyun_mysql_backup.backup_test]
+  inst_id    = ctyun_mysql_instance.mysql_test.id
+  project_id = "0"
+}
+
+
+data "ctyun_mysql_param_templates" "template"{
+  engine = "8.0"
+  name = "parameterSet80"
 }
 
 locals {

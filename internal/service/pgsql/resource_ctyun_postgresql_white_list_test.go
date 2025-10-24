@@ -10,7 +10,10 @@ import (
 func TestAccCtyunPgsqlWhiteList(t *testing.T) {
 	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_white_list." + rnd
+	datasourceName := "data.ctyun_postgresql_white_lists." + dnd
+	datasourceFile := "datasource_ctyun_postgresql_white_lists.tf"
 	resourceFile := "resource_ctyun_postgresql_white_list.tf"
 
 	// 从环境变量获取测试依赖资源
@@ -39,6 +42,14 @@ func TestAccCtyunPgsqlWhiteList(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "ip_list_result.#", "2"),
 					resource.TestCheckTypeSetElemAttr(resourceName, "ip_list_result.*", "192.168.1.0/24"),
 					resource.TestCheckTypeSetElemAttr(resourceName, "ip_list_result.*", "10.0.0.1/32"),
+				),
+			},
+			//  datasource验证
+			{
+				Config: utils.LoadTestCase(
+					datasourceFile, dnd, instanceID, "192.168.1.0"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckTypeSetElemAttr(datasourceName, "white_list.*", "192.168.1.0/24"),
 				),
 			},
 			// 2. 更新白名单测试（追加模式）

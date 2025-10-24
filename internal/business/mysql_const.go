@@ -1,8 +1,9 @@
 package business
 
 const (
-	ProdIDSI57   = 10001003 // 单实例 single5.7版本
-	ProdIDSI80   = 10001103 // 单实例 single8.0版本
+	ProdIDSI57 = 10001003 // 单实例 single5.7版本
+	ProdIDSI80 = 10001103 // 单实例 single8.0版本
+
 	ProdIDSIRO57 = 10001005 // 单实例 single 只读5.7版本
 	ProdIDSIRO80 = 10001105 // 单实例 single 只读8.0版本
 
@@ -111,6 +112,8 @@ const (
 
 	MysqlBackupRecoveryJobStatusSuccess = 2 // 成功
 	MysqlBackupRecoveryJobStatusFail    = 3 // 失败
+
+	MysqlNodeTypeReadNode = "readNode"
 )
 
 var ProdType = []string{
@@ -220,6 +223,11 @@ var MysqlProdIdDict = map[string]int64{
 	"MasterSlave80":  ProdIDMS80,   // 一主一备 master-slave 8.0版本
 	"Master2Slave57": ProdIDM2S57,  // 一主两备 master-2-slave 5.7版本
 	"Master2Slave80": ProdIDM2S80,  // 一主两备 master-2-slave 8.0版本
+}
+
+var MysqlReadNodeVersionProdIdDict = map[string]string{
+	"5.7": "ReadOnly57",
+	"8.0": "ReadOnly80",
 }
 
 var MysqlNodeNumDict = map[string]int32{

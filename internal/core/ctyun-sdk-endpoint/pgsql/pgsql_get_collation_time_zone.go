@@ -38,7 +38,7 @@ func (this *PgsqlGetCollationTimeZoneApi) Do(ctx context.Context, credential cty
 		err = errors.New("missing required parameter: prodInstId")
 		return
 	}
-
+	builder.AddParam("prodInstId", req.ProdInstId)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {
 		return

@@ -152,8 +152,12 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_account." + rnd
 	resourceFile := "resource_ctyun_postgresql_account_lock.tf"
+
+	datasourceName := "data.ctyun_postgresql_accounts." + dnd
+	datasourceFile := "datasource_ctyun_postgresql_accounts.tf"
 
 	projectID := "0"
 	instanceID := dependence.PgsqlID
@@ -197,6 +201,14 @@ func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 				PreConfig: func() {
 					wait10Seconds()
 				},
+			},
+			// datasource 验证
+			{
+				Config: utils.LoadTestCase(
+					datasourceFile, dnd, instanceID, accountName),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "postgresql_accounts.0.account_name", accountName),
+				),
 			},
 			// 2. 验证高权限账户的数据库授权能力
 			{

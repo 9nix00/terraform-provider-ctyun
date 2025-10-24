@@ -76,7 +76,7 @@ func (c *CtyunMysqlBackup) ImportState(ctx context.Context, request resource.Imp
 
 func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
 				Required:    true,
@@ -154,7 +154,7 @@ func (c *CtyunMysqlBackup) Create(ctx context.Context, request resource.CreateRe
 	}
 
 	// 开始创建新用户
-	err = c.CreateMysqlBackup(ctx, &plan)
+	err = c.createMysqlBackup(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -222,7 +222,7 @@ func (c *CtyunMysqlBackup) Delete(ctx context.Context, request resource.DeleteRe
 	}
 }
 
-func (c *CtyunMysqlBackup) CreateMysqlBackup(ctx context.Context, config *CtyunMysqlBackupConfig) error {
+func (c *CtyunMysqlBackup) createMysqlBackup(ctx context.Context, config *CtyunMysqlBackupConfig) error {
 	config.Name = types.StringValue(config.InstID.ValueString() + strings.ReplaceAll(uuid.NewString(), "-", ""))
 	params := &mysql.TeledbCreateBackupRequest{
 		OuterProdInstId: config.InstID.ValueString(),
@@ -238,6 +238,11 @@ func (c *CtyunMysqlBackup) CreateMysqlBackup(ctx context.Context, config *CtyunM
 	}
 	if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
 		header.ProjectID = config.ProjectID.ValueString()
+	}
+	//  mysql备份之前，确定状态running
+	err := c.startedLoop(ctx, config, 60)
+	if err != nil {
+		return err
 	}
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbCreateBackupApi.Do(ctx, c.meta.Credential, params, header)
 	if err != nil {
@@ -443,11 +448,79 @@ func (c *CtyunMysqlBackup) backupIngLoop(ctx context.Context, config CtyunMysqlB
 	return err
 }
 
+func (c *CtyunMysqlBackup) startedLoop(ctx context.Context, config *CtyunMysqlBackupConfig, loopCount ...int) (err error) {
+	count := 30
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+	var cnt int
+	result := retryer.Start(
+		func(currentTime int) bool {
+			// 获取实例详情
+			detailParams := &mysql.TeledbQueryDetailRequest{
+				OuterProdInstId: config.InstID.ValueString(),
+			}
+			detailHeaders := &mysql.TeledbQueryDetailRequestHeaders{
+				InstID:   config.InstID.ValueString(),
+				RegionID: config.RegionID.ValueString(),
+			}
+			if config.ProjectID.ValueString() != "" {
+				detailHeaders.ProjectID = config.ProjectID.ValueStringPointer()
+			}
+			resp, err2 := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
+			if err2 != nil {
+				err = err2
+				return false
+			} else if resp.StatusCode != 0 {
+				err = fmt.Errorf("API return error. Message: %s", resp.Message)
+				return false
+			} else if resp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+			runningStatus := resp.ReturnObj.ProdRunningStatus
+			orderStatus := resp.ReturnObj.ProdOrderStatus
+			// 若变配前，发现数据库已冻结，将其恢复
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = fmt.Errorf("mysql实例已冻结，请先启用后再进行备份操作！")
+				if err != nil {
+					return false
+				}
+			}
+			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
+				// 有三次是start，才认为状态正常
+				cnt++
+				if cnt > 2 {
+					return false
+				}
+			}
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = errors.New("订单处于暂停状态，不可进行变更操作")
+				return false
+			}
+			if runningStatus == business.MysqlRunningStatusStopping || runningStatus == business.MysqlRunningStatusStopped {
+				err = errors.New("主机处于关机状态，不可进行变更操作")
+				return false
+			}
+
+			return true
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未到达启动状态！")
+	}
+	return
+}
+
 type CtyunMysqlBackupConfig struct {
 	InstID      types.String `tfsdk:"inst_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	RegionID    types.String `tfsdk:"region_id"`
-	Name        types.String `tfsdk:"Name"` // 备份名称在4位到64位之间，不区分大小写，可以包含中文、字母、数字、中划线或下划线，不能包含其他特殊字符
+	Name        types.String `tfsdk:"name"` // 备份名称在4位到64位之间，不区分大小写，可以包含中文、字母、数字、中划线或下划线，不能包含其他特殊字符
 	Description types.String `tfsdk:"description"`
 	TaskType    types.String `tfsdk:"task_type"`
 	ID          types.String `tfsdk:"id"`

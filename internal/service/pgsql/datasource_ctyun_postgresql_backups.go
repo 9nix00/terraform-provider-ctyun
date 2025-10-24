@@ -42,7 +42,7 @@ func (c *ctyunPgsqlBackups) Metadata(ctx context.Context, request datasource.Met
 
 func (c *ctyunPgsqlBackups) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10160072",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -248,7 +248,7 @@ type CtyunPostgresqlBackupsConfig struct {
 	ProjectID         types.String                `tfsdk:"project_id"`
 	InstID            types.String                `tfsdk:"inst_id"`
 	Name              types.String                `tfsdk:"name"`
-	pageNo            types.Int32                 `tfsdk:"page_no"`
+	PageNo            types.Int32                 `tfsdk:"page_no"`
 	PageSize          types.Int32                 `tfsdk:"page_size"`
 	BackupType        types.String                `tfsdk:"backup_type"`
 	StartTime         types.String                `tfsdk:"start_time"`

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -40,7 +40,7 @@ func (c *ctyunPgsqlAccounts) Metadata(ctx context.Context, request datasource.Me
 
 func (c *ctyunPgsqlAccounts) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10161317",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -61,18 +61,18 @@ func (c *ctyunPgsqlAccounts) Schema(ctx context.Context, request datasource.Sche
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"page_no": schema.Int64Attribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Description: "分页页码，默认为1",
-				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
 				},
 			},
-			"page_size": schema.Int64Attribute{
+			"page_size": schema.Int32Attribute{
 				Optional:    true,
 				Description: "每页记录数，默认为10",
-				Validators: []validator.Int64{
-					int64validator.Between(1, 100),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 100),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -107,7 +107,7 @@ func (c *ctyunPgsqlAccounts) Schema(ctx context.Context, request datasource.Sche
 							Computed:    true,
 							Description: "用户是否可以登录数据库",
 						},
-						"rol_conn_limit": schema.Int64Attribute{
+						"rol_conn_limit": schema.Int32Attribute{
 							Computed:    true,
 							Description: "用户连接数限制（-1表示无限制）",
 						},
@@ -141,6 +141,7 @@ func (c *ctyunPgsqlAccounts) Read(ctx context.Context, request datasource.ReadRe
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 	accountRespList, err := c.getPgsqlAccountList(ctx, config)
 	if err != nil {
 		return
@@ -174,8 +175,8 @@ func (c *ctyunPgsqlAccounts) getPgsqlAccountList(ctx context.Context, config Cty
 	if !config.PageSize.IsNull() {
 		params.PageSize = config.PageSize.ValueInt32()
 	}
-	if !config.pageNo.IsNull() {
-		params.PageNum = config.pageNo.ValueInt32()
+	if !config.PageNo.IsNull() {
+		params.PageNum = config.PageNo.ValueInt32()
 	}
 
 	if !config.Name.IsNull() {
@@ -219,7 +220,7 @@ type CtyunPgsqlAccounts struct {
 	RegionID           types.String            `tfsdk:"region_id"`
 	ProjectID          types.String            `tfsdk:"project_id"`
 	InstID             types.String            `tfsdk:"inst_id"`
-	pageNo             types.Int32             `tfsdk:"page_no"`
+	PageNo             types.Int32             `tfsdk:"page_no"`
 	PageSize           types.Int32             `tfsdk:"page_size"`
 	Name               types.String            `tfsdk:"name"`
 	PostgresqlAccounts []PgsqlAccountInfoModel `tfsdk:"postgresql_accounts"`

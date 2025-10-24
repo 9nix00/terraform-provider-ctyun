@@ -51,7 +51,7 @@ func (c *CtyunMysqlBackupCancel) ImportState(ctx context.Context, request resour
 
 func (c *CtyunMysqlBackupCancel) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
 				Required:    true,

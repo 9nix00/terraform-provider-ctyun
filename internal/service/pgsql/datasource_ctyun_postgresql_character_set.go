@@ -39,7 +39,7 @@ func (c *ctyunPostgresqlCharacterSet) Metadata(ctx context.Context, request data
 
 func (c *ctyunPostgresqlCharacterSet) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10159978",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -53,7 +53,7 @@ func (c *ctyunPostgresqlCharacterSet) Schema(ctx context.Context, request dataso
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"character_set": schema.SetAttribute{
+			"character_set": schema.ListAttribute{
 				Computed:    true,
 				ElementType: types.StringType,
 				Description: "字符集列表",
@@ -105,20 +105,37 @@ func (c *ctyunPostgresqlCharacterSet) Read(ctx context.Context, request datasour
 	}
 
 	characterSetResp := resp.ReturnObj.CharacterSetNameItems
-	characterSet, diagnostics := types.SetValueFrom(ctx, types.StringType, characterSetResp)
-	if diagnostics.HasError() {
-		err = fmt.Errorf(diagnostics[0].Detail())
-		return
-	}
-	config.CharacterSet = characterSet
+	// 避免返回的结果重复，先去重
+	result := c.removeDuplicatesInPlace(characterSetResp)
+
+	config.CharacterSet = result
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 }
 
+func (c *ctyunPostgresqlCharacterSet) removeDuplicatesInPlace(strs []string) []string {
+	if len(strs) == 0 {
+		return strs
+	}
+
+	encountered := map[string]bool{}
+	j := 0
+
+	for _, str := range strs {
+		if !encountered[str] {
+			encountered[str] = true
+			strs[j] = str
+			j++
+		}
+	}
+
+	return strs[:j]
+}
+
 type CtyunPostgresqlCharacterSetConfig struct {
 	RegionID     types.String `tfsdk:"region_id"`
 	ProjectID    types.String `tfsdk:"project_id"`
-	CharacterSet types.Set    `tfsdk:"character_set"`
+	CharacterSet []string     `tfsdk:"character_set"`
 }

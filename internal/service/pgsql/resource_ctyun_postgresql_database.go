@@ -72,7 +72,7 @@ func (c *CtyunPgsqlDatabase) ImportState(ctx context.Context, request resource.I
 
 func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10159978",
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
 				Required:    true,

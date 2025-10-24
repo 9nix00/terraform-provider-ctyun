@@ -94,6 +94,8 @@ const (
 	PgsqlBackupResultINGStr     = "ing"
 	PgsqlBackupResultSuccessStr = "success"
 	PgsqlBackupResultFailStr    = "fail"
+
+	PgsqlNodeTypeReadNode = "readNode"
 )
 
 var PgsqlBackupTypeMap = map[string]int32{
@@ -228,6 +230,14 @@ var PgsqlProdIDDict = map[string]int64{
 	"MasterSlave168":   PgsqlProdIDMS168,
 	"Master2Slave168":  PgsqlProdIDM2S168,
 	"ReadOnly168":      PgsqlProdIDRead168,
+}
+
+var PgsqlReadNodeVersionProdIdDict = map[string]string{
+	"12.22": "ReadOnly1222",
+	"14.17": "ReadOnly1417",
+	"15.12": "ReadOnly1512",
+	"13.20": "ReadOnly1320",
+	"16.8":  "ReadOnly168",
 }
 
 var PgsqlProdIDRevDict = map[int64]string{

@@ -42,6 +42,9 @@ func (this *PgsqlGetWhiteListApi) Do(ctx context.Context, credential ctyunsdk.Cr
 	}
 	builder.AddHeader("regionId", header.RegionID)
 	builder.AddParam("prodInstId", req.ProdInstId)
+	if req.IP != nil {
+		builder.AddParam("ip", *req.IP)
+	}
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {

@@ -38,7 +38,7 @@ var (
 type CtyunPostgresqlInstance struct {
 	meta         *common.CtyunMetadata
 	ecsService   *business.EcsService
-	pgsqlService *business.MysqlService
+	pgsqlService *business.PgsqlService
 }
 
 func (c *CtyunPostgresqlInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -53,7 +53,7 @@ func (c *CtyunPostgresqlInstance) Configure(ctx context.Context, request resourc
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.ecsService = business.NewEcsService(c.meta)
-	c.pgsqlService = business.NewMysqlService(c.meta)
+	c.pgsqlService = business.NewPgsqlService(c.meta)
 }
 
 func NewCtyunPostgresqlInstance() resource.Resource {
@@ -254,7 +254,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"project_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
+				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID。若环境变量为空，则默认为0",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -445,10 +445,10 @@ func (c *CtyunPostgresqlInstance) Update(ctx context.Context, request resource.U
 		return
 	}
 
-	if !plan.Password.Equal(state.Password) {
-		err = fmt.Errorf("数据库密码暂时不支持修改")
-		return
-	}
+	//if !plan.Password.Equal(state.Password) {
+	//	err = fmt.Errorf("数据库密码暂时不支持修改")
+	//	return
+	//}
 
 	// flavor转换host_type, spec和OsType, CpuType
 	err = c.checkSpec(ctx, &plan)
@@ -556,7 +556,11 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	}
 
 	header := &pgsql.PgsqlCreateRequestHeader{}
-	if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
+	if config.ProjectID.IsNull() || config.ProjectID.IsUnknown() || config.ProjectID.ValueString() == "" {
+		projectId := "0"
+		params.ProjectId = &projectId
+		header.ProjectId = &projectId
+	} else {
 		params.ProjectId = config.ProjectID.ValueStringPointer()
 		header.ProjectId = config.ProjectID.ValueStringPointer()
 	}
@@ -574,14 +578,14 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 	}
 
 	// 处理MysqlNodeInfoList
-	mysqlNodeInfoList := []pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
-	mysqlNodeInfo := pgsql.PgsqlCreateRequestMysqlNodeInfoList{}
-	mysqlNodeInfo.InstSpec = business.PgsqlInstanceSeriesDict[config.instanceSeries]
-	mysqlNodeInfo.StorageType = config.StorageType.ValueString()
-	mysqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
-	mysqlNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
-	mysqlNodeInfo.Disks = 1
-	mysqlNodeInfo.NodeType = business.PgsqlNodeTypeDict[config.ProdID.ValueString()]
+	var pgsqlNodeInfoList []pgsql.PgsqlCreateRequestNodeInfoList
+	pgsqlNodeInfo := pgsql.PgsqlCreateRequestNodeInfoList{}
+	pgsqlNodeInfo.InstSpec = business.PgsqlInstanceSeriesDict[config.instanceSeries]
+	pgsqlNodeInfo.StorageType = config.StorageType.ValueString()
+	pgsqlNodeInfo.StorageSpace = config.StorageSpace.ValueInt32()
+	pgsqlNodeInfo.ProdPerformanceSpec = config.prodPerformanceSpec
+	pgsqlNodeInfo.Disks = 1
+	pgsqlNodeInfo.NodeType = business.PgsqlNodeTypeDict[config.ProdID.ValueString()]
 
 	// 处理backupStorage
 	if !config.BackupStorageType.IsNull() && !config.BackupStorageType.IsUnknown() {
@@ -592,23 +596,23 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		} else {
 			if config.BackupStorageSpace.ValueInt32() != 0 {
 				backupStorageSpace := fmt.Sprintf("%d", config.BackupStorageSpace.ValueInt32())
-				mysqlNodeInfo.BackupStorageSpace = &backupStorageSpace
-				mysqlNodeInfo.BackupStorageType = &backupStorageType
+				pgsqlNodeInfo.BackupStorageSpace = &backupStorageSpace
+				pgsqlNodeInfo.BackupStorageType = &backupStorageType
 			}
 		}
 	}
 
 	// 处理availabilityZoneInfo
-	azModelList := []pgsql.PgsqlCreateRequestAvailabilityZoneInfo{}
+	var azModelList []pgsql.PgsqlCreateRequestAvailabilityZoneInfo
 
 	err = c.generateAvailabilityZoneInfo(ctx, config, config, &azModelList, "create")
 	if err != nil {
 		return
 	}
 
-	mysqlNodeInfo.AvailabilityZoneInfo = azModelList
-	mysqlNodeInfoList = append(mysqlNodeInfoList, mysqlNodeInfo)
-	params.MysqlNodeInfoList = mysqlNodeInfoList
+	pgsqlNodeInfo.AvailabilityZoneInfo = azModelList
+	pgsqlNodeInfoList = append(pgsqlNodeInfoList, pgsqlNodeInfo)
+	params.MysqlNodeInfoList = pgsqlNodeInfoList
 
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlCreateApi.Do(ctx, c.meta.Credential, params, header)
 	if err != nil {
@@ -646,7 +650,7 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlListApi.Do(ctx, c.meta.Credential, listParams, listHeaders)
 		if err2 != nil {
 			return err2
-		} else if resp.StatusCode != 800 {
+		} else if resp.StatusCode != common.NormalStatusCode {
 			err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 			return
 		}
@@ -681,7 +685,7 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
 	if err != nil {
 		return err
-	} else if resp.StatusCode != 800 {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -738,16 +742,24 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		modifyNameHeaders := &pgsql.PgsqlUpdateInstanceNameRequestHeader{
 			RegionID: state.RegionID.ValueString(),
 		}
-		if state.ProjectID.ValueString() != "" {
+		if !state.ProjectID.IsNull() && !state.ProjectID.IsUnknown() {
 			modifyNameHeaders.ProjectID = state.ProjectID.ValueStringPointer()
 		}
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlUpdateInstanceNameApi.Do(ctx, c.meta.Credential, modifyNameParams, modifyNameHeaders)
 		if err2 != nil {
 			return err2
-		} else if resp.StatusCode != 800 {
+		} else if resp.StatusCode != common.NormalStatusCode {
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
 			return
 		}
+	}
+	// 更新root密码
+	if !plan.Password.IsNull() && !plan.Password.Equal(state.Password) {
+		err = c.updateRootPassword(ctx, state, plan)
+		if err != nil {
+			return
+		}
+		state.Password = plan.Password
 	}
 	// 扩容云数据库实例
 	// 磁盘扩容
@@ -798,7 +810,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlStopApi.Do(ctx, c.meta.Credential, stopParams, stopHeaders)
 		if err2 != nil {
 			return err2
-		} else if resp.StatusCode != 800 {
+		} else if resp.StatusCode != common.NormalStatusCode {
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
 			return
 		}
@@ -827,7 +839,7 @@ func (c *CtyunPostgresqlInstance) updatePgsqlInstance(ctx context.Context, state
 		resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlRestartApi.Do(ctx, c.meta.Credential, restartParams, restartHeaders)
 		if err2 != nil {
 			return err2
-		} else if resp.StatusCode != 800 {
+		} else if resp.StatusCode != common.NormalStatusCode {
 			err = fmt.Errorf("API return error. Message: %s", resp.Message)
 			return
 		}
@@ -856,7 +868,7 @@ func (c *CtyunPostgresqlInstance) ListLoop(ctx context.Context, config *CtyunPos
 			if err2 != nil {
 				err = err2
 				return false
-			} else if resp.StatusCode != 800 {
+			} else if resp.StatusCode != common.NormalStatusCode {
 				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 				return false
 			}
@@ -921,7 +933,7 @@ func (c *CtyunPostgresqlInstance) RunningStatusLoop(ctx context.Context, state *
 					return false
 				}
 				return true
-			} else if resp.StatusCode != 800 {
+			} else if resp.StatusCode != common.NormalStatusCode {
 				tolerateCount--
 				if tolerateCount < 0 {
 					err = fmt.Errorf("API return error. Message: %s", resp.Message)
@@ -992,7 +1004,7 @@ func (c *CtyunPostgresqlInstance) StartedOrderLoop(ctx context.Context, state *C
 					return false
 				}
 				return true
-			} else if resp.StatusCode != 800 {
+			} else if resp.StatusCode != common.NormalStatusCode {
 				tolerateCount--
 				if tolerateCount < 0 {
 					err = fmt.Errorf("API return error. Message: %s", resp.Message)
@@ -1035,7 +1047,7 @@ func (c *CtyunPostgresqlInstance) detail(ctx context.Context, state CtyunPostgre
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
 	if err != nil {
 		return nil, err
-	} else if resp.StatusCode != 800 {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -1093,7 +1105,7 @@ func (c *CtyunPostgresqlInstance) refundLoop(ctx context.Context, state CtyunPos
 			if err2 != nil {
 				err = err2
 				return false
-			} else if resp.StatusCode != 800 {
+			} else if resp.StatusCode != common.NormalStatusCode {
 				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 				return false
 			}
@@ -1158,7 +1170,7 @@ func (c *CtyunPostgresqlInstance) destroyLoop(ctx context.Context, state CtyunPo
 			if err2 != nil {
 				err = err2
 				return false
-			} else if resp.StatusCode != 800 {
+			} else if resp.StatusCode != common.NormalStatusCode {
 				err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 				return false
 			} else if resp.ReturnObj == nil {
@@ -1218,7 +1230,7 @@ func (c *CtyunPostgresqlInstance) startInstance(ctx context.Context, state *Ctyu
 	resp, err2 := c.meta.Apis.SdkCtPgsqlApis.PgsqlStartApi.Do(ctx, c.meta.Credential, startParams, startHeaders)
 	if err2 != nil {
 		return err2
-	} else if resp.StatusCode != 800 {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
@@ -1430,7 +1442,7 @@ func (c *CtyunPostgresqlInstance) getAzNodeNumMap(ctx context.Context, state *Ct
 		} else if resp == nil {
 			err = errors.New("查询pgsql节点 AZ信息时返回nil，请稍后再试！")
 			return
-		} else if resp.StatusCode != 800 {
+		} else if resp.StatusCode != common.NormalStatusCode {
 			err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 			return
 		} else if resp.ReturnObj == nil {
@@ -1580,7 +1592,7 @@ func (c *CtyunPostgresqlInstance) getInstanceDetailInfo(ctx context.Context, sta
 	} else if resp == nil {
 		err = errors.New("查询pgsql实例返回为nil，请稍后重试")
 		return
-	} else if resp.StatusCode != 800 {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -1787,6 +1799,29 @@ func (c *CtyunPostgresqlInstance) UpgradeProdLoop(ctx context.Context, state *Ct
 	}
 	return
 
+}
+
+func (c *CtyunPostgresqlInstance) updateRootPassword(ctx context.Context, state *CtyunPostgresqlInstanceConfig, plan *CtyunPostgresqlInstanceConfig) error {
+	params := &pgsql.PgsqlResetRootPasswordRequest{
+		ProdInstId: state.ID.ValueString(),
+		Password:   plan.Password.ValueString(),
+	}
+	header := &pgsql.PgsqlResetRootPasswordRequestHeader{
+		ProjectID: state.ProjectID.ValueStringPointer(),
+		RegionID:  state.RegionID.ValueString(),
+	}
+
+	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlResetRootPasswordApi.Do(ctx, c.meta.Credential, params, header)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("修改postgresql(id=%s) root密码失败，接口返回nil，请联系研发确认问题原因！", state.ID.ValueString())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return err
+	}
+	return nil
 }
 
 type CtyunPostgresqlInstanceConfig struct {

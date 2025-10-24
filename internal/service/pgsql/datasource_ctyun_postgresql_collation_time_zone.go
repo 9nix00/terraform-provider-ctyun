@@ -39,7 +39,7 @@ func (c *ctyunPostgresqlCollationTimeZone) Metadata(ctx context.Context, request
 
 func (c *ctyunPostgresqlCollationTimeZone) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10159978",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -118,6 +118,7 @@ func (c *ctyunPostgresqlCollationTimeZone) Read(ctx context.Context, request dat
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 
 	params := &pgsql.PgsqlGetCollationTimeZoneRequest{
 		ProdInstId: config.InstID.ValueString(),

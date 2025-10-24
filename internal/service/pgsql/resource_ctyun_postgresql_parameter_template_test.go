@@ -6,6 +6,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -22,7 +23,11 @@ func TestAccCtyunPostgresqlParamTemplate(t *testing.T) {
 	datasourceFile := "datasource_ctyun_postgresql_parameter_templates.tf"
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	sourceTemplateID := 1
+	sourceTemplateIDStr := dependence.paramTemplateID
+	sourceTemplateID, err := strconv.Atoi(sourceTemplateIDStr)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// 测试数据
 	templateName := "tf-param-template-" + rnd

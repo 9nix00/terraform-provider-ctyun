@@ -13,8 +13,15 @@ import (
 func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_database." + rnd
 	resourceFile := "resource_ctyun_postgresql_database_none_charset.tf"
+
+	charsetDatasourceName := "data.ctyun_postgresql_character_set." + dnd
+	charsetDatasourceFile := "datasource_ctyun_postgresql_character_set.tf"
+
+	collationDatasourceName := "data.ctyun_postgresql_collation_time_zone." + dnd
+	collationDatasourceFile := "datasource_ctyun_postgresql_collation_time_zone.tf"
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
@@ -36,6 +43,22 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+			// collation datasource 验证
+			{
+				Config: utils.LoadTestCase(collationDatasourceFile, dnd, instanceID, projectID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(collationDatasourceName, "standard_time_offset"),
+					resource.TestCheckResourceAttrSet(collationDatasourceName, "time_zone"),
+					resource.TestCheckResourceAttrSet(collationDatasourceName, "collations.#")),
+			},
+			// char set datasource验证
+			{
+				Config: utils.LoadTestCase(charsetDatasourceFile, dnd),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(charsetDatasourceName, "character_set.#"),
+				),
+			},
+
 			// 1. 创建数据库测试（UTF8字符集）
 			{
 				Config: utils.LoadTestCase(
@@ -119,13 +142,13 @@ func TestAccCtyunPostgresqlDatabaseWithOtherCharset(t *testing.T) {
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
 	instanceID := dependence.PgsqlID
-	ownerAccount := "kqjwyk"
+	ownerAccount := dependence.accountName
 
 	// 测试数据
 	dbName := "test_db_" + rnd
-	charset := "LATIN1"
-	collate := "kl_GL.iso88591"
-	charType := "kl_GL.iso88591"
+	charset := dependence.charsetName
+	collate := dependence.collateName
+	charType := dependence.collateType
 	description := "Database_with_specific_charset"
 
 	// 等待函数

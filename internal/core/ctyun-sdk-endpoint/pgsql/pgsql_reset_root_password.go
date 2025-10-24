@@ -57,7 +57,7 @@ func (this *PgsqlResetRootPasswordApi) Do(ctx context.Context, credential ctyuns
 
 type PgsqlResetRootPasswordRequest struct {
 	ProdInstId string `json:"prodInstId"` // 实例ID，必填
-	Password   string `json:"password"`   // 账户密码（安全考虑需要用base64加密后传输）
+	Password   string `json:"password"`   // 账户密码
 }
 type PgsqlResetRootPasswordRequestHeader struct {
 	ProjectID *string `json:"Project-Id	,omitempty"`

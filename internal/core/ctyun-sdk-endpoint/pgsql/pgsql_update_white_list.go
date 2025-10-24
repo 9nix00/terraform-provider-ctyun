@@ -57,7 +57,7 @@ func (this *PgsqlUpdateWhiteListApi) Do(ctx context.Context, credential ctyunsdk
 type PgsqlUpdateWhiteListRequest struct {
 	ProdInstId string   `json:"prodInstId"` // 实例ID，必填
 	Mode       string   `json:"mode"`       // 账户名称
-	IpList     []string `json:"ipList"`     // 账户密码（安全考虑需要用base64加密后传输）
+	IpList     []string `json:"ipList"`     // ip白名单列表
 }
 type PgsqlUpdateWhiteListRequestHeader struct {
 	ProjectID *string `json:"Project-Id	,omitempty"`
