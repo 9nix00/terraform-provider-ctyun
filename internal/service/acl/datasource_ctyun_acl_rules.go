@@ -118,7 +118,7 @@ func (c *CtyunAclRules) getRuleList(ctx context.Context, config *CtyunAclRulesCo
 		err = fmt.Errorf("获取acl规则列表失败（acl id=%s），接口返回nil，请联系研发确认问题原因！", config.AclID.ValueString())
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError

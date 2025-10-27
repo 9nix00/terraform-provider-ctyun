@@ -272,7 +272,7 @@ func (c *CtyunAcl) create(ctx context.Context, config *CtyunAclConfig) error {
 		err = fmt.Errorf("创建acl失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	config.ID = types.StringValue(*resp.ReturnObj[0].AclID)
@@ -319,7 +319,7 @@ func (c *CtyunAcl) getAclDetail(ctx context.Context, config *CtyunAclConfig) (*c
 		err = fmt.Errorf("获取acl详情失败，接口返回nil，请联系研发确认问题原因！")
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
@@ -367,7 +367,7 @@ func (c *CtyunAcl) delete(ctx context.Context, config CtyunAclConfig) error {
 		err = fmt.Errorf("删除acl失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil

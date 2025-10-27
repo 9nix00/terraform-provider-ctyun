@@ -13,10 +13,7 @@ import (
 func TestAccNewCtyunPrivateNatResource(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	resourceName := "ctyun_private_nat." + rnd
 	datasourceName := "data.ctyun_private_nats." + dnd
 	initDescription := "terraform provider 开发测试"
@@ -132,10 +129,7 @@ func TestAccNewCtyunPrivateNatResource(t *testing.T) {
 
 func TestAccNewCtyunPrivateNatResource3(t *testing.T) {
 	rnd := utils.GenerateRandomString()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	resourceName := "ctyun_private_nat." + rnd
 
 	initDescription := "terraform provider 开发测试"
@@ -186,10 +180,6 @@ func TestAccNewCtyunPrivateNatResource3(t *testing.T) {
 func TestAccNewCtyunPrivateNatResource2(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 	resourceName := "ctyun_private_nat." + rnd
 
 	initDescription := "terraform provider 开发测试"

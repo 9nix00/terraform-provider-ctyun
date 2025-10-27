@@ -3,16 +3,10 @@ package vpc_test
 import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"os"
 	"testing"
 )
 
 func TestAccCtyunNetResourcesByTag_basic(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
@@ -31,11 +25,6 @@ func TestAccCtyunNetResourcesByTag_basic(t *testing.T) {
 }
 
 func TestAccCtyunNetResourcesByTag_withLabelKey(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
@@ -62,10 +51,6 @@ func TestAccCtyunNetResourcesByTag_withLabelKey(t *testing.T) {
 }
 
 func TestAccCtyunNetResourcesByTag_withPagination(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),

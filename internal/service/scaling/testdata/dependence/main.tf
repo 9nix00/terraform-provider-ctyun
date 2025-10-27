@@ -74,7 +74,7 @@ resource "ctyun_keypair" "scaling_test" {
 resource "ctyun_scaling_config" "config_test" {
   name            = "sc-for-policy"
   image_id        =  local.image_id
-  flavor_name     = "s7.large.2"
+  flavor_name     = "c7.large.2"
   use_floatings   = "diable"
   login_mode      = "key_pair"
   key_pair_id     = ctyun_keypair.scaling_test.id
@@ -86,7 +86,7 @@ resource "ctyun_scaling_config" "config_test" {
 resource "ctyun_scaling_config" "config_test1" {
   name            = "sc-for-policy1"
   image_id        =  local.image_id
-  flavor_name     = "s7.large.2"
+  flavor_name     = "c7.large.2"
   use_floatings   = "diable"
   login_mode      = "key_pair"
   key_pair_id     = ctyun_keypair.scaling_test.id

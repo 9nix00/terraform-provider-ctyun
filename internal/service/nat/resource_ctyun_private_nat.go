@@ -10,7 +10,6 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -402,7 +401,7 @@ func (c *ctyunPrivateNat) create(ctx context.Context, plan *CtyunPrivateNatConfi
 		plan.NatGatewayID = loopResponse.NatGatewayId
 	}
 
-	plan.ProjectID = utils.SecStringValue(&createParams.ProjectID)
+	//plan.ProjectID = utils.SecStringValue(&createParams.ProjectID)
 	return
 }
 func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatConfig) (returnObj ctnat.CtnatCreatePrivatenatReturnObjResponse, createParams *ctnat.CtnatCreatePrivatenatRequest, err error) {
@@ -417,7 +416,9 @@ func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatCo
 	azName := plan.AzName.ValueString()
 	payVoucherPrice := plan.PayVoucherPrice.ValueString()
 	projectID := plan.ProjectID.ValueString()
-
+	if projectID == "" {
+		projectID = "0"
+	}
 	// 获取autoRenew参数，如果未设置则默认为true
 	autoRenew := plan.AutoRenew.ValueBool()
 

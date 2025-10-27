@@ -13,10 +13,7 @@ import (
 
 func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_system_disk.tf"
@@ -109,10 +106,7 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 }
 func TestAccCtyunImageFromEcsSystemDisk_case1(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_system_disk_case_1.tf"
@@ -222,10 +216,7 @@ func TestAccCtyunImageFromEcsSystemDisk_case1(t *testing.T) {
 
 func TestAccCtyunImageFromEcs_dataDisk(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_data_disk.tf"
@@ -320,10 +311,7 @@ func TestAccCtyunImageFromEcs_dataDisk(t *testing.T) {
 }
 func TestAccCtyunImageFromEcs_dataDisk_case1(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_data_disk_case1.tf"
@@ -418,10 +406,7 @@ func TestAccCtyunImageFromEcs_dataDisk_case1(t *testing.T) {
 }
 func TestAccCtyunImageFromEcs_entire(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_entire.tf"
@@ -514,10 +499,7 @@ func TestAccCtyunImageFromEcs_entire(t *testing.T) {
 
 func TestAccCtyunImageFromEcs_entire_case1(t *testing.T) {
 	//t.Parallel()
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_image_from_ecs." + rnd
 	resourceFile := "ctyun_image_from_ecs_entire_case1.tf"

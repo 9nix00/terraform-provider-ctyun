@@ -90,7 +90,6 @@ func TestAccCtyunKeyPairCreate(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "private_key"),
 				),
 			},
-
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
@@ -103,6 +102,7 @@ func TestAccCtyunKeyPairCreate(t *testing.T) {
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"project_id",
+					"private_key",
 				},
 			},
 			{

@@ -208,7 +208,7 @@ func (c *CtyunAclRule) create(ctx context.Context, config *CtyunAclRuleConfig) e
 		err = fmt.Errorf("创建acl规则失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	err = c.getRuleID(ctx, config)
@@ -297,7 +297,7 @@ func (c *CtyunAclRule) getRuleList(ctx context.Context, config *CtyunAclRuleConf
 		err = fmt.Errorf("获取acl规则列表失败（acl id=%s），接口返回nil，请联系研发确认问题原因！", config.AclID.ValueString())
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
@@ -400,7 +400,7 @@ func (c *CtyunAclRule) update(ctx context.Context, state *CtyunAclRuleConfig, pl
 		err = fmt.Errorf("更新acl规则失败（acl_id =%s,acl_rule_id =%s），接口返回nil，请联系研发确认问题原因！", state.AclID.ValueString(), plan.ID)
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil
@@ -421,7 +421,7 @@ func (c *CtyunAclRule) delete(ctx context.Context, config CtyunAclRuleConfig) er
 		err = fmt.Errorf("删除acl规则失败（acl_id =%s,acl_rule_id =%s），接口返回nil，请联系研发确认问题原因！", config.AclID.ValueString(), config.ID)
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil

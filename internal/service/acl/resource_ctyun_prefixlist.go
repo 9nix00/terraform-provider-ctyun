@@ -184,7 +184,7 @@ func (c *CtyunPrefix) getAndMerge(ctx context.Context, config *CtyunPrefixConfig
 		err = fmt.Errorf("获取prefix失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
@@ -229,7 +229,7 @@ func (c *CtyunPrefix) create(ctx context.Context, config *CtyunPrefixConfig) err
 		err = fmt.Errorf("创建prefix失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	config.ID = types.StringValue(*resp.ReturnObj.PrefixListID)
@@ -252,7 +252,7 @@ func (c *CtyunPrefix) update(ctx context.Context, state *CtyunPrefixConfig, plan
 		err = fmt.Errorf("更新prefix失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil
@@ -270,7 +270,7 @@ func (c *CtyunPrefix) delete(ctx context.Context, config CtyunPrefixConfig) erro
 		err = fmt.Errorf("删除prefix失败（prefixlist id=%s），接口返回nil，请联系研发确认问题原因！", config.ID.ValueString())
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil
