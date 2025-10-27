@@ -107,20 +107,20 @@ variable "password" {
 #
 #
 # # 创建数据盘资源
-# resource "ctyun_ebs" "data_disk_test" {
-#   name       = "tf-test-data-disk"
-#   mode       = "vbd"
-#   type       = "sata"
-#   size       = 60
-#   cycle_type = "on_demand"
-# }
-#
-# # 创建EBS与ECS的关联关系（显式挂载）
-# resource "ctyun_ebs_association_ecs" "data_disk_association" {
-#   instance_id = ctyun_ecs.ecs_test.id
-#   ebs_id      = ctyun_ebs.data_disk_test.id
-# }
-# # 查询网络接口资源
+resource "ctyun_ebs" "data_disk_test" {
+  name       = "tf-test-data-disk"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
+}
+
+# 创建EBS与ECS的关联关系（显式挂载）
+resource "ctyun_ebs_association_ecs" "data_disk_association" {
+  instance_id = ctyun_ecs.ecs_test.id
+  ebs_id      = ctyun_ebs.data_disk_test.id
+}
+# 查询网络接口资源
 
 resource "ctyun_port" "port_test" {
   name       = "tf-test-port"
@@ -138,6 +138,11 @@ resource "ctyun_vip" "vip_test" {
   vpc_id     = local.real_vpc_id
   ip_address = "192.168.100.152"
   vip_type   = "v4"
-
 }
 
+resource "ctyun_dhcpoptionset" "dhcpoptionset_test" {
+  name         = "tf-dhcpoptionset-test"
+  description  = "terraform测试使用"
+  domain_name  = "example.com"
+  dns_list     = ["8.8.8.8", "8.8.4.4"]
+}

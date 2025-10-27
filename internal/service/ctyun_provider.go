@@ -553,6 +553,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		vpc.NewCtyunVip(),
 		vpc.NewCtyunVipAssociation(),
 		vpc.NewCtyunDhcpOptionSet(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpc(),
 	)
 }
 
