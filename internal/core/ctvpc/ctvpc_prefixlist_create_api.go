@@ -51,6 +51,7 @@ type CtvpcPrefixlistCreateRequest struct {
 	Limit           int32                                          `json:"limit"`              /*  前缀列表支持的最大条目容量，创建后将无法修改,限制1-200条，具体以账户配额为准,不能小于前缀列表规则个数  */
 	AddressType     int32                                          `json:"addressType"`        /*  地址类型，4：ipv4，6：ipv6  */
 	PrefixListRules []*CtvpcPrefixlistCreatePrefixListRulesRequest `json:"prefixListRules"`    /*  接口业务数据  */
+	Description     *string                                        `json:"description"`
 }
 
 type CtvpcPrefixlistCreatePrefixListRulesRequest struct {

@@ -6,7 +6,10 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -30,8 +33,173 @@ func (c *CtyunAclRules) Metadata(ctx context.Context, request datasource.Metadat
 }
 
 func (c *CtyunAclRules) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
-	//TODO implement me
-	panic("implement me")
+	response.Schema = schema.Schema{
+		Description: "查询访问控制列表(ACL)规则信息",
+		Attributes: map[string]schema.Attribute{
+			"region_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池ID，默认使用provider配置",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"acl_id": schema.StringAttribute{
+				Required:    true,
+				Description: "ACL ID",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "项目ID",
+			},
+			"name": schema.StringAttribute{
+				Computed:    true,
+				Description: "ACL名称过滤条件",
+			},
+			"description": schema.StringAttribute{
+				Computed:    true,
+				Description: "ACL描述过滤条件",
+			},
+			"vpc_id": schema.StringAttribute{
+				Computed:    true,
+				Description: "VPC ID过滤条件",
+			},
+			"enabled": schema.StringAttribute{
+				Computed:    true,
+				Description: "启用状态过滤条件（disable/enable）",
+			},
+			"in_policy_id": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "入方向策略ID列表",
+			},
+			"out_policy_id": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "出方向策略ID列表",
+			},
+			"subnet_ids": schema.ListAttribute{
+				Computed:    true,
+				ElementType: types.StringType,
+				Description: "绑定的子网ID",
+			},
+			"in_rules": schema.ListNestedAttribute{
+				Computed: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"acl_rule_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "ACL规则ID",
+						},
+						"direction": schema.StringAttribute{
+							Computed:    true,
+							Description: "规则方向（ingress/egress）",
+						},
+						"priority": schema.Int64Attribute{
+							Computed:    true,
+							Description: "规则优先级",
+						},
+						"protocol": schema.StringAttribute{
+							Computed:    true,
+							Description: "协议类型（tcp/udp/icmp/all）",
+						},
+						"ip_version": schema.StringAttribute{
+							Computed:    true,
+							Description: "IP版本（ipv4/ipv6）",
+						},
+						"destination_port": schema.StringAttribute{
+							Computed:    true,
+							Description: "目标端口范围",
+						},
+						"source_port": schema.StringAttribute{
+							Computed:    true,
+							Description: "源端口范围",
+						},
+						"source_ip_address": schema.StringAttribute{
+							Computed:    true,
+							Description: "源IP地址范围",
+						},
+						"destination_ip_address": schema.StringAttribute{
+							Computed:    true,
+							Description: "目标IP地址范围",
+						},
+						"action": schema.StringAttribute{
+							Computed:    true,
+							Description: "动作（accept/drop）",
+						},
+						"enabled": schema.StringAttribute{
+							Computed:    true,
+							Description: "启用状态（disable/enable）",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "规则描述",
+						},
+					},
+				},
+				Description: "入方向规则列表",
+			},
+			"out_rules": schema.ListNestedAttribute{
+				Computed: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"acl_rule_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "ACL规则ID",
+						},
+						"direction": schema.StringAttribute{
+							Computed:    true,
+							Description: "规则方向（ingress/egress）",
+						},
+						"priority": schema.Int32Attribute{
+							Computed:    true,
+							Description: "规则优先级",
+						},
+						"protocol": schema.StringAttribute{
+							Computed:    true,
+							Description: "协议类型（tcp/udp/icmp/all）",
+						},
+						"ip_version": schema.StringAttribute{
+							Computed:    true,
+							Description: "IP版本（ipv4/ipv6）",
+						},
+						"destination_port": schema.StringAttribute{
+							Computed:    true,
+							Description: "目标端口范围",
+						},
+						"source_port": schema.StringAttribute{
+							Computed:    true,
+							Description: "源端口范围",
+						},
+						"source_ip_address": schema.StringAttribute{
+							Computed:    true,
+							Description: "源IP地址范围",
+						},
+						"destination_ip_address": schema.StringAttribute{
+							Computed:    true,
+							Description: "目标IP地址范围",
+						},
+						"action": schema.StringAttribute{
+							Computed:    true,
+							Description: "动作（accept/drop）",
+						},
+						"enabled": schema.StringAttribute{
+							Computed:    true,
+							Description: "启用状态（disable/enable）",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "规则描述",
+						},
+					},
+				},
+				Description: "出方向规则列表",
+			},
+		},
+	}
 }
 
 func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
@@ -52,12 +220,11 @@ func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest
 		err = errors.New("region ID不能为空！")
 		return
 	}
-
-	rules, err := c.getRuleList(ctx, &config)
+	config.RegionID = types.StringValue(regionId)
+	rule, err := c.getRuleList(ctx, &config)
 	if err != nil {
 		return
 	}
-	rule := rules[0]
 	config.Name = types.StringValue(*rule.Name)
 	config.Description = types.StringValue(*rule.Description)
 	config.VpcID = types.StringValue(*rule.VpcID)
@@ -103,7 +270,7 @@ func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
-func (c *CtyunAclRules) getRuleList(ctx context.Context, config *CtyunAclRulesConfig) ([]*ctvpc.CtvpcListAclRuleReturnObjResponse, error) {
+func (c *CtyunAclRules) getRuleList(ctx context.Context, config *CtyunAclRulesConfig) (*ctvpc.CtvpcListAclRuleReturnObjResponse, error) {
 	params := &ctvpc.CtvpcListAclRuleRequest{
 		RegionID: config.RegionID.ValueString(),
 		AclID:    config.AclID.ValueString(),
@@ -118,7 +285,7 @@ func (c *CtyunAclRules) getRuleList(ctx context.Context, config *CtyunAclRulesCo
 		err = fmt.Errorf("获取acl规则列表失败（acl id=%s），接口返回nil，请联系研发确认问题原因！", config.AclID.ValueString())
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
