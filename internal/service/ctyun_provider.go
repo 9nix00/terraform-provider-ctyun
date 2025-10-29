@@ -37,6 +37,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/acl"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
 	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
@@ -467,6 +468,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlParameters(),
 		ccse.NewCtyunCcseNamespaces(),
 		ccse.NewCtyunCcseImages(),
+		acl.NewCtyunAcls(),
+		acl.NewCtyunAclRules(),
+		acl.NewCtyunPrefixLists(),
 		crs.NewCtyunCrsOpensourceImages(),
 	)
 }
@@ -605,6 +609,10 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		kafka.NewCtyunKafkaAcl(),
 		ccse.NewCtyunCcseNamespace(),
 		ccse.NewCtyunCcseScalingNodePoolPolicy(),
+		acl.NewCtyunAcl(),
+		acl.NewCtyunAclRule(),
+		acl.NewCtyunPrefix(),
+		acl.NewCtyunSubnetAssociationAcl(),
 		crs.NewCtyunCrsVpcAttach(),
 	)
 }

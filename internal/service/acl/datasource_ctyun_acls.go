@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -36,8 +40,103 @@ func (c *ctyunAcls) Metadata(ctx context.Context, request datasource.MetadataReq
 }
 
 func (c *ctyunAcls) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
-	//TODO implement me
-	panic("implement me")
+	response.Schema = schema.Schema{
+		Description: "查询访问控制列表(ACL)信息",
+		Attributes: map[string]schema.Attribute{
+			"region_id": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池ID，默认使用provider配置",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"id": schema.StringAttribute{
+				Optional:    true,
+				Description: "ACL ID，精确查询",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+			},
+			"project_id": schema.StringAttribute{
+				Optional:    true,
+				Description: "项目ID",
+			},
+			"name": schema.StringAttribute{
+				Optional:    true,
+				Description: "ACL名称，查询条件之一",
+			},
+			"page_no": schema.Int32Attribute{
+				Optional:    true,
+				Description: "分页页码，默认为1",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
+			},
+			"page_size": schema.Int32Attribute{
+				Optional:    true,
+				Description: "每页记录数，默认为10。取值范围：1~50",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 50),
+				},
+			},
+			"acls": schema.ListNestedAttribute{
+				Computed: true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"id": schema.StringAttribute{
+							Computed:    true,
+							Description: "ACL ID",
+						},
+						"name": schema.StringAttribute{
+							Computed:    true,
+							Description: "ACL名称",
+						},
+						"description": schema.StringAttribute{
+							Computed:    true,
+							Description: "ACL描述",
+						},
+						"apply_to_public_lb": schema.BoolAttribute{
+							Computed:    true,
+							Description: "是否应用到公网负载均衡",
+						},
+						"vpc_id": schema.StringAttribute{
+							Computed:    true,
+							Description: "所属VPC ID",
+						},
+						"enabled": schema.StringAttribute{
+							Computed:    true,
+							Description: "启用状态，disalbe和enable",
+						},
+						"in_policy_id": schema.SetAttribute{
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "入方向策略ID集合",
+						},
+						"out_policy_id": schema.SetAttribute{
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "出方向策略ID集合",
+						},
+						"create_time": schema.StringAttribute{
+							Computed:    true,
+							Description: "创建时间",
+						},
+						"update_time": schema.StringAttribute{
+							Computed:    true,
+							Description: "更新时间",
+						},
+						"subnet_ids": schema.SetAttribute{
+							Computed:    true,
+							ElementType: types.StringType,
+							Description: "关联的子网ID集合",
+						},
+					},
+				},
+				Description: "ACL列表",
+			},
+		},
+	}
 }
 
 func (c *ctyunAcls) Read(ctx context.Context, request datasource.ReadRequest, response *datasource.ReadResponse) {
@@ -58,7 +157,7 @@ func (c *ctyunAcls) Read(ctx context.Context, request datasource.ReadRequest, re
 		err = errors.New("region ID不能为空！")
 		return
 	}
-
+	config.RegionID = types.StringValue(regionId)
 	params := &ctvpc.CtvpcListAclRequest{
 		RegionID: config.RegionID.ValueString(),
 		PageNo:   1,
@@ -76,8 +175,8 @@ func (c *ctyunAcls) Read(ctx context.Context, request datasource.ReadRequest, re
 	if !config.PageNo.IsNull() {
 		params.PageNo = config.PageNo.ValueInt32()
 	}
-	if !config.pageSize.IsNull() {
-		params.PageSize = config.pageSize.ValueInt32()
+	if !config.PageSize.IsNull() {
+		params.PageSize = config.PageSize.ValueInt32()
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcListAclApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -132,8 +231,8 @@ type CtyunAclInfoModel struct {
 	ID              types.String `tfsdk:"id"`
 	Name            types.String `tfsdk:"name"`
 	Description     types.String `tfsdk:"description"`
-	ApplyToPublicLb types.Bool   `tfsdk:"applyToPublicLb"`
-	VpcID           types.String `tfsdk:"vpcId"`
+	ApplyToPublicLb types.Bool   `tfsdk:"apply_to_public_lb"`
+	VpcID           types.String `tfsdk:"vpc_id"`
 	Enabled         types.String `tfsdk:"enabled"`
 	InPolicyID      types.Set    `tfsdk:"in_policy_id"`
 	OutPolicyID     types.Set    `tfsdk:"out_policy_id"`
@@ -148,6 +247,6 @@ type CtyunAclsConfig struct {
 	ProjectID types.String        `tfsdk:"project_id"`
 	Name      types.String        `tfsdk:"name"`
 	PageNo    types.Int32         `tfsdk:"page_no"`
-	pageSize  types.Int32         `tfsdk:"page_size"`
+	PageSize  types.Int32         `tfsdk:"page_size"`
 	Acls      []CtyunAclInfoModel `tfsdk:"acls"`
 }
