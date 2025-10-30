@@ -55,13 +55,13 @@ func (this *TeledbCreateBackupApi) Do(ctx context.Context, credential ctyunsdk.C
 	builder.AddHeader("inst-id", header.InstID)
 	builder.AddHeader("regionId", header.RegionID)
 
-	builder.AddParam("outerProdInstId", req.OuterProdInstId)
-	builder.AddParam("backupName", req.BackupName)
-	builder.AddParam("taskType", req.TaskType)
-
-	if req.Description != nil {
-		builder.AddParam("description", *req.Description)
-	}
+	//builder.AddParam("outerProdInstId", req.OuterProdInstId)
+	//builder.AddParam("backupName", req.BackupName)
+	//builder.AddParam("taskType", req.TaskType)
+	//
+	//if req.Description != nil {
+	//	builder.AddParam("description", *req.Description)
+	//}
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameCtdas, builder)
 	if err != nil {

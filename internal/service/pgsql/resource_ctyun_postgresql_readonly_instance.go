@@ -569,8 +569,12 @@ func (c *CtyunPostgresqlReadOnlyInstance) CreateLoop(ctx context.Context, config
 				return false
 			}
 			if len(instanceList) == 1 {
-				response = instanceList
-				return false
+				runningStatus := instanceList[0].ProdRunningStatus
+				orderStatus := instanceList[0].ProdOrderStatus
+				if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
+					response = instanceList
+					return false
+				}
 			}
 			// 未查询到，继续轮询
 			return true

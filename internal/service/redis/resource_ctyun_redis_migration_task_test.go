@@ -21,12 +21,12 @@ func TestAccCtyunRedisMigrationTask(t *testing.T) {
 
 	// 使用依赖中提供的Redis实例信息
 	sourceInstanceId := dependence.instanceId
-	sourceIp := "192.168.0.10" // 示例IP，请根据实际情况修改
+	sourceIp := dependence.address
 	sourceAccount := dependence.userName
 	sourcePassword := dependence.userPassword
 
 	targetInstanceId := dependence.instance2Id
-	targetIp := "192.168.0.11" // 示例IP，请根据实际情况修改
+	targetIp := dependence.address2
 	targetAccount := dependence.user2Name
 	targetPassword := dependence.user2Password
 
@@ -67,7 +67,6 @@ func TestAccCtyunRedisMigrationTask(t *testing.T) {
 			},
 			// 查询在线迁移进度明细
 			{
-
 				Config: utils.LoadTestCase(resourceFile, rnd,
 					sourceInstanceId, sourceIp, sourceAccount, sourcePassword,
 					targetInstanceId, targetIp, targetAccount, targetPassword, "") +

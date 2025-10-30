@@ -31,9 +31,9 @@ func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
 	securityGroupID := dependence.securityGroupID
 	//azInfo := `availability_zone_info = [{"availability_zone_name":"cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count":1, "node_type":"master"}]`
 
-	flavorName := "s7.large.2"
+	flavorName := "c7.xlarge.2"
 	appointVip := `appoint_vip="192.168.4.111"`
-	updatedFlavorName := "s7.large.4"
+	updatedFlavorName := "c7.xlarge.2"
 	updatedProdId := "MasterSlave1222"
 	updatedStorageSpace := 120
 

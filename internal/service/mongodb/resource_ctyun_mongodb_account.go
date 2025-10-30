@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
@@ -205,6 +206,9 @@ func (c *CtyunMongodbAccount) Read(ctx context.Context, req resource.ReadRequest
 	}
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
+		if errors.Is(err, common.ResourceNotExistError) {
+			err = nil
+		}
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
@@ -347,8 +351,6 @@ func (c *CtyunMongodbAccount) create(ctx context.Context, plan MongodbAccountCon
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	}
-	// 设置ID
-	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.Name.ValueString()))
 	return
 }
 
@@ -396,12 +398,12 @@ func (c *CtyunMongodbAccount) getAndMerge(ctx context.Context, plan *MongodbAcco
 					}
 				}
 			}
-
+			plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.InstanceID.ValueString(), plan.Name.ValueString()))
 			return nil
 		}
 	}
 
-	return fmt.Errorf("未找到指定账号: %s", plan.Name.ValueString())
+	return common.ResourceNotExistError
 }
 
 // updateAccountPassword 更新账户密码

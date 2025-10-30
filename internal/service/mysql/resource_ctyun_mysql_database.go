@@ -125,11 +125,9 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 				Description: "备注",
 			},
 			"charset_name": schema.StringAttribute{
-				Required:    true,
-				Description: "字符集",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Required:      true,
+				Description:   "字符集",
+				PlanModifiers: []planmodifier.String{},
 			},
 			"user_grant_privilege": schema.ListNestedAttribute{
 				Computed: true,

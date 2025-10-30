@@ -11,7 +11,7 @@ import (
 
 // 创建备份集 + 取消备份任务
 func TestAccCtyunMysqlBackup(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_backup." + rnd
 	resourceFile := "resource_ctyun_mysql_backup.tf"
@@ -55,22 +55,8 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 			},
 			// 2. 导入测试
 			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources[resourceName]
-					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
-					}
-
-					// 构造导入ID: ID|region_id|project_id|inst_id
-					return fmt.Sprintf("%s,%s,%s,%s",
-						rs.Primary.ID,
-						rs.Primary.Attributes["region_id"],
-						rs.Primary.Attributes["project_id"],
-						rs.Primary.Attributes["inst_id"],
-					), nil
-				},
+				ResourceName:            resourceName,
+				ImportState:             true,
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"description", "task_type"}, // 不需要忽略任何字段
 			},
@@ -107,7 +93,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 }
 
 func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_backup." + rnd
 	resourceFile := "resource_ctyun_mysql_backup.tf"
@@ -155,7 +141,6 @@ func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
 			// datasource获取backup_record_id
 			// 验证取消备份
 			{
-
 				Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
 					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)) +
 					utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backup_list.0.records.0.backup_record_id", backupsDatasourceName)),
@@ -176,7 +161,7 @@ func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
 }
 
 func TestAccCtyunMysqlBackupRecovery(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_backup_recovery." + rnd
@@ -269,7 +254,7 @@ func TestAccCtyunMysqlBackupRecovery(t *testing.T) {
 }
 
 func TestAccCtyunMysqlBackupRecoveryByTaskID(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_backup_recovery." + rnd

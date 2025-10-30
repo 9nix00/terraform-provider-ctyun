@@ -63,7 +63,7 @@ func (c *CtyunMysqlParamTemplates) Schema(ctx context.Context, request datasourc
 				Optional:    true,
 				Description: "mysql版本",
 				Validators: []validator.String{
-					stringvalidator.OneOf("5.8", "8.0"),
+					stringvalidator.OneOf("5.7", "8.0"),
 				},
 			},
 			"page_no": schema.Int32Attribute{

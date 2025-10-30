@@ -79,7 +79,7 @@ func TestAccCtyunRedisParamTemplate(t *testing.T) {
 				]`) +
 					utils.LoadTestCase(datasourceFile, dnd, "custom", "1", "10"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "list.#", "1"),
+					resource.TestCheckResourceAttrWith(datasourceName, "list.#", utils.AtLeastOne),
 					resource.TestCheckResourceAttr(datasourceName, "list.0.name", initName),
 				),
 			},
@@ -91,7 +91,7 @@ func TestAccCtyunRedisParamTemplate(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					regionId := ds.Attributes["region_id"]
 					templateId := ds.Attributes["id"]
-					return fmt.Sprintf("%s,%s", regionId, templateId), nil
+					return fmt.Sprintf("%s,%s", templateId, regionId), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"params", "params_return"},

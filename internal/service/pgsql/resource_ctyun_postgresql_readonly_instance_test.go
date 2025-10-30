@@ -8,19 +8,19 @@ import (
 )
 
 func TestAccCtyunPostgresqlReadOnlyInstance(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_readonly_instance." + rnd
 	resourceFile := "resource_ctyun_postgresql_readonly_instance_on_demand.tf"
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"                 // 默认项目ID
-	instanceID := dependence.PgsqlID // 主实例ID
+	instanceID := dependence.pgsqlID // 主实例ID
 	cycleType := "on_demand"
 
 	// 测试数据
 	instanceName := "test-pg-ro-" + rnd
-	flavorName := "s7.large.2" // PostgreSQL 规格
+	flavorName := "c7.xlarge.2" // PostgreSQL 规格
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),

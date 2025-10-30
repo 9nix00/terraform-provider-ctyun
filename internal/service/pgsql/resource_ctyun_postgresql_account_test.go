@@ -11,7 +11,7 @@ import (
 )
 
 func TestAccCtyunPostgresqlAccount(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_account." + rnd
 	resourceFile := "resource_ctyun_postgresql_account.tf"
@@ -19,7 +19,7 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	instanceID := "7242dc75cb91414a997d7bdddcf3f393"
+	instanceID := dependence.pgsqlID
 	testDB1 := "test1"
 	testDB2 := "test"
 
@@ -150,7 +150,7 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 }
 
 func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_account." + rnd
@@ -160,7 +160,7 @@ func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 	datasourceFile := "datasource_ctyun_postgresql_accounts.tf"
 
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 	testDB := "test"
 
 	// 测试数据

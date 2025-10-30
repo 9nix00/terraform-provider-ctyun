@@ -12,7 +12,7 @@ import (
 )
 
 func TestAccCtyunPostgresqlParamTemplate(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

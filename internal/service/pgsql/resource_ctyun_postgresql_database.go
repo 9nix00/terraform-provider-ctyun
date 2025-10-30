@@ -2,6 +2,7 @@ package pgsql
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
@@ -76,7 +77,7 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
 				Required:    true,
-				Description: "mysql实例id",
+				Description: "pgsql实例id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -118,6 +119,7 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "数据库描述，长度为2~256个字符。以中文、英文字母开头，可以包含数字、中文、英文、下划线（_）、短横线（-）",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 256),
@@ -209,8 +211,10 @@ func (c *CtyunPgsqlDatabase) Read(ctx context.Context, request resource.ReadRequ
 	// 查询远端
 	err = c.getAndMergePgsqlDatabase(ctx, &state)
 	if err != nil {
-		response.State.RemoveResource(ctx)
-		err = nil
+		if errors.Is(err, common.ResourceNotExistError) {
+			response.State.RemoveResource(ctx)
+			err = nil
+		}
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
@@ -334,11 +338,10 @@ func (c *CtyunPgsqlDatabase) createPgsqlDatabase(ctx context.Context, config *Ct
 }
 
 func (c *CtyunPgsqlDatabase) getAndMergePgsqlDatabase(ctx context.Context, config *CtyunPostgresqlDatabaseConfig) error {
-	resp, err := c.getDatabaseDetail(ctx, config)
+	databaseDetail, err := c.getDatabaseDetail(ctx, config)
 	if err != nil {
 		return err
 	}
-	databaseDetail := resp[0]
 	config.CharSetName = types.StringValue(databaseDetail.DBEncoding)
 	config.CharSetCollate = types.StringValue(databaseDetail.DBCollate)
 	config.CharSetType = types.StringValue(databaseDetail.DbType)
@@ -347,7 +350,7 @@ func (c *CtyunPgsqlDatabase) getAndMergePgsqlDatabase(ctx context.Context, confi
 	return nil
 }
 
-func (c *CtyunPgsqlDatabase) getDatabaseDetail(ctx context.Context, config *CtyunPostgresqlDatabaseConfig) ([]pgsql.PgsqlGetDatabaseSchemaResponseReturnObj, error) {
+func (c *CtyunPgsqlDatabase) getDatabaseDetail(ctx context.Context, config *CtyunPostgresqlDatabaseConfig) (detail pgsql.PgsqlGetDatabaseSchemaResponseReturnObj, err error) {
 	params := &pgsql.PgsqlGetDatabaseSchemaRequest{
 		ProdInstId: config.InstID.ValueString(),
 		DBName:     config.Name.ValueStringPointer(),
@@ -362,26 +365,27 @@ func (c *CtyunPgsqlDatabase) getDatabaseDetail(ctx context.Context, config *Ctyu
 
 	resp, err := c.meta.Apis.SdkCtPgsqlApis.PgsqlGetDatabaseSchemaApi.Do(ctx, c.meta.Credential, params, header)
 	if err != nil {
-		return nil, err
+		return
 	} else if resp == nil {
 		err = fmt.Errorf("postgresql实例(id=%s)查询数据库详情，接口返回nil，请联系研发确认问题原因！", config.InstID.ValueString())
-		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf(" API return error. Message: %s Error: %s", resp.Message, *resp.Error)
-		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
-		return nil, err
+	} else if len(resp.ReturnObj) == 0 {
+		err = common.ResourceNotExistError
+	} else if len(resp.ReturnObj) > 1 {
+		for _, v := range resp.ReturnObj {
+			if v.DBName == config.Name.ValueString() {
+				detail = v
+			}
+			return
+		}
+		err = common.ResourceNotExistError
+	} else if len(resp.ReturnObj) == 1 {
+		detail = resp.ReturnObj[0]
 	}
-	if len(resp.ReturnObj) > 1 {
-		err = fmt.Errorf("postgresql实例(id=%s)查询数据库(database_name=%s)详情，返回多条信息。", config.InstID.ValueString(), config.Name.ValueString())
-		return nil, err
-	}
-	if len(resp.ReturnObj) < 1 {
-		err = fmt.Errorf("postgresql实例(id=%s)未查询到数据库(database_name=%s)详情。", config.InstID.ValueString(), config.Name.ValueString())
-		return nil, err
-	}
-	return resp.ReturnObj, nil
+	return
 
 }
 
