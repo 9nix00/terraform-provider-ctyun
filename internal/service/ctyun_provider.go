@@ -617,8 +617,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		acl.NewCtyunPrefix(),
 		acl.NewCtyunSubnetAssociationAcl(),
 		crs.NewCtyunCrsVpcAttach(),
-		vpc.NewCtyunDhcpOptionSet(),
-		vpc.NewCtyunDhcpOptionSetAssociationVpc(),
 		ec2.NewCtyunExpressConnect(),
 		ec2.NewCtyunEcCloudGateway(),
 		ec2.NewCtyunEcPacket(),
