@@ -58,6 +58,11 @@ type Apis struct {
 	EcEcBindSDWANApi                         *EcEcBindSDWANApi
 	EcEcListCloudHighSubnetApi               *EcEcListCloudHighSubnetApi
 	EcEcQueryRemainQuotaApi                  *EcEcQueryRemainQuotaApi
+	// 新增云网关计费API
+	EcEcCgwBillNewApi    *EcEcCgwBillNewApi
+	EcEcCgwBillRefundApi *EcEcCgwBillRefundApi
+	// 按需订单查询API
+	EcEcTgwOrderQueryApi *EcEcTgwOrderQueryApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -117,5 +122,10 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcBindSDWANApi:                         NewEcEcBindSDWANApi(client),
 		EcEcListCloudHighSubnetApi:               NewEcEcListCloudHighSubnetApi(client),
 		EcEcQueryRemainQuotaApi:                  NewEcEcQueryRemainQuotaApi(client),
+		// 注册云网关计费API
+		EcEcCgwBillNewApi:    NewEcEcCgwBillNewApi(client),
+		EcEcCgwBillRefundApi: NewEcEcCgwBillRefundApi(client),
+		// 注册按需订单查询API
+		EcEcTgwOrderQueryApi: NewEcEcTgwOrderQueryApi(client),
 	}
 }

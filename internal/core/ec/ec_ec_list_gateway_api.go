@@ -76,7 +76,7 @@ type EcEcListGatewayReturnObjResponse struct {
 
 type EcEcListGatewayReturnObjResultsResponse struct {
 	CgwID          *string `json:"cgwID"`          /*  云网关实例ID  */
-	Region         *string `json:"region"`         /*  Integer地域信息，不填默认查询全部<br/>取值如下<br/>1：中国大陆<br/>2:亚太  */
+	Region         *int64  `json:"region"`         /*  Integer地域信息，不填默认查询全部<br/>取值如下<br/>1：中国大陆<br/>2:亚太  */
 	CgwName        *string `json:"cgwName"`        /*  云网关名称  */
 	CgwDescription *string `json:"cgwDescription"` /*  云网关描述  */
 	EcID           *string `json:"ecID"`           /*  云间高速实例ID  */
