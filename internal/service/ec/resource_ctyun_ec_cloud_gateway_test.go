@@ -12,15 +12,17 @@ import (
 
 func TestAccEcCloudGateway_basic(t *testing.T) {
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_ec_cloud_gateway." + rnd
 	resourceFile := "resource_ctyun_ec_cloud_gateway.tf"
+	datasourceName := "data.ctyun_ec_cloud_gateways." + dnd
+	datasourceFile := "datasource_ctyun_ec_cloud_gateways.tf"
 
 	name := utils.GenerateRandomString()
 	description := "terrform 测试专用"
 	updatedDescription := "Updated description"
 	regionType := "CNP"
-
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		CheckDestroy: func(s *terraform.State) error {
@@ -45,6 +47,14 @@ func TestAccEcCloudGateway_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
+				),
+			},
+
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, dependence.expressConnectID, name, updatedDescription, regionType) +
+					utils.LoadTestCase(datasourceFile, dnd, dependence.expressConnectID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "ec_id", dependence.expressConnectID),
 				),
 			},
 			{

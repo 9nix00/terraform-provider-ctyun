@@ -38,7 +38,7 @@ func (c *ctyunEcCloudGateways) Schema(_ context.Context, _ datasource.SchemaRequ
 				Optional:    true,
 				Description: "模糊匹配，支持cgwID,cgwName,cgwDescription三个属性",
 			},
-			"region": schema.StringAttribute{
+			"region": schema.Int64Attribute{
 				Optional:    true,
 				Description: "地域信息，不填默认查询全部 取值如下 1：中国大陆 2:亚太",
 			},
@@ -50,7 +50,7 @@ func (c *ctyunEcCloudGateways) Schema(_ context.Context, _ datasource.SchemaRequ
 							Computed:    true,
 							Description: "云网关实例ID",
 						},
-						"region": schema.StringAttribute{
+						"region": schema.Int64Attribute{
 							Computed:    true,
 							Description: "地域信息，不填默认查询全部 取值如下 1：中国大陆 2:亚太",
 						},
@@ -136,7 +136,7 @@ func (c *ctyunEcCloudGateways) Read(ctx context.Context, req datasource.ReadRequ
 	}
 
 	if !config.Region.IsNull() {
-		region := config.Region.ValueString()
+		region := fmt.Sprintf("%d", config.Region.ValueInt64())
 		request.Region = &region
 	}
 
@@ -274,6 +274,6 @@ type CtyunEcCloudGatewaysConfig struct {
 	EcID          types.String                              `tfsdk:"ec_id"`
 	CgwID         types.String                              `tfsdk:"cgw_id"`
 	QueryContent  types.String                              `tfsdk:"query_content"`
-	Region        types.String                              `tfsdk:"region"`
+	Region        types.Int64                               `tfsdk:"region"`
 	CloudGateways []CtyunEcCloudGatewaysCloudGatewaysConfig `tfsdk:"cloud_gateways"`
 }

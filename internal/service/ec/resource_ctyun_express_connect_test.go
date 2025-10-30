@@ -15,7 +15,10 @@ func TestAccExpressConnect_update(t *testing.T) {
 
 	resourceName := "ctyun_express_connect." + rnd
 	resourceFile := "resource_ctyun_express_connect.tf"
+	dnd := utils.GenerateRandomString()
 
+	datasourceName := "data.ctyun_express_connects." + dnd
+	datasourceFile := "datasource_ctyun_express_connects.tf"
 	name := utils.GenerateRandomString()
 	description := "Initial description"
 	updatedDescription := "Updated description"
@@ -42,6 +45,7 @@ func TestAccExpressConnect_update(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 				),
 			},
+
 			{
 				// 测试导入
 				ResourceName:      resourceName,
@@ -56,6 +60,12 @@ func TestAccExpressConnect_update(t *testing.T) {
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, name, updatedDescription),
 				Destroy: true,
+			},
+			{
+				Config: utils.LoadTestCase(datasourceFile, dnd, dependence.expressConnectID),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "id", dependence.expressConnectID),
+				),
 			},
 		},
 	})
