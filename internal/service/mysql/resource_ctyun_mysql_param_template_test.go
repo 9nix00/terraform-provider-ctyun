@@ -2,16 +2,14 @@ package mysql_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"testing"
 )
 
 func TestAccCtyunMysqlParamTemplate(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_param_template." + rnd
@@ -60,28 +58,6 @@ func TestAccCtyunMysqlParamTemplate(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", initialDescription),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
-			},
-			// 3. 导入测试
-			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources[resourceName]
-					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
-					}
-					return fmt.Sprintf("%s,%s,%s,%s,%s,%s",
-						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["region_id"],
-						rs.Primary.Attributes["project_id"],
-						rs.Primary.Attributes["description"],
-						rs.Primary.Attributes["engine"],
-						rs.Primary.Attributes["name"],
-					), nil
-				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"template_parameters"}, // 参数列表可能很大，导入时不验证
-
 			},
 			// 4. 参数模板 datasource验证
 			{

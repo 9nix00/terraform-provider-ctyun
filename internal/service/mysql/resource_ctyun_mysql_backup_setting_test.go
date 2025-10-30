@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccCtyunMysqlBackupSetting(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_backup_setting." + rnd
 	frequencyResourceFile := "resource_ctyun_mysql_backup_setting_frequency.tf"
@@ -17,7 +17,7 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	mysqlInstanceID := "e5ad1c553e394bc891c5bf8fc58be191"
+	mysqlInstanceID := dependence.mysqlID
 
 	// 初始配置
 	initialConfig := map[string]interface{}{

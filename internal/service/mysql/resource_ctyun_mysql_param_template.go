@@ -88,7 +88,7 @@ func (c *CtyunMysqlParamTemplate) Schema(ctx context.Context, request resource.S
 			},
 			"engine": schema.StringAttribute{
 				Required:    true,
-				Description: "数据库版本，取值：5.8, 8.0",
+				Description: "数据库版本，取值：5.7, 8.0",
 				Validators: []validator.String{
 					stringvalidator.OneOf("5.7", "8.0"),
 				},

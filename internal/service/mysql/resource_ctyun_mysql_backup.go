@@ -56,16 +56,15 @@ func (c *CtyunMysqlBackup) ImportState(ctx context.Context, request resource.Imp
 		}
 	}()
 	var cfg CtyunMysqlBackupConfig
-	var ID, regionId, projectId, instId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &instId)
+	var name, regionId, projectId, instId string
+	err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
 	if err != nil {
 		return
 	}
 
-	cfg.ID = types.StringValue(ID)
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
-	cfg.Name = types.StringValue(ID)
+	cfg.Name = types.StringValue(name)
 	cfg.InstID = types.StringValue(instId)
 	err = c.getAndMergeMysqlBackup(ctx, &cfg)
 	if err != nil {
@@ -134,7 +133,10 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "备份集id，与backup_name保持一致",
+				Description: "id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -153,18 +155,17 @@ func (c *CtyunMysqlBackup) Create(ctx context.Context, request resource.CreateRe
 		return
 	}
 
-	// 开始创建新用户
-	err = c.createMysqlBackup(ctx, &plan)
+	// 开始创建备份
+	plan.Name = types.StringValue(plan.InstID.ValueString() + strings.ReplaceAll(uuid.NewString(), "-", ""))
+	err = c.createMysqlBackup(ctx, plan)
 	if err != nil {
 		return
 	}
-
 	// 创建后，获取mysql详情
 	err = c.getAndMergeMysqlBackup(ctx, &plan)
 	if err != nil {
 		return
 	}
-	plan.ID = types.StringValue(plan.Name.ValueString())
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -222,8 +223,7 @@ func (c *CtyunMysqlBackup) Delete(ctx context.Context, request resource.DeleteRe
 	}
 }
 
-func (c *CtyunMysqlBackup) createMysqlBackup(ctx context.Context, config *CtyunMysqlBackupConfig) error {
-	config.Name = types.StringValue(config.InstID.ValueString() + strings.ReplaceAll(uuid.NewString(), "-", ""))
+func (c *CtyunMysqlBackup) createMysqlBackup(ctx context.Context, config CtyunMysqlBackupConfig) error {
 	params := &mysql.TeledbCreateBackupRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		BackupName:      config.Name.ValueString(),
@@ -257,14 +257,11 @@ func (c *CtyunMysqlBackup) createMysqlBackup(ctx context.Context, config *CtyunM
 		err = common.InvalidReturnObjError
 		return err
 	}
-	// todo 临时将backupName替代blockID
-	config.ID = types.StringValue(config.Name.ValueString())
-	return nil
+	return c.checkAfterCreate(ctx, config)
 }
 
 func (c *CtyunMysqlBackup) getAndMergeMysqlBackup(ctx context.Context, config *CtyunMysqlBackupConfig) error {
-	// 验证可以查询到即可，备份集不支持参数更新，因此无信息需要更新
-	resp, err := c.getBackupRecordList(ctx, config)
+	resp, err := c.getBackupRecordList(ctx, *config)
 	if err != nil {
 		return err
 	}
@@ -277,6 +274,7 @@ func (c *CtyunMysqlBackup) getAndMergeMysqlBackup(ctx context.Context, config *C
 		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
+	config.ID = types.StringValue(fmt.Sprintf("%s,%s,%s,%s", config.Name.ValueString(), config.InstID.ValueString(), config.ProjectID.ValueString(), config.RegionID.ValueString()))
 	return nil
 }
 
@@ -291,7 +289,7 @@ func (c *CtyunMysqlBackup) deleteBackupSetAndFile(ctx context.Context, config Ct
 		return err
 	}
 
-	resp, err := c.getBackupRecordList(ctx, &config)
+	resp, err := c.getBackupRecordList(ctx, config)
 	if err != nil {
 		return err
 	}
@@ -333,7 +331,7 @@ func (c *CtyunMysqlBackup) deleteBackupSetAndFile(ctx context.Context, config Ct
 	return nil
 }
 
-func (c *CtyunMysqlBackup) getBackupRecordList(ctx context.Context, config *CtyunMysqlBackupConfig) (*mysql.TeledbGetBackupListResponseReturnObj, error) {
+func (c *CtyunMysqlBackup) getBackupRecordList(ctx context.Context, config CtyunMysqlBackupConfig) (*mysql.TeledbGetBackupListResponseReturnObj, error) {
 	params := &mysql.TeledbGetBackupListRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		BackupName:      config.Name.ValueStringPointer(),
@@ -352,7 +350,7 @@ func (c *CtyunMysqlBackup) getBackupRecordList(ctx context.Context, config *Ctyu
 	if err != nil {
 		return nil, err
 	} else if resp == nil {
-		err = fmt.Errorf("获取mysql实例(id=%s)备份集(id=%s)信息及备份任务失败，接口返回nil，具体原因请联系研发确认！", config.InstID.ValueString(), config.ID.ValueString())
+		err = fmt.Errorf("获取mysql实例(id=%s)备份集(id=%s)信息及备份任务失败，接口返回nil，具体原因请联系研发确认！", config.InstID.ValueString(), config.Name.ValueString())
 		return nil, err
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("get backup list error, API return error. Message: %s Error: %s", resp.Message, *resp.Error)
@@ -400,13 +398,13 @@ func (c *CtyunMysqlBackup) backupIngLoop(ctx context.Context, config CtyunMysqlB
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
-	retryer, err := business.NewRetryer(time.Second*30, count)
+	retryer, err := business.NewRetryer(time.Second*5, count)
 	if err != nil {
 		return err
 	}
 	result := retryer.Start(
 		func(currentTime int) bool {
-			resp, err2 := c.getBackupRecordList(ctx, &config)
+			resp, err2 := c.getBackupRecordList(ctx, config)
 			if err2 != nil {
 				err = err2
 				return false
@@ -448,7 +446,7 @@ func (c *CtyunMysqlBackup) backupIngLoop(ctx context.Context, config CtyunMysqlB
 	return err
 }
 
-func (c *CtyunMysqlBackup) startedLoop(ctx context.Context, config *CtyunMysqlBackupConfig, loopCount ...int) (err error) {
+func (c *CtyunMysqlBackup) startedLoop(ctx context.Context, config CtyunMysqlBackupConfig, loopCount ...int) (err error) {
 	count := 30
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -506,7 +504,6 @@ func (c *CtyunMysqlBackup) startedLoop(ctx context.Context, config *CtyunMysqlBa
 				err = errors.New("主机处于关机状态，不可进行变更操作")
 				return false
 			}
-
 			return true
 		},
 	)
@@ -524,5 +521,40 @@ type CtyunMysqlBackupConfig struct {
 	Description types.String `tfsdk:"description"`
 	TaskType    types.String `tfsdk:"task_type"`
 	ID          types.String `tfsdk:"id"`
-	//BackupRecords types.List   `tfsdk:"backup_records"`
+}
+
+func (c *CtyunMysqlBackup) checkAfterCreate(ctx context.Context, config CtyunMysqlBackupConfig) (err error) {
+	var executeSuccessFlag bool
+	retryer, _ := business.NewRetryer(time.Second*10, 180)
+	retryer.Start(
+		func(currentTime int) bool {
+			var resp *mysql.TeledbGetBackupListResponseReturnObj
+			resp, err = c.getBackupRecordList(ctx, config)
+			if err != nil {
+				return false
+			}
+			backupList := resp.List
+			if len(backupList) == 0 {
+				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)未查询到备份集", config.Name.ValueString(), config.InstID.ValueString())
+				return false
+			}
+			if len(backupList) > 1 {
+				err = fmt.Errorf("通过backupName(%s),mysql实例(id=%s)查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
+				return false
+			}
+
+			backupRecordList := backupList[0]
+			if len(backupRecordList.Records) > 0 && backupRecordList.Records[0].TaskId != "" && backupRecordList.Records[0].BackupRecordId != 0 {
+				executeSuccessFlag = true
+				return false
+			}
+			return true
+		})
+	if err != nil {
+		return
+	}
+	if !executeSuccessFlag {
+		return fmt.Errorf("backupName(%s),mysql实例(id=%s)未完成", config.Name.ValueString(), config.InstID.ValueString())
+	}
+	return nil
 }

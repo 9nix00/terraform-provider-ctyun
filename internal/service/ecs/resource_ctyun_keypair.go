@@ -234,7 +234,7 @@ type CtyunKeypairConfig struct {
 	PrivateKey  types.String `tfsdk:"private_key"`
 }
 
-// createKeyPari 删除密钥对
+// createKeyPari 创建密钥对
 func (c *ctyunKeypair) createKeyPair(ctx context.Context, plan *CtyunKeypairConfig) (error error) {
 	params := ctecs2.CtecsCreateKeypairV41Request{
 		RegionID:    plan.RegionId.ValueString(),
@@ -275,5 +275,4 @@ func (c *ctyunKeypair) importKeyPair(ctx context.Context, plan CtyunKeypairConfi
 		return
 	}
 	return
-
 }

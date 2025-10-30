@@ -10,10 +10,10 @@ output "security_group_id" {
   value = local.real_security_group_id
 }
 
-# output "eip_id" {
-#   value = ctyun_eip.eip_test.id
-# }
-#
+output "eip_id" {
+  value = ctyun_eip.eip_test.id
+}
+
 output "mysql_id" {
   value = ctyun_mysql_instance.mysql_test.id
 }

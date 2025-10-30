@@ -9,7 +9,6 @@ import (
 )
 
 func TestAccCtyunMysqlReadOnlyInstance(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_readonly_instance." + rnd
 	resourceFile := "resource_ctyun_mysql_read_node.tf"
@@ -21,7 +20,7 @@ func TestAccCtyunMysqlReadOnlyInstance(t *testing.T) {
 	//cycleCount := 1
 	// 测试数据
 	instanceName := "test-ro-" + rnd
-	flavorName := "s7.large.2" // 示例规格，根据实际情况调整
+	flavorName := "c7.large.2" // 示例规格，根据实际情况调整
 	storageType := "SATA"      // 存储类型
 	storageSpace := 100        // 存储空间(GB)
 

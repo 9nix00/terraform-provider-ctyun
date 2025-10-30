@@ -14,4 +14,5 @@ resource "ctyun_redis_instance" "%[1]s" {
   security_group_id = "%[7]s"
   cycle_type = "month"
   cycle_count = 1
+  host_type = "C"
 }

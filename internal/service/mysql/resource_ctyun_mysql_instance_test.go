@@ -20,7 +20,7 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
-	flavorName := "s7.xlarge.2"
+	flavorName := "c7.xlarge.2"
 	storageType := "SATA"
 	storageSpace := 100
 	updatePassword := "Kyk111**" + utils.GenerateRandomString()
@@ -71,7 +71,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
-	flavorName := "s7.xlarge.2"
+	flavorName := "c7.xlarge.2"
 
 	storageType := "SATA"
 	storageSpace := 100
@@ -83,7 +83,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	// 磁盘、规格升配
 	updatedStorageSpace := 120
 	updatedBackupStorageSpace := `backup_storage_space=150`
-	updatedFlavorName := "s7.xlarge.4"
+	updatedFlavorName := "c7.xlarge.4"
 	// 单机到一主一备
 	updatedProdID := "MasterSlave57"
 	resource.Test(t, resource.TestCase{
@@ -156,7 +156,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 			// datasource验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, updatedName, password, "", "", updatedFlavorName, updatedProdID, updatedWritePort, storageType, updatedStorageSpace, updatedDiskAvailabilityZoneInfo, "", updatedBackupStorageSpace) +
-					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_name=%s.name", resourceName)),
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("name=%s.name", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "mysql_instances.#", "1"),
 				),
@@ -183,7 +183,7 @@ func TestAccCtyunMysqlInstanceMonth(t *testing.T) {
 	cycleCount := "cycle_count=1"
 	autoRenewStatus := `auto_renew=false`
 
-	flavorName := "s7.xlarge.2"
+	flavorName := "c7.xlarge.2"
 
 	storageType := "SATA"
 	storageSpace := 100

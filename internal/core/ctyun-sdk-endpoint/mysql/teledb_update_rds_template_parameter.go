@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	ctyunsdk "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"net/http"
 )
@@ -35,17 +34,6 @@ func (this *TeledbUpdateRdsTemplateParameterApi) Do(ctx context.Context, credent
 
 	builder.AddHeader("regionId", header.RegionID)
 	builder.AddHeader("inst-id", header.InstID)
-	if req.ID != nil {
-		builder.AddParam("id", fmt.Sprintf("%d", *req.ID))
-	}
-
-	if req.Parameters != nil {
-		valueStr, err2 := mapToString(*req.Parameters)
-		if err2 != nil {
-			return nil, err2
-		}
-		builder.AddParam("parameters", valueStr)
-	}
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameCtdas, builder)
 	if err != nil {

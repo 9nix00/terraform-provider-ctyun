@@ -11,7 +11,7 @@ import (
 )
 
 func TestAccCtyunPostgresqlDatabase(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_database." + rnd
@@ -25,7 +25,7 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 	ownerAccount := "kqjwyk"
 
 	// 测试数据
@@ -134,14 +134,14 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 
 // 测试用例2：使用其他字符集（需要提供排序规则和类型）
 func TestAccCtyunPostgresqlDatabaseWithOtherCharset(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_database." + rnd
 	resourceFile := "resource_ctyun_postgresql_database.tf"
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 	ownerAccount := dependence.accountName
 
 	// 测试数据

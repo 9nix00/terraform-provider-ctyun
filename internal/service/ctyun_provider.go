@@ -19,6 +19,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
@@ -316,7 +317,6 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-
 			SdkCtImageApis:  sdkctimage.NewApis(fmt.Sprintf(endpointUrl, sdkctimage.EndpointName), coreClient),
 			SdkCtNatApis:    ctnat.NewApis(fmt.Sprintf(endpointUrl, ctnat.EndpointName), coreClient),
 			CtEbsApis:       ctebs.NewApis(client),
@@ -334,6 +334,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
+			AmqpApis:        amqp.NewApis(client),
 			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
 			SdkCrsApis:      crs2.NewApis(fmt.Sprintf(endpointUrl, crs2.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
@@ -555,7 +556,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
 		pgsql.NewCtyunPostgresqlCollectorPolicy(),
-		pgsql.NewCtyunPostgresqlSecurityGroup(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),

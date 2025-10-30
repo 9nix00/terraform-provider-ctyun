@@ -232,20 +232,16 @@ func (c *CtyunMysqlReadOnlyInstance) Create(ctx context.Context, request resourc
 		return
 	}
 	// 开始创建
-	err = c.CreateMysqlReadOnlyInstance(ctx, &plan)
+	err = c.createMysqlReadOnlyInstance(ctx, &plan)
 	if err != nil {
 		return
 	}
-
 	// 创建后，获取mysql详情
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
 }
 
 func (c *CtyunMysqlReadOnlyInstance) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
@@ -395,7 +391,7 @@ func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceDetail(ctx context.Context,
 	return nil
 }
 
-func (c *CtyunMysqlReadOnlyInstance) CreateMysqlReadOnlyInstance(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig) error {
+func (c *CtyunMysqlReadOnlyInstance) createMysqlReadOnlyInstance(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig) error {
 	cycleType := config.CycleType.ValueString()
 	params := &mysql.TeledbCreateRequest{
 		InstId:          config.InstID.ValueStringPointer(),
@@ -498,7 +494,7 @@ func (c *CtyunMysqlReadOnlyInstance) getAndMerge(ctx context.Context, config *Ct
 	// 判断id是否为空，如果刚刚创建的话，需要轮询列表，查询id
 	if config.ID.IsNull() || config.ID.IsUnknown() {
 		// 根据inst name 查询
-		instanceList, err := c.getMysqlInstanceList(ctx, config, config.Name.ValueStringPointer())
+		instanceList, err := c.getMysqlInstanceList(ctx, *config, config.Name.ValueStringPointer())
 		if err != nil {
 			return err
 		}
@@ -507,7 +503,7 @@ func (c *CtyunMysqlReadOnlyInstance) getAndMerge(ctx context.Context, config *Ct
 			return err
 		} else if len(instanceList) == 0 {
 			// 若查询不到，说明未创建成功，需要轮询
-			instanceList, err = c.CreateLoop(ctx, config)
+			instanceList, err = c.createLoop(ctx, *config)
 			if err != nil {
 				return err
 			}
@@ -523,7 +519,7 @@ func (c *CtyunMysqlReadOnlyInstance) getAndMerge(ctx context.Context, config *Ct
 	return nil
 }
 
-func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceList(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig, name *string) ([]mysql.TeledbGetListResponseReturnDetailList, error) {
+func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceList(ctx context.Context, config CtyunMysqlReadOnlyInstanceConfig, name *string) ([]mysql.TeledbGetListResponseReturnDetailList, error) {
 	mysqlListParams := &mysql.TeledbGetListRequest{
 		PageNow:  1,
 		PageSize: 100,
@@ -551,7 +547,7 @@ func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceList(ctx context.Context, c
 	return resp.ReturnObj.List, nil
 }
 
-func (c *CtyunMysqlReadOnlyInstance) CreateLoop(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig, loopCount ...int) ([]mysql.TeledbGetListResponseReturnDetailList, error) {
+func (c *CtyunMysqlReadOnlyInstance) createLoop(ctx context.Context, config CtyunMysqlReadOnlyInstanceConfig, loopCount ...int) ([]mysql.TeledbGetListResponseReturnDetailList, error) {
 	var err error
 	var cnt int
 	var response []mysql.TeledbGetListResponseReturnDetailList
@@ -640,7 +636,7 @@ func (c *CtyunMysqlReadOnlyInstance) refundLoop(ctx context.Context, state Ctyun
 			return true
 		})
 	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，资源仍未创建或查询到！")
+		return errors.New("轮询已达最大次数，资源仍未销毁！")
 	}
 	return err
 }

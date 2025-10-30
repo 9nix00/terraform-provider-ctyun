@@ -76,6 +76,7 @@ type CtyunRedisInstanceConfig struct {
 	AutoRenew           types.Bool                      `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
 	AutoRenewCycleCount types.Int32                     `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
 	MaintenanceTime     types.String                    `tfsdk:"maintenance_time"`
+	ConnectionAddress   types.String                    `tfsdk:"connection_address"`
 	ProtectionStatus    types.Bool                      `tfsdk:"protection_status"`
 	BackupPolicy        *CtyunRedisInstanceBackupPolicy `tfsdk:"backup_policy"`
 	SslEnabled          types.Bool                      `tfsdk:"ssl_enabled"`
@@ -470,6 +471,10 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"tls_version": schema.StringAttribute{
 				Computed:    true,
 				Description: "TLS版本",
+			},
+			"connection_address": schema.StringAttribute{
+				Computed:    true,
+				Description: "连接地址",
 			},
 			"template_id": schema.StringAttribute{
 				Optional:    true,
@@ -879,6 +884,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 		plan.AutoRenew = types.BoolValue(false)
 		plan.AutoRenewCycleCount = types.Int32Null()
 	}
+	plan.ConnectionAddress = types.StringValue(instance.ConnectionAddress)
 	plan.MaintenanceTime = types.StringValue(instance.MaintenanceTime)
 	plan.ProtectionStatus = utils.SecBoolValue(instance.ProtectionStatus)
 	plan.EngineVersion = types.StringValue(instance.EngineVersion)

@@ -36,11 +36,6 @@ func (this *TeledbUpdateParameterTemplateApi) Do(ctx context.Context, credential
 	builder.AddHeader("regionId", header.RegionID)
 
 	builder.AddParam("id", fmt.Sprintf("%d", req.ID))
-	valueStr, err := valueToString(req.Value)
-	if err != nil {
-		return nil, err
-	}
-	builder.AddParam("value", valueStr)
 
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNameCtdas, builder)
 	if err != nil {

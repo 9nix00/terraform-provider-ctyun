@@ -20,11 +20,8 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 	datasourceName := "data.ctyun_mysql_association_eips." + dnd
 	datasourceFile := "datasource_ctyun_mysql_association_eips.tf"
 	eipId := dependence.eipID
-	//eipId := "eip-140rfs2and"
 	eipAddress := dependence.eipAddress
-	//eipAddress := "150.223.193.123"
 	instId := dependence.mysqlID
-	//instId := dependence.subnetID
 
 	instance_series := "S"
 

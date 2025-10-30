@@ -134,7 +134,7 @@ func (c *CtyunMysqlAccount) Schema(ctx context.Context, request resource.SchemaR
 				Optional:    true,
 				Description: "备注",
 			},
-			"schema_privilege_list": schema.ListNestedAttribute{
+			"schema_privilege_list": schema.SetNestedAttribute{
 				Optional:    true,
 				Description: "数据库权限配置列表",
 				NestedObject: schema.NestedAttributeObject{
@@ -175,7 +175,7 @@ func (c *CtyunMysqlAccount) Create(ctx context.Context, request resource.CreateR
 	}
 
 	// 开始创建新用户
-	err = c.CreateMysqlAccount(ctx, &plan)
+	err = c.createMysqlAccount(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -298,7 +298,8 @@ func (c *CtyunMysqlAccount) Delete(ctx context.Context, request resource.DeleteR
 	}
 }
 
-func (c *CtyunMysqlAccount) CreateMysqlAccount(ctx context.Context, config *CtyunMysqlAccountConfig) error {
+// createMysqlAccount 创建mysql账号
+func (c *CtyunMysqlAccount) createMysqlAccount(ctx context.Context, config *CtyunMysqlAccountConfig) error {
 	params := &mysql.TeledbCreateAccountRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		AccountName:     config.Name.ValueString(),
@@ -338,7 +339,7 @@ func (c *CtyunMysqlAccount) CreateMysqlAccount(ctx context.Context, config *Ctyu
 		return err
 	}
 	// 若用户增加注释，需要处理更新remark
-	if !config.Description.IsNull() {
+	if config.Description.ValueString() != "" {
 		err = c.updateRemark(ctx, config, config.Description.ValueString())
 		if err != nil {
 			return err
@@ -352,6 +353,7 @@ func (c *CtyunMysqlAccount) encodeBase64(password string) string {
 	return encodedPassword
 }
 
+// getAndMergeMysqlAccount 查询mysql账号
 func (c *CtyunMysqlAccount) getAndMergeMysqlAccount(ctx context.Context, config *CtyunMysqlAccountConfig) error {
 	respPrivilege, err := c.getMysqlAccountInfo(ctx, config)
 	if err != nil {
@@ -370,7 +372,7 @@ func (c *CtyunMysqlAccount) getAndMergeMysqlAccount(ctx context.Context, config 
 			privileges = append(privileges, privilege)
 		}
 		var diags diag.Diagnostics
-		config.SchemaPrivilegeList, diags = types.ListValueFrom(ctx, utils.StructToTFObjectTypes(MysqlSchemaPrivilegeModel{}), &privileges)
+		config.SchemaPrivilegeList, diags = types.SetValueFrom(ctx, utils.StructToTFObjectTypes(MysqlSchemaPrivilegeModel{}), &privileges)
 		if diags.HasError() {
 			err = errors.New(diags[0].Detail())
 			return err
@@ -656,9 +658,9 @@ type CtyunMysqlAccountConfig struct {
 	InstID              types.String `tfsdk:"inst_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
 	RegionID            types.String `tfsdk:"region_id"`
-	Name                types.String `tfsdk:"Name"`
+	Name                types.String `tfsdk:"name"`
 	Password            types.String `tfsdk:"password"`
-	SchemaPrivilegeList types.List   `tfsdk:"schema_privilege_list"`
+	SchemaPrivilegeList types.Set    `tfsdk:"schema_privilege_list"`
 	Description         types.String `tfsdk:"description"`
 	ID                  types.String `tfsdk:"id"`
 }

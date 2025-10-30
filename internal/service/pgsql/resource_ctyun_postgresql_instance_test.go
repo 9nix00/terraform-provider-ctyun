@@ -11,13 +11,13 @@ import (
 )
 
 func TestAccCtyunPgsqlInstanceProjectId(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceFile := "resource_ctyun_postgresql_instance_test.tf"
 	resourceName := "ctyun_postgresql_instance." + rnd
 	cycleType := "on_demand"
 	prodId := "Single1222"
-	flavorName := "s7.large.2"
+	flavorName := "c7.xlarge.2"
 	storageType := "SATA"
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
@@ -82,8 +82,8 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
 	password := "Kyk123=" + utils.GenerateRandomString()
 	caseCensitive := true
-	flavorName := "s7.large.2"
-	updatedFlavorName := "s7.large.4"
+	flavorName := "c7.xlarge.2"
+	updatedFlavorName := "c7.xlarge.4"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID
@@ -326,8 +326,8 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	cycleType := "on_demand"
 	flavorName := "c7.large.2"
 	prodId := "Master2Slave1512"
-	storageType := "SSD"
-	backupStorageType := `backup_storage_type="SSD"`
+	storageType := "SAS"
+	backupStorageType := `backup_storage_type="SAS"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	password := "Kyk123=" + utils.GenerateRandomString()
@@ -362,7 +362,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", storageSpace)),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SAS"),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "100")),
 			},
 			// 升配主备磁盘，spec
@@ -377,7 +377,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", updatedFlavorName),
 					resource.TestCheckResourceAttr(resourceName, "storage_type", storageType),
 					resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", updatedStorageSpace)),
-					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SSD"),
+					resource.TestCheckResourceAttr(resourceName, "backup_storage_type", "SAS"),
 					resource.TestCheckResourceAttr(resourceName, "backup_storage_space", "200"),
 					resource.ComposeAggregateTestCheckFunc(
 						func(s *terraform.State) error {

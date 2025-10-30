@@ -132,10 +132,10 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 			},
 			"sfs_size": schema.Int32Attribute{
 				Required:    true,
-				Description: "文件大小（GB），范围: 500-32768。支持更新",
+				Description: "文件大小（GB），范围: 512-32768。支持更新",
 				Validators: []validator.Int32{
 					// 范围验证
-					int32validator.Between(500, 32768),
+					int32validator.Between(512, 32768),
 					// 自定义步长验证
 					validator2.SfsSize(),
 				},
@@ -217,6 +217,20 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				ElementType: types.StringType,
 				Computed:    true,
 				Description: "HPFS文件系统下的数据流动策略ID列表",
+			},
+			"share_path": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载路径",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"secret_key": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载密钥",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -431,6 +445,8 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 	config.ClusterName = types.StringValue(hpfsDetail.ClusterName)
 	config.UsedSize = types.Int32Value(hpfsDetail.UsedSize)
 	config.Baseline = types.StringValue(hpfsDetail.Baseline)
+	config.SharePath = types.StringValue(hpfsDetail.HpfsSharePath)
+	config.SecretKey = types.StringValue(hpfsDetail.SecretKey)
 	dataFlowList, diags := types.SetValueFrom(ctx, types.StringType, hpfsDetail.DataflowList)
 	if diags.HasError() {
 		err = errors.New(diags[0].Detail())
@@ -699,4 +715,6 @@ type CtyunHpfsConfig struct {
 	SfsStatus     types.String `tfsdk:"sfs_status"`      // 并行文件状态
 	UsedSize      types.Int32  `tfsdk:"used_size"`       // 已用大小（MB）
 	DataflowList  types.Set    `tfsdk:"dataflow_list"`   // HPFS文件系统下的数据流动策略ID列表
+	SharePath     types.String `tfsdk:"share_path"`
+	SecretKey     types.String `tfsdk:"secret_key"`
 }

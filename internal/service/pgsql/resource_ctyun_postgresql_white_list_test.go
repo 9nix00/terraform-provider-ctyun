@@ -8,7 +8,7 @@ import (
 )
 
 func TestAccCtyunPgsqlWhiteList(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_white_list." + rnd
@@ -18,7 +18,7 @@ func TestAccCtyunPgsqlWhiteList(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 
 	// 测试数据
 	initialIPs := `["192.168.1.0/24", "10.0.0.1/32"]`
@@ -95,14 +95,14 @@ func TestAccCtyunPgsqlWhiteList(t *testing.T) {
 
 // 测试用例2：仅使用覆盖模式
 func TestAccCtyunPgsqlWhiteListCoverOnly(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_white_list." + rnd
 	resourceFile := "resource_ctyun_postgresql_white_list.tf"
 
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 
 	// 测试数据
 	initialIPs := `["192.168.2.0/24", "10.0.0.2/32"]`

@@ -6,12 +6,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-
 	"testing"
 )
 
 func TestAccCtyunMysqlDatabase(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_database." + rnd

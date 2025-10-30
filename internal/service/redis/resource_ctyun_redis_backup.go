@@ -218,7 +218,7 @@ func (c *ctyunRedisBackup) Configure(_ context.Context, request resource.Configu
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID]/[regionID]/[名称]
+// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID],[regionID],[名称]
 func (c *ctyunRedisBackup) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 
 	var err error
@@ -372,7 +372,7 @@ func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBack
 	}
 
 	// 设置ID
-	plan.ID = types.StringValue(fmt.Sprintf("%s/%s/%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), backupData.RestoreName))
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), backupData.RestoreName))
 
 	return
 }

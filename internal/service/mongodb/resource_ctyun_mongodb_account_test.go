@@ -17,9 +17,9 @@ func TestAccMongodbAccount_basic(t *testing.T) {
 	resourceName := "ctyun_mongodb_account." + rnd
 	resourceFile := "resource_ctyun_mongodb_account.tf"
 
-	instance_id := "98f229ddda674219a0930da14cb78394"
-	password := "xxads@1QWsas"
-	passwordUpdate := "xxads@1QWssdsasqWS"
+	instance_id := dependence.mongodbID
+	password := "@1QWs" + utils.GenerateRandomString()
+	passwordUpdate := "@1qWS" + utils.GenerateRandomString()
 	name := utils.GenerateRandomString()
 
 	database := "admin"
@@ -69,44 +69,6 @@ func TestAccMongodbAccount_basic(t *testing.T) {
 	})
 }
 
-func TestAccMongodbAccount_update(t *testing.T) {
-	rnd := utils.GenerateRandomString()
-
-	resourceName := "ctyun_mongodb_account." + rnd
-	resourceFile := "resource_ctyun_mongodb_account.tf"
-
-	instId := dependence.mongodbID
-
-	resource.Test(t, resource.TestCase{
-		CheckDestroy: func(s *terraform.State) error {
-			_, exists := s.RootModule().Resources[resourceName]
-			if exists {
-				return fmt.Errorf("resource destroy failed")
-			}
-			return nil
-		},
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instId),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "privileges", "read"),
-				),
-			},
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instId),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "privileges", "readWrite"),
-				),
-			},
-			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, instId),
-				Destroy: true,
-			},
-		},
-	})
-}
-
 func TestMongodbAccountValidation(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 
@@ -122,7 +84,7 @@ func TestMongodbAccountValidation(t *testing.T) {
 			},
 			{
 				Config:      utils.LoadTestCase(resourceFile, rnd, instId),
-				ExpectError: regexp.MustCompile("密码必须包含大写字母、小写字母、数字、特殊字符中的至少三种"),
+				ExpectError: regexp.MustCompile("存在非法字符，密码仅支持大写字母、小写字母、数字和特殊字符"),
 			},
 		},
 	})
