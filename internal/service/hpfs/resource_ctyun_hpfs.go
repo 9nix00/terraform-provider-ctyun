@@ -225,6 +225,13 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
+			"secret_key": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载密钥",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -439,6 +446,7 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 	config.UsedSize = types.Int32Value(hpfsDetail.UsedSize)
 	config.Baseline = types.StringValue(hpfsDetail.Baseline)
 	config.SharePath = types.StringValue(hpfsDetail.HpfsSharePath)
+	config.SecretKey = types.StringValue(hpfsDetail.SecretKey)
 	dataFlowList, diags := types.SetValueFrom(ctx, types.StringType, hpfsDetail.DataflowList)
 	if diags.HasError() {
 		err = errors.New(diags[0].Detail())
@@ -708,4 +716,5 @@ type CtyunHpfsConfig struct {
 	UsedSize      types.Int32  `tfsdk:"used_size"`       // 已用大小（MB）
 	DataflowList  types.Set    `tfsdk:"dataflow_list"`   // HPFS文件系统下的数据流动策略ID列表
 	SharePath     types.String `tfsdk:"share_path"`
+	SecretKey     types.String `tfsdk:"secret_key"`
 }
