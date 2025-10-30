@@ -21,23 +21,23 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlDatabase{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlDatabase{}
-	_ resource.ResourceWithImportState = &CtyunMysqlDatabase{}
+	_ resource.Resource                = &ctyunMysqlDatabase{}
+	_ resource.ResourceWithConfigure   = &ctyunMysqlDatabase{}
+	_ resource.ResourceWithImportState = &ctyunMysqlDatabase{}
 )
 
-type CtyunMysqlDatabase struct {
+type ctyunMysqlDatabase struct {
 	meta *common.CtyunMetadata
 }
 
-func (c *CtyunMysqlDatabase) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+func (c *ctyunMysqlDatabase) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mysql_database"
 }
 func NewCtyunMysqlDatabase() resource.Resource {
-	return &CtyunMysqlDatabase{}
+	return &ctyunMysqlDatabase{}
 }
 
-func (c *CtyunMysqlDatabase) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
+func (c *ctyunMysqlDatabase) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -45,7 +45,7 @@ func (c *CtyunMysqlDatabase) Configure(ctx context.Context, request resource.Con
 	c.meta = meta
 }
 
-func (c *CtyunMysqlDatabase) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+func (c *ctyunMysqlDatabase) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -73,7 +73,7 @@ func (c *CtyunMysqlDatabase) ImportState(ctx context.Context, request resource.I
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
-func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *ctyunMysqlDatabase) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10140487",
 		Attributes: map[string]schema.Attribute{
@@ -160,7 +160,7 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 	}
 }
 
-func (c *CtyunMysqlDatabase) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *ctyunMysqlDatabase) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -191,7 +191,7 @@ func (c *CtyunMysqlDatabase) Create(ctx context.Context, request resource.Create
 	}
 }
 
-func (c *CtyunMysqlDatabase) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *ctyunMysqlDatabase) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -217,7 +217,7 @@ func (c *CtyunMysqlDatabase) Read(ctx context.Context, request resource.ReadRequ
 	}
 }
 
-func (c *CtyunMysqlDatabase) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *ctyunMysqlDatabase) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -255,7 +255,7 @@ func (c *CtyunMysqlDatabase) Update(ctx context.Context, request resource.Update
 	}
 }
 
-func (c *CtyunMysqlDatabase) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *ctyunMysqlDatabase) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -276,7 +276,7 @@ func (c *CtyunMysqlDatabase) Delete(ctx context.Context, request resource.Delete
 	}
 }
 
-func (c *CtyunMysqlDatabase) CreateMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) CreateMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
 	// 创建前，确认db name是否可用
 	//err := c.checkDBName(ctx, config)
 	//if err != nil {
@@ -315,7 +315,7 @@ func (c *CtyunMysqlDatabase) CreateMysqlDatabase(ctx context.Context, config *Ct
 	return nil
 }
 
-func (c *CtyunMysqlDatabase) updateDescription(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) updateDescription(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
 	params := &mysql.TeledbUpdateDatabaseRemarkRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		DatabaseName:    config.Name.ValueString(),
@@ -341,7 +341,7 @@ func (c *CtyunMysqlDatabase) updateDescription(ctx context.Context, config *Ctyu
 	return nil
 }
 
-func (c *CtyunMysqlDatabase) getAndMergeMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) getAndMergeMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
 	resp, err := c.getMysqlDatabaseInfo(ctx, config)
 	if err != nil {
 		return err
@@ -365,7 +365,7 @@ func (c *CtyunMysqlDatabase) getAndMergeMysqlDatabase(ctx context.Context, confi
 	return nil
 }
 
-func (c *CtyunMysqlDatabase) getMysqlDatabaseInfo(ctx context.Context, config *CtyunMysqlDatabaseConfig) (*mysql.TeledbGetDatabaseSchemaResponseReturnObj, error) {
+func (c *ctyunMysqlDatabase) getMysqlDatabaseInfo(ctx context.Context, config *CtyunMysqlDatabaseConfig) (*mysql.TeledbGetDatabaseSchemaResponseReturnObj, error) {
 	params := &mysql.TeledbGetDatabaseSchemaRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 	}
@@ -398,7 +398,7 @@ func (c *CtyunMysqlDatabase) getMysqlDatabaseInfo(ctx context.Context, config *C
 	return nil, fmt.Errorf("未查询到db_name=%s，mysql实例(id=%s)的schema 信息", config.Name.ValueString(), config.InstID.ValueString())
 }
 
-func (c *CtyunMysqlDatabase) checkDBName(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) checkDBName(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
 	params := &mysql.TeledbCheckDatabaseNameAvailableRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		DBName:          config.Name.ValueString(),
@@ -427,7 +427,7 @@ func (c *CtyunMysqlDatabase) checkDBName(ctx context.Context, config *CtyunMysql
 	return nil
 }
 
-func (c *CtyunMysqlDatabase) updateMysqlDatabase(ctx context.Context, state *CtyunMysqlDatabaseConfig, plan *CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) updateMysqlDatabase(ctx context.Context, state *CtyunMysqlDatabaseConfig, plan *CtyunMysqlDatabaseConfig) error {
 	if !plan.Description.IsNull() && !plan.Description.Equal(state.Description) {
 		state.Description = plan.Description
 		err := c.updateDescription(ctx, state)
@@ -439,7 +439,7 @@ func (c *CtyunMysqlDatabase) updateMysqlDatabase(ctx context.Context, state *Cty
 	return nil
 }
 
-func (c *CtyunMysqlDatabase) deleteMysqlDatabase(ctx context.Context, config CtyunMysqlDatabaseConfig) error {
+func (c *ctyunMysqlDatabase) deleteMysqlDatabase(ctx context.Context, config CtyunMysqlDatabaseConfig) error {
 	params := &mysql.TeledbDeleteDatabaseRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		DBName:          config.Name.ValueString(),

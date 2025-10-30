@@ -396,12 +396,10 @@ func (c *ctyunPrivateNat) create(ctx context.Context, plan *CtyunPrivateNatConfi
 		err = fmt.Errorf("创建nat时regionId和轮询结果regionId不一致，计划的regionId：%s, 轮询所得regionId：%s", plan.RegionID.ValueString(), loopResponse.RegionID.ValueString())
 	}
 
-	//plan.NatGatewayID = types.StringValue(loop.Uuid[0])
 	if !loopResponse.NatGatewayId.IsNull() {
 		plan.NatGatewayID = loopResponse.NatGatewayId
 	}
 
-	//plan.ProjectID = utils.SecStringValue(&createParams.ProjectID)
 	return
 }
 func (c *ctyunPrivateNat) createNat(ctx context.Context, plan *CtyunPrivateNatConfig) (returnObj ctnat.CtnatCreatePrivatenatReturnObjResponse, createParams *ctnat.CtnatCreatePrivatenatRequest, err error) {
