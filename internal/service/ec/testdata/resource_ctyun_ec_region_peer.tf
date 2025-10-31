@@ -1,4 +1,4 @@
-resource "ctyun_express_connect_region_peer" "%[1]s" {
+resource "ctyun_ec_region_peer" "%[1]s" {
   name        = "%[2]s"
   ec_id       = "%[3]s"
   src_cgw_id  = "%[4]s"
