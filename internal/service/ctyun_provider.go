@@ -44,6 +44,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebm"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
+	ec2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/ec"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/elb"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/hpfs"
@@ -473,6 +474,11 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		acl.NewCtyunAclRules(),
 		acl.NewCtyunPrefixLists(),
 		crs.NewCtyunCrsOpensourceImages(),
+		ec2.NewCtyunExpressConnects(),
+		ec2.NewCtyunEcCloudGateways(),
+		ec2.NewCtyunExpressConnectionRoutes(),
+		ec2.NewCtyunExpressConnectionRegionPeers(),
+		ec2.NewCtyunExpressConnectionVpcInstances(),
 	)
 }
 
@@ -614,6 +620,12 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		acl.NewCtyunPrefix(),
 		acl.NewCtyunSubnetAssociationAcl(),
 		crs.NewCtyunCrsVpcAttach(),
+		ec2.NewCtyunExpressConnect(),
+		ec2.NewCtyunEcCloudGateway(),
+		ec2.NewCtyunEcPacket(),
+		ec2.NewCtyunExpressConnectRoute(),
+		ec2.NewCtyunExpressConnectRegionPeer(),
+		ec2.NewCtyunExpressConnectVpcInstance(),
 	)
 }
 

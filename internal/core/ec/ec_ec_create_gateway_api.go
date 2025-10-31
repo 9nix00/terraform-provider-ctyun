@@ -50,13 +50,13 @@ func (a *EcEcCreateGatewayApi) Do(ctx context.Context, credential core.Credentia
 }
 
 type EcEcCreateGatewayRequest struct {
-	CgwName     string  `json:"cgwName"`               /*  云网关名称  */
-	Description *string `json:"description,omitempty"` /*  云网关描述  */
-	Region      *int32  `json:"region,omitempty"`      /*  地域信息，取值如下<br/>1：中国大陆（默认）<br/>2:亚太  */
-	DcName      string  `json:"dcName"`                /*  资源池名称  */
-	DcID        string  `json:"dcID"`                  /*  资源池ID信息  */
-	EcID        string  `json:"ecID"`                  /*  云间高速实例ID  */
-	DcType      string  `json:"dcType"`                /*  资源池类型，<br/>取值范围:<br/>'CNP':CNP资源池<br/>'MAZ':MAZ资源池<br/>'PRVT':私有云资源池  */
+	CgwName     string  `json:"cgwName"`                  /*  云网关名称  */
+	Description *string `json:"cgwDescription,omitempty"` /*  云网关描述  */
+	Region      *int32  `json:"region,omitempty"`         /*  地域信息，取值如下<br/>1：中国大陆（默认）<br/>2:亚太  */
+	DcName      string  `json:"dcName"`                   /*  资源池名称  */
+	DcID        string  `json:"dcID"`                     /*  资源池ID信息  */
+	EcID        string  `json:"ecID"`                     /*  云间高速实例ID  */
+	DcType      string  `json:"dcType"`                   /*  资源池类型，<br/>取值范围:<br/>'CNP':CNP资源池<br/>'MAZ':MAZ资源池<br/>'PRVT':私有云资源池  */
 }
 
 type EcEcCreateGatewayResponse struct {

@@ -55,11 +55,15 @@ type EcEcCreateRequest struct {
 }
 
 type EcEcCreateResponse struct {
-	StatusCode    *int32  `json:"statusCode"`    /*  返回状态码<br/>取值范围:<br/>800:成功<br/>900:失败  */
-	ErrorCode     *string `json:"errorCode"`     /*  业务细分码，为product.module.code三段式码  */
-	Message       *string `json:"message"`       /*  失败时的错误描述，一般为英文描述  */
-	Description   *string `json:"description"`   /*  失败时的错误描述，一般为中文描述  */
-	TraceID       *string `json:"traceID"`       /*  链路追踪ID  */
+	StatusCode  *int32                       `json:"statusCode"`  /*  返回状态码<br/>取值范围:<br/>800:成功<br/>900:失败  */
+	ErrorCode   *string                      `json:"errorCode"`   /*  业务细分码，为product.module.code三段式码  */
+	Description *string                      `json:"description"` /*  失败时的错误描述，一般为中文描述  */
+	TraceID     *string                      `json:"traceID"`     /*  链路追踪ID  */
+	ReturnObj   *EcEcCreateResponseReturnObj `json:"returnObj"`   /*  详细信息 */
+	Message     *string                      `json:"message"`     /*  失败时的错误描述，一般为英文描述  */
+
+}
+type EcEcCreateResponseReturnObj struct {
 	EcID          *string `json:"ecID"`          /*  云间高速实例ID  */
 	EcName        *string `json:"ecName"`        /*  名称  */
 	EcDescription *string `json:"ecDescription"` /*  描述信息  */
