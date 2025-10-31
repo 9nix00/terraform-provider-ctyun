@@ -67,7 +67,7 @@ type CtyunVpceServiceRule struct {
 
 func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10042658/10217013**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10042658/10217013`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -245,7 +245,6 @@ func (c *ctyunVpceService) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {

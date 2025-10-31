@@ -73,7 +73,7 @@ type CtyunEbsVolumesConfig struct {
 
 func (c *ctyunEbsVolumes) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10027930**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10027930`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -271,7 +271,7 @@ func (c *ctyunEbsVolumes) Configure(_ context.Context, request datasource.Config
 func (c *ctyunEbsVolumes) getByID(ctx context.Context, config *CtyunEbsVolumesConfig) (err error) {
 	// 组装请求体
 	params := &ctebs2.EbsQueryEbsByIDRequest{
-		RegionID: config.RegionID.ValueStringPointer(),
+		RegionID: config.RegionID.ValueString(),
 		DiskID:   config.DiskID.ValueString(),
 	}
 
@@ -280,7 +280,7 @@ func (c *ctyunEbsVolumes) getByID(ctx context.Context, config *CtyunEbsVolumesCo
 	if err != nil {
 		return
 	} else if resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
@@ -290,35 +290,38 @@ func (c *ctyunEbsVolumes) getByID(ctx context.Context, config *CtyunEbsVolumesCo
 	volumes := []CtyunEbsVolumesModel{}
 	disk := resp.ReturnObj
 	item := CtyunEbsVolumesModel{
-		ID:              utils.SecStringValue(disk.DiskID),
-		Name:            utils.SecStringValue(disk.DiskName),
-		Size:            types.Int32Value(disk.DiskSize),
-		Type:            utils.SecStringValue(disk.DiskType),
-		Mode:            utils.SecStringValue(disk.DiskMode),
-		Status:          utils.SecStringValue(disk.DiskStatus),
+		ID:              utils.SecStringValue(&disk.DiskID),
+		Name:            utils.SecStringValue(&disk.DiskName),
+		Size:            types.Int32Value(int32(disk.DiskSize)),
+		Type:            utils.SecStringValue(&disk.DiskType),
+		Mode:            utils.SecStringValue(&disk.DiskMode),
+		Status:          utils.SecStringValue(&disk.DiskStatus),
 		CreateTime:      types.Int64Value(disk.CreateTime),
 		UpdateTime:      types.Int64Value(disk.UpdateTime),
 		ExpireTime:      types.Int64Value(disk.ExpireTime),
 		IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
 		IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
-		InstanceName:    utils.SecStringValue(disk.InstanceName),
-		InstanceID:      utils.SecStringValue(disk.InstanceID),
-		InstanceStatus:  utils.SecStringValue(disk.InstanceStatus),
+		InstanceName:    utils.SecStringValue(&disk.InstanceName),
+		InstanceID:      utils.SecStringValue(&disk.InstanceID),
+		InstanceStatus:  utils.SecStringValue(&disk.InstanceStatus),
 		MultiAttach:     utils.SecBoolValue(disk.MultiAttach),
-		ProjectID:       utils.SecStringValue(disk.ProjectID),
+		ProjectID:       utils.SecStringValue(&disk.ProjectID),
 		IsEncrypt:       utils.SecBoolValue(disk.IsEncrypt),
-		KmsUUID:         utils.SecStringValue(disk.KmsUUID),
-		RegionID:        utils.SecStringValue(disk.RegionID),
-		AzName:          utils.SecStringValue(disk.AzName),
+		KmsUUID:         utils.SecStringValue(&disk.KmsUUID),
+		RegionID:        utils.SecStringValue(&disk.RegionID),
+		AzName:          utils.SecStringValue(&disk.AzName),
 		DiskFreeze:      utils.SecBoolValue(disk.DiskFreeze),
-		ProvisionedIops: types.Int32Value(disk.ProvisionedIops),
+		ProvisionedIops: types.Int32Value(int32(disk.ProvisionedIops)),
 		Attachments:     []CtyunEbsVolumesAttachments{},
 	}
 	for _, a := range disk.Attachments {
+		if a == nil {
+			continue
+		}
 		item.Attachments = append(item.Attachments, CtyunEbsVolumesAttachments{
-			InstanceID:   utils.SecStringValue(a.InstanceID),
-			AttachmentID: utils.SecStringValue(a.AttachmentID),
-			Device:       utils.SecStringValue(a.Device),
+			InstanceID:   utils.SecStringValue(&a.InstanceID),
+			AttachmentID: utils.SecStringValue(&a.AttachmentID),
+			Device:       utils.SecStringValue(&a.Device),
 		})
 	}
 	volumes = append(volumes, item)

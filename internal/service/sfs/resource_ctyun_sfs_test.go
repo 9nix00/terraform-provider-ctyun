@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunSfs(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs." + rnd
 	resourceFile := "resource_ctyun_sfs_onDemand.tf"
@@ -71,7 +71,7 @@ func TestAccCtyunSfs(t *testing.T) {
 }
 
 func TestAccCtyunSfsCycle(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs." + rnd

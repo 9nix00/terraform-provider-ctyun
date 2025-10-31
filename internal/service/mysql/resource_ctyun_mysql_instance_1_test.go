@@ -17,7 +17,7 @@ func TestAccCtyunMysqlInstance1(t *testing.T) {
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := dependence.securityGroupID
+	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
 	name := "tf-mysql" + utils.GenerateRandomString()
 	password := "Kyk123." + utils.GenerateRandomString()
 	//period := 1

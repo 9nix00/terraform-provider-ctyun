@@ -69,7 +69,7 @@ type CtyunEbsBackupConfig struct {
 
 func (c *ctyunEbsBackup) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026752/10037428**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026752/10037428`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -198,8 +198,9 @@ func (c *ctyunEbsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "云硬盘备份存储库名称",
 			},
 			"created_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间",
+				Computed:      true,
+				Description:   "创建时间",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}

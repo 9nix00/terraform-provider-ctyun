@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunEbm{}
-	_ resource.ResourceWithConfigure   = &ctyunEbm{}
-	_ resource.ResourceWithImportState = &ctyunEbm{}
+	_ resource.Resource                = &ctyunEbmInterface{}
+	_ resource.ResourceWithConfigure   = &ctyunEbmInterface{}
+	_ resource.ResourceWithImportState = &ctyunEbmInterface{}
 )
 
 type ctyunEbmInterface struct {
@@ -55,7 +55,7 @@ type CtyunEbmInterfaceConfig struct {
 
 func (c *ctyunEbmInterface) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027724/10040142**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027724/10040142`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},

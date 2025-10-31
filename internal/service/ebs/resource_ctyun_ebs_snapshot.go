@@ -41,7 +41,7 @@ func (c *ctyunEbsSnapshot) Metadata(_ context.Context, request resource.Metadata
 
 func (c *ctyunEbsSnapshot) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10043223**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10043223`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -366,6 +366,7 @@ func (c *ctyunEbsSnapshot) delete(ctx context.Context, plan CtyunEbsSnapshotConf
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
 	}
+	time.Sleep(10 * time.Second)
 	return
 }
 

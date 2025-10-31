@@ -46,7 +46,7 @@ func (c *ctyunNat) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10166493`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -244,7 +244,12 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 
 	plan.ProjectID = utils.SecStringValue(createParams.ProjectID)
 
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	if response.Diagnostics.HasError() {
+		return
+	}
+
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -253,7 +258,7 @@ func (c *ctyunNat) Create(ctx context.Context, request resource.CreateRequest, r
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
@@ -321,6 +326,9 @@ func (c *ctyunNat) Update(ctx context.Context, request resource.UpdateRequest, r
 		return
 	}
 
+	if err != nil {
+		return
+	}
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMergeNat(ctx, &state)
 	if err != nil {
@@ -461,6 +469,7 @@ func (c *ctyunNat) createNat(ctx context.Context, plan *CtyunNatConfig) (returnO
 	}
 	returnObj = *resp.ReturnObj
 	createParams = params
+
 	return
 }
 
@@ -562,6 +571,7 @@ func (c *ctyunNat) modifyNatSpec(ctx context.Context, state CtyunNatConfig, plan
 }
 
 func (c *ctyunNat) updateNatInfo(ctx context.Context, state CtyunNatConfig, plan CtyunNatConfig) (err error) {
+
 	if plan.Name.Equal(state.Name) && plan.Description.Equal(state.Description) {
 		return
 	}

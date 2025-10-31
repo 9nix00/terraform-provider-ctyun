@@ -55,7 +55,9 @@ func TestAccCtyunMysqlWhiteListTest(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd, prodInstId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "white_lists.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "white_lists.0.group_name", groupName),
+					resource.TestCheckTypeSetElemNestedAttrs(datasourceName, "white_lists.*", map[string]string{
+						"group_name": groupName,
+					}),
 					resource.TestCheckResourceAttr(datasourceName, "white_lists.0.group_white_list_count", "4"),
 				),
 			},

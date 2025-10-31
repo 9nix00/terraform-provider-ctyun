@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunSfsPermissionGroup(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs_permission_group." + rnd
 	resourceFile := "resource_ctyun_sfs_permission_group.tf"
@@ -86,7 +86,7 @@ func TestAccCtyunSfsPermissionGroup(t *testing.T) {
 }
 
 func TestAccCtyunSfsPermissionGroupNoneDesc(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_sfs_permission_group." + rnd
 	resourceFile := "resource_ctyun_sfs_permission_group_none_desc.tf"

@@ -66,7 +66,7 @@ type CtgkafkaTransChargeTypeV3Response struct {
 }
 
 type CtgkafkaTransChargeTypeV3ReturnObjResponse struct {
-	Data *CtgkafkaTransChargeTypeV3ReturnObjDataResponse `json:"data"` /*  返回数据。  */
+	Data []*CtgkafkaTransChargeTypeV3ReturnObjDataResponse `json:"data"` /*  返回数据。  */
 }
 
 type CtgkafkaTransChargeTypeV3ReturnObjDataResponse struct{}

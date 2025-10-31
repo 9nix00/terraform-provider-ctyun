@@ -34,7 +34,7 @@ func (c *ctyunEbsAssociation) Metadata(_ context.Context, request resource.Metad
 
 func (c *ctyunEbsAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10169293**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10169293`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -53,7 +53,7 @@ func (c *ctyunEbsAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
-				Description: "云主机id，多可用区资源池下，云硬盘和云主机必须在同个az才能支持挂载",
+				Description: "云主机id，多可用区资源池下，云硬盘和云主机必须在同个az才能支持挂载；XSSD类型云硬盘支持绑定的云主机规格包括：s8,m8,c8,c8ne,m8ne,s8e,c8e,m8e,hc3,hm3",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

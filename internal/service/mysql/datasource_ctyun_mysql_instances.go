@@ -35,12 +35,11 @@ func (c *ctyunMysqlInstances) Configure(ctx context.Context, request datasource.
 
 func (c *ctyunMysqlInstances) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_mysql_instances"
-
 }
 
 func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10033813/10134365**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10134365`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -52,7 +51,7 @@ func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.Sch
 				Computed:    true,
 				Description: "项目ID",
 			},
-			"page_now": schema.Int32Attribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "当前页",
@@ -92,7 +91,7 @@ func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.Sch
 				Optional:    true,
 				Description: "数据库引擎 枚举5.7, 8.0",
 			},
-			"prod_inst_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Optional:    true,
 				Description: "实例名称",
 			},
@@ -341,14 +340,14 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 		err = errors.New("region ID不能为空！")
 		return
 	}
-	if config.PageNow.ValueInt32() == 0 {
-		config.PageNow = types.Int32Value(1)
+	if config.PageNo.ValueInt32() == 0 {
+		config.PageNo = types.Int32Value(1)
 	}
 	if config.PageSize.ValueInt32() == 0 {
 		config.PageSize = types.Int32Value(100)
 	}
 	params := &mysql.TeledbGetListRequest{
-		PageNow:  config.PageNow.ValueInt32(),
+		PageNow:  config.PageNo.ValueInt32(),
 		PageSize: config.PageSize.ValueInt32(),
 	}
 	if !config.TagVOList.IsNull() {
@@ -370,8 +369,8 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 	if config.ResDbEngine.ValueString() != "" {
 		params.ResDbEngine = config.ResDbEngine.ValueStringPointer()
 	}
-	if config.ProdInstName.ValueString() != "" {
-		params.ProdInstName = config.ProdInstName.ValueStringPointer()
+	if config.Name.ValueString() != "" {
+		params.ProdInstName = config.Name.ValueStringPointer()
 	}
 	if config.Vip.ValueString() != "" {
 		params.Vip = config.Vip.ValueStringPointer()
@@ -454,14 +453,14 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 }
 
 type CtyunMysqlInstancesConfig struct {
-	RegionID       types.String         `tfsdk:"region_id"`      // 区域id
-	ProjectID      types.String         `tfsdk:"project_id"`     //项目id
-	PageNow        types.Int32          `tfsdk:"page_now"`       // 当前页，必填
-	PageSize       types.Int32          `tfsdk:"page_size"`      // 单页记录条数，必填
-	TagVOList      types.List           `tfsdk:"tag_vo_list"`    // 标签列表，选填
-	ResDbEngine    types.String         `tfsdk:"res_db_engine"`  // 数据库引擎，选填
-	ProdInstName   types.String         `tfsdk:"prod_inst_name"` // 实例名称，选填
-	Vip            types.String         `tfsdk:"vip"`            // 连接ip，选填
+	RegionID       types.String         `tfsdk:"region_id"`     // 区域id
+	ProjectID      types.String         `tfsdk:"project_id"`    //项目id
+	PageNo         types.Int32          `tfsdk:"page_no"`       // 当前页，必填
+	PageSize       types.Int32          `tfsdk:"page_size"`     // 单页记录条数，必填
+	TagVOList      types.List           `tfsdk:"tag_vo_list"`   // 标签列表，选填
+	ResDbEngine    types.String         `tfsdk:"res_db_engine"` // 数据库引擎，选填
+	Name           types.String         `tfsdk:"name"`          // 实例名称，选填
+	Vip            types.String         `tfsdk:"vip"`           // 连接ip，选填
 	MysqlInstances []MysqlInstanceModel `tfsdk:"mysql_instances"`
 }
 

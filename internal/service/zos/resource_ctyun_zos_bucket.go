@@ -13,7 +13,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -70,7 +69,7 @@ type CtyunZosBucketConfig struct {
 
 func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026735/10181237**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026735/10181237`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -142,8 +141,9 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Validators: []validator.Bool{
 					validator2.CrossFieldBool(
 						path.MatchRoot("retention_mode"),
-						[]attr.Value{types.StringValue("COMPLIANCE")},
-						[]attr.Value{types.BoolValue(true)}),
+						[]any{"COMPLIANCE"},
+						[]bool{true},
+					),
 				},
 			},
 			"log_enabled": schema.BoolAttribute{

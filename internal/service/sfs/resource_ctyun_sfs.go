@@ -51,7 +51,7 @@ func NewCtyunSfs() resource.Resource {
 
 func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027350**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027350`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -129,7 +129,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "包周期类型，year/month/on_demand；onDemand为false时，必须指定。不支持更新",
+				Description: "计费类型，year/month/on_demand。不支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.SfsCycleType...),
 				},
@@ -139,7 +139,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			},
 			"cycle_count": schema.Int64Attribute{
 				Optional:    true,
-				Description: "包周期数。onDemand为false时必须指定；周期最大长度不能超过3年",
+				Description: "包周期数，cycle_type是year或month时必须指定，周期最大长度不能超过3年",
 				Validators: []validator.Int64{
 					validator2.AlsoRequiresEqualInt64(
 						path.MatchRoot("cycle_type"),
@@ -200,6 +200,20 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"used_size": schema.Int32Attribute{
 				Computed:    true,
 				Description: "弹性文件系统已使用大小（MB）",
+			},
+			"share_path": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载路径",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"share_path_windows": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载路径（windows）",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -449,6 +463,8 @@ func (c *ctyunSfs) getAndMergeSfs(ctx context.Context, config *CtyunSfsConfig) e
 		return err
 	}
 	returnObj := resp.ReturnObj
+	config.SharePath = types.StringValue(returnObj.SharePath)
+	config.SharePathWin = types.StringValue(returnObj.WindowsSharePath)
 	config.Name = types.StringValue(returnObj.SfsName)
 	config.UsedSize = types.Int32Value(returnObj.UsedSize)
 	config.Status = types.StringValue(returnObj.SfsStatus)
@@ -662,20 +678,22 @@ func (c *ctyunSfs) ImportState(ctx context.Context, request resource.ImportState
 }
 
 type CtyunSfsConfig struct {
-	RegionID    types.String `tfsdk:"region_id"`
-	IsEncrypt   types.Bool   `tfsdk:"is_encrypt"`
-	KmsUUID     types.String `tfsdk:"kms_uuid"`
-	ProjectID   types.String `tfsdk:"project_id"`
-	SfsType     types.String `tfsdk:"sfs_type"`
-	SfsProtocol types.String `tfsdk:"sfs_protocol"`
-	Name        types.String `tfsdk:"name"`
-	SfsSize     types.Int32  `tfsdk:"sfs_size"`
-	CycleType   types.String `tfsdk:"cycle_type"`
-	CycleCount  types.Int64  `tfsdk:"cycle_count"`
-	AzName      types.String `tfsdk:"az_name"`
-	VpcID       types.String `tfsdk:"vpc_id"`
-	SubnetID    types.String `tfsdk:"subnet_id"`
-	ID          types.String `tfsdk:"id"`
-	Status      types.String `tfsdk:"status"`
-	UsedSize    types.Int32  `tfsdk:"used_size"`
+	RegionID     types.String `tfsdk:"region_id"`
+	IsEncrypt    types.Bool   `tfsdk:"is_encrypt"`
+	KmsUUID      types.String `tfsdk:"kms_uuid"`
+	ProjectID    types.String `tfsdk:"project_id"`
+	SfsType      types.String `tfsdk:"sfs_type"`
+	SfsProtocol  types.String `tfsdk:"sfs_protocol"`
+	Name         types.String `tfsdk:"name"`
+	SfsSize      types.Int32  `tfsdk:"sfs_size"`
+	CycleType    types.String `tfsdk:"cycle_type"`
+	CycleCount   types.Int64  `tfsdk:"cycle_count"`
+	AzName       types.String `tfsdk:"az_name"`
+	VpcID        types.String `tfsdk:"vpc_id"`
+	SubnetID     types.String `tfsdk:"subnet_id"`
+	ID           types.String `tfsdk:"id"`
+	Status       types.String `tfsdk:"status"`
+	UsedSize     types.Int32  `tfsdk:"used_size"`
+	SharePath    types.String `tfsdk:"share_path"`
+	SharePathWin types.String `tfsdk:"share_path_windows"`
 }

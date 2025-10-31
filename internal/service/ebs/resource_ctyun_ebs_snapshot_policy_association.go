@@ -46,7 +46,7 @@ type CtyunEbsSnapshotPolicyAssociationConfig struct {
 
 func (c *ctyunEbsSnapshotPolicyAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -372,7 +372,7 @@ func (c *ctyunEbsSnapshotPolicyAssociation) getBindingDisks(ctx context.Context,
 
 		// 组装请求体
 		params := &ctebs2.EbsQueryEbsByIDRequest{
-			RegionID: plan.RegionID.ValueStringPointer(),
+			RegionID: plan.RegionID.ValueString(),
 			DiskID:   diskId,
 		}
 
@@ -381,7 +381,7 @@ func (c *ctyunEbsSnapshotPolicyAssociation) getBindingDisks(ctx context.Context,
 		if err != nil {
 			return "", err
 		} else if resp.StatusCode == common.ErrorStatusCode {
-			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 			return "", err
 		} else if resp.ReturnObj == nil {
 			err = common.InvalidReturnObjError
@@ -390,8 +390,8 @@ func (c *ctyunEbsSnapshotPolicyAssociation) getBindingDisks(ctx context.Context,
 
 		// 安全处理SnapshotPolicyID
 		var currentPolicyID string
-		if resp.ReturnObj.SnapshotPolicyID != nil {
-			currentPolicyID = *resp.ReturnObj.SnapshotPolicyID
+		if resp.ReturnObj.SnapshotPolicyID != "" {
+			currentPolicyID = resp.ReturnObj.SnapshotPolicyID
 		}
 		// 如果resp.ReturnObj.SnapshotPolicyID是nil，currentPolicyID保持为空字符串
 
