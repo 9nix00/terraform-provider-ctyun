@@ -5,12 +5,13 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"testing"
 )
 
 func TestAccCtyunExpressConnectRoute(t *testing.T) {
 	rnd := utils.GenerateRandomString()
-	resourceName := "ctyun_express_connect_route." + rnd
+	resourceName := "ctyun_ec_route." + rnd
 	resourceFile := "resource_ctyun_ec_route.tf"
 	resourceFile1 := "resource_ctyun_ec_route_blackhole.tf"
 
@@ -88,7 +89,7 @@ func TestAccCtyunExpressConnectRoute(t *testing.T) {
 // 测试用例2: IPv6路由测试
 //func TestAccCtyunExpressConnectRouteIPv6(t *testing.T) {
 //	rnd := utils.GenerateRandomString()
-//	resourceName := "ctyun_express_connect_route." + rnd
+//	resourceName := "ctyun_ec_route." + rnd
 //	resourceFile := "resource_ctyun_ec_route.tf"
 //
 //	ecID := dependence.expressConnectID
@@ -136,7 +137,7 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 	resourceFile := "resource_ctyun_ec_route.tf"
 
 	datasourceFile := "datasource_ctyun_ec_routes.tf"
-	datasourceName := "data.ctyun_express_connect_routes." + dnd
+	datasourceName := "data.ctyun_ec_routes." + dnd
 	// 从环境变量获取测试依赖资源
 	ecID := dependence.expressConnectID
 	cgwID := dependence.cloudGatewayId
@@ -152,7 +153,7 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 	i := 1
 	for nextHopType, nextHopID := range nextHopTypesAndIDMap {
 		t.Run(nextHopType, func(t *testing.T) {
-			resourceName := "ctyun_express_connect_route." + rnd + "_" + nextHopType
+			resourceName := "ctyun_ec_route." + rnd + "_" + nextHopType
 			cidr := fmt.Sprintf("192.168.1.%d/32", i)
 			ipVersion := "ipv4"
 			description := fmt.Sprintf("Route with %s next hop", nextHopType)
@@ -173,10 +174,35 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 						),
 					},
 					{
-						Config: utils.LoadTestCase(datasourceFile, dnd,
+						Config: utils.LoadTestCase(
+							resourceFile, rnd+"_"+nextHopType,
+							ecID, cgwID, rtbID,
+							cidr, ipVersion, description, false, nextHopType, nextHopID,
+						) + utils.LoadTestCase(datasourceFile, dnd,
 							ecID, cgwID, rtbID),
 						Check: resource.ComposeAggregateTestCheckFunc(
 							resource.TestCheckResourceAttrSet(datasourceName, "routes.#")),
+					},
+					// 3. 导入测试
+					{
+						ResourceName: resourceName,
+						ImportState:  true,
+						ImportStateIdFunc: func(s *terraform.State) (string, error) {
+							rs, ok := s.RootModule().Resources[resourceName]
+							if !ok {
+								return "", fmt.Errorf("resource not found: %s", resourceName)
+							}
+							return fmt.Sprintf("%s,%s,%s,%s,%s",
+								rs.Primary.Attributes["id"],
+								rs.Primary.Attributes["ec_id"],
+								rs.Primary.Attributes["cgw_id"],
+								rs.Primary.Attributes["rtb_id"],
+								rs.Primary.Attributes["next_hop_id"],
+							), nil
+						},
+						ImportStateVerify:       true,
+						ImportStateVerifyIgnore: []string{"exclusive_id", "project_id", "is_black_hole_route"}, // 子网列表可能变化
+
 					},
 					// 2. 清理资源
 					{

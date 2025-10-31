@@ -12,11 +12,11 @@ import (
 func TestAccCtyunExpressConnectVpcInstance(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
-	resourceName := "ctyun_express_connect_vpc_instance." + rnd
+	resourceName := "ctyun_ec_vpc_instance." + rnd
 	resourceFile := "resource_ctyun_ec_vpc_instance.tf"
 
 	datasourceFile := "datasource_ctyun_ec_vpc_instances.tf"
-	datasourceName := "data.ctyun_express_connect_vpc_instances." + dnd
+	datasourceName := "data.ctyun_ec_vpc_instances." + dnd
 	// 从环境变量获取测试依赖资源
 	ecID := dependence.expressConnectID
 	cgwID := dependence.cloudGatewayId

@@ -23,7 +23,7 @@ type CtyunExpressConnectRegionPeer struct {
 }
 
 func (c *CtyunExpressConnectRegionPeer) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_express_connect_region_peer"
+	response.TypeName = request.ProviderTypeName + "_ec_region_peer"
 }
 
 func (c *CtyunExpressConnectRegionPeer) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
