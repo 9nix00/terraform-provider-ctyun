@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunExpressConnectVpcInstance(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_express_connect_vpc_instance." + rnd

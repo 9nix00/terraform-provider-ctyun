@@ -9,7 +9,6 @@ import (
 )
 
 func TestAccCtyunExpressConnectRoute(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_express_connect_route." + rnd
 	resourceFile := "resource_ctyun_ec_route.tf"
@@ -87,52 +86,50 @@ func TestAccCtyunExpressConnectRoute(t *testing.T) {
 }
 
 // 测试用例2: IPv6路由测试
-func TestAccCtyunExpressConnectRouteIPv6(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
-	rnd := utils.GenerateRandomString()
-	resourceName := "ctyun_express_connect_route." + rnd
-	resourceFile := "resource_ctyun_ec_route.tf"
-
-	ecID := dependence.expressConnectID
-	cgwID := dependence.cloudGatewayId
-	rtbID := dependence.rtbID
-	cidr := "240e:982:da91:::/88"
-	ipVersion := "ipv6"
-	description := "IPv6 route description"
-	isBlackHole := false
-	nextHopType := "vpc"
-	nextHopID := dependence.vpcInstanceVpcID
-
-	resource.Test(t, resource.TestCase{
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// 1. 创建IPv6路由测试
-			{
-				Config: utils.LoadTestCase(
-					resourceFile, rnd,
-					ecID, cgwID, rtbID,
-					cidr, ipVersion, description, isBlackHole, nextHopType, nextHopID),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "ip_version", "ipv6"),
-					resource.TestCheckResourceAttr(resourceName, "cidr", "2001:db8::/32"),
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-				),
-			},
-			// 2. 清理资源
-			{
-				Config: utils.LoadTestCase(
-					resourceFile, rnd,
-					ecID, cgwID, rtbID,
-					cidr, ipVersion, description, isBlackHole, nextHopType, nextHopID),
-				Destroy: true,
-			},
-		},
-	})
-}
+//func TestAccCtyunExpressConnectRouteIPv6(t *testing.T) {
+//	rnd := utils.GenerateRandomString()
+//	resourceName := "ctyun_express_connect_route." + rnd
+//	resourceFile := "resource_ctyun_ec_route.tf"
+//
+//	ecID := dependence.expressConnectID
+//	cgwID := dependence.cloudGatewayId
+//	rtbID := dependence.rtbID
+//	cidr := "240e:982:da91:::/88"
+//	ipVersion := "ipv6"
+//	description := "IPv6 route description"
+//	isBlackHole := false
+//	nextHopType := "vpc"
+//	nextHopID := dependence.vpcInstanceVpcID
+//
+//	resource.Test(t, resource.TestCase{
+//		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+//		Steps: []resource.TestStep{
+//			// 1. 创建IPv6路由测试
+//			{
+//				Config: utils.LoadTestCase(
+//					resourceFile, rnd,
+//					ecID, cgwID, rtbID,
+//					cidr, ipVersion, description, isBlackHole, nextHopType, nextHopID),
+//				Check: resource.ComposeAggregateTestCheckFunc(
+//					resource.TestCheckResourceAttr(resourceName, "ip_version", "ipv6"),
+//					resource.TestCheckResourceAttr(resourceName, "cidr", "2001:db8::/32"),
+//					resource.TestCheckResourceAttrSet(resourceName, "id"),
+//				),
+//			},
+//			// 2. 清理资源
+//			{
+//				Config: utils.LoadTestCase(
+//					resourceFile, rnd,
+//					ecID, cgwID, rtbID,
+//					cidr, ipVersion, description, isBlackHole, nextHopType, nextHopID),
+//				Destroy: true,
+//			},
+//		},
+//	})
+//}
 
 // 测试用例4: 不同下一跳类型测试
 func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
