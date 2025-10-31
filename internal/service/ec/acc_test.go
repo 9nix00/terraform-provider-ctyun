@@ -46,11 +46,11 @@ func TestMain(m *testing.M) {
 		subnetID2:        outputs["subnet_id2"].Value,
 		vpcInstanceVpcID: outputs["vpc_instance_vpc_id"].Value,
 		rtbID:            outputs["rtb_id"].Value,
-		//regionPeerID:     outputs["region_peer_id"].Value,
-		regionPeerID: "",
-		cgwID1:       outputs["cgw_id1"].Value,
-		cgwID2:       outputs["cgw_id2"].Value,
-		packetID:     outputs["packet_id"].Value,
+		regionPeerID:     outputs["region_peer_id"].Value,
+		//regionPeerID: "",
+		cgwID1:   outputs["cgw_id1"].Value,
+		cgwID2:   outputs["cgw_id2"].Value,
+		packetID: outputs["packet_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

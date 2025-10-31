@@ -30,7 +30,7 @@ type CtyunExpressConnectVpcInstance struct {
 }
 
 func (c *CtyunExpressConnectVpcInstance) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_express_connect_vpc_instance"
+	response.TypeName = request.ProviderTypeName + "_ec_vpc_instance"
 }
 
 func (c *CtyunExpressConnectVpcInstance) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {

@@ -25,7 +25,7 @@ type CtyunExpressConnectRoute struct {
 }
 
 func (c *CtyunExpressConnectRoute) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_express_connect_route"
+	response.TypeName = request.ProviderTypeName + "_ec_route"
 }
 
 func (c *CtyunExpressConnectRoute) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
@@ -49,12 +49,17 @@ func (c *CtyunExpressConnectRoute) ImportState(ctx context.Context, request reso
 		}
 	}()
 	var config CtyunExpressConnectRouteConfig
-	var ID, regionId, projectId, vpcId, name string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId, &name)
+	var ID, ecId, cgwId, rtbId, nextHopId string
+	err = terraform_extend.Split(request.ID, &ID, &ecId, &cgwId, &rtbId, &nextHopId)
 	if err != nil {
 		return
 	}
-
+	config.ID = types.StringValue(ID)
+	config.EcID = types.StringValue(ecId)
+	config.CgwID = types.StringValue(cgwId)
+	config.RtbID = types.StringValue(rtbId)
+	config.NextHopID = types.StringValue(nextHopId)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
@@ -332,9 +337,6 @@ func (c *CtyunExpressConnectRoute) getAndMerge(ctx context.Context, config *Ctyu
 			config.CIDR = types.StringValue(*routeObj.RouteCIDR)
 			if !config.IsBlackHoleRoute.ValueBool() {
 				config.NextHopType = types.StringValue(business.EcNextHopTypeRevMap[*routeObj.NexthopType])
-				if config.NextHopType.ValueString() != business.EcNextHopTypeVPC {
-					config.NextHopID = types.StringValue(*routeObj.NexthopID)
-				}
 			} else {
 				config.NextHopType = types.StringNull()
 				config.NextHopID = types.StringNull()

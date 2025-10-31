@@ -34,7 +34,7 @@ func (c *CtyunExpressConnectionRoutes) Configure(ctx context.Context, request da
 }
 
 func (c *CtyunExpressConnectionRoutes) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_express_connect_routes"
+	response.TypeName = request.ProviderTypeName + "_ec_routes"
 }
 
 func (c *CtyunExpressConnectionRoutes) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {

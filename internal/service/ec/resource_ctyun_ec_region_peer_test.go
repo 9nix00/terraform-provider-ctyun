@@ -13,11 +13,11 @@ func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
 	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
-	resourceName := "ctyun_express_connect_region_peer." + rnd
+	resourceName := "ctyun_ec_region_peer." + rnd
 	resourceFile := "resource_ctyun_ec_region_peer.tf"
 
 	datasourceFile := "datasource_ctyun_ec_regions_peers.tf"
-	datasourceName := "data.ctyun_express_connect_region_peers." + dnd
+	datasourceName := "data.ctyun_ec_region_peers." + dnd
 
 	// 从环境变量获取测试依赖资源
 	ecID := dependence.expressConnectID
@@ -123,7 +123,7 @@ func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
 func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
 	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
-	resourceName := "ctyun_express_connect_region_peer." + rnd
+	resourceName := "ctyun_ec_region_peer." + rnd
 	resourceFile := "resource_ctyun_ec_region_peer.tf"
 
 	// 从环境变量获取测试依赖资源
@@ -155,6 +155,25 @@ func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
 							resource.TestCheckResourceAttr(resourceName, "rate", fmt.Sprintf("%d", rate)),
 							resource.TestCheckResourceAttrSet(resourceName, "id"),
 						),
+					},
+					// 3. 导入测试
+					{
+						ResourceName: resourceName,
+						ImportState:  true,
+						ImportStateIdFunc: func(s *terraform.State) (string, error) {
+							rs, ok := s.RootModule().Resources[resourceName]
+							if !ok {
+								return "", fmt.Errorf("resource not found: %s", resourceName)
+							}
+							return fmt.Sprintf("%s,%s,%s",
+								rs.Primary.Attributes["id"],
+								rs.Primary.Attributes["ec_id"],
+								rs.Primary.Attributes["cgw_id"],
+							), nil
+						},
+						ImportStateVerify:       true,
+						ImportStateVerifyIgnore: []string{"exclusive_id", "project_id"}, // 子网列表可能变化
+
 					},
 					// 2. 清理资源
 					{

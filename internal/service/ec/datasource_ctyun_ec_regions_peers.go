@@ -33,7 +33,7 @@ func (c *CtyunExpressConnectionRegionPeer) Configure(ctx context.Context, reques
 }
 
 func (c *CtyunExpressConnectionRegionPeer) Metadata(ctx context.Context, request datasource.MetadataRequest, response *datasource.MetadataResponse) {
-	response.TypeName = request.ProviderTypeName + "_express_connect_region_peers"
+	response.TypeName = request.ProviderTypeName + "_ec_region_peers"
 }
 
 func (c *CtyunExpressConnectionRegionPeer) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
