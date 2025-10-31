@@ -32,7 +32,7 @@ output "cgw_id1" {
   value = ctyun_ec_cloud_gateway.cloud_gateway_xinan1.id
 }
 output "cgw_id2" {
-  value = ctyun_ec_cloud_gateway.cloud_gateway_huabei2.id
+  value = ctyun_ec_cloud_gateway.cloud_gateway_hgh7.id
 }
 
 output "packet_id" {

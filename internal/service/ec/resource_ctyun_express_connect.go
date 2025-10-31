@@ -283,6 +283,8 @@ func (c *CtyunExpressConnect) getAndMerge(ctx context.Context, plan *CtyunExpres
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
 		return
+	} else if len(resp.ReturnObj.Results) == 0 {
+		return fmt.Errorf("no express connect instance found")
 	}
 	result := resp.ReturnObj.Results[0]
 	plan.Name = types.StringValue(*result.EcName)

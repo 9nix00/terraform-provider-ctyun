@@ -118,12 +118,12 @@ resource "ctyun_ec_cloud_gateway" "cloud_gateway_xinan1" {
   region_name = "cn-xinan1-xn1A-public-ctcloud"
 }
 
-resource "ctyun_ec_cloud_gateway" "cloud_gateway_huabei2" {
+resource "ctyun_ec_cloud_gateway" "cloud_gateway_hgh7" {
   ec_id       = ctyun_express_connect.express_connect_dependence.id
-  name        = "cloud_gateway_huabei2"
+  name        = "cloud_gateway_hgh7"
   description = "云间高速开发测试专用"
-  region_id   = "200000001852"
-  region_name = "cn-huabei2-tj1A-public-ctcloud"
+  region_id   = "200000003329"
+  region_name = "cn-zj-hgh7-1a-public-ctcloud"
 }
 
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_huhehaote3" {
@@ -136,7 +136,7 @@ resource "ctyun_ec_cloud_gateway" "cloud_gateway_huhehaote3" {
 
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_wulumuqi7" {
   ec_id       = ctyun_express_connect.express_connect_dependence.id
-  name        = "cloud_gateway_huabei2"
+  name        = "cloud_gateway_hgh7"
   description = "云间高速开发测试专用"
   region_id   = "200000004098"
   region_name = "cn-xj-urc7-1a-public-ctcloud"

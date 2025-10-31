@@ -257,7 +257,10 @@ func (c *CtyunEcPacket) Create(ctx context.Context, req resource.CreateRequest, 
 	if err != nil {
 		return
 	}
-
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
@@ -283,6 +286,12 @@ func (c *CtyunEcPacket) Read(ctx context.Context, req resource.ReadRequest, resp
 }
 
 func (c *CtyunEcPacket) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan, state CtyunEcPacketConfig
 
 	// 获取计划状态和当前状态
@@ -311,20 +320,28 @@ func (c *CtyunEcPacket) Update(ctx context.Context, req resource.UpdateRequest, 
 			return
 		}
 	}
-
+	err = c.getAndMerge(ctx, &state)
+	if err != nil {
+		return
+	}
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (c *CtyunEcPacket) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			resp.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunEcPacketConfig
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	// 执行退订操作
-	err := c.refund(ctx, &state)
+	err = c.refund(ctx, &state)
 	if err != nil {
-		resp.Diagnostics.AddError("退订带宽包失败", err.Error())
 		return
 	}
 }
@@ -400,6 +417,10 @@ func (c *CtyunEcPacket) getAndMerge(ctx context.Context, state *CtyunEcPacketCon
 
 		if result.ResourceID != nil {
 			state.ResourceID = types.StringValue(*result.ResourceID)
+		}
+
+		if result.PacketID != nil {
+			state.ID = types.StringValue(*result.PacketID)
 		}
 	}
 
@@ -628,6 +649,5 @@ func (c *CtyunEcPacket) create(ctx context.Context, plan *CtyunEcPacketConfig) (
 		}
 	}
 	// 设置返回值
-	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.EcID.ValueString(), plan.ResourceID.ValueString()))
 	return nil
 }
