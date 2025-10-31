@@ -28,7 +28,7 @@ func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
 	// 测试数据
 	peerName := "test-region-peer-" + rnd
 	initialRate := int32(1) // 10 Mbps
-	updatedRate := int32(2) // 100 Mbps
+	updatedRate := int32(2) // 2 Mbps
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),

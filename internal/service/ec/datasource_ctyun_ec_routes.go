@@ -39,7 +39,7 @@ func (c *CtyunExpressConnectionRoutes) Metadata(ctx context.Context, request dat
 
 func (c *CtyunExpressConnectionRoutes) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "查询云专线路由信息",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10132372",
 		Attributes: map[string]schema.Attribute{
 			"ec_id": schema.StringAttribute{
 				Required:    true,

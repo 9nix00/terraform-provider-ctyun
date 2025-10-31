@@ -39,7 +39,7 @@ func (c *CtyunExpressConnectionVpcInstances) Metadata(ctx context.Context, reque
 
 func (c *CtyunExpressConnectionVpcInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038256",
 		Attributes: map[string]schema.Attribute{
 			"ec_id": schema.StringAttribute{
 				Required:    true,
