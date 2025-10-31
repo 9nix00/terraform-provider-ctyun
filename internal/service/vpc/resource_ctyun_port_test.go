@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -12,10 +11,6 @@ import (
 )
 
 func TestAccCtyunNetworkInterface_basic(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_port." + rnd
 	resourceFile := "resource_ctyun_network_interface.tf"
@@ -105,10 +100,7 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 }
 
 func TestAccCtyunNetworkInterface_case1(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	name := "ctyun_port." + rnd
 	configFile := "resource_ctyun_network_interface_case1.tf"
@@ -167,10 +159,7 @@ func TestAccCtyunNetworkInterface_case1(t *testing.T) {
 }
 
 func TestAccCtyunNetworkInterface_case2(t *testing.T) {
-	err := os.Setenv("TF_ACC", "1")
-	if err != nil {
-		return
-	}
+
 	rnd := utils.GenerateRandomString()
 	name := "ctyun_port." + rnd
 	configFile := "resource_ctyun_network_interface_case2.tf"
@@ -180,7 +169,7 @@ func TestAccCtyunNetworkInterface_case2(t *testing.T) {
 	initialDescription := "test port description"
 
 	subnetId := dependence.subnetID
-	primaryIp := "192.168.1.1" // 使用自动分配
+	primaryIp := "192.168.2.33" // 使用手动分配
 	securityGroupId := dependence.securityGroupID
 	secondaryIpCount := 1
 	ipv6AddressCount := 0

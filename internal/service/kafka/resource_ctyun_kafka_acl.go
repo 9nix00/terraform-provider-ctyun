@@ -281,15 +281,15 @@ func (c *ctyunKafkaAcl) ImportState(ctx context.Context, request resource.Import
 		}
 	}()
 	var cfg CtyunKafkaAclConfig
-	var instanceId, regionID, Name, useNewTopic string
-	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &Name, &useNewTopic)
+	var instanceId, regionID, name string
+	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &name)
 	if err != nil {
 		return
 	}
 	cfg.RegionId = types.StringValue(regionID)
 	cfg.InstanceId = types.StringValue(instanceId)
-	cfg.Name = types.StringValue(Name)
-	cfg.UseNewTopic = types.StringValue(useNewTopic)
+	cfg.Name = types.StringValue(name)
+	//cfg.UseNewTopic = types.StringValue(useNewTopic)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {
@@ -407,8 +407,7 @@ func (c *ctyunKafkaAcl) getAndMerge(ctx context.Context, plan *CtyunKafkaAclConf
 	}
 
 	// 设置基本属性
-	plan.Id = types.StringValue(fmt.Sprintf("%s,%s,%s,%s", plan.InstanceId, plan.RegionId, plan.Name, plan.UseNewTopic))
-
+	plan.Id = types.StringValue(fmt.Sprintf("%s,%s,%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), plan.Name.ValueString()))
 	if resp.ReturnObj.TopicNum > 0 {
 		// 设置topics
 		topicsSet, diags := types.SetValueFrom(ctx, types.StringType, resp.ReturnObj.Topics)

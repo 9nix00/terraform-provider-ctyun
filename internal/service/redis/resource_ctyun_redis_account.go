@@ -233,7 +233,7 @@ func (c *ctyunRedisAccount) Configure(_ context.Context, request resource.Config
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID]/[regionID]/[账户名称]
+// 导入命令：terraform import [配置标识].[导入配置名称] [账户名称],[实例ID],[regionID]
 func (c *ctyunRedisAccount) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -242,8 +242,8 @@ func (c *ctyunRedisAccount) ImportState(ctx context.Context, request resource.Im
 		}
 	}()
 	var cfg CtyunRedisAccountConfig
-	var instanceId, regionID, accountName string
-	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &accountName)
+	var accountName, instanceId, regionID string
+	err = terraform_extend.Split(request.ID, &accountName, &instanceId, &regionID)
 	if err != nil {
 		return
 	}
@@ -414,7 +414,7 @@ func (c *ctyunRedisAccount) getAndMerge(ctx context.Context, plan *CtyunRedisAcc
 		plan.Description = types.StringValue(accountData.AccountDescription)
 	}
 
-	id := fmt.Sprintf("%s,%s,%s", plan.InstanceId.ValueString(), plan.RegionId.ValueString(), plan.Name.ValueString())
+	id := fmt.Sprintf("%s,%s,%s", plan.Name.ValueString(), plan.InstanceId.ValueString(), plan.RegionId.ValueString())
 	plan.Id = types.StringValue(id)
 	return
 }

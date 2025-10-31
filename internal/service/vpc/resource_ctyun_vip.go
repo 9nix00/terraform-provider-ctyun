@@ -130,6 +130,10 @@ func (c *CtyunVip) Create(ctx context.Context, request resource.CreateRequest, r
 	if err != nil {
 		return
 	}
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
 
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 }
@@ -154,12 +158,7 @@ func (c *CtyunVip) Read(ctx context.Context, request resource.ReadRequest, respo
 
 func (c *CtyunVip) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	// HaVip资源不支持更新操作，直接返回
-	var plan CtyunVipConfig
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	return
 }
 
 func (c *CtyunVip) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
@@ -171,10 +170,7 @@ func (c *CtyunVip) Delete(ctx context.Context, request resource.DeleteRequest, r
 
 	err := c.delete(ctx, &state)
 	if err != nil {
-		response.Diagnostics.AddError(
-			"删除高可用虚拟IP失败",
-			err.Error(),
-		)
+		response.Diagnostics.AddError("删除高可用虚拟IP失败", err.Error())
 		return
 	}
 }

@@ -16,6 +16,7 @@ type Dependence struct {
 	eipID           string
 	eipAddress      string
 	mysqlID         string
+	mysqlID2        string
 	azName          string
 	taskID          string
 	templateID      string
@@ -39,14 +40,12 @@ func TestMain(m *testing.M) {
 		vpcID:           outputs["vpc_id"].Value,
 		subnetID:        outputs["subnet_id"].Value,
 		securityGroupID: outputs["security_group_id"].Value,
-		//eipID:           outputs["eip_id"].Value,
-		eipID: "",
+		eipID:           outputs["eip_id"].Value,
 		//eipAddress: outputs["eip_address"].Value,
-		mysqlID: outputs["mysql_id"].Value,
-		//mysqlID: "ab2df2c959074f1287864ff20497a247",
-		azName: outputs["az_name"].Value,
-		taskID: outputs["task_id"].Value,
-		//taskID:          "",
+		mysqlID:         outputs["mysql_id"].Value,
+		mysqlID2:        outputs["mysql_id"].Value,
+		azName:          outputs["az_name"].Value,
+		taskID:          outputs["task_id"].Value,
 		templateID:      outputs["template_id"].Value,
 		backupTimeStamp: outputs["backup_timestamp"].Value,
 	}

@@ -19,4 +19,5 @@ resource "ctyun_redis_instance" "%[1]s" {
     retention_day = %[16]d
   }
   ssl_enabled = %[17]t
+  host_type = "C"
 }

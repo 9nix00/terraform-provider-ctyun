@@ -51,18 +51,22 @@ func (c *CtyunAcl) ImportState(ctx context.Context, request resource.ImportState
 			response.Diagnostics.AddError(err.Error(), err.Error())
 		}
 	}()
-	var cfg CtyunAclConfig
+	var config CtyunAclConfig
 	var ID, regionId, projectId, vpcId, name string
 	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId, &name)
 	if err != nil {
 		return
 	}
-
-	err = c.getAndMerge(ctx, &cfg)
+	config.ID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+	config.VpcID = types.StringValue(vpcId)
+	config.Name = types.StringValue(name)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -126,7 +130,7 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"enabled": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否启用ACL，默认启用。启用：disable,不启用：enable",
+				Description: "是否启用ACL，默认启用。启用：enable,不启用：disable",
 				Default:     stringdefault.StaticString(business.AclEnable),
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.AclEnable, business.AclDisable),
@@ -136,7 +140,7 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Computed:    true,
 				Description: "acl id唯一标识",
 				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -257,13 +261,17 @@ func (c *CtyunAcl) Delete(ctx context.Context, request resource.DeleteRequest, r
 
 func (c *CtyunAcl) create(ctx context.Context, config *CtyunAclConfig) error {
 	params := &ctvpc.CtvpcCreateAclRequest{
-		ClientToken: uuid.NewString(),
-		RegionID:    config.RegionID.ValueString(),
-		VpcID:       config.VpcID.ValueString(),
-		Name:        config.Name.ValueString(),
+		ClientToken:     uuid.NewString(),
+		RegionID:        config.RegionID.ValueString(),
+		VpcID:           config.VpcID.ValueString(),
+		Name:            config.Name.ValueString(),
+		ApplyToPublicLb: config.ApplyToPublicLb.ValueBoolPointer(),
 	}
 	if !config.ProjectID.IsNull() && !config.ID.IsNull() {
 		params.ProjectID = config.ProjectID.ValueStringPointer()
+	}
+	if !config.Description.IsNull() && !config.Description.IsUnknown() {
+		params.Description = config.Description.ValueStringPointer()
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreateAclApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -272,10 +280,10 @@ func (c *CtyunAcl) create(ctx context.Context, config *CtyunAclConfig) error {
 		err = fmt.Errorf("创建acl失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
-	config.ID = types.StringValue(*resp.ReturnObj[0].AclID)
+	config.ID = types.StringValue(*resp.ReturnObj.AclID)
 
 	// 判断创建ACL时，就需要禁用ACL
 	if config.Enabled.ValueString() == business.AclDisable {
@@ -292,7 +300,7 @@ func (c *CtyunAcl) getAndMerge(ctx context.Context, config *CtyunAclConfig) erro
 	if err != nil {
 		return err
 	}
-	detail := resp.ReturnObj[0]
+	detail := resp.ReturnObj
 	if detail == nil {
 		err = fmt.Errorf("获取acl详情失败，接口返回nil，请联系研发确认问题原因！")
 		return err
@@ -319,7 +327,7 @@ func (c *CtyunAcl) getAclDetail(ctx context.Context, config *CtyunAclConfig) (*c
 		err = fmt.Errorf("获取acl详情失败，接口返回nil，请联系研发确认问题原因！")
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
@@ -367,7 +375,7 @@ func (c *CtyunAcl) delete(ctx context.Context, config CtyunAclConfig) error {
 		err = fmt.Errorf("删除acl失败，接口返回nil，请联系研发确认问题原因！")
 		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
-		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
 	return nil

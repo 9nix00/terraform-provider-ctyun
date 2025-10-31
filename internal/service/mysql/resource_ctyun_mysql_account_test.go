@@ -12,7 +12,6 @@ import (
 
 // 测试MySQL账户资源
 func TestAccCtyunMysqlAccount(t *testing.T) {
-	//t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_account." + rnd
@@ -24,7 +23,8 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
 	mysqlInstanceID := dependence.mysqlID
-	accountPassword := "e&R6Hy?LR=Yq@Eg2"
+	accountPassword := utils.GenerateRandomString() + "&R3?=@"
+	newPassword := utils.GenerateRandomString() + "New2@"
 	accountName := "test_account_" + rnd
 
 	// 测试数据库名称（确保在MySQL实例中存在）
@@ -84,7 +84,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile,
 					rnd, mysqlInstanceID, projectID,
-					accountName, accountPassword+"_new",
+					accountName, newPassword,
 					updatedPrivilegesStr, "Updated description",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -118,26 +118,26 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"password", "description"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"password", "description"},
 			},
 			{
 
 				Config: utils.LoadTestCase(resourceFile,
 					rnd, mysqlInstanceID, projectID,
-					accountName, accountPassword+"_new",
+					accountName, newPassword,
 					updatedPrivilegesStr, "Updated description",
 				) + utils.LoadTestCase(datasourceFile, dnd, mysqlInstanceID, accountName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.#", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.0.name", accountName),
-					resource.TestCheckResourceAttrSet(dataSourceName, "mysql_accounts.0.schema_privilege_list"),
+					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.0.account_name", accountName),
+					resource.TestCheckResourceAttrSet(dataSourceName, "mysql_accounts.0.schema_privilege_list.#"),
 				),
 			},
 			{
 
 				Config: utils.LoadTestCase(resourceFile,
 					rnd, mysqlInstanceID, projectID,
-					accountName, accountPassword+"_new",
+					accountName, newPassword,
 					updatedPrivilegesStr, "Updated description",
 				),
 				Destroy: true,

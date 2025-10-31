@@ -23,7 +23,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="
 	password := "Kyk123=" + utils.GenerateRandomString()
 	caseCensitive := true
-	flavorName := "s7.large.2"
+	flavorName := "c7.xlarge.2"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	securityGroupID := dependence.securityGroupID

@@ -67,6 +67,18 @@ locals {
   real_security_group_id = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test[0].id, "") : local.data_security_group_id
 }
 
+resource "ctyun_security_group_rule" "security_group_rule_ingress" {
+ security_group_id = local.real_security_group_id
+ direction         = "ingress"
+ action            = "accept"
+ priority          = 1
+ protocol          = "tcp"
+ ether_type        = "ipv4"
+ dest_cidr_ip      = "0.0.0.0/0"
+ range             = "6379"
+}
+
+
 resource "ctyun_eip" "eip_test" {
   name                = "tf-eip-for-redis"
   bandwidth           = 10
@@ -95,7 +107,7 @@ resource "ctyun_redis_instance" "test_redis_instance" {
   auto_renew = true
   auto_renew_cycle_count = 12
   shard_mem_size = 8
-
+  host_type = "C"
 }
 
 resource "ctyun_redis_instance" "test_redis_instance2" {
@@ -111,6 +123,7 @@ resource "ctyun_redis_instance" "test_redis_instance2" {
   auto_renew = true
   auto_renew_cycle_count = 12
   shard_mem_size = 8
+  host_type = "C"
 }
 
 resource "ctyun_redis_account" "test_instance1_account" {

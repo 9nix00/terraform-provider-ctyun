@@ -118,6 +118,7 @@ func (c *ctyunMysqlAccounts) Read(ctx context.Context, request datasource.ReadRe
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 	accounts, err := c.getMysqlAccountInfo(ctx, &config)
 	if err != nil {
 		return

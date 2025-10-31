@@ -19,7 +19,7 @@ type TagsService struct {
 func NewTagsService(meta *common.CtyunMetadata) *TagsService {
 	return &TagsService{meta: meta}
 }
-func (v TagsService) BundTags(ctx context.Context, regionId, resourceType, resourceID string, tags *types.Set) (err error) {
+func (v TagsService) BindTags(ctx context.Context, regionId, resourceType, resourceID string, tags *types.Set) (err error) {
 
 	// 最大轮询100次直到没有 "errorCode":"Openapi.Nat.BindLabelFailed"
 	retryer, err := NewRetryer(time.Second*10, 61)

@@ -18,7 +18,7 @@ func TestAccCtyunVip_basic(t *testing.T) {
 	// 测试参数
 	subnetId := dependence.subnetID
 	vpcId := dependence.vpcID
-	ipAddress := "192.168.3.101"
+	ipAddress := "192.168.2.101"
 	vipType := "v4"
 
 	resource.Test(t, resource.TestCase{

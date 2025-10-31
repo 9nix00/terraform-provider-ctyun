@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	ccse2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ccse"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/cda"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/core"
 	crs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/crs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebm"
@@ -18,6 +19,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
@@ -28,12 +30,15 @@ import (
 	pgsql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctzos"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/dcs2"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
 	sdk_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/sdk"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/acl"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
 	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
@@ -312,7 +317,6 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	// 填充对应的内容信息
 	common.InitCtyunMetadata(
 		&common.Apis{
-
 			SdkCtImageApis:  sdkctimage.NewApis(fmt.Sprintf(endpointUrl, sdkctimage.EndpointName), coreClient),
 			SdkCtNatApis:    ctnat.NewApis(fmt.Sprintf(endpointUrl, ctnat.EndpointName), coreClient),
 			CtEbsApis:       ctebs.NewApis(client),
@@ -330,6 +334,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCtElbApis:    ctelb.NewApis(fmt.Sprintf(endpointUrl, ctelb.EndpointName), coreClient),
 			SdkCtMysqlApis:  mysql.NewApis(client),
 			SdkKafkaApis:    ctgkafka.NewApis(fmt.Sprintf(endpointUrl, ctgkafka.EndpointName), coreClient),
+			AmqpApis:        amqp.NewApis(client),
 			SdkAmqpApis:     amqp2.NewApis(fmt.Sprintf(endpointUrl, amqp2.EndpointName), coreClient),
 			SdkCrsApis:      crs2.NewApis(fmt.Sprintf(endpointUrl, crs2.EndpointName), coreClient),
 			SdkCtPgsqlApis:  pgsql2.NewApis(client),
@@ -338,6 +343,9 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtEbsBackupApis: ctebsbackup.NewApis(fmt.Sprintf(endpointUrl, ctebsbackup.EndpointName), coreClient),
 			SdkScalingApis:  scaling.NewApis(fmt.Sprintf(endpointUrl, scaling.EndpointName), coreClient),
 			SdkSfsApi:       sfs.NewApis(fmt.Sprintf(endpointUrl, sfs.EndpointName), coreClient),
+			SdkCdaApis:      cda.NewApis(fmt.Sprintf(endpointUrl, cda.EndpointName), coreClient),
+			SdkEcApis:       ec.NewApis(fmt.Sprintf(endpointUrl, ec.EndpointName), coreClient),
+			SdkSdwanApis:    sdwan.NewApis(fmt.Sprintf(endpointUrl, sdwan.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -442,9 +450,6 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mongodb.NewCtyunMongodbSpecs(),
 		mongodb.NewCtyunMongodbAssociationEips(),
 		vpc.NewCtyunNetTagss(),
-		rabbitmq.NewCtyunRabbitmqVhosts(),
-		rabbitmq.NewCtyunRabbitmqExchanges(),
-		rabbitmq.NewCtyunRabbitmqQueues(),
 		mysql2.NewCtyunMysqlAccounts(),
 		mysql2.NewCtyunMysqlBackups(),
 		mysql2.NewCtyunMysqlRecoverableTimePoints(),
@@ -464,6 +469,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		mysql2.NewCtyunMysqlParameters(),
 		ccse.NewCtyunCcseNamespaces(),
 		ccse.NewCtyunCcseImages(),
+		acl.NewCtyunAcls(),
+		acl.NewCtyunAclRules(),
+		acl.NewCtyunPrefixLists(),
 		crs.NewCtyunCrsOpensourceImages(),
 	)
 }
@@ -497,7 +505,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ecs.NewCtyunKeypair(),
 		vpc.NewCtyunBandwidth(),
 		vpc.NewCtyunBandwidthAssociationEip(),
-
 		iam.NewCtyunPolicyAssociationUserGroup(),
 		iam.NewCtyunPolicyAssociationUser(),
 		iam.NewCtyunEnterpriseProject(),
@@ -549,7 +556,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
 		pgsql.NewCtyunPostgresqlCollectorPolicy(),
-		pgsql.NewCtyunPostgresqlSecurityGroup(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),
@@ -592,9 +598,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		pgsql.NewCtyunPostgresqlAccount(),
 		pgsql.NewCtyunPostgresqlBackup(),
 		pgsql.NewCtyunPgsqlDatabase(),
-		rabbitmq.NewCtyunRabbitmqVhost(),
-		rabbitmq.NewCtyunRabbitmqExchange(),
-		rabbitmq.NewCtyunRabbitmqQueue(),
 		pgsql.NewCtyunPgsqlParamTemplate(),
 		pgsql.NewCtyunPgsqlWhiteList(),
 		mysql2.NewCtyunMysqlReadOnlyInstance(),
@@ -604,11 +607,12 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		kafka.NewCtyunKafkaTopic(),
 		kafka.NewCtyunKafkaUser(),
 		kafka.NewCtyunKafkaAcl(),
-		rabbitmq.NewCtyunRabbitmqVhost(),
-		rabbitmq.NewCtyunRabbitmqExchange(),
-		rabbitmq.NewCtyunRabbitmqQueue(),
 		ccse.NewCtyunCcseNamespace(),
 		ccse.NewCtyunCcseScalingNodePoolPolicy(),
+		acl.NewCtyunAcl(),
+		acl.NewCtyunAclRule(),
+		acl.NewCtyunPrefix(),
+		acl.NewCtyunSubnetAssociationAcl(),
 		crs.NewCtyunCrsVpcAttach(),
 	)
 }

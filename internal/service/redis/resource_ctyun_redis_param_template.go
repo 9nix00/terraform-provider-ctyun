@@ -197,10 +197,11 @@ func (c *ctyunRedisParamTemplate) Create(ctx context.Context, request resource.C
 	if err != nil {
 		return
 	}
-	err = c.getIdByQueryList(ctx, &plan)
+	id, err := c.getIdByQueryList(ctx, plan)
 	if err != nil {
 		return
 	}
+	plan.ID = types.StringValue(id)
 	err = c.getAndMerge(ctx, nil, &plan)
 	if err != nil {
 		return
@@ -293,7 +294,7 @@ func (c *ctyunRedisParamTemplate) Configure(_ context.Context, request resource.
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [regionID]/[templateID]
+// 导入命令：terraform import [配置标识].[导入配置名称] [templateID],[regionID]
 func (c *ctyunRedisParamTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -303,8 +304,8 @@ func (c *ctyunRedisParamTemplate) ImportState(ctx context.Context, request resou
 	}()
 
 	var cfg CtyunRedisParamTemplateConfig
-	var regionId, templateId string
-	err = terraform_extend.Split(request.ID, &regionId, &templateId)
+	var templateId, regionId string
+	err = terraform_extend.Split(request.ID, &templateId, &regionId)
 	if err != nil {
 		return
 	}
@@ -445,7 +446,6 @@ func (c *ctyunRedisParamTemplate) getAndMerge(ctx context.Context, plan, state *
 	}
 
 	// 更新state中的信息
-	state.ID = types.StringValue(resp.ReturnObj.Template.Id)
 	state.Name = types.StringValue(resp.ReturnObj.Template.Name)
 	state.Description = types.StringValue(resp.ReturnObj.Template.Description)
 	state.CacheMode = types.StringValue(resp.ReturnObj.Template.CacheMode)
@@ -582,15 +582,11 @@ func (c *ctyunRedisParamTemplate) getAndMerge(ctx context.Context, plan, state *
 			},
 		})
 	}
-
-	fmt.Println("state.ParamsReturn: ", state.ParamsReturn)
-
 	return
 }
 
 // getIdByQueryList 从远端查询参数模板id
-func (c *ctyunRedisParamTemplate) getIdByQueryList(ctx context.Context, state *CtyunRedisParamTemplateConfig) (err error) {
-
+func (c *ctyunRedisParamTemplate) getIdByQueryList(ctx context.Context, state CtyunRedisParamTemplateConfig) (id string, err error) {
 	// 组装请求体
 	params := &ctgdcs2.Dcs2DescribeRedisTemplateRequest{
 		RegionId: state.RegionId.ValueString(),
@@ -612,10 +608,10 @@ func (c *ctyunRedisParamTemplate) getIdByQueryList(ctx context.Context, state *C
 	for _, template := range resp.ReturnObj.List {
 		// 根据模板名称匹配来设置ID
 		if template.Name == state.Name.ValueString() {
-			state.ID = types.StringValue(template.Id)
-			break
+			id = template.Id
+			return
 		}
 	}
-
+	err = common.InvalidReturnObjError
 	return
 }

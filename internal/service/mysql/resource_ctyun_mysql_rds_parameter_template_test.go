@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunMysqlRdsParameterTemplate(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_mysql_rds_parameter_template." + rnd

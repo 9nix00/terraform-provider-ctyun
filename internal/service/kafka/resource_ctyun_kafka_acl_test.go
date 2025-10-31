@@ -63,18 +63,10 @@ func TestAccCtyunKafkaAcl(t *testing.T) {
 				),
 			},
 			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					ds := s.RootModule().Resources[resourceName].Primary
-					regionId := ds.Attributes["region_id"]
-					instanceId := ds.Attributes["instance_id"]
-					name := ds.Attributes["name"]
-					useNewTopic := ds.Attributes["use_new_topic"]
-					return fmt.Sprintf("%s,%s,%s,%s", instanceId, regionId, name, useNewTopic), nil
-				},
+				ResourceName:            resourceName,
+				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"id"},
+				ImportStateVerifyIgnore: []string{"use_new_topic"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updateUseNewTopic, userName) + utils.LoadTestCase(datasourceFile, dnd, initName, instanceId),

@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunPostgresqlBackup(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_backup." + rnd
 	resourceFile := "resource_ctyun_postgresql_backup.tf"
@@ -18,7 +18,7 @@ func TestAccCtyunPostgresqlBackup(t *testing.T) {
 	// 从环境变量获取测试依赖资源
 
 	projectID := "0"
-	instanceID := dependence.PgsqlID
+	instanceID := dependence.pgsqlID
 
 	// 测试数据
 	backupName := "test_backup_" + rnd

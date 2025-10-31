@@ -285,7 +285,7 @@ type CtyunPgsqlInstancesConfig struct {
 type CtyunPgsqlInstanceInfoModel struct {
 	CreateTime          types.String `tfsdk:"create_time"`           // 创建时间
 	ProdDbEngine        types.String `tfsdk:"prod_db_engine"`        // 数据库实例引擎
-	ID                  types.String `tfsdk:"id"`                    // 实例ID
+	ID                  types.String `tfsdk:"prod_inst_id"`          // 实例ID
 	Name                types.String `tfsdk:"name"`                  // 实例名称
 	ProdRunningStatus   types.Int32  `tfsdk:"prod_running_status"`   // 运行状态代码
 	Alive               types.Int32  `tfsdk:"alive"`                 // 实例存活状态

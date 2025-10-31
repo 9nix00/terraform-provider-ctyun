@@ -210,7 +210,7 @@ func (c *ctyunRedisInstanceWhitelist) Configure(_ context.Context, request resou
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID]/[regionID]/[分组名称]
+// 导入命令：terraform import [配置标识].[导入配置名称] [分组名称],[实例ID],[regionID]
 func (c *ctyunRedisInstanceWhitelist) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 
 	var err error
@@ -222,7 +222,7 @@ func (c *ctyunRedisInstanceWhitelist) ImportState(ctx context.Context, request r
 
 	var cfg CtyunRedisInstanceWhitelistConfig
 	var instanceId, regionId, name string
-	err = terraform_extend.Split(request.ID, &instanceId, &regionId, &name)
+	err = terraform_extend.Split(request.ID, &name, &instanceId, &regionId)
 	if err != nil {
 		return
 	}
@@ -362,7 +362,7 @@ func (c *ctyunRedisInstanceWhitelist) getAndMerge(ctx context.Context, state *Ct
 	state.Name = types.StringValue(whitelistData.Group)
 
 	// 设置ID
-	state.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", state.InstanceId.ValueString(), state.RegionId.ValueString(), state.Name.ValueString()))
+	state.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", state.Name.ValueString(), state.InstanceId.ValueString(), state.RegionId.ValueString()))
 
 	return
 }
