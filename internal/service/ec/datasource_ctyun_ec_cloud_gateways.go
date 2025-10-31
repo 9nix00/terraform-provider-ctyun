@@ -98,7 +98,7 @@ func (c *ctyunEcCloudGateways) Schema(_ context.Context, _ datasource.SchemaRequ
 							Computed:    true,
 							Description: "创建时间",
 						},
-						"default_rtb_id": schema.StringAttribute{
+						"rtb_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "云网关默认路由表ID",
 						},
@@ -266,7 +266,7 @@ type CtyunEcCloudGatewaysCloudGatewaysConfig struct {
 	PolicyCount  types.Int64  `tfsdk:"policy_count"`
 	InsCount     types.Int64  `tfsdk:"ins_count"`
 	CreateDate   types.String `tfsdk:"create_date"`
-	DefaultRtbID types.String `tfsdk:"default_rtb_id"`
+	DefaultRtbID types.String `tfsdk:"rtb_id"`
 	HasMonitor   types.Bool   `tfsdk:"has_monitor"`
 }
 

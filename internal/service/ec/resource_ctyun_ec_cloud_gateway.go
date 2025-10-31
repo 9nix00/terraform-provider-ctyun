@@ -44,6 +44,7 @@ type CtyunEcCloudGatewayConfig struct {
 	//DcType      types.String `tfsdk:"region_type"`
 	CreateDate types.String `tfsdk:"create_date"`
 	ProjectID  types.String `tfsdk:"project_id"`
+	RtbID      types.String `tfsdk:"rtb_id"`
 }
 
 func (c *CtyunEcCloudGateway) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -55,6 +56,13 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 		MarkdownDescription: `**云网关资源**`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "云网关实例ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"rtb_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "云网关实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -369,7 +377,9 @@ func (c *CtyunEcCloudGateway) getAndMerge(ctx context.Context, plan *CtyunEcClou
 	if result.CreateDate != nil {
 		plan.CreateDate = types.StringValue(*result.CreateDate)
 	}
-
+	if result.DefaultRtbID != nil {
+		plan.RtbID = types.StringValue(*result.DefaultRtbID)
+	}
 	return
 }
 func (c *CtyunEcCloudGateway) update(ctx context.Context, plan *CtyunEcCloudGatewayConfig) (err error) {
