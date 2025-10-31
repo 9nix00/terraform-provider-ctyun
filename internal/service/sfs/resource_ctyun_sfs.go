@@ -201,18 +201,6 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Computed:    true,
 				Description: "弹性文件系统已使用大小（MB）",
 			},
-			"read_only": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Default:     booldefault.StaticBool(false),
-				Description: "弹性文件系统是否只读。默认为false。支持更新，true-只读；false-可读写。sfs_protocol=cifs仅支持为false",
-				Validators: []validator.Bool{
-					validator2.ConflictsWithEqualBool(
-						path.MatchRoot("sfs_protocol"),
-						types.StringValue("cifs"),
-					),
-				},
-			},
 			"share_path": schema.StringAttribute{
 				Computed:    true,
 				Description: "挂载路径",
@@ -245,11 +233,6 @@ func (c *ctyunSfs) Create(ctx context.Context, request resource.CreateRequest, r
 		return
 	}
 	err = c.createSfs(ctx, &plan)
-	if err != nil {
-		return
-	}
-	// 如果创建时，read_only不为空，需要调用设置下
-	err = c.setSfsRw(ctx, &plan, &plan)
 	if err != nil {
 		return
 	}
@@ -489,17 +472,6 @@ func (c *ctyunSfs) getAndMergeSfs(ctx context.Context, config *CtyunSfsConfig) e
 	config.SfsProtocol = types.StringValue(returnObj.SfsProtocol)
 	config.SfsType = types.StringValue(returnObj.SfsType)
 	//config.AzName = types.StringValue(returnObj.AzName)
-	// 获取是否只读
-	rwResp, err := c.getSfsRwDetail(ctx, config)
-	if err != nil {
-		return err
-	}
-	config.ReadOnly = types.BoolValue(*rwResp.ReturnObj.List[0].ReadOnly.Value)
-	//if rwResp.ReturnObj.List[0].ReadOnly == "true" {
-	//	config.ReadOnly = types.BoolValue(true)
-	//} else {
-	//	config.ReadOnly = types.BoolValue(false)
-	//}
 
 	return nil
 }
@@ -556,12 +528,6 @@ func (c *ctyunSfs) updateSfs(ctx context.Context, state *CtyunSfsConfig, plan *C
 	}
 	// 扩容sfs
 	err = c.ResizeSfs(ctx, state, plan)
-	if err != nil {
-		return err
-	}
-
-	// 设置文件系统是否已读
-	err = c.setSfsRw(ctx, state, plan)
 	if err != nil {
 		return err
 	}
@@ -685,77 +651,6 @@ func (c *ctyunSfs) resizeLoop(ctx context.Context, state *CtyunSfsConfig, plan *
 	return err
 }
 
-func (c *ctyunSfs) setSfsRw(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig) error {
-	if plan.ReadOnly.IsNull() || plan.ReadOnly.IsUnknown() {
-		return nil
-	}
-
-	// 如果需要已读
-	if plan.ReadOnly.ValueBool() {
-		params := &sfs.SfsSfsSetReadSfsRequest{
-			RegionID: state.RegionID.ValueString(),
-			SfsUID:   state.ID.ValueString(),
-		}
-		resp, err := c.meta.Apis.SdkSfsApi.SfsSfsSetReadSfsApi.Do(ctx, c.meta.SdkCredential, params)
-		if err != nil {
-			return err
-		} else if resp == nil {
-			return fmt.Errorf("设置id为%s的弹性文件服务为只读实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
-		} else if resp.StatusCode != common.NormalStatusCode {
-			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		}
-	} else {
-		params := &sfs.SfsSfsSetReadWriteSfsRequest{
-			RegionID: state.RegionID.ValueString(),
-			SfsUID:   state.ID.ValueString(),
-		}
-		resp, err := c.meta.Apis.SdkSfsApi.SfsSfsSetReadWriteSfsApi.Do(ctx, c.meta.SdkCredential, params)
-		if err != nil {
-			return err
-		} else if resp == nil {
-			return fmt.Errorf("设置id为%s的弹性文件服务为读写实例失败，接口返回nil。请联系研发确认问题原因。", state.ID.ValueString())
-		} else if resp.StatusCode != common.NormalStatusCode {
-			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
-		}
-	}
-
-	// 确认是否更新成功
-	err := c.rwLoop(ctx, *plan)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (c *ctyunSfs) rwLoop(ctx context.Context, plan CtyunSfsConfig) error {
-	var err error
-	retryer, err := business.NewRetryer(time.Second*10, 60)
-	if err != nil {
-		return err
-	}
-	result := retryer.Start(
-		func(currentTime int) bool {
-			var rwResp *sfs.SfsSfsListReadWriteSfs1Response
-			rwResp, err = c.getSfsRwDetail(ctx, &plan)
-			if err != nil {
-				return false
-			}
-			readOnly := rwResp.ReturnObj.List[0].ReadOnly.Value
-			//if readOnly != fmt.Sprintf("%t", plan.ReadOnly.ValueBool()) {
-			if *readOnly != plan.ReadOnly.ValueBool() {
-				return true
-			}
-			return false
-		})
-	if err != nil {
-		return err
-	}
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，弹性文件系统名称未修改成功！")
-	}
-	return err
-}
-
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
 func (c *ctyunSfs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
@@ -799,7 +694,6 @@ type CtyunSfsConfig struct {
 	ID           types.String `tfsdk:"id"`
 	Status       types.String `tfsdk:"status"`
 	UsedSize     types.Int32  `tfsdk:"used_size"`
-	ReadOnly     types.Bool   `tfsdk:"read_only"`
 	SharePath    types.String `tfsdk:"share_path"`
 	SharePathWin types.String `tfsdk:"share_path_windows"`
 }
