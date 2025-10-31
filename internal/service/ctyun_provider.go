@@ -476,6 +476,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		crs.NewCtyunCrsOpensourceImages(),
 		ec2.NewCtyunExpressConnects(),
 		ec2.NewCtyunEcCloudGateways(),
+		ec2.NewCtyunExpressConnectionRoutes(),
+		ec2.NewCtyunExpressConnectionRegionPeers(),
+		ec2.NewCtyunExpressConnectionVpcInstances(),
 	)
 }
 
@@ -620,6 +623,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ec2.NewCtyunExpressConnect(),
 		ec2.NewCtyunEcCloudGateway(),
 		ec2.NewCtyunEcPacket(),
+		ec2.NewCtyunExpressConnectRoute(),
+		ec2.NewCtyunExpressConnectRegionPeer(),
+		ec2.NewCtyunExpressConnectVpcInstance(),
 	)
 }
 

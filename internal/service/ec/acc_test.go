@@ -10,6 +10,9 @@ import (
 const dependenceDir = "testdata/dependence"
 
 type Dependence struct {
+	vpcID     string
+	subnetID  string
+	subnetID2 string
 	expressConnectID string
 	cloudGatewayId   string
 }
@@ -18,6 +21,9 @@ var dependence Dependence
 
 func TestMain(m *testing.M) {
 	// 初始化依赖资源
+	if skip := os.Getenv("SKIP_PGSQL_TEST"); skip != "" {
+		return
+	}
 	fmt.Println("开始初始化依赖资源")
 	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {
@@ -25,10 +31,15 @@ func TestMain(m *testing.M) {
 		terraform.DestroyResource(dependenceDir)
 		os.Exit(1)
 	}
+
 	dependence = Dependence{
 		expressConnectID: outputs["ctyun_express_connect_id"].Value,
 		cloudGatewayId:   outputs["ctyun_ec_cloud_gateway_id"].Value,
+		vpcID:     outputs["vpc_id"].Value,
+		subnetID:  outputs["subnet_id"].Value,
+		subnetID2: outputs["subnet_id2"].Value,
 	}
+
 	fmt.Println("依赖资源初始化完毕")
 
 	// 执行测试用例

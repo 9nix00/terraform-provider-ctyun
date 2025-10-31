@@ -63,6 +63,10 @@ type Apis struct {
 	EcEcCgwBillRefundApi *EcEcCgwBillRefundApi
 	// 按需订单查询API
 	EcEcTgwOrderQueryApi *EcEcTgwOrderQueryApi
+	EcCreateRegionPeerApi                    *EcCreateRegionPeerApi
+	EcDeleteRegionPeerApi                    *EcDeleteRegionPeerApi
+	EcRegionPeerListApi                      *EcRegionPeerListApi
+	EcRegionPeerUpdateApi                    *EcRegionPeerUpdateApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -127,5 +131,9 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcCgwBillRefundApi: NewEcEcCgwBillRefundApi(client),
 		// 注册按需订单查询API
 		EcEcTgwOrderQueryApi: NewEcEcTgwOrderQueryApi(client),
+		EcCreateRegionPeerApi:                    NewEcCreateRegionPeerApi(client),
+		EcDeleteRegionPeerApi:                    NewEcDeleteRegionPeerApi(client),
+		EcRegionPeerListApi:                      NewEcRegionPeerListApi(client),
+		EcRegionPeerUpdateApi:                    NewEcRegionPeerUpdateApi(client),
 	}
 }
