@@ -58,6 +58,10 @@ type Apis struct {
 	EcEcBindSDWANApi                         *EcEcBindSDWANApi
 	EcEcListCloudHighSubnetApi               *EcEcListCloudHighSubnetApi
 	EcEcQueryRemainQuotaApi                  *EcEcQueryRemainQuotaApi
+	EcCreateRegionPeerApi                    *EcCreateRegionPeerApi
+	EcDeleteRegionPeerApi                    *EcDeleteRegionPeerApi
+	EcRegionPeerListApi                      *EcRegionPeerListApi
+	EcRegionPeerUpdateApi                    *EcRegionPeerUpdateApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -117,5 +121,9 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcBindSDWANApi:                         NewEcEcBindSDWANApi(client),
 		EcEcListCloudHighSubnetApi:               NewEcEcListCloudHighSubnetApi(client),
 		EcEcQueryRemainQuotaApi:                  NewEcEcQueryRemainQuotaApi(client),
+		EcCreateRegionPeerApi:                    NewEcCreateRegionPeerApi(client),
+		EcDeleteRegionPeerApi:                    NewEcDeleteRegionPeerApi(client),
+		EcRegionPeerListApi:                      NewEcRegionPeerListApi(client),
+		EcRegionPeerUpdateApi:                    NewEcRegionPeerUpdateApi(client),
 	}
 }
