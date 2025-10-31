@@ -6,13 +6,12 @@ terraform {
   }
 }
 
-# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
 
-resource "ctyun_express_connect" "express_connect_dependence" {
+resource "ctyun_express_connect" "example" {
   name        = "express_connect_dependence"
-  description = "云间高速开发测试专用"
+  description = "云间高速example专用"
 
 }

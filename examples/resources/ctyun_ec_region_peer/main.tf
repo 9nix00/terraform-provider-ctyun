@@ -1,20 +1,31 @@
 
+terraform {
+  required_providers {
+    ctyun = {
+      source = "ctyun-it/ctyun"
+    }
+  }
+}
+
+provider "ctyun" {
+  env = "prod"
+}
 
 resource "ctyun_express_connect" "express_connect_dependence" {
   name        = "express_connect_dependence"
-  description = "云间高速开发测试专用"
+  description = "云间高速example专用"
 
 }
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_dependence" {
   ec_id       = ctyun_express_connect.express_connect_dependence.id
   name        = "cloud_gateway_dependence"
-  description = "云间高速开发测试专用"
+  description = "云间高速example专用"
 }
 
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_huhehaote3" {
   ec_id       = ctyun_express_connect.express_connect_dependence.id
   name        = "cloud_gateway_xinan1"
-  description = "云间高速开发测试专用"
+  description = "云间高速example专用"
   region_id   = "200000003573"
   region_name = "cn-nm-het3-1a-public-ctcloud"
 }
@@ -22,7 +33,7 @@ resource "ctyun_ec_cloud_gateway" "cloud_gateway_huhehaote3" {
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_wulumuqi7" {
   ec_id       = ctyun_express_connect.express_connect_dependence.id
   name        = "cloud_gateway_hgh7"
-  description = "云间高速开发测试专用"
+  description = "云间高速example专用"
   region_id   = "200000004098"
   region_name = "cn-xj-urc7-1a-public-ctcloud"
 }

@@ -6,20 +6,19 @@ terraform {
   }
 }
 
-# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
 }
 
 resource "ctyun_express_connect" "express_connect_example" {
   name        = "express_connect_example"
-  description = "云间高速examples专用"
+  description = "云间高速example专用"
 
 }
 resource "ctyun_ec_cloud_gateway" "cloud_gateway_example" {
   ec_id       = ctyun_express_connect.express_connect_example.id
   name        = "cloud_gateway_example"
-  description = "云间高速examples专用"
+  description = "云间高速example专用"
 }
 
 resource "ctyun_vpc" "vpc_test_for_instance" {
@@ -64,6 +63,6 @@ resource "ctyun_ec_route" "example" {
   description         = "examples"
   is_black_hole_route = false
   next_hop_type       = "vpc"
-  next_hop_id         = ctyun_express_connect_vpc_instance.instance_test.id
+  next_hop_id         = ctyun_ec_vpc_instance.instance_test.id
 }
 
