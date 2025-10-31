@@ -50,9 +50,16 @@ func (a *EcEcUpdateVPCNetworkApi) Do(ctx context.Context, credential core.Creden
 }
 
 type EcEcUpdateVPCNetworkRequest struct {
-	EcID    string `json:"ecID"`    /*  云间高速实例ID  */
-	VpcID   string `json:"vpcID"`   /*  vpc ID  */
-	Subnets string `json:"subnets"` /*  subnet列表  */
+	EcID    string                                `json:"ecID"`    /*  云间高速实例ID  */
+	VpcID   string                                `json:"vpcID"`   /*  vpc ID  */
+	Subnets []*EcEcUpdateVPCNetworkSubnetsRequest `json:"subnets"` /*  subnet列表  */
+}
+
+type EcEcUpdateVPCNetworkSubnetsRequest struct {
+	SubnetID   string `json:"subnetID"`   /*  子网ID, 填写错误会导致异步加载失败，导致回滚  */
+	IPVersion  string `json:"IPVersion"`  /*  子网类型<br/>取值范围:<br/>"IPV4":IPv4类型<br/>"IPV6":IPv6类型  */
+	CIDR       string `json:"CIDR"`       /*  子网CIDR  */
+	SubnetName string `json:"subnetName"` /*  子网名称  */
 }
 
 type EcEcUpdateVPCNetworkResponse struct {

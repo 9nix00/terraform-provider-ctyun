@@ -50,14 +50,17 @@ func (a *EcEcOrderPacketNewApi) Do(ctx context.Context, credential core.Credenti
 }
 
 type EcEcOrderPacketNewRequest struct {
-	ClientToken *string `json:"clientToken,omitempty"` /*  客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一  */
-	RegionID    string  `json:"regionID"`              /*  资源池ID  */
-	PacketName  string  `json:"packetName"`            /*  带宽包名字  */
-	EcID        string  `json:"ecID"`                  /*  云间高速ID  */
-	Bandwidth   int32   `json:"bandwidth"`             /*  带宽，单位MB  */
-	OnDemand    bool    `json:"onDemand"`              /*  布尔类型，是否按需下单。默认为false  */
-	CycleType   string  `json:"cycleType"`             /*  包周期类型,当onDemand为False时，必须指定<br/>取值如下：<br/>'YEAR': 包年<br/>'MONTH':包月  */
-	CycleCount  int32   `json:"cycleCount"`            /*  包周期数。onDemand为False时必须指定。周期最大长度不能超过36个月  */
+	ClientToken     *string `json:"clientToken,omitempty"` /*  客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一  */
+	RegionID        string  `json:"regionID"`              /*  资源池ID  */
+	PacketName      string  `json:"packetName"`            /*  带宽包名字  */
+	EcID            string  `json:"ecID"`                  /*  云间高速ID  */
+	Bandwidth       int32   `json:"bandwidth"`             /*  带宽，单位MB  */
+	OnDemand        bool    `json:"onDemand"`              /*  布尔类型，是否按需下单。默认为false  */
+	CycleType       string  `json:"cycleType"`             /*  包周期类型,当onDemand为False时，必须指定<br/>取值如下：<br/>'YEAR': 包年<br/>'MONTH':包月  */
+	CycleCount      int32   `json:"cycleCount"`            /*  包周期数。onDemand为False时必须指定。周期最大长度不能超过36个月  */
+	AreaA           *string `json:"areaA"`                 /*  区域A类型，取值如下：<br/>"china": 中国大陆,<br/>"APAC":亚太<br/>默认china   */
+	AreaB           *string `json:"areaB"`                 /*  区域B类型，取值如下：<br/>"china": 中国大陆,<br/>"APAC":亚太<br/>默认china  */
+	PayVoucherPrice *string `json:"payVoucherPrice"`       /*  代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）  */
 }
 
 type EcEcOrderPacketNewResponse struct {
@@ -84,10 +87,10 @@ type EcEcOrderPacketNewDetailsResponse struct{}
 type EcEcOrderPacketNewReturnObjResourcesResponse struct {
 	ResourceID       *string `json:"resourceID"`       /*  单项资源的变配、续订、退订等需要该资源项的ID  */
 	OrderID          *string `json:"orderID"`          /*  订单ID  */
-	StartTime        *int32  `json:"startTime"`        /*  启动时刻，epoch时戳，毫秒精度  */
-	ExpireTime       *int32  `json:"expireTime"`       /*  过期时刻，epoch时戳，毫秒精度  */
-	CreateTime       *int32  `json:"createTime"`       /*  创建时刻，epoch时戳，毫秒精度  */
-	UpdateTime       *int32  `json:"updateTime"`       /*  更新时刻，epoch时戳，毫秒精度  */
+	StartTime        *int64  `json:"startTime"`        /*  启动时刻，epoch时戳，毫秒精度  */
+	ExpireTime       *int64  `json:"expireTime"`       /*  过期时刻，epoch时戳，毫秒精度  */
+	CreateTime       *int64  `json:"createTime"`       /*  创建时刻，epoch时戳，毫秒精度  */
+	UpdateTime       *int64  `json:"updateTime"`       /*  更新时刻，epoch时戳，毫秒精度  */
 	Status           *int32  `json:"status"`           /*  资源状态。参考masterResourceStatus  */
 	IsMaster         *bool   `json:"isMaster"`         /*  布尔类型，是否是主资源项  */
 	ItemValue        *int32  `json:"itemValue"`        /*  资源规格，带宽包大小，单位MB  */

@@ -58,6 +58,15 @@ type Apis struct {
 	EcEcBindSDWANApi                         *EcEcBindSDWANApi
 	EcEcListCloudHighSubnetApi               *EcEcListCloudHighSubnetApi
 	EcEcQueryRemainQuotaApi                  *EcEcQueryRemainQuotaApi
+	// 新增云网关计费API
+	EcEcCgwBillNewApi    *EcEcCgwBillNewApi
+	EcEcCgwBillRefundApi *EcEcCgwBillRefundApi
+	// 按需订单查询API
+	EcEcTgwOrderQueryApi *EcEcTgwOrderQueryApi
+	EcCreateRegionPeerApi                    *EcCreateRegionPeerApi
+	EcDeleteRegionPeerApi                    *EcDeleteRegionPeerApi
+	EcRegionPeerListApi                      *EcRegionPeerListApi
+	EcRegionPeerUpdateApi                    *EcRegionPeerUpdateApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -117,5 +126,14 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcBindSDWANApi:                         NewEcEcBindSDWANApi(client),
 		EcEcListCloudHighSubnetApi:               NewEcEcListCloudHighSubnetApi(client),
 		EcEcQueryRemainQuotaApi:                  NewEcEcQueryRemainQuotaApi(client),
+		// 注册云网关计费API
+		EcEcCgwBillNewApi:    NewEcEcCgwBillNewApi(client),
+		EcEcCgwBillRefundApi: NewEcEcCgwBillRefundApi(client),
+		// 注册按需订单查询API
+		EcEcTgwOrderQueryApi: NewEcEcTgwOrderQueryApi(client),
+		EcCreateRegionPeerApi:                    NewEcCreateRegionPeerApi(client),
+		EcDeleteRegionPeerApi:                    NewEcDeleteRegionPeerApi(client),
+		EcRegionPeerListApi:                      NewEcRegionPeerListApi(client),
+		EcRegionPeerUpdateApi:                    NewEcRegionPeerUpdateApi(client),
 	}
 }
