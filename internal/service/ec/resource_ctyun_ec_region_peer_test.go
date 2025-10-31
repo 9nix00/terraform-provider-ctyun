@@ -20,10 +20,10 @@ func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
 	datasourceName := "data.ctyun_express_connect_region_peers." + dnd
 
 	// 从环境变量获取测试依赖资源
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	srcCgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	dstCgwID := "b362f841-3ea9-4528-95c5-d9ca8931cd08"
-	packetID := "af212216-61af-42bd-a869-0c5136ed89b8"
+	ecID := dependence.expressConnectID
+	srcCgwID := dependence.cgwID1
+	dstCgwID := dependence.cgwID2
+	packetID := dependence.packetID
 
 	// 测试数据
 	peerName := "test-region-peer-" + rnd
@@ -127,13 +127,13 @@ func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
 	resourceFile := "resource_ctyun_ec_region_peer.tf"
 
 	// 从环境变量获取测试依赖资源
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	srcCgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	dstCgwID := "b362f841-3ea9-4528-95c5-d9ca8931cd08"
-	packetID := "af212216-61af-42bd-a869-0c5136ed89b8"
+	ecID := dependence.expressConnectID
+	srcCgwID := dependence.cgwID1
+	dstCgwID := dependence.cgwID2
+	packetID := dependence.packetID
 
 	// 测试不同的带宽值
-	rates := []int32{1, 2, 10}
+	rates := []int32{1, 2, 5}
 
 	for _, rate := range rates {
 		t.Run(fmt.Sprintf("Rate_%dMbps", rate), func(t *testing.T) {

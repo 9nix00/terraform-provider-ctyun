@@ -270,6 +270,8 @@ func (c *CtyunExpressConnectVpcInstance) Delete(ctx context.Context, request res
 }
 
 func (c *CtyunExpressConnectVpcInstance) create(ctx context.Context, config *CtyunExpressConnectVpcInstanceConfig) error {
+
+	// todo cgw 和vpc和subnet建议做个判断兜底
 	params := &ec.EcEcAddVPCNetworkRequest{
 		EcID:       config.EcID.ValueString(),
 		CgwID:      config.CgwID.ValueString(),
@@ -600,7 +602,7 @@ func (c *CtyunExpressConnectVpcInstance) updateLoop(ctx context.Context, config 
 			for _, instance := range vpcInstances {
 				if *instance.VpcID == config.VpcID.ValueString() && *instance.EcID == config.EcID.ValueString() && *instance.CgwID == config.CgwID.ValueString() {
 					{
-						if len(vpcInstances[0].SubnetList) == subnetNum {
+						if len(instance.SubnetList) == subnetNum {
 							return false
 						}
 					}

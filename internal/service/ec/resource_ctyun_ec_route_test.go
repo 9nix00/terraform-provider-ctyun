@@ -16,12 +16,12 @@ func TestAccCtyunExpressConnectRoute(t *testing.T) {
 	resourceFile1 := "resource_ctyun_ec_route_blackhole.tf"
 
 	// 从环境变量获取测试依赖资源
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	cgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	rtbID := "beacf1e4-952a-451b-b7be-4df122b36df8"
+	ecID := dependence.expressConnectID
+	cgwID := dependence.cloudGatewayId
+	rtbID := dependence.rtbID
 	cidr := "192.168.1.3/32"
 	ipVersion := "ipv4"
-	nextHopID := "vpc-obo8cwurdi"
+	nextHopID := dependence.vpcInstanceVpcID
 	nextHopType := "vpc"
 
 	initDescription := "init description for route test"
@@ -93,15 +93,15 @@ func TestAccCtyunExpressConnectRouteIPv6(t *testing.T) {
 	resourceName := "ctyun_express_connect_route." + rnd
 	resourceFile := "resource_ctyun_ec_route.tf"
 
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	cgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	rtbID := "beacf1e4-952a-451b-b7be-4df122b36df8"
-	cidr := "2001:db8::/32"
+	ecID := dependence.expressConnectID
+	cgwID := dependence.cloudGatewayId
+	rtbID := dependence.rtbID
+	cidr := "240e:982:da91:::/88"
 	ipVersion := "ipv6"
 	description := "IPv6 route description"
 	isBlackHole := false
 	nextHopType := "vpc"
-	nextHopID := "vpc-obo8cwurdi"
+	nextHopID := dependence.vpcInstanceVpcID
 
 	resource.Test(t, resource.TestCase{
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
@@ -141,16 +141,16 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ec_routes.tf"
 	datasourceName := "data.ctyun_express_connect_routes." + dnd
 	// 从环境变量获取测试依赖资源
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	cgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	rtbID := "beacf1e4-952a-451b-b7be-4df122b36df8"
+	ecID := dependence.expressConnectID
+	cgwID := dependence.cloudGatewayId
+	rtbID := dependence.rtbID
 
 	// 测试不同的下一跳类型
 	nextHopTypesAndIDMap := map[string]string{
-		"vpc": "vpc-obo8cwurdi",
+		"vpc": dependence.vpcInstanceVpcID,
 		//"cda":   "",
 		//"vpn":   "",
-		//"cross": ""
+		"cross": dependence.regionPeerID,
 	}
 	i := 1
 	for nextHopType, nextHopID := range nextHopTypesAndIDMap {

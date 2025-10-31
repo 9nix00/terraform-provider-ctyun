@@ -19,9 +19,9 @@ func TestAccCtyunExpressConnectVpcInstance(t *testing.T) {
 	datasourceFile := "datasource_ctyun_ec_vpc_instances.tf"
 	datasourceName := "data.ctyun_express_connect_vpc_instances." + dnd
 	// 从环境变量获取测试依赖资源
-	ecID := "49410d6d-fd53-48b3-9f78-cb28da38d7be"
-	cgwID := "85de16c1-12d8-4608-aea1-eae75843af25"
-	rtbID := "beacf1e4-952a-451b-b7be-4df122b36df8"
+	ecID := dependence.expressConnectID
+	cgwID := dependence.cloudGatewayId
+	rtbID := dependence.rtbID
 	vpcID := dependence.vpcID
 	//exclusiveID := os.Getenv("CTYUN_EXCLUSIVE_ID")
 
