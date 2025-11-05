@@ -3,6 +3,12 @@ package business
 import "github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 
 const (
+	AkEnabled  = "1000"
+	AkDisabled = "1001"
+
+	PolicyTypeSystem = "system"
+	PolicyTypeCustom = "custom"
+
 	PolicyRangeRegion = "region"
 	PolicyRangeGlobal = "global"
 
