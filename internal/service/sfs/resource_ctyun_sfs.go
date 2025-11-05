@@ -158,13 +158,15 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "实例部署的az信息。多可用区资源池下，若不填写，将随机分配AZ",
+				Computed:    true,
+				Description: "可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME，4.0资源池必须",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, false),
 			},
 			"vpc_id": schema.StringAttribute{
 				Required:    true,
@@ -365,23 +367,17 @@ func (c *ctyunSfs) createSfs(ctx context.Context, config *CtyunSfsConfig) error 
 		params.CycleType = config.CycleType.ValueString()
 		params.CycleCount = int32(config.CycleCount.ValueInt64())
 	}
-	// 确认是否为多az
 	zones, err2 := c.regionService.GetZonesByRegionID(ctx, config.RegionID.ValueString())
 	if err2 != nil {
 		return err2
 	}
-	isNaz := false
-	if len(zones) > 1 {
-		isNaz = true
+	if len(zones) == 0 {
+		return fmt.Errorf("当前只支持多AZ资源池")
 	}
-	if isNaz {
-		if config.AzName.IsNull() || config.AzName.IsUnknown() {
-			params.AzName = zones[0]
-			//err := fmt.Errorf("当资源池为多AZ，创建sfs需要指定AZ。")
-			//return err
-		} else {
-			params.AzName = config.AzName.ValueString()
-		}
+	if config.AzName.IsNull() || config.AzName.IsUnknown() {
+		params.AzName = zones[0]
+	} else {
+		params.AzName = config.AzName.ValueString()
 	}
 	if !config.IsEncrypt.IsNull() && !config.IsEncrypt.IsUnknown() {
 		params.IsEncrypt = config.IsEncrypt.ValueBoolPointer()
