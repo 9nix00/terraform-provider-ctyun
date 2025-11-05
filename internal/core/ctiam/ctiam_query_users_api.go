@@ -76,9 +76,9 @@ type CtiamQueryUsersReturnObjResultResponse struct {
 	Groups       []*CtiamQueryUsersReturnObjResultGroupsResponse `json:"groups"`       /*  用户组  */
 	Remark       *string                                         `json:"remark"`       /*  描述信息  */
 	UserName     *string                                         `json:"userName"`     /*  用户名  */
-	IsRoot       *string                                         `json:"isRoot"`       /*  是否是主用户（1：主用户，0：子用户）  */
-	CreateDate   *string                                         `json:"createDate"`   /*  创建时间  */
-	Prohibit     *int32                                          `json:"prohibit"`     /*  禁用账号，只针对子账号才能是禁用的状态 是否启用( 0启用 , 1 禁用)  */
+	IsRoot       int32                                           `json:"isRoot"`       /*  是否是主用户（1：主用户，0：子用户）  */
+	CreateDate   int64                                           `json:"createDate"`   /*  创建时间  */
+	Prohibit     int32                                           `json:"prohibit"`     /*  禁用账号，只针对子账号才能是禁用的状态 是否启用( 0启用 , 1 禁用)  */
 	LoginName    *string                                         `json:"loginName"`    /*  登录名  */
 	UserNickName *string                                         `json:"userNickName"` /*  用户自定义登录名前缀  */
 	VirtualEmail *string                                         `json:"virtualEmail"` /*  是否虚拟邮箱，true为虚拟邮箱  */

@@ -51,7 +51,7 @@ func (a *CtiamQueryPolicyApi) Do(ctx context.Context, credential core.Credential
 
 type CtiamQueryPolicyRequest struct {
 	PageNum           int32   `json:"pageNum"`                     /*  页码  */
-	PageSize          string  `json:"pageSize"`                    /*  每页条数  */
+	PageSize          int32   `json:"pageSize"`                    /*  每页条数  */
 	PolicyType        *int32  `json:"policyType,omitempty"`        /*  策略类型（1：系统策略、2：自定义策略）  */
 	PolicyRange       *int32  `json:"policyRange,omitempty"`       /*  策略范围（1：资源池、2：全局）  */
 	PolicyName        *string `json:"policyName,omitempty"`        /*  策略名称  */

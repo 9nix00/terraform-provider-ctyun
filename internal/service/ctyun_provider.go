@@ -482,6 +482,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ec2.NewCtyunExpressConnectionRegionPeers(),
 		ec2.NewCtyunExpressConnectionVpcInstances(),
 		iam.NewCtyunIamUserAks(),
+		iam.NewCtyunIamUsers(),
+		iam.NewCtyunIamPolicies(),
 	)
 }
 

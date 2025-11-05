@@ -5,7 +5,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -29,18 +29,18 @@ func (c *CtyunIamUsers) Schema(_ context.Context, _ datasource.SchemaRequest, re
 	resp.Schema = schema.Schema{
 		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10345725/10355805`,
 		Attributes: map[string]schema.Attribute{
-			"page_size": schema.Int64Attribute{
+			"page_size": schema.Int32Attribute{
 				Required:    true,
 				Description: "每页显示数量",
-				Validators: []validator.Int64{
-					int64validator.Between(1, 1000),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 1000),
 				},
 			},
-			"page_no": schema.Int64Attribute{
+			"page_no": schema.Int32Attribute{
 				Required:    true,
 				Description: "当前页码",
-				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
 				},
 			},
 			"users": schema.SetNestedAttribute{
@@ -56,7 +56,7 @@ func (c *CtyunIamUsers) Schema(_ context.Context, _ datasource.SchemaRequest, re
 							Computed:    true,
 							Description: "用户邮箱",
 						},
-						"account_id": schema.BoolAttribute{
+						"account_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "账户ID",
 						},
@@ -68,13 +68,13 @@ func (c *CtyunIamUsers) Schema(_ context.Context, _ datasource.SchemaRequest, re
 							Computed:    true,
 							Description: "用户名",
 						},
-						"is_root": schema.BoolAttribute{
-							Computed:    true,
-							Description: "是否主用户",
-						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间，为UTC格式",
+						},
+						"is_root": schema.BoolAttribute{
+							Computed:    true,
+							Description: "是否主用户",
 						},
 						"enabled": schema.BoolAttribute{
 							Computed:    true,
@@ -119,26 +119,31 @@ func (c *CtyunIamUsers) Read(ctx context.Context, request datasource.ReadRequest
 	if response.Diagnostics.HasError() {
 		return
 	}
-	aks, err := c.iamService.QueryList(ctx, config.UserID.ValueString())
+	resp, err := c.iamService.QueryUserList(ctx, config.PageNo.ValueInt32(), config.PageSize.ValueInt32())
 	if err != nil {
 		return
 	}
-	var sk string
-	config.List = []CtyunIamUsersModel{}
-	for _, a := range aks {
-		if config.AK.ValueString() == "" || config.AK.ValueString() == utils.SecString(a.AccessKey) {
-			item := CtyunIamUsersModel{
-				AK:         utils.SecStringValue(a.AccessKey),
-				Enabled:    types.BoolValue(map[string]bool{business.Enabled: true, business.Disabled: false}[utils.SecString(a.Status)]),
-				CreateTime: types.StringValue(utils.FromUnixToUTC(a.CreatedTime)),
-			}
-			sk, err = c.iamService.DecryptSK(utils.SecString(a.SecretKey), c.meta.SdkCredential.GetAccessKey())
-			if err != nil {
-				return
-			}
-			item.SK = types.StringValue(sk)
-			config.List = append(config.List, item)
+
+	config.Users = []CtyunIamUsersModel{}
+	for _, user := range resp.Result {
+		item := CtyunIamUsersModel{
+			UserID:     utils.SecStringValue(user.UserId),
+			Email:      utils.SecStringValue(user.LoginEmail),
+			Phone:      utils.SecStringValue(user.MobilePhone),
+			Name:       utils.SecStringValue(user.UserName),
+			AccountID:  utils.SecStringValue(user.AccountId),
+			IsRoot:     types.BoolValue(map[int32]bool{1: true, 0: false}[user.IsRoot]),
+			Enabled:    types.BoolValue(map[int32]bool{0: true, 1: false}[user.Prohibit]),
+			CreateTime: types.StringValue(utils.FromUnixToUTC(user.CreateDate)),
 		}
+		for _, group := range user.Groups {
+			item.Groups = append(item.Groups, CtyunIamUsersGroup{
+				ID:          utils.SecStringValue(group.Id),
+				Name:        utils.SecStringValue(group.GroupName),
+				Description: utils.SecStringValue(group.GroupIntro),
+			})
+		}
+		config.Users = append(config.Users, item)
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
@@ -153,14 +158,26 @@ func (c *CtyunIamUsers) Configure(_ context.Context, req datasource.ConfigureReq
 }
 
 type CtyunIamUsersConfig struct {
-	UserID types.String         `tfsdk:"user_id"`
-	AK     types.String         `tfsdk:"ak"`
-	List   []CtyunIamUsersModel `tfsdk:"list"`
+	PageSize types.Int32          `tfsdk:"page_size"`
+	PageNo   types.Int32          `tfsdk:"page_no"`
+	Users    []CtyunIamUsersModel `tfsdk:"users"`
 }
 
+// CtyunIamUsersModel 对应 Schema 根节点结构
 type CtyunIamUsersModel struct {
-	AK         types.String `tfsdk:"ak"`
-	SK         types.String `tfsdk:"sk"`
-	Enabled    types.Bool   `tfsdk:"enabled"`
-	CreateTime types.String `tfsdk:"create_time"`
+	UserID     types.String         `tfsdk:"user_id"`
+	Email      types.String         `tfsdk:"email"`
+	AccountID  types.String         `tfsdk:"account_id"`
+	Phone      types.String         `tfsdk:"phone"`
+	Name       types.String         `tfsdk:"name"`
+	CreateTime types.String         `tfsdk:"create_time"`
+	IsRoot     types.Bool           `tfsdk:"is_root"`
+	Enabled    types.Bool           `tfsdk:"enabled"`
+	Groups     []CtyunIamUsersGroup `tfsdk:"groups"`
+}
+
+type CtyunIamUsersGroup struct {
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Description types.String `tfsdk:"description"`
 }

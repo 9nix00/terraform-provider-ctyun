@@ -60,11 +60,12 @@ func (c IamService) DecryptSK(secretSK, ak string) (decrypted string, err error)
 	return
 }
 
-func (c IamService) QueryUserList(ctx context.Context, pageSize, pageNumber int32) (aks []*ctiam.CtiamQueryAkReturnObjAccessKeyUserListAccessKeyListResponse, err error) {
+func (c IamService) QueryUserList(ctx context.Context, pageNum, pageSize int32) (users *ctiam.CtiamQueryUsersReturnObjResponse, err error) {
 	params := &ctiam.CtiamQueryUsersRequest{
-		PageNum: pageNumber,
+		PageNum:  pageNum,
+		PageSize: pageSize,
 	}
-	resp, err := c.meta.Apis.SdkCtIamApis.CtiamQueryAkApi.Do(ctx, c.meta.SdkCredential, params)
+	resp, err := c.meta.Apis.SdkCtIamApis.CtiamQueryUsersApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
 	} else if *resp.StatusCode != common.NormalStatusCodeString {
@@ -74,12 +75,6 @@ func (c IamService) QueryUserList(ctx context.Context, pageSize, pageNumber int3
 		err = common.InvalidReturnObjError
 		return
 	}
-	for _, r := range resp.ReturnObj.AccessKeyUserList {
-		if utils.SecString(r.UserId) == userID {
-			aks = r.AccessKeyList
-			return
-		}
-	}
-	err = fmt.Errorf("not found userID %s", userID)
+	users = resp.ReturnObj
 	return
 }

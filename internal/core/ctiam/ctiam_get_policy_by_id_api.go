@@ -56,9 +56,9 @@ type CtiamGetPolicyByIdResponse struct {
 type CtiamGetPolicyByIdReturnObjResponse struct {
 	Id                *string `json:"id"`                /*  策略id  */
 	PolicyName        *string `json:"policyName"`        /*  策略名称  */
-	PolicyType        *int32  `json:"policyType"`        /*  策略类型  */
-	PolicyRange       *int32  `json:"policyRange"`       /*  策略范围  */
+	PolicyType        int32   `json:"policyType"`        /*  策略类型  */
+	PolicyRange       int32   `json:"policyRange"`       /*  策略范围  */
 	PolicyDescription *string `json:"policyDescription"` /*  策略描述  */
 	PolicyContent     *string `json:"policyContent"`     /*  策略内容  */
-	CreateTime        *string `json:"createTime"`        /*  创建时间  */
+	CreateTime        int64   `json:"createTime"`        /*  创建时间  */
 }
