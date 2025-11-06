@@ -11,7 +11,7 @@ import (
 )
 
 func TestAccCtyunAcl(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_acl." + rnd
 	resourceFile := "resource_ctyun_acl.tf"
@@ -93,7 +93,7 @@ func TestAccCtyunAcl(t *testing.T) {
 
 // 测试用例2：创建时禁用ACL
 func TestAccCtyunAclDisabled(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

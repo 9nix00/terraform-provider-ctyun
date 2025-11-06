@@ -67,4 +67,8 @@ type AmqpTransToPrePaidReturnObjResponse struct {
 	Data *AmqpTransToPrePaidReturnObjDataResponse `json:"data"` /*  返回数据。  */
 }
 
-type AmqpTransToPrePaidReturnObjDataResponse struct{}
+type AmqpTransToPrePaidReturnObjDataResponse struct {
+	MasterOrderId   string `json:"masterOrderId"`
+	MasterOrderNo   string `json:"masterOrderNo"`
+	MasterOrderType string `json:"masterOrderType"`
+}
