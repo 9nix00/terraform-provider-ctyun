@@ -721,11 +721,11 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 }
 
 func (c *CtyunMysqlInstance) CreateLoop(ctx context.Context, ListParams *mysql.TeledbGetListRequest, ListHeaders *mysql.TeledbGetListHeaders, loopCount ...int) (err error) {
-
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
+	var successCnt int
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -747,7 +747,11 @@ func (c *CtyunMysqlInstance) CreateLoop(ctx context.Context, ListParams *mysql.T
 			status := resp.ReturnObj.List[0].ProdOrderStatus
 			switch status {
 			case business.MysqlOrderStatusStarted:
-				return false
+				successCnt++
+				if successCnt > 3 {
+					return false
+				}
+				return true
 			case business.MysqlOrderStatusCreating:
 				return true
 			case business.MysqlOrderStatusWaiting:

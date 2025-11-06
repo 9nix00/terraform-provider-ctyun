@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunAclRule(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_acl_rule." + rnd
 	resourceFile := "resource_ctyun_acl_rule.tf"
@@ -160,7 +160,7 @@ func TestAccCtyunAclRule(t *testing.T) {
 
 // 测试用例2: 测试IPv6规则
 func TestAccCtyunAclRuleIPv6(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_acl_rule." + rnd
@@ -229,7 +229,7 @@ func TestAccCtyunAclRuleIPv6(t *testing.T) {
 
 // 测试用例3: 测试不同协议规则
 func TestAccCtyunAclRuleProtocols(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	rnd1 := utils.GenerateRandomString()
 	resourceName := "ctyun_acl_rule." + rnd

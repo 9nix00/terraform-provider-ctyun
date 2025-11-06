@@ -23,7 +23,7 @@ func NewOrderLooper(api *ctecs.EcsOrderQueryUuidApi) *OrderLooper {
 func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credential, masterOrderId string, loopCount ...int) (*LoopOrderResponse, error) {
 	var resp *LoopOrderResponse
 	var respError error
-	c := 60
+	c := 360
 	if len(loopCount) > 0 {
 		c = loopCount[0]
 	}

@@ -39,9 +39,10 @@ var (
 )
 
 type ctyunRabbitmqInstance struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta        *common.CtyunMetadata
+	vpcService  *business.VpcService
+	sgService   *business.SecurityGroupService
+	orderLooper *business.OrderLooper
 }
 
 func NewCtyunRabbitmqInstance() resource.Resource {
@@ -410,6 +411,7 @@ func (c *ctyunRabbitmqInstance) Configure(_ context.Context, request resource.Co
 	c.meta = meta
 	c.vpcService = business.NewVpcService(meta)
 	c.sgService = business.NewSecurityGroupService(meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
@@ -597,6 +599,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -627,6 +630,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -788,6 +792,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -856,6 +861,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -926,6 +932,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 

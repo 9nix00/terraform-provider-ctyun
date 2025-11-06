@@ -25,7 +25,7 @@ func mapListToStr(rules []map[string]string) string {
 }
 
 func TestAccCtyunPrefix(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_prefix_list." + rnd
 	resourceFile := "resource_ctyun_prefix.tf"
@@ -113,7 +113,7 @@ func TestAccCtyunPrefix(t *testing.T) {
 
 // 测试用例2: IPv6前缀列表测试
 func TestAccCtyunPrefixIPv6(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_prefix_list." + rnd
@@ -177,7 +177,7 @@ func TestAccCtyunPrefixIPv6(t *testing.T) {
 
 // 测试用例3: 边界值测试
 func TestAccCtyunPrefixBoundaryValues(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_prefix_list." + rnd
 	resourceFile := "resource_ctyun_prefix.tf"
