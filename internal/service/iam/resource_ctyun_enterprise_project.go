@@ -232,11 +232,16 @@ func (c *ctyunEnterpriseProject) getAndMergeEnterpriseProject(ctx context.Contex
 
 // changeStatus 改变状态
 func (c *ctyunEnterpriseProject) changeStatus(ctx context.Context, projectId string, statusTo string) error {
-	//status, err := business.EnterpriseProjectStatusMap.FromOriginalScene(statusTo, business.EnterpriseProjectSceneRequest)
-	//if err != nil {
-	//	return err
-	//}
+	// 停用
 	_, err := c.meta.Apis.CtIamApis.EnterpriseProjectStatusUpdateApi.Do(ctx, c.meta.Credential, &ctiam.EnterpriseProjectStatusUpdateRequest{
+		ProjectId: projectId,
+		Status:    2,
+	})
+	if err != nil {
+		return err
+	}
+	// 删除
+	_, err = c.meta.Apis.CtIamApis.EnterpriseProjectStatusUpdateApi.Do(ctx, c.meta.Credential, &ctiam.EnterpriseProjectStatusUpdateRequest{
 		ProjectId: projectId,
 		Status:    3,
 	})

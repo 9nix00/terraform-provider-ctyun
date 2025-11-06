@@ -56,12 +56,12 @@ func (c *CtyunIamPolicies) Schema(_ context.Context, _ datasource.SchemaRequest,
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"policies": schema.SetNestedAttribute{
+			"policies": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "策略列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"policy_id": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "策略ID",
 						},
@@ -195,7 +195,7 @@ type CtyunIamPoliciesConfig struct {
 }
 
 type CtyunIamPoliciesModel struct {
-	PolicyID    types.String `tfsdk:"policy_id"`
+	PolicyID    types.String `tfsdk:"id"`
 	Name        types.String `tfsdk:"name"`        /*  策略名称  */
 	Type        types.String `tfsdk:"type"`        /*  策略类型  */
 	Range       types.String `tfsdk:"range"`       /*  策略范围  */

@@ -43,7 +43,7 @@ func (c *CtyunIamUsers) Schema(_ context.Context, _ datasource.SchemaRequest, re
 					int32validator.AtLeast(1),
 				},
 			},
-			"users": schema.SetNestedAttribute{
+			"users": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "用户列表",
 				NestedObject: schema.NestedAttributeObject{
