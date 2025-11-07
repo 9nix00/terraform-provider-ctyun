@@ -28,7 +28,6 @@ func TestAccCtyunSfs(t *testing.T) {
 
 	updatedSfsSize := 550
 	updatedName := name + "new"
-	readOnly := true
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -50,23 +49,21 @@ func TestAccCtyunSfs(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "sfs_type", sfsType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceName, "read_only", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
 				),
 			},
 			// 2. 资源更新测试（名称/大小/只读）
 			{
-				Config: utils.LoadTestCase(resourceFile1, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID, readOnly),
+				Config: utils.LoadTestCase(resourceFile1, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "read_only", "true"),
 				),
 			},
 			// 3. 资源导入测试
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID, readOnly),
+				Config:  utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID),
 				Destroy: true,
 			},
 		},
@@ -102,12 +99,10 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 	sfsSize := 500
 	cycleType := "month"
 	cycleCount := 1
-	//readOnly := true
 
 	// 更新参数
 	updatedSfsSize := 550
 	updatedName := name + "-updated"
-	//updatedReadOnly := false
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -132,7 +127,6 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "is_encrypt", "false"), // 验证加密
-					resource.TestCheckResourceAttr(resourceName, "read_only", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
 				),
 			},
@@ -145,7 +139,6 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "read_only", "false"),
 					// 保持加密设置不变
 					resource.TestCheckResourceAttr(resourceName, "is_encrypt", "false"),
 				),

@@ -7,7 +7,7 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cluster_domain = "www.ctyun.com"
     network_plugin = "cubecni"
     pod_subnet_id_list = ["%[5]s"]
-    start_port = 20106
+    start_port = 30001
     end_port   = 32767
     elb_prod_code = "standardI"
     cycle_type  = "on_demand"
