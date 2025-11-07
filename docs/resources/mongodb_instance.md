@@ -1,5 +1,5 @@
 # ctyun_mongodb_instance (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
+**详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535**
 
 
 
@@ -89,6 +89,7 @@ variable "password" {
 - `is_upgrade_back_up` (Boolean) 磁盘扩容时候会使用,是否主磁盘与备磁盘一起扩容，支持更新。该参数仅在升配主存储空间时生效，且需要注意is_upgrade_back_up=ture时，待升配的磁盘空间必须大于现磁盘空间（包括备份空间）。取值范围：true-主备同时扩容； false-主备不同时扩容。默认为false
 - `mongos_num` (Number) mongos节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
+- `read_only_count` (Number) 从节点数量
 - `read_port` (Number) 读端口,支持更新。若需要更新读取端口时可填，取值范围：1~65535
 - `region_id` (String) 区域id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 - `shard_num` (Number) shard节点数量，mongodb为集群版需填写，支持更新。默认为2，取值范围：2~32

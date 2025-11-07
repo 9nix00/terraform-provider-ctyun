@@ -26,7 +26,6 @@ resource "ctyun_subnet" "subnet_test" {
   dns = [
     "114.114.114.114",
     "8.8.8.8",
-    "8.8.4.4"
   ]
 }
 resource "ctyun_security_group" "sg_mysql_test" {

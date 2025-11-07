@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"time"
 )
 
 func NewCtyunEipAssociation() resource.Resource {
@@ -28,6 +29,7 @@ type ctyunEipAssociation struct {
 	meta       *common.CtyunMetadata
 	eipService *business.EipService
 	ecsService *business.EcsService
+	ebmService *business.EbmService
 }
 
 func (c *ctyunEipAssociation) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -56,7 +58,7 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 			"association_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "绑定的实例类型：ECS云主机：vm，目前仅支持云主机vm，后续会补充更多可选项",
+				Description: "绑定的实例类型：云主机：vm，物理机：bm",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.EipAssociationTypes...),
 				},
@@ -72,7 +74,7 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"project_id": schema.StringAttribute{
@@ -120,7 +122,7 @@ func (c *ctyunEipAssociation) Create(ctx context.Context, request resource.Creat
 	// 校验目标绑定对象存在
 	switch plan.AssociationType.ValueString() {
 	case business.EipAssociationTypeVm:
-		err := c.ecsService.MustExist(ctx, plan.InstanceId.ValueString(), plan.RegionId.ValueString())
+		err = c.ecsService.MustExist(ctx, plan.InstanceId.ValueString(), plan.RegionId.ValueString())
 		if err != nil {
 			response.Diagnostics.AddError(err.Error(), err.Error())
 			return
@@ -147,7 +149,7 @@ func (c *ctyunEipAssociation) Create(ctx context.Context, request resource.Creat
 		response.Diagnostics.AddError(err2.Error(), err2.Error())
 		return
 	}
-
+	time.Sleep(10 * time.Second)
 	plan.RegionId = types.StringValue(regionId)
 	plan.ProjectId = types.StringValue(projectId)
 	instance, ctyunRequestError := c.getAndMergeEipAssociation(ctx, plan)
@@ -232,6 +234,7 @@ func (c *ctyunEipAssociation) Configure(_ context.Context, request resource.Conf
 	c.meta = meta
 	c.eipService = business.NewEipService(meta)
 	c.ecsService = business.NewEcsService(meta)
+	c.ebmService = business.NewEbmService(meta)
 }
 
 // getAndMergeEipAssociation 查询eip绑定关系

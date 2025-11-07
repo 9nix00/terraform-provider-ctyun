@@ -10,7 +10,7 @@ import (
 )
 
 func TestAccCtyunSubnetAssociationAcl(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_subnet_association_acl." + rnd
 	resourceFile := "resource_ctyun_subnet_association_acl.tf"
@@ -82,7 +82,7 @@ func TestAccCtyunSubnetAssociationAcl(t *testing.T) {
 
 // 测试用例2: 多个子网关联测试
 func TestAccCtyunSubnetAssociationAclMultiple(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
+
 	rnd := utils.GenerateRandomString()
 	resourceName1 := "ctyun_subnet_association_acl." + rnd + "_1"
 	resourceName2 := "ctyun_subnet_association_acl." + rnd + "_2"

@@ -64,7 +64,7 @@ locals {
 }
 
 resource "ctyun_security_group" "security_group_test1" {
-  count = local.data_vpc_id=="" ? 1 : 0
+  count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
@@ -73,8 +73,9 @@ resource "ctyun_security_group" "security_group_test1" {
   }
 }
 resource "ctyun_security_group" "security_group_test2" {
+  count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-sg-for-pgsql"
+  name        = "tf-sg-for-paas2"
   description = "terraform测试使用2"
   lifecycle {
     prevent_destroy = false
@@ -83,7 +84,7 @@ resource "ctyun_security_group" "security_group_test2" {
 
 locals {
   real_security_group_id1 = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test1[0].id, "") : local.data_security_group_id
-  real_security_group_id2 = ctyun_security_group.security_group_test2.id
+  real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id2
 }
 
 resource "ctyun_eip" "eip_test" {

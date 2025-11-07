@@ -36,7 +36,6 @@ func (this *PgsqlUpdateAccountRemarkApi) Do(ctx context.Context, credential ctyu
 		return
 	}
 	builder.AddHeader("regionId", header.RegionID)
-	builder.AddParam("description", *req.Description)
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {
 		return

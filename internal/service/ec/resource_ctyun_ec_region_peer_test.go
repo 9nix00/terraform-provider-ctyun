@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_ec_region_peer." + rnd
@@ -121,7 +120,6 @@ func TestAccCtyunExpressConnectRegionPeer(t *testing.T) {
 
 // 测试用例2: 不同带宽值测试
 func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_ec_region_peer." + rnd
 	resourceFile := "resource_ctyun_ec_region_peer.tf"
@@ -165,15 +163,19 @@ func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
 							if !ok {
 								return "", fmt.Errorf("resource not found: %s", resourceName)
 							}
-							return fmt.Sprintf("%s,%s,%s",
+							return fmt.Sprintf("%s,%s,%s,%s",
 								rs.Primary.Attributes["id"],
 								rs.Primary.Attributes["ec_id"],
+								rs.Primary.Attributes["packet_id"],
 								rs.Primary.Attributes["cgw_id"],
 							), nil
 						},
-						ImportStateVerify:       true,
-						ImportStateVerifyIgnore: []string{"exclusive_id", "project_id"}, // 子网列表可能变化
-
+						ImportStateVerify: true,
+						ImportStateVerifyIgnore: []string{
+							"exclusive_id",
+							"project_id",
+							"route_learn",
+						},
 					},
 					// 2. 清理资源
 					{

@@ -56,6 +56,9 @@ func (c *ctyunEnterpriseProjectAssociationUserGroup) Schema(_ context.Context, _
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"policy_ids": schema.SetAttribute{
 				Optional:    true,
