@@ -18,7 +18,7 @@ func TestAccCtyunMysqlNoAzInfoInstance(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name1 := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	updateProdID := "Master2Slave57"
@@ -85,7 +85,7 @@ func TestAccCtyunMysqlNoAzInfoInstance1(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -165,7 +165,7 @@ func TestAccCtyunMysqlNoAzInfoInstance2(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 
 	name2 := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()

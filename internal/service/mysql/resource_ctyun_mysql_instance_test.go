@@ -16,7 +16,7 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -67,7 +67,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -177,7 +177,7 @@ func TestAccCtyunMysqlInstanceMonth(t *testing.T) {
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	cycleCount := "cycle_count=1"
