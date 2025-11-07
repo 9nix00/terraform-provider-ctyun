@@ -106,7 +106,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   flavor_name           = "c7.large.2"
   prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
-  security_group_id     = [local.real_security_group_id]
+  security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
   storage_type          = "SATA"
   storage_space         = 100

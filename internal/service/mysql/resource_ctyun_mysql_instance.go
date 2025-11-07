@@ -11,7 +11,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -21,7 +20,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -154,16 +152,14 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					validator2.SubnetValidate(),
 				},
 			},
-			"security_group_id": schema.SetAttribute{
+			"security_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "安全组Id",
-				ElementType: types.StringType,
-				PlanModifiers: []planmodifier.Set{
-					setplanmodifier.RequiresReplace(),
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
-				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.ValueStringsAre(validator2.SecurityGroupValidate()),
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -538,13 +534,8 @@ func (c *CtyunMysqlInstance) createMysqlInstance(ctx context.Context, config *Ct
 		CpuType:     business.MysqlCpuTypeDict[config.cpuType],
 		OsType:      business.MysqlOSTypeDict[config.osType],
 	}
-	var securityGroupIds []string
-	diags := config.SecurityGroupID.ElementsAs(ctx, &securityGroupIds, true)
-	if diags.HasError() {
-		err = fmt.Errorf(diags[0].Detail())
-		return err
-	}
-	params.SecurityGroupId = securityGroupIds[0]
+
+	params.SecurityGroupId = config.SecurityGroupID.ValueString()
 
 	if !config.Password.IsNull() && !config.Password.IsUnknown() {
 		password := business.Encode(config.Password.ValueString())
@@ -1873,24 +1864,13 @@ func (c *CtyunMysqlInstance) encodeBase64(password string) string {
 	return encodedPassword
 }
 
-func (c *CtyunMysqlInstance) addSecurityGroups(ctx context.Context, config *CtyunMysqlInstanceConfig, addSgList []string) error {
-	if addSgList == nil || len(addSgList) == 0 {
-		diags := config.SecurityGroupID.ElementsAs(ctx, &addSgList, true)
-		if diags.HasError() {
-			err := fmt.Errorf(diags[0].Detail())
-			return err
-		}
-	}
-	return nil
-}
-
 type CtyunMysqlInstanceConfig struct {
 	CycleType                   types.String `tfsdk:"cycle_type"`                     // 计费模式： 支持on_demand和month
 	RegionID                    types.String `tfsdk:"region_id"`                      // 资源池Id
 	VpcID                       types.String `tfsdk:"vpc_id"`                         // 虚拟私有云Id
 	FlavorName                  types.String `tfsdk:"flavor_name"`                    // 规格名称
 	SubnetID                    types.String `tfsdk:"subnet_id"`                      // 子网Id
-	SecurityGroupID             types.Set    `tfsdk:"security_group_id"`              // 安全组
+	SecurityGroupID             types.String `tfsdk:"security_group_id"`              // 安全组
 	Name                        types.String `tfsdk:"name"`                           // 集群名称
 	Password                    types.String `tfsdk:"password"`                       // 管理员密码（RSA公钥加密）
 	CycleCount                  types.Int32  `tfsdk:"cycle_count"`                    // 购买时长：单位月（范围：1-12，24，36）
