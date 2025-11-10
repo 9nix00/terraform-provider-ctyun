@@ -76,6 +76,16 @@ resource "ctyun_ecs" "ecs_test" {
   is_destroy_instance = false
 }
 
+
+resource "ctyun_ebs" "ebs_test" {
+  count      = 2
+  name       = "ecs-data-volume${count.index+1}"
+  mode       = "vbd"
+  type       = "sata"
+  size       = 60
+  cycle_type = "on_demand"
+}
+
 variable "password" {
   type      = string
   sensitive = true
