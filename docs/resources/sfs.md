@@ -64,7 +64,7 @@ resource "ctyun_sfs" "sfs_test" {
 
 ### Optional
 
-- `az_name` (String) 实例部署的az信息。多可用区资源池下，若不填写，将随机分配AZ
+- `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME，4.0资源池必须
 - `cycle_count` (Number) 包周期数，cycle_type是year或month时必须指定，周期最大长度不能超过3年
 - `is_encrypt` (Boolean) 是否加密盘，默认false，支持更新。目前仅少量资源池支持加密。具体可查看产品能力地图：https://www.ctyun.cn/document/10027350/10693922
 - `kms_uuid` (String) 如果是加密盘，需要提供kms的uuid，支持更新
