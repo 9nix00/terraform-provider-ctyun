@@ -73,7 +73,7 @@ func (c *ctyunIamUser) Schema(_ context.Context, _ resource.SchemaRequest, respo
 			},
 			"user_group_ids": schema.SetAttribute{
 				Required:    true,
-				Description: "用户组id，用户加入的目标安全组id，创建用户时至少加入一个用户组",
+				Description: "用户组id，用户加入的目标用户组，创建用户时至少加入一个用户组",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),

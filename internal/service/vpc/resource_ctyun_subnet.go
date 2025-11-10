@@ -74,10 +74,9 @@ func (c *ctyunSubnet) Schema(_ context.Context, _ resource.SchemaRequest, respon
 			"dns": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Description: "子网dns列表, 最多同时支持4个dns地址，支持更新",
+				Description: "子网dns列表, 最多同时支持2个dns地址，支持更新",
 				Validators: []validator.Set{
-					setvalidator.SizeAtLeast(1),
-					setvalidator.SizeAtMost(4),
+					setvalidator.SizeBetween(1, 2),
 					setvalidator.ValueStringsAre(validator2.Ip()),
 				},
 			},

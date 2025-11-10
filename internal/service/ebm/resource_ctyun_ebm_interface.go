@@ -23,9 +23,9 @@ import (
 )
 
 var (
-	_ resource.Resource                = &ctyunEbm{}
-	_ resource.ResourceWithConfigure   = &ctyunEbm{}
-	_ resource.ResourceWithImportState = &ctyunEbm{}
+	_ resource.Resource                = &ctyunEbmInterface{}
+	_ resource.ResourceWithConfigure   = &ctyunEbmInterface{}
+	_ resource.ResourceWithImportState = &ctyunEbmInterface{}
 )
 
 type ctyunEbmInterface struct {

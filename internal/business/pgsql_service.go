@@ -15,7 +15,7 @@ func NewPgsqlService(meta *common.CtyunMetadata) *PgsqlService {
 	return &PgsqlService{meta: meta}
 }
 
-func (u MysqlService) GetPgsqlFlavorByProdIdAndFlavorName(ctx context.Context, prodID string, flavorName, regionID, series string) (flavor mysql.InstSpecInfo, err error) {
+func (u PgsqlService) GetPgsqlFlavorByProdIdAndFlavorName(ctx context.Context, prodID string, flavorName, regionID, series string) (flavor mysql.InstSpecInfo, err error) {
 	params := &mysql.TeledbMysqlSpecsRequest{
 		ProdType:     "1",
 		ProdCode:     "POSTGRESQL",

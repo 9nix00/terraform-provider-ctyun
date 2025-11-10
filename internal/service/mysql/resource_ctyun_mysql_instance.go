@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
@@ -158,7 +159,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.SecurityGroupValidate(),
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"name": schema.StringAttribute{
@@ -379,7 +380,7 @@ func (c *CtyunMysqlInstance) Create(ctx context.Context, request resource.Create
 		return
 	}
 	// 开始创建
-	err = c.CreateMysqlInstance(ctx, &plan)
+	err = c.createMysqlInstance(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -389,6 +390,9 @@ func (c *CtyunMysqlInstance) Create(ctx context.Context, request resource.Create
 	if err != nil {
 		return
 	}
+
+	// 确认安全组是否都添加完成
+	//err := c.addSecurityGroups(ctx, &plan)
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -444,10 +448,10 @@ func (c *CtyunMysqlInstance) Update(ctx context.Context, request resource.Update
 		return
 	}
 
-	if !plan.Password.Equal(state.Password) {
-		err = fmt.Errorf("数据库密码暂时不支持修改")
-		return
-	}
+	//if !plan.Password.Equal(state.Password) {
+	//	err = fmt.Errorf("数据库密码暂时不支持修改")
+	//	return
+	//}
 
 	// 校验规格
 	err = c.checkSpec(ctx, &plan)
@@ -487,7 +491,7 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	}
 
 	// 确保主机在退订之前是处于running状态
-	err = c.StartedLoop(ctx, &state)
+	err = c.startedLoop(ctx, &state)
 	if err != nil {
 		return
 	}
@@ -513,24 +517,26 @@ func (c *CtyunMysqlInstance) Delete(ctx context.Context, request resource.Delete
 	response.Diagnostics.AddWarning("删除MySql集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
-// CreateMysqlInstance 创建mysql实例
-func (c *CtyunMysqlInstance) CreateMysqlInstance(ctx context.Context, config *CtyunMysqlInstanceConfig) (err error) {
+// createMysqlInstance 创建mysql实例
+func (c *CtyunMysqlInstance) createMysqlInstance(ctx context.Context, config *CtyunMysqlInstanceConfig) (err error) {
 	cycleType := config.CycleType.ValueString()
 	params := &mysql.TeledbCreateRequest{
-		BillMode:        business.MysqlBillMode[cycleType],
-		RegionId:        config.RegionID.ValueString(),
-		ProdVersion:     business.MysqlProdVersionDict[config.ProdID.ValueString()],
-		VpcId:           config.VpcID.ValueString(),
-		HostType:        config.hostType,
-		SubnetId:        config.SubnetID.ValueString(),
-		SecurityGroupId: config.SecurityGroupID.ValueString(),
-		Name:            config.Name.ValueString(),
-		Period:          config.CycleCount.ValueInt32(),
-		Count:           1,
-		ProdId:          business.MysqlProdIdDict[config.ProdID.ValueString()],
-		CpuType:         business.MysqlCpuTypeDict[config.cpuType],
-		OsType:          business.MysqlOSTypeDict[config.osType],
+		BillMode:    business.MysqlBillMode[cycleType],
+		RegionId:    config.RegionID.ValueString(),
+		ProdVersion: business.MysqlProdVersionDict[config.ProdID.ValueString()],
+		VpcId:       config.VpcID.ValueString(),
+		HostType:    config.hostType,
+		SubnetId:    config.SubnetID.ValueString(),
+		Name:        config.Name.ValueString(),
+		Period:      config.CycleCount.ValueInt32(),
+		Count:       1,
+		ProdId:      business.MysqlProdIdDict[config.ProdID.ValueString()],
+		CpuType:     business.MysqlCpuTypeDict[config.cpuType],
+		OsType:      business.MysqlOSTypeDict[config.osType],
 	}
+
+	params.SecurityGroupId = config.SecurityGroupID.ValueString()
+
 	if !config.Password.IsNull() && !config.Password.IsUnknown() {
 		password := business.Encode(config.Password.ValueString())
 		params.Password = password
@@ -688,15 +694,29 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 
 	config.StorageSpace = types.Int32Value(returnOjb.DiskSize)
 	config.BackupStorageSpace = types.Int32Value(returnOjb.BackupDiskSize)
+	// 更新安全组相关信息
+	//securityGroupList := returnOjb.SecurityGroupList
+	//if len(securityGroupList) > 0 {
+	//	var sgIDs []string
+	//	for _, sg := range securityGroupList {
+	//		sgIDs = append(sgIDs, sg.SecurityGroupId)
+	//	}
+	//	securityGroupIDs, diags := types.SetValueFrom(ctx, types.StringType, securityGroupList)
+	//	if diags.HasError() {
+	//		err = fmt.Errorf(diags[0].Detail())
+	//		return err
+	//	}
+	//	config.SecurityGroupID = securityGroupIDs
+	//}
 	return
 }
 
 func (c *CtyunMysqlInstance) CreateLoop(ctx context.Context, ListParams *mysql.TeledbGetListRequest, ListHeaders *mysql.TeledbGetListHeaders, loopCount ...int) (err error) {
-
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
+	var successCnt int
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -718,7 +738,11 @@ func (c *CtyunMysqlInstance) CreateLoop(ctx context.Context, ListParams *mysql.T
 			status := resp.ReturnObj.List[0].ProdOrderStatus
 			switch status {
 			case business.MysqlOrderStatusStarted:
-				return false
+				successCnt++
+				if successCnt > 3 {
+					return false
+				}
+				return true
 			case business.MysqlOrderStatusCreating:
 				return true
 			case business.MysqlOrderStatusWaiting:
@@ -952,8 +976,8 @@ func (c *CtyunMysqlInstance) updateInfoLoop(ctx context.Context, state *CtyunMys
 	return
 }
 
-func (c *CtyunMysqlInstance) StartedLoop(ctx context.Context, state *CtyunMysqlInstanceConfig, loopCount ...int) (err error) {
-	count := 30
+func (c *CtyunMysqlInstance) startedLoop(ctx context.Context, state *CtyunMysqlInstanceConfig, loopCount ...int) (err error) {
+	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
@@ -1192,11 +1216,32 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 			return
 		}
 	}
+	// 修改实例密码
+	if !plan.Password.IsNull() && !plan.Password.Equal(state.Password) {
+		// 更新之前需要确定主机状态必须为started
+		err = c.startedLoop(ctx, state)
+		if err != nil {
+			return
+		}
+		err = c.updateMysqlRootPassword(ctx, state, plan)
+		if err != nil {
+			return
+		}
+		state.Password = plan.Password
+	}
+	//  修改安全组，当前只增不减
+	//if !plan.SecurityGroupID.Equal(state.SecurityGroupID) {
+	//	err = c.startedLoop(ctx, state)
+	//	if err != nil {
+	//		return
+	//	}
+	//	err = c.updateSecurityGroup(ctx, state, plan)
+	//}
 
 	// 修改实例写端口
 	if plan.WritePort.ValueInt32() != 0 && state.WritePort.ValueInt32() != plan.WritePort.ValueInt32() {
 		// 更新之前需要确定主机状态必须为started
-		err = c.StartedLoop(ctx, state)
+		err = c.startedLoop(ctx, state)
 		if err != nil {
 			return
 		}
@@ -1219,6 +1264,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 			return
 		}
 	}
+
 	// 轮询基础信息是否修改成功
 	err = c.updateInfoLoop(ctx, state, plan)
 	if err != nil {
@@ -1313,7 +1359,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 	// 若ProdPerformanceSpec, DiskVolume或者ProdId不为空时候，触发变配
 	if upgradeParams.ProdPerformanceSpec != nil || upgradeParams.ProdId != nil {
 		// 更新之前需要确定主机状态必须为started
-		err = c.StartedLoop(ctx, state)
+		err = c.startedLoop(ctx, state)
 		if err != nil {
 			return
 		}
@@ -1347,7 +1393,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 	// 停止实例
 	if plan.RunningControl.ValueString() == "freeze" {
 		// 进行重启、停止实例时，确保实例处于started状态
-		err = c.StartedLoop(ctx, state)
+		err = c.startedLoop(ctx, state)
 		if err != nil {
 			return
 		}
@@ -1379,7 +1425,7 @@ func (c *CtyunMysqlInstance) updateMysqlInstance(ctx context.Context, state *Cty
 	// 重启实例
 	if plan.RunningControl.ValueString() == "restart" {
 		// 进行重启、关机实例时，确保实例处于started状态
-		err = c.StartedLoop(ctx, state)
+		err = c.startedLoop(ctx, state)
 		if err != nil {
 			return
 		}
@@ -1731,7 +1777,7 @@ func (c *CtyunMysqlInstance) UpgradeStorageLoop(ctx context.Context, state *Ctyu
 }
 
 func (c *CtyunMysqlInstance) upgradeMysqlStorage(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig, upgradeParams *mysql.TeledbUpgradeRequest, upgradeHeader *mysql.TeledbUpgradeRequestHeader) (err error) {
-	err = c.StartedLoop(ctx, state)
+	err = c.startedLoop(ctx, state)
 	if err != nil {
 		return
 	}
@@ -1788,6 +1834,34 @@ func (c *CtyunMysqlInstance) checkSpec(ctx context.Context, plan *CtyunMysqlInst
 	}
 	plan.osType = "ctyunos"
 	return nil
+}
+
+func (c *CtyunMysqlInstance) updateMysqlRootPassword(ctx context.Context, state *CtyunMysqlInstanceConfig, plan *CtyunMysqlInstanceConfig) error {
+	params := &mysql.TeledbResetRootPasswordRequest{
+		OuterProdInstId: state.ID.ValueString(),
+		RootPassword:    c.encodeBase64(plan.Password.ValueString()),
+	}
+	header := &mysql.TeledbResetRootPasswordRequestHeader{
+		InstID:   state.InstID.ValueString(),
+		RegionID: state.RegionID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbResetRootPasswordApi.Do(ctx, c.meta.Credential, params, header)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("修改mysql实例(id=%s)的root密码失败，接口返回nil，请联系研发确认问题原因！", state.InstID.ValueString())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return err
+	}
+	return err
+
+}
+
+func (c *CtyunMysqlInstance) encodeBase64(password string) string {
+	encodedPassword := base64.StdEncoding.EncodeToString([]byte(password))
+	return encodedPassword
 }
 
 type CtyunMysqlInstanceConfig struct {

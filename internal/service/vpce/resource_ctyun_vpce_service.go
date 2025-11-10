@@ -245,7 +245,6 @@ func (c *ctyunVpceService) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
-
 	// 反查信息
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {

@@ -24,7 +24,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 	specsDatasourceFile := "datasource_ctyun_postgresql_specs.tf"
 
 	eipId := dependence.eipID
-	instId := dependence.PgsqlID
+	instId := dependence.pgsqlID
 	//instId := "1bb2c455994c419ca0acadbc436c44c8"
 
 	//prodType := "1"

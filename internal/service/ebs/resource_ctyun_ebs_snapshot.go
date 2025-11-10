@@ -366,6 +366,7 @@ func (c *ctyunEbsSnapshot) delete(ctx context.Context, plan CtyunEbsSnapshotConf
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
 	}
+	time.Sleep(10 * time.Second)
 	return
 }
 

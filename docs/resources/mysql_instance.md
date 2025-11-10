@@ -135,7 +135,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格，支持更新
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）
 - `prod_id` (String) 产品id，支持更新。取值范围：Single57（单实例5.7版本）, Single80（单实例8.0版本）, MasterSlave57（一主一备5.7版本）, MasterSlave80（一主一备8.0版本）, Master2Slave57（一主两备5.7版本）, Master2Slave80（一主两备8.0版本）。在更新时，不支持prod_id（节点）和prod_performance_spec（规格）同时更新。
-- `security_group_id` (String) 安全组Id
+- `security_group_id` (Set of String) 安全组Id
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)，支持更新
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD
 - `subnet_id` (String) 子网Id

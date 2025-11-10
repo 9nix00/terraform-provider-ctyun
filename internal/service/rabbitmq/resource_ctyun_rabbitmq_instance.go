@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	amqp2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/amqp"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -14,7 +15,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -39,9 +39,10 @@ var (
 )
 
 type ctyunRabbitmqInstance struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta        *common.CtyunMetadata
+	vpcService  *business.VpcService
+	sgService   *business.SecurityGroupService
+	orderLooper *business.OrderLooper
 }
 
 func NewCtyunRabbitmqInstance() resource.Resource {
@@ -68,7 +69,12 @@ type CtyunRabbitmqInstanceConfig struct {
 	SubnetID        types.String `tfsdk:"subnet_id"`
 	SecurityGroupID types.String `tfsdk:"security_group_id"`
 	CycleType       types.String `tfsdk:"cycle_type"`
+	ActualCycleType types.String `tfsdk:"actual_cycle_type"`
 	CycleCount      types.Int32  `tfsdk:"cycle_count"`
+	Endpoint        types.String `tfsdk:"endpoint"`
+	SslEndpoint     types.String `tfsdk:"ssl_endpoint"`
+	CreateTime      types.String `tfsdk:"create_time"`
+	ExpireTime      types.String `tfsdk:"expire_time"`
 
 	zoneList []string
 }
@@ -99,8 +105,9 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				},
 			},
 			"master_order_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "主订单号",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
+				Computed:      true,
+				Description:   "主订单号",
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -195,15 +202,11 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					validator2.SecurityGroupValidate(),
 				},
 			},
-
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
+				Description: "订购周期类型，取值范围：month：按月，on_demand：按需，支持更新。当此值为month时，cycle_count为必填",
 				Validators: []validator.String{
-					stringvalidator.OneOf("month", "on_demand"),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
+					stringvalidator.OneOf(business.OrderCycleTypeMonth, business.OrderCycleTypeOnDemand),
 				},
 			},
 			"cycle_count": schema.Int32Attribute{
@@ -220,8 +223,37 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 					),
 					int32validator.OneOf(1, 2, 3, 5, 6, 7, 12, 24, 36),
 				},
-				PlanModifiers: []planmodifier.Int32{
-					int32planmodifier.RequiresReplace(),
+			},
+			"actual_cycle_type": schema.StringAttribute{
+				Computed:    true,
+				Description: "服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。",
+			},
+			"endpoint": schema.StringAttribute{
+				Computed:    true,
+				Description: "接入点",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"ssl_endpoint": schema.StringAttribute{
+				Computed:    true,
+				Description: "SSL接入点",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "过期时间，UTC格式，按需时为空",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 		},
@@ -320,6 +352,7 @@ func (c *ctyunRabbitmqInstance) Update(ctx context.Context, request resource.Upd
 	if err != nil {
 		return
 	}
+	state.CycleType, state.CycleCount = plan.CycleType, plan.CycleCount
 	// 查询远端信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -378,6 +411,7 @@ func (c *ctyunRabbitmqInstance) Configure(_ context.Context, request resource.Co
 	c.meta = meta
 	c.vpcService = business.NewVpcService(meta)
 	c.sgService = business.NewSecurityGroupService(meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
@@ -448,7 +482,7 @@ func (c *ctyunRabbitmqInstance) checkSpecParams(ctx context.Context, plan CtyunR
 		RegionId: plan.RegionID.ValueString(),
 	}
 	// 调用API
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpProdDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -554,7 +588,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		ZoneList:        plan.zoneList,
 	}
 
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesCreatePrePayOrderApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -565,6 +599,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -584,7 +619,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		ZoneList:        plan.zoneList,
 	}
 
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesCreatePostPayOrderApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -595,6 +630,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -613,6 +649,12 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
 	plan.NodeNum = types.Int32Value(instance.NodeCount)
 	plan.SpecName = types.StringValue(instance.Prod)
+	cTime, eTime := utils.ConvertToUTCZ(instance.CreateTime), utils.ConvertToUTCZ(instance.ExpireTime)
+	plan.CreateTime = types.StringValue(cTime)
+	plan.ExpireTime = types.StringValue(eTime)
+	plan.Endpoint = types.StringValue(instance.Endpoint)
+	plan.SslEndpoint = types.StringValue(instance.SslEndpoint)
+	plan.ActualCycleType = types.StringValue(map[string]string{"1": business.OrderCycleTypeMonth, "2": business.OrderCycleTypeOnDemand}[instance.BillMode])
 	return
 }
 
@@ -623,6 +665,15 @@ func (c *ctyunRabbitmqInstance) checkBeforeUpdate(ctx context.Context, plan, sta
 	}
 	if instance.Status != 1 {
 		return fmt.Errorf("请在实例处于运行中状态时再进行更新操作")
+	}
+	if strings.Contains(plan.SpecName.ValueString(), "single") && !strings.Contains(state.SpecName.ValueString(), "single") {
+		return fmt.Errorf("不支持单机版和周期版互转")
+	}
+	if strings.Contains(plan.SpecName.ValueString(), "cluster") && !strings.Contains(state.SpecName.ValueString(), "cluster") {
+		return fmt.Errorf("不支持单机版和周期版互转")
+	}
+	if plan.CycleType.Equal(state.CycleType) && !plan.CycleCount.Equal(state.CycleCount) {
+		return fmt.Errorf("不支持续订")
 	}
 
 	return nil
@@ -644,6 +695,64 @@ func (c *ctyunRabbitmqInstance) update(ctx context.Context, plan, state CtyunRab
 	}
 	err = c.updateSpec(ctx, plan, state)
 	if err != nil {
+		return
+	}
+	err = c.updateCycle(ctx, plan, state)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// updateCycle 包周期到期转按需和按需转包周期
+func (c *ctyunRabbitmqInstance) updateCycle(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	if plan.CycleType.Equal(state.CycleType) {
+		return
+	}
+	if plan.CycleType.ValueString() == business.OnDemandCycleType {
+		err = c.transToPrePaid(ctx, plan, state)
+	} else {
+		err = c.transChargeType(ctx, plan, state)
+	}
+	return
+}
+
+// transToPrePaid 包周期到期转按需
+func (c *ctyunRabbitmqInstance) transToPrePaid(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	params := &amqp2.AmqpTransToPrePaidRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransToPrePaidApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	return
+}
+
+// transChargeType 按需转包周期
+func (c *ctyunRabbitmqInstance) transChargeType(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
+	autoPay := true
+	params := &amqp2.AmqpTransChargeTypeRequest{
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
+		CycleCnt:   plan.CycleCount.ValueInt32(),
+		AutoPay:    &autoPay,
+	}
+	resp, err := c.meta.Apis.SdkAmqpApis.AmqpTransChargeTypeApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return
+	} else if resp.StatusCode != common.NormalStatusCodeString {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return
 	}
 	return
@@ -673,7 +782,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		DiskExtendSize: plan.DiskSize.ValueInt32(),
 		AutoPay:        true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesDiskExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesDiskExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -683,6 +792,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -741,7 +851,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		ExtendNodeNum: plan.NodeNum.ValueInt32(),
 		AutoPay:       true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesNodeExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesNodeExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -751,6 +861,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -811,7 +922,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		SpecName:   plan.SpecName.ValueString(),
 		AutoPay:    true,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesSpecExtendApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -821,6 +932,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -865,7 +977,7 @@ func (c *ctyunRabbitmqInstance) updateName(ctx context.Context, plan, state Ctyu
 		ProdInstId:   state.ID.ValueString(),
 		InstanceName: plan.InstanceName.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesInstanceNameApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesInstanceNameApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -882,7 +994,7 @@ func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbi
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesUnsubscribeInstApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -898,7 +1010,7 @@ func (c *ctyunRabbitmqInstance) destroy(ctx context.Context, plan CtyunRabbitmqI
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstanceDeleteApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -995,7 +1107,7 @@ func (c *ctyunRabbitmqInstance) getByName(ctx context.Context, plan CtyunRabbitm
 		PageNum:  1,
 		PageSize: 100,
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
@@ -1020,7 +1132,7 @@ func (c *ctyunRabbitmqInstance) getByID(ctx context.Context, plan CtyunRabbitmqI
 		RegionId:   plan.RegionID.ValueString(),
 		ProdInstId: plan.ID.ValueString(),
 	}
-	resp, err := c.meta.Apis.SdkAmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
+	resp, err := c.meta.Apis.AmqpApis.AmqpInstancesQueryDetailApi.Do(ctx, c.meta.Credential, params)
 	if err != nil {
 		return
 	} else if resp.StatusCode != common.NormalStatusCodeString {
