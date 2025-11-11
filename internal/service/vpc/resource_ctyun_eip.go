@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"time"
 )
 
 func NewCtyunEip() resource.Resource {
@@ -309,7 +310,7 @@ func (c *ctyunEip) Delete(ctx context.Context, request resource.DeleteRequest, r
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	time.Sleep(1 * time.Second)
 	resp, err := c.meta.Apis.CtVpcApis.EipDeleteApi.Do(ctx, c.meta.Credential, &ctvpc.EipDeleteRequest{
 		EipId:       state.Id.ValueString(),
 		RegionId:    state.RegionId.ValueString(),
