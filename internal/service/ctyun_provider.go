@@ -42,6 +42,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
 	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/dns"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebm"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
 	ec2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/ec"
@@ -479,6 +480,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ec2.NewCtyunExpressConnectionRoutes(),
 		ec2.NewCtyunExpressConnectionRegionPeers(),
 		ec2.NewCtyunExpressConnectionVpcInstances(),
+		dns.NewCtyunPrivateZones(),
+		dns.NewCtyunPrivateZoneRecords(),
 	)
 }
 
@@ -626,6 +629,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ec2.NewCtyunExpressConnectRoute(),
 		ec2.NewCtyunExpressConnectRegionPeer(),
 		ec2.NewCtyunExpressConnectVpcInstance(),
+		dns.NewCtyunPrivateZone(),
+		dns.NewCtyunPrivateZoneRecord(),
 	)
 }
 

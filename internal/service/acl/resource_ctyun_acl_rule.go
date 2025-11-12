@@ -77,7 +77,7 @@ func (c *CtyunAclRule) ImportState(ctx context.Context, request resource.ImportS
 
 func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028588",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
