@@ -21,14 +21,14 @@ func TestAccCtyunIamUser(t *testing.T) {
 	email := utils.GenerateRandomString() + "@example.com"
 	phone := "13812345678"
 	name := utils.GenerateRandomString()
-	password := "P@ss2" + utils.GenerateRandomString()
+	password := "P@ss2" + utils.GenerateRandomString()[:3]
 	description := "init"
 	groupID := dependence.groupID
 
 	updatedEmail := utils.GenerateRandomString() + "@example.com"
 	updatedPhone := "17912345678"
 	updatedName := utils.GenerateRandomString()
-	updatedPassword := "P@ss2" + utils.GenerateRandomString()
+	updatedPassword := "P@ss2" + utils.GenerateRandomString()[:3]
 	updatedDescription := "updated"
 	updatedGroupID := dependence.groupID2
 

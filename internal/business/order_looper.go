@@ -28,7 +28,7 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 		c = loopCount[0]
 	}
 	var cnt int
-	retryer, _ := NewRetryer(time.Second*5, c)
+	retryer, _ := NewRetryer(time.Second*10, c)
 	result := retryer.Start(
 		func(currentTime int) bool {
 			detail, err := o.api.Do(ctx, credential, &ctecs.EcsOrderQueryUuidRequest{
