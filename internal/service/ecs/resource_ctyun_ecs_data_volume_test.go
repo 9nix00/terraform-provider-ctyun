@@ -27,11 +27,11 @@ func TestAccCtyunEcsDataVolume(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					dependence.ecsID,
-					dependence.ebsID,
+					dependence.ebsID3,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_id", dependence.ecsID),
-					resource.TestCheckResourceAttr(resourceName, "ebs_ids.0", dependence.ebsID),
+					resource.TestCheckResourceAttr(resourceName, "ebs_ids.0", dependence.ebsID3),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -39,11 +39,13 @@ func TestAccCtyunEcsDataVolume(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					dependence.ecsID,
-					dependence.ebsID2,
+					fmt.Sprintf(`%s","%s","%s`, dependence.ebsID, dependence.ebsID2, dependence.ebsID3),
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "instance_id", dependence.ecsID),
-					resource.TestCheckResourceAttr(resourceName, "ebs_ids.0", dependence.ebsID2),
+					resource.TestCheckResourceAttr(resourceName, "ebs_ids.0", dependence.ebsID),
+					resource.TestCheckResourceAttr(resourceName, "ebs_ids.1", dependence.ebsID2),
+					resource.TestCheckResourceAttr(resourceName, "ebs_ids.2", dependence.ebsID3),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -57,7 +59,7 @@ func TestAccCtyunEcsDataVolume(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					dependence.ecsID,
-					dependence.ebsID2,
+					fmt.Sprintf(`%s","%s","%s`, dependence.ebsID2, dependence.ebsID, dependence.ebsID3),
 				),
 				Destroy: true,
 			},

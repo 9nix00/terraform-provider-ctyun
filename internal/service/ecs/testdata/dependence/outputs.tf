@@ -45,3 +45,7 @@ output "ebs_id" {
 output "ebs_id2" {
   value = ctyun_ebs.ebs_test[1].id
 }
+
+output "ebs_id3" {
+  value = ctyun_ebs.ebs_test[2].id
+}

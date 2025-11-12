@@ -78,7 +78,7 @@ resource "ctyun_ecs" "ecs_test" {
 
 
 resource "ctyun_ebs" "ebs_test" {
-  count      = 2
+  count      = 3
   name       = "ecs-data-volume${count.index+1}"
   mode       = "vbd"
   type       = "sata"

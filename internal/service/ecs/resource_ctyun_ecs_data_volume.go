@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"strings"
 )
 
@@ -64,6 +65,7 @@ func (c *CtyunEcsDataVolume) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.List{
 					listvalidator.ValueStringsAre(validator2.UUID()),
 					listvalidator.SizeBetween(1, 10),
+					listvalidator.UniqueValues(),
 				},
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
@@ -101,6 +103,7 @@ func (c *CtyunEcsDataVolume) Create(ctx context.Context, request resource.Create
 	if err != nil {
 		return
 	}
+	tflog.Info(ctx, "尝试绑定的磁盘列表：", map[string]interface{}{"ebsIDs": plan.EbsIDs})
 	for _, ebsID := range plan.EbsIDs {
 		err = c.attach(ctx, ebsID, plan.InstanceID.ValueString(), plan.RegionID.ValueString())
 		if err != nil {

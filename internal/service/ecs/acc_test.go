@@ -22,6 +22,7 @@ type Dependence struct {
 	ecsID           string
 	ebsID           string
 	ebsID2          string
+	ebsID3          string
 }
 
 var dependence Dependence
@@ -48,6 +49,7 @@ func TestMain(m *testing.M) {
 		ecsID:           outputs["ecs_id"].Value,
 		ebsID:           outputs["ebs_id"].Value,
 		ebsID2:          outputs["ebs_id2"].Value,
+		ebsID3:          outputs["ebs_id3"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 
