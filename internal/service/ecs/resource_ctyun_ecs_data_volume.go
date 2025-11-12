@@ -9,15 +9,16 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"strings"
 )
 
@@ -57,13 +58,17 @@ func (c *CtyunEcsDataVolume) Schema(_ context.Context, _ resource.SchemaRequest,
 					validator2.UUID(),
 				},
 			},
-			"ebs_ids": schema.SetAttribute{
+			"ebs_ids": schema.ListAttribute{
 				Required:    true,
 				ElementType: types.StringType,
 				Description: "磁盘ID列表",
-				Validators: []validator.Set{
-					setvalidator.ValueStringsAre(validator2.UUID()),
-					setvalidator.SizeBetween(1, 10),
+				Validators: []validator.List{
+					listvalidator.ValueStringsAre(validator2.UUID()),
+					listvalidator.SizeBetween(1, 10),
+					listvalidator.UniqueValues(),
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -98,6 +103,7 @@ func (c *CtyunEcsDataVolume) Create(ctx context.Context, request resource.Create
 	if err != nil {
 		return
 	}
+	tflog.Info(ctx, "尝试绑定的磁盘列表：", map[string]interface{}{"ebsIDs": plan.EbsIDs})
 	for _, ebsID := range plan.EbsIDs {
 		err = c.attach(ctx, ebsID, plan.InstanceID.ValueString(), plan.RegionID.ValueString())
 		if err != nil {
@@ -138,48 +144,7 @@ func (c *CtyunEcsDataVolume) Read(ctx context.Context, request resource.ReadRequ
 }
 
 func (c *CtyunEcsDataVolume) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
 
-	var state CtyunEcsDataVolumeConfig
-	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	var plan CtyunEcsDataVolumeConfig
-	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-	err = c.checkBeforeAttach(ctx, plan)
-	if err != nil {
-		return
-	}
-	add, del := utils.DifferenceStrArray(plan.EbsIDs, state.EbsIDs)
-	if len(add) == 0 && len(del) == 0 {
-		return
-	}
-	for _, ebsID := range del {
-		err = c.detach(ctx, ebsID, state.InstanceID.ValueString(), state.RegionID.ValueString())
-		if err != nil {
-			return
-		}
-	}
-	for _, ebsID := range add {
-		err = c.attach(ctx, ebsID, plan.InstanceID.ValueString(), plan.RegionID.ValueString())
-		if err != nil {
-			return
-		}
-	}
-	err = c.getAndMerge(ctx, &plan)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
 func (c *CtyunEcsDataVolume) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {

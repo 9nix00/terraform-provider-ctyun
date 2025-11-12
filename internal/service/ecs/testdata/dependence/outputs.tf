@@ -50,6 +50,10 @@ output "ebs_id2" {
   value = ctyun_ebs.ebs_test[1].id
 }
 
+output "ebs_id3" {
+  value = ctyun_ebs.ebs_test[2].id
+}
+
 output "instance_id" {
   value = ctyun_ecs.ecs_test.id
 }

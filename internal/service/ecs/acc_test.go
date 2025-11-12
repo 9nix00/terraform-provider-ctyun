@@ -22,6 +22,7 @@ type Dependence struct {
 	ecsID                   string
 	ebsID                   string
 	ebsID2                  string
+	ebsID3                  string
 	instanceID              string
 	dataDiskID              string
 	ecsPortForAssociationId string
@@ -52,6 +53,7 @@ func TestMain(m *testing.M) {
 		ecsID:                   outputs["ecs_id"].Value,
 		ebsID:                   outputs["ebs_id"].Value,
 		ebsID2:                  outputs["ebs_id2"].Value,
+		ebsID3:                  outputs["ebs_id3"].Value,
 		instanceID:              outputs["instance_id"].Value,
 		dataDiskID:              outputs["data_disk_id"].Value,
 		ecsPortForAssociationId: outputs["ecs_port_for_association_id"].Value,
