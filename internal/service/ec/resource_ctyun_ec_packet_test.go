@@ -19,7 +19,7 @@ func TestAccEcPacket_basic(t *testing.T) {
 	ecID := dependence.expressConnectID
 	packetName := utils.GenerateRandomString()
 	bandwidth := "5"
-	cycleType := "MONTH"
+	cycleType := "month"
 	cycleCount := "1"
 
 	resource.Test(t, resource.TestCase{
@@ -33,7 +33,7 @@ func TestAccEcPacket_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, ecID, packetName, bandwidth, cycleType, cycleCount),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "ec_id", ecID),
-					resource.TestCheckResourceAttr(resourceName, "packet_name", packetName),
+					resource.TestCheckResourceAttr(resourceName, "name", packetName),
 					resource.TestCheckResourceAttr(resourceName, "bandwidth", bandwidth),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", cycleCount),
