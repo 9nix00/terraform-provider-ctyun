@@ -18,6 +18,16 @@ go build .
 
 
 
+## 单元测试
+
+```
+cd terraform-provider-ctyun
+go test -v ./internal/service/ec/resource_ctyun_ec_sdwan_instance_test.go
+```
+
+注意：运行测试需要配置相关的环境变量和依赖资源。
+
+
 ## Terraform配置项
 
 ```

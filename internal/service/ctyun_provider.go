@@ -479,6 +479,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ec2.NewCtyunExpressConnectionRoutes(),
 		ec2.NewCtyunExpressConnectionRegionPeers(),
 		ec2.NewCtyunExpressConnectionVpcInstances(),
+		ec2.NewCtyunEcSdwanInstances(),
+		ec2.NewCtyunEcCdaInstances(),
 	)
 }
 
@@ -626,6 +628,9 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ec2.NewCtyunExpressConnectRoute(),
 		ec2.NewCtyunExpressConnectRegionPeer(),
 		ec2.NewCtyunExpressConnectVpcInstance(),
+		ec2.NewCtyunEcSdwanInstance(),
+		ec2.NewCtyunEcCdaInstance(),
+		ec2.NewCtyunEcCloudGatewaySdwanAssociation(),
 	)
 }
 

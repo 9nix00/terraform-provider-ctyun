@@ -131,3 +131,4 @@ resource "ctyun_ec_region_peer" "region_peer_test" {
   rate        = 1
   route_learn = 1
 }
+
