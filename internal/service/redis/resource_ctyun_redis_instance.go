@@ -75,6 +75,7 @@ type CtyunRedisInstanceConfig struct {
 	AutoRenew           types.Bool   `tfsdk:"auto_renew"`             /*  自动续费开关<li>true：开启</li><li>false：关闭(默认)</li>  */
 	AutoRenewCycleCount types.Int32  `tfsdk:"auto_renew_cycle_count"` /*  自动续费周期(月)<br>autoRenew=true时必填，可选：1-6,12,24,36  */
 	MaintenanceTime     types.String `tfsdk:"maintenance_time"`
+	Vip                 types.String `tfsdk:"vip"`
 	ProtectionStatus    types.Bool   `tfsdk:"protection_status"`
 }
 
@@ -371,6 +372,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Default:     stringdefault.StaticString("00:00-02:00"),
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^([0-1][0-9]|2[0-3]):[0-5][0-9]-([0-1][0-9]|2[0-3]):[0-5][0-9]$"), "时间格式错误"),
+				},
+			},
+			"vip": schema.StringAttribute{
+				Computed:    true,
+				Description: "VIP地址",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"protection_status": schema.BoolAttribute{
@@ -768,6 +776,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 		plan.SecondaryAzName = types.StringValue(instance.AzList[1].AzEngName)
 	}
 
+	plan.Vip = types.StringValue(instance.Vip)
 	plan.MaintenanceTime = types.StringValue(instance.MaintenanceTime)
 	plan.ProtectionStatus = utils.SecBoolValue(instance.ProtectionStatus)
 	plan.EngineVersion = types.StringValue(instance.EngineVersion)

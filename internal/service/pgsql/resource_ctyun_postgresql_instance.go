@@ -174,9 +174,10 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"appoint_vip": schema.StringAttribute{
+			"vip": schema.StringAttribute{
 				Optional:    true,
-				Description: "指定VIP",
+				Computed:    true,
+				Description: "VIP地址",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -561,8 +562,8 @@ func (c *CtyunPostgresqlInstance) CreatePgsqlInstance(ctx context.Context, confi
 		header.ProjectId = config.ProjectID.ValueStringPointer()
 	}
 
-	if config.AppointVip.ValueString() != "" {
-		params.AppointVip = config.AppointVip.ValueStringPointer()
+	if config.Vip.ValueString() != "" {
+		params.AppointVip = config.Vip.ValueStringPointer()
 	}
 	if config.osType != "" {
 		osTypeCode := business.MysqlOSTypeDict[config.osType]
@@ -691,6 +692,7 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 
 	// 解析pgsql 详情
 	returnObj := resp.ReturnObj
+	config.Vip = types.StringValue(returnObj.Vip)
 	config.Alive = types.Int32Value(returnObj.Alive)
 	config.StorageSpace = types.Int32Value(returnObj.DiskSize)
 	config.StorageType = types.StringValue(returnObj.DiskType)
@@ -1799,7 +1801,7 @@ type CtyunPostgresqlInstanceConfig struct {
 	VpcID                types.String `tfsdk:"vpc_id"`                 // 虚拟私有云Id，，回收站恢复到新实例场景非必传则取原实例配置
 	SubnetId             types.String `tfsdk:"subnet_id"`              // 子网Id，，回收站恢复到新实例场景非必传则取原实例配置
 	SecurityGroupId      types.String `tfsdk:"security_group_id"`      // 安全组，回收站恢复到新实例场景非必传则取原实例配置
-	AppointVip           types.String `tfsdk:"appoint_vip"`            // 指定vip
+	Vip                  types.String `tfsdk:"vip"`                    // 指定vip
 	Name                 types.String `tfsdk:"name"`                   // 集群名称(若开通只读实例，默认在主实例名称后面加"-read")
 	Password             types.String `tfsdk:"password"`               // 管理员密码（RSA公钥加密）
 	CycleCount           types.Int32  `tfsdk:"cycle_count"`            // 购买时长：单位月（范围：1-36）
