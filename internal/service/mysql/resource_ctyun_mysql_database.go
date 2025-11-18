@@ -27,7 +27,8 @@ var (
 )
 
 type CtyunMysqlDatabase struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlDatabase) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -43,6 +44,7 @@ func (c *CtyunMysqlDatabase) Configure(ctx context.Context, request resource.Con
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.mysqlService = business.NewMysqlService(meta)
 }
 
 func (c *CtyunMysqlDatabase) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -172,7 +174,17 @@ func (c *CtyunMysqlDatabase) Create(ctx context.Context, request resource.Create
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	err = c.mysqlService.WaitInstanceStatus(
+		ctx,
+		plan.InstID.ValueString(),
+		plan.ProjectID.ValueString(),
+		plan.RegionID.ValueString(),
+		business.MysqlRunningStatusStarted,
+		business.MysqlOrderStatusStarted,
+	)
+	if err != nil {
+		return
+	}
 	// 开始创建数据库
 	err = c.createMysqlDatabase(ctx, &plan)
 	if err != nil {

@@ -29,7 +29,8 @@ var (
 )
 
 type CtyunMysqlAccount struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlAccount) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -45,6 +46,7 @@ func (c *CtyunMysqlAccount) Configure(ctx context.Context, request resource.Conf
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.mysqlService = business.NewMysqlService(meta)
 }
 
 func (c *CtyunMysqlAccount) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -174,6 +176,17 @@ func (c *CtyunMysqlAccount) Create(ctx context.Context, request resource.CreateR
 		return
 	}
 
+	err = c.mysqlService.WaitInstanceStatus(
+		ctx,
+		plan.InstID.ValueString(),
+		plan.ProjectID.ValueString(),
+		plan.RegionID.ValueString(),
+		business.MysqlRunningStatusStarted,
+		business.MysqlOrderStatusStarted,
+	)
+	if err != nil {
+		return
+	}
 	// 开始创建新用户
 	err = c.createMysqlAccount(ctx, &plan)
 	if err != nil {

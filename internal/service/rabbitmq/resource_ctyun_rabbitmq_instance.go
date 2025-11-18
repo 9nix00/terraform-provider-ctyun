@@ -597,7 +597,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -628,7 +628,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -732,7 +732,7 @@ func (c *ctyunRabbitmqInstance) transToPrePaid(ctx context.Context, plan, state 
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.MasterOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -756,7 +756,7 @@ func (c *ctyunRabbitmqInstance) transChargeType(ctx context.Context, plan, state
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data[0].MasterOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -794,7 +794,7 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -858,7 +858,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -929,7 +929,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -1004,7 +1004,7 @@ func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbi
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents[0].NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
