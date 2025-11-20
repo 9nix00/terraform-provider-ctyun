@@ -18,7 +18,7 @@ func TestAccCtyunPgsqlRunningControlInstance(t *testing.T) {
 
 	cycleType := "on_demand"
 	prodId := "Single1222"
-	storageType := "SATA"
+	storageType := "SSD"
 	backupStorageType := `backup_storage_type="SATA"`
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()

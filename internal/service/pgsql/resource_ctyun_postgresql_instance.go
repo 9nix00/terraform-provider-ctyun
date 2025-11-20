@@ -117,9 +117,9 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			},
 			"storage_type": schema.StringAttribute{
 				Required:    true,
-				Description: "主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
+				Description: "主存储类型: SSD=超高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD",
 				Validators: []validator.String{
-					stringvalidator.OneOf(business.StorageType...),
+					stringvalidator.OneOf(business.StorageTypeSSD, business.StorageTypeSSDGenric, business.StorageTypeFASTSSD),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

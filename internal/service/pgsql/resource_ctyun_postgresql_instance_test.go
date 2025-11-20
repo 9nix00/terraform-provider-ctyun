@@ -18,7 +18,7 @@ func TestAccCtyunPgsqlInstanceProjectId(t *testing.T) {
 	cycleType := "on_demand"
 	prodId := "Single1222"
 	flavorName := "c7.xlarge.2"
-	storageType := "SATA"
+	storageType := "SSD"
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	password := "Kyk123=" + utils.GenerateRandomString()
@@ -75,7 +75,7 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 
 	cycleType := "on_demand"
 	prodId := "Single1222"
-	storageType := "SATA"
+	storageType := "SSD"
 	backupStorageType := `backup_storage_type="SATA"`
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
@@ -231,7 +231,7 @@ func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
 	cycleType := "on_demand"
 	flavorName := "c7.large.2"
 	prodId := "Single1417"
-	storageType := "SAS"
+	storageType := "SSD"
 	backupStorageType := `backup_storage_type = "SATA"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
@@ -326,7 +326,7 @@ func TestAccCtyunPgsqlInstanceNoAZ2Info(t *testing.T) {
 	cycleType := "on_demand"
 	flavorName := "c7.large.2"
 	prodId := "Master2Slave1512"
-	storageType := "SAS"
+	storageType := "SSD"
 	backupStorageType := `backup_storage_type="SAS"`
 	storageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()

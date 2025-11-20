@@ -10,22 +10,25 @@ func FromRFC3339ToLocal(timeStr string) string {
 	return t.In(time.Local).Format(time.DateTime)
 }
 
-// FromUnixToUTC 将Unix时间戳转换为UTC时间字符串
-// 输入的时间值：1717574263,
-// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
+// FromUnixToUTC 将Unix时间戳（10位秒级/13位毫秒级）转换为UTC时间字符串
+// 输入的时间值：1717574263（10位）、1717574263000（13位）
+// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"，无效输入返回空
 func FromUnixToUTC(timestamp int64) string {
-	// 检查时间戳是否合理（避免过大的值）
-	if timestamp < 0 || timestamp > 9999999999 {
+	// 调整范围校验：包含13位合理最大值（约2286年）
+	if timestamp < 0 || timestamp > 3000000000000 {
 		return ""
 	}
 
-	// 将Unix时间戳转换为时间对象
-	t := time.Unix(timestamp, 0).UTC()
+	var t time.Time
+	if timestamp > 9999999999 {
+		sec := timestamp / 1000
+		nsec := (timestamp % 1000) * 1e6
+		t = time.Unix(sec, nsec).UTC()
+	} else {
+		t = time.Unix(timestamp, 0).UTC()
+	}
 
-	// 格式化为RFC3339格式的UTC时间字符串
-	utcStr := t.Format(time.RFC3339)
-
-	return utcStr
+	return t.Format(time.RFC3339)
 }
 
 // ConvertToUTCZ 将带时区的时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式

@@ -97,7 +97,7 @@ func (c *CtyunExpressConnectVpcInstance) Schema(ctx context.Context, request res
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池id,如果不填这默认使用provider ctyun中的region_id或者环境变量",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -174,6 +174,10 @@ func (c *CtyunExpressConnectVpcInstance) Create(ctx context.Context, request res
 	if err != nil {
 		return
 	}
+	err = c.flushVpcRoute(ctx, plan)
+	if err != nil {
+		return
+	}
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
 		return
@@ -236,7 +240,10 @@ func (c *CtyunExpressConnectVpcInstance) Update(ctx context.Context, request res
 	if err != nil {
 		return
 	}
-
+	err = c.flushVpcRoute(ctx, plan)
+	if err != nil {
+		return
+	}
 	// 更新远端后，查询远端并同步一下本地信息
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
@@ -320,6 +327,25 @@ func (c *CtyunExpressConnectVpcInstance) create(ctx context.Context, config *Cty
 	// 通过vpc id + ec id + cwg id 去获取id
 	err = c.getInstanceIdByEcVpcInfo(ctx, config)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// flushVpcRoute 刷新路由
+func (c *CtyunExpressConnectVpcInstance) flushVpcRoute(ctx context.Context, config CtyunExpressConnectVpcInstanceConfig) error {
+	params := &ec.EcEcUpdateInstanceRouteRequest{
+		EcID:  config.EcID.ValueString(),
+		VpcID: config.VpcID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkEcApis.EcEcUpdateInstanceRouteApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("刷新路由失败")
+		return err
+	} else if *resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf(" API return error. Message: %s Error: %s", *resp.ErrorCode, *resp.Message)
 		return err
 	}
 	return nil
