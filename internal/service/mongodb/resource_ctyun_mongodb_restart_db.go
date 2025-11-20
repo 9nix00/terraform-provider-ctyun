@@ -2,7 +2,9 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
@@ -14,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"time"
 )
 
 var (
@@ -146,8 +149,61 @@ func (c *CtyunMongodbRestartDb) Delete(ctx context.Context, req resource.DeleteR
 
 }
 
-func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, plan *CtyunMongodbRestartDbConfig) (err error) {
+func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, state *CtyunMongodbRestartDbConfig, loopCount ...int) (err error) {
 
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	syncCount := 3
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+
+	listHeader := &mongodb.MongodbGetListHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		listHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	result := retryer.Start(
+		func(currentTime int) bool {
+
+			detailParams := &mongodb.MongodbQueryDetailRequest{
+				ProdInstId: state.ID.ValueString(),
+			}
+			detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				detailHeader.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			detailResp, err3 := c.meta.Apis.SdkMongodbApis.MongodbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeader)
+			if err3 != nil {
+				err = err3
+				return false
+			} else if detailResp.StatusCode != 800 {
+				err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
+				return false
+			} else if detailResp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+
+			if detailResp.ReturnObj.ProdRunningStatus == business.MongodbRunningStatusStarted {
+				if syncCount > 0 {
+					syncCount--
+					return true
+				}
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，实例仍未运行成功！")
+	}
 	return
 }
 

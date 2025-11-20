@@ -89,7 +89,7 @@ func NewMongodbDeleteBackupApi(client *ctyunsdk.CtyunClient) *MongodbDeleteBacku
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/DDS2/v2/openApi/deleteBackup",
+			UrlPath: "/DDS2/v2/openApi/deleteBackupFileJob",
 		},
 	}
 }
@@ -230,7 +230,7 @@ type MongodbDescribeBackupsReturnObj struct {
 }
 
 type MongodbBackupInfo struct {
-	BackupId          string  `json:"backupId"`          // 备份ID
+	BackupId          int32   `json:"id"`                // 备份ID
 	BackupName        string  `json:"backupName"`        // 备份名称
 	BackupMethod      string  `json:"backupMethod"`      // 备份方式
 	BackupType        string  `json:"backupType"`        // 备份类型

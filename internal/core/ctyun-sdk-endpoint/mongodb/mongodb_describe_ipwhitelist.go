@@ -18,7 +18,7 @@ func NewMongodbDescribeIpWhitelistApi(client *ctyunsdk.CtyunClient) *MongodbDesc
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodGet,
-			UrlPath: "/DDS2/v2/openApi/describeIPWhitelist",
+			UrlPath: "/DDS2/v2/openApi/queryWhiteList",
 		},
 	}
 }
@@ -72,10 +72,13 @@ type MongodbDescribeIpWhitelistResponse struct {
 }
 
 type MongodbDescribeIpWhitelistResponseData struct {
-	WhitelistGroup []MongodbWhitelistGroup `json:"whitelistGroup"` // 白名单分组列表
+	WhitelistGroup []MongodbWhitelistGroup `json:"list"` // 白名单分组列表
 }
 
 type MongodbWhitelistGroup struct {
-	IpWhitelistName string   `json:"ipWhitelistName"` // 白名单分组名称
-	IpList          []string `json:"ipList"`          // IP列表
+	GroupName     string `json:"groupName"`     // 白名单分组名称
+	WhiteListType int32  `json:"whiteListType"` // 白名单分组名称
+	Id            int32  `json:"id"`            // 白名单分组名称
+	IpList        string `json:"ipList"`        // IP列表
+	IpType        string `json:"ipType"`        // IP列表
 }

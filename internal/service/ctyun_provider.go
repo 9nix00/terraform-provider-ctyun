@@ -436,6 +436,8 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		common2.NewCtyunZones(),
 		mysql2.NewCtyunMysqlWhiteLists(),
 		mongodb.NewCtyunMongodbInstances(),
+		mongodb.NewCtyunMongodbBackups(),
+		mongodb.NewCtyunMongodbWhiteLists(),
 		hpfs.NewCtyunHpfsInstances(),
 		hpfs.NewCtyunHpfsClusters(),
 		scaling2.NewCtyunScalings(),
