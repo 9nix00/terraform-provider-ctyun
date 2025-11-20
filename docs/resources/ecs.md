@@ -118,7 +118,6 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填 支持更新
 - `display_name` (String) 实例名称，长度为2-63字符 支持更新
-- `flavor_id` (String) 规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机 支持更新
 - `image_id` (String) 镜像id
 - `instance_name` (String) 主机名称（hostname），不可以使用已存在的云主机名称。不同操作系统下，云主机名称规则有差异。Windows：长度为2-15个字符，允许使用大小写字母、数字或连字符（-）。不能以连字符（-）开头或结尾，不能连续使用连字符（-），也不能仅使用数字；其他操作系统：长度为2-64字符，允许使用点（.）分隔字符成多段，每段允许使用大小写字母、数字或连字符（-），但不能连续使用点号（.）或连字符（-），不能以点号（.）或连字符（-）开头或结尾，也不能仅使用数字
 - `subnet_id` (String) 主网卡的子网id
@@ -128,11 +127,17 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 
 ### Optional
 
+- `affinity_group_id` (String) 云主机组ID 支持更新
 - `auto_renew` (Boolean) 是否自动续订，此参数在包周期情况下才有效，当为包周期时此值默认为true
 - `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年 支持更新
+- `deletion_protection` (Boolean) 是否开启实例删除保护，默认为false 包年包月实例不支持更新实例删除保护参数 支持更新
+- `flavor_id` (String) 规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机 支持更新
+- `flavor_name` (String) 云主机规格名称，当创建云主机随机分配可用区时，规格名称为必填项，规格ID无效。当采用确定可用区时，规格ID和规格名称两者均可使用，必填其中一个，当两个都填写以规格ID为准。
 - `is_destroy_instance` (Boolean) 是否立即释放，默认为false。包周期云主机退订之后有一定时间的保留期，通过terraform destroy触发退订后，若此字段为true，会立即释放该云主机。支持更新
 - `key_pair_name` (String) 密钥对名称，支持更新
+- `labels` (Attributes List) 标签 云主机绑定多个标签时，标签键（参数labelKey）不可重复，单台云主机最多可绑定10个标签 支持更新 (see [below for nested schema](#nestedatt--labels))
+- `metadata` (Map of String) 云主机元数据信息，键值对形式 支持更新
 - `password` (String, Sensitive) 用户密码，满足以下规则：长度在8～30个字符；必须包含大写字母、小写字母、数字以及特殊符号中的三项；特殊符号可选：()`~!@#$%^&*_-+=|{}[]:;'<>,.?/\且不能以斜线号/开头 支持更新
 - `pay_voucher_price` (Number) 代金券，满足以下规则：两位小数，不足两位自动补0，超过两位小数无效；不可为负数；注：字段为0时表示不使用代金券，默认不使用
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
@@ -151,3 +156,11 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 - `master_order_id` (String) 订购的受理单ID
 - `name` (String) 名称
 - `system_disk_id` (String) 系统盘的id
+
+<a id="nestedatt--labels"></a>
+### Nested Schema for `labels`
+
+Required:
+
+- `key` (String) 标签的key值，长度不能超过32个字符。支持更新
+- `value` (String) 标签的value值，长度不能超过32个字符。 支持更新

@@ -29,9 +29,9 @@ data "ctyun_mysql_instances" "test" {
 
 ### Optional
 
-- `page_now` (Number) 当前页
+- `name` (String) 实例名称
+- `page_no` (Number) 当前页
 - `page_size` (Number) 单页记录条数
-- `prod_inst_name` (String) 实例名称
 - `project_id` (String) 项目ID
 - `region_id` (String) 资源池ID
 - `res_db_engine` (String) 数据库引擎 枚举5.7, 8.0

@@ -82,7 +82,7 @@ func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaReque
 							Computed:    true,
 							Description: "外部访问端口",
 							Validators: []validator.Int64{
-								int64validator.Between(1, 1024),
+								int64validator.Between(1, 65535),
 							},
 						},
 						"internal_port": schema.Int64Attribute{

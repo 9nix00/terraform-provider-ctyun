@@ -39,9 +39,10 @@ var (
 )
 
 type ctyunRabbitmqInstance struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta        *common.CtyunMetadata
+	vpcService  *business.VpcService
+	sgService   *business.SecurityGroupService
+	orderLooper *business.OrderLooper
 }
 
 func NewCtyunRabbitmqInstance() resource.Resource {
@@ -249,11 +250,9 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				},
 			},
 			"expire_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "过期时间，UTC格式，按需时为空",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Computed:      true,
+				Description:   "过期时间，UTC格式，按需时为空",
+				PlanModifiers: []planmodifier.String{},
 			},
 		},
 	}
@@ -410,6 +409,7 @@ func (c *ctyunRabbitmqInstance) Configure(_ context.Context, request resource.Co
 	c.meta = meta
 	c.vpcService = business.NewVpcService(meta)
 	c.sgService = business.NewSecurityGroupService(meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
@@ -597,6 +597,7 @@ func (c *ctyunRabbitmqInstance) createPrePayOrder(ctx context.Context, plan Ctyu
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -627,6 +628,7 @@ func (c *ctyunRabbitmqInstance) createPostPayOrder(ctx context.Context, plan Cty
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -729,6 +731,8 @@ func (c *ctyunRabbitmqInstance) transToPrePaid(ctx context.Context, plan, state 
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.MasterOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -751,6 +755,8 @@ func (c *ctyunRabbitmqInstance) transChargeType(ctx context.Context, plan, state
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data[0].MasterOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -788,13 +794,13 @@ func (c *ctyunRabbitmqInstance) diskExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -806,10 +812,6 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, pl
 			if instance.Status != 1 || utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32()*instance.NodeCount {
 				return true
 			}
-			successCnt++
-			if successCnt < 3 {
-				return true
-			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -817,7 +819,7 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateDiskSize(ctx context.Context, pl
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("磁盘变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 磁盘变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -856,6 +858,7 @@ func (c *ctyunRabbitmqInstance) nodeExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -885,7 +888,7 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateNodeNum(ctx context.Context, pla
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("节点数量变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 节点数量变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -926,6 +929,7 @@ func (c *ctyunRabbitmqInstance) specExtend(ctx context.Context, plan, state Ctyu
 		err = common.InvalidReturnObjError
 		return
 	}
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, resp.ReturnObj.Data.NewOrderId)
 	return
 }
 
@@ -955,7 +959,7 @@ func (c *ctyunRabbitmqInstance) checkAfterUpdateSpec(ctx context.Context, plan, 
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("规格变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 规格变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -993,7 +997,14 @@ func (c *ctyunRabbitmqInstance) unsubscribe(ctx context.Context, plan CtyunRabbi
 	} else if resp.StatusCode != common.NormalStatusCodeString {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
+	} else if resp.ReturnObj == nil ||
+		len(resp.ReturnObj.Data.BatchOrderPlacementResults) == 0 ||
+		len(resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents) == 0 {
+		err = common.InvalidReturnObjError
+		return
 	}
+	masterOrderID := resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents[0].NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1027,7 +1038,6 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 			if instance == nil || instance.Status != 1 || instance.ProdInstId == "" {
 				return true
 			}
-			time.Sleep(30 * time.Second)
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false
@@ -1036,19 +1046,19 @@ func (c *ctyunRabbitmqInstance) checkAfterCreate(ctx context.Context, plan Ctyun
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("创建时间过长")
+		err = fmt.Errorf("实例 %s 创建时间过长", plan.InstanceName.ValueString())
 	}
 	return
 }
 
 // checkAfterUnsubscribe 退订后检查
-func (c *ctyunRabbitmqInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+func (c *ctyunRabbitmqInstance) checkAfterUnsubscribe(ctx context.Context, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
 			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
-			instance, err = c.getByName(ctx, plan)
+			instance, err = c.getByName(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1062,19 +1072,19 @@ func (c *ctyunRabbitmqInstance) checkAfterUnsubscribe(ctx context.Context, plan 
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("退订时间过长")
+		err = fmt.Errorf("实例 %s(%s)退订时间过长", state.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
 
 // checkAfterDestroy 销毁后检查
-func (c *ctyunRabbitmqInstance) checkAfterDestroy(ctx context.Context, plan CtyunRabbitmqInstanceConfig) (err error) {
+func (c *ctyunRabbitmqInstance) checkAfterDestroy(ctx context.Context, state CtyunRabbitmqInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
 			var instance *amqp.AmqpInstancesQueryResponseReturnObjData
-			instance, err = c.getByName(ctx, plan)
+			instance, err = c.getByName(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1088,7 +1098,7 @@ func (c *ctyunRabbitmqInstance) checkAfterDestroy(ctx context.Context, plan Ctyu
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("销毁时间过长")
+		err = fmt.Errorf("实例 %s(%s) 销毁时间过长", state.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }

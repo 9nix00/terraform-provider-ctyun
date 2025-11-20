@@ -120,6 +120,7 @@ resource "ctyun_mysql_backup" "backup_test" {
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"
+  depends_on = [ctyun_mysql_database.db3]
 }
 
 data "ctyun_mysql_recoverable_time_points" "time_point_test" {

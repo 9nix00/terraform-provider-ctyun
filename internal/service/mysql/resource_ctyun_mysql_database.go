@@ -27,7 +27,8 @@ var (
 )
 
 type CtyunMysqlDatabase struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlDatabase) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -43,6 +44,7 @@ func (c *CtyunMysqlDatabase) Configure(ctx context.Context, request resource.Con
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.mysqlService = business.NewMysqlService(meta)
 }
 
 func (c *CtyunMysqlDatabase) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -172,9 +174,19 @@ func (c *CtyunMysqlDatabase) Create(ctx context.Context, request resource.Create
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	err = c.mysqlService.WaitInstanceStatus(
+		ctx,
+		plan.InstID.ValueString(),
+		plan.ProjectID.ValueString(),
+		plan.RegionID.ValueString(),
+		business.MysqlRunningStatusStarted,
+		business.MysqlOrderStatusStarted,
+	)
+	if err != nil {
+		return
+	}
 	// 开始创建数据库
-	err = c.CreateMysqlDatabase(ctx, &plan)
+	err = c.createMysqlDatabase(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -276,7 +288,8 @@ func (c *CtyunMysqlDatabase) Delete(ctx context.Context, request resource.Delete
 	}
 }
 
-func (c *CtyunMysqlDatabase) CreateMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
+// createMysqlDatabase 创建数据库
+func (c *CtyunMysqlDatabase) createMysqlDatabase(ctx context.Context, config *CtyunMysqlDatabaseConfig) error {
 	// 创建前，确认db name是否可用
 	//err := c.checkDBName(ctx, config)
 	//if err != nil {

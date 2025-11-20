@@ -109,7 +109,15 @@ func (c *ctyunCrsVpcAttach) Create(ctx context.Context, request resource.CreateR
 
 	err = c.attach(ctx, plan)
 	if err != nil {
-		return
+		if strings.Contains(err.Error(), "请稍后重新发起请求") {
+			time.Sleep(10 * time.Second)
+			err = c.attach(ctx, plan)
+			if err != nil {
+				return
+			}
+		} else {
+			return
+		}
 	}
 
 	err = c.getAndMerge(ctx, &plan)

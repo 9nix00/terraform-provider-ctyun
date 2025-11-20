@@ -38,8 +38,7 @@ resource "ctyun_subnet" "subnet_test" {
   description = "terraform测试使用"
   dns         = [
     "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
+    "8.8.8.8"
   ]
   enable_ipv6 = true
 }
@@ -106,6 +105,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写
 - `auto_renew_cycle_count` (Number) 自动续订时长，单位月，支持1, 2, 3, 5, 6, 7, 12, 24, 36
 - `az_name` (String) 主可用区，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
+- `backup_policy` (Attributes) 实例的备份策略配置 (see [below for nested schema](#nestedatt--backup_policy))
 - `copies_count` (Number) 副本数量，当edition取值为OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填（取值范围2-6），当edition取其他值时不填。
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
 - `data_disk_type` (String) 磁盘类型，支持SAS和SSD，默认SAS
@@ -116,10 +116,25 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `secondary_az_name` (String) 备可用区
 - `shard_count` (Number) 分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。
+- `ssl_enabled` (Boolean) ssl加密设置，设置该值会触发重启，只有version为BASIC且engine_version为6.0、7.0且edition为StandardSingle、StandardDual、DirectClusterSingle或DirectCluster时才能设置，支持更新
+- `template_id` (String) 参数模板ID，用于应用参数模板
 - `version` (String) 版本类型，SeriesInfo中的version值，支持BASIC和PLUS，默认BASIC
 
 ### Read-Only
 
+- `actual_cycle_type` (String) 服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。
+- `connection_address` (String) 连接地址
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `name` (String) 名称
+- `protected_conn` (String) 受保护的连接地址
+- `tls_version` (String) TLS版本
+
+<a id="nestedatt--backup_policy"></a>
+### Nested Schema for `backup_policy`
+
+Required:
+
+- `period` (String) 备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份
+- `retention_day` (Number) 备份保留天数（1-7）
+- `time` (Number) 每日备份执行时间（0-23）

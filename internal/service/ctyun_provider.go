@@ -15,6 +15,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	ctiam2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctiam"
 	sdkctimage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
@@ -327,6 +328,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtImageApis:     ctimage.NewApis(client),
 			CtVpcApis:       ctvpc.NewApis(client),
 			CtEbmApis:       ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtIamApis:    ctiam2.NewApis(fmt.Sprintf(endpointUrl, ctiam2.EndpointName), coreClient),
 			SdkCtEbsApis:    ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
 			SdkCtEcsApis:    ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
 			SdkCtVpcApis:    ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
@@ -480,6 +482,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ec2.NewCtyunExpressConnectionRoutes(),
 		ec2.NewCtyunExpressConnectionRegionPeers(),
 		ec2.NewCtyunExpressConnectionVpcInstances(),
+		iam.NewCtyunIamUserAks(),
+		iam.NewCtyunIamUsers(),
+		iam.NewCtyunIamPolicies(),
 		dns.NewCtyunPrivateZones(),
 		dns.NewCtyunPrivateZoneRecords(),
 	)
@@ -587,6 +592,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		ecs.NewCtyunEcsDataVolume(),
 		mongodb.NewCtyunMongodbAccount(),
 		mongodb.NewCtyunMongodbWhiteList(),
 		mongodb.NewCtyunMongodbBackupResource(),
@@ -629,6 +635,7 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ec2.NewCtyunExpressConnectRoute(),
 		ec2.NewCtyunExpressConnectRegionPeer(),
 		ec2.NewCtyunExpressConnectVpcInstance(),
+		iam.NewCtyunIamUserAk(),
 		dns.NewCtyunPrivateZone(),
 		dns.NewCtyunPrivateZoneRecord(),
 	)

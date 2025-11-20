@@ -3,6 +3,7 @@ package ec
 import (
 	"context"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -10,10 +11,9 @@ import (
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 )
 
 var (
@@ -41,9 +42,8 @@ type CtyunEcPacketConfig struct {
 	ID                   types.String `tfsdk:"id"`
 	EcID                 types.String `tfsdk:"ec_id"`
 	RegionID             types.String `tfsdk:"region_id"`
-	PacketName           types.String `tfsdk:"packet_name"`
+	Name                 types.String `tfsdk:"name"`
 	Bandwidth            types.Int64  `tfsdk:"bandwidth"`
-	OnDemand             types.Bool   `tfsdk:"on_demand"`
 	CycleType            types.String `tfsdk:"cycle_type"`
 	CycleCount           types.Int64  `tfsdk:"cycle_count"`
 	AreaA                types.String `tfsdk:"area_a"`
@@ -92,7 +92,7 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
-			"packet_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "带宽包名字",
 				PlanModifiers: []planmodifier.String{
@@ -112,34 +112,33 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 					int64validator.AtLeast(1),
 				},
 			},
-			"on_demand": schema.BoolAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "布尔类型，是否按需下单。默认为false",
-				PlanModifiers: []planmodifier.Bool{
-					boolplanmodifier.RequiresReplace(),
-				},
-				Default: booldefault.StaticBool(false),
-			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "包周期类型，当onDemand为False时，必须指定，取值如下：YEAR: 包年，MONTH:包月",
+				Description: "订购周期类型，取值范围：month：按月，year：按年",
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.OrderCycleTypes...),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-				},
-				Validators: []validator.String{
-					stringvalidator.OneOf("YEAR", "MONTH"),
 				},
 			},
 			"cycle_count": schema.Int64Attribute{
 				Required:    true,
-				Description: "包周期数。onDemand为False时必须指定。周期最大长度不能超过36个月",
+				Description: "订购时长，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-3年",
+				Validators: []validator.Int64{
+					validator2.AlsoRequiresEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeMonth),
+						types.StringValue(business.OrderCycleTypeYear),
+					),
+					validator2.ConflictsWithEqualInt64(
+						path.MatchRoot("cycle_type"),
+						types.StringValue(business.OrderCycleTypeOnDemand),
+					),
+					validator2.CycleCount(1, 11, 1, 3),
+				},
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
-				},
-				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
-					int64validator.AtMost(36),
 				},
 			},
 			"area_a": schema.StringAttribute{
@@ -311,15 +310,6 @@ func (c *CtyunEcPacket) Update(ctx context.Context, req resource.UpdateRequest, 
 		}
 	}
 
-	// 如果是周期类型或周期数量变更，则进行续订
-	if (!plan.CycleType.Equal(state.CycleType) || !plan.CycleCount.Equal(state.CycleCount)) &&
-		!plan.OnDemand.ValueBool() {
-		err := c.renew(ctx, &plan, &state)
-		if err != nil {
-			resp.Diagnostics.AddError("续订带宽包失败", err.Error())
-			return
-		}
-	}
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		return
@@ -408,7 +398,7 @@ func (c *CtyunEcPacket) getAndMerge(ctx context.Context, state *CtyunEcPacketCon
 
 		// 更新状态信息
 		if result.PacketName != nil {
-			state.PacketName = types.StringValue(*result.PacketName)
+			state.Name = types.StringValue(*result.PacketName)
 		}
 
 		if result.Rate != nil {
@@ -577,17 +567,12 @@ func (c *CtyunEcPacket) create(ctx context.Context, plan *CtyunEcPacketConfig) (
 	newReq := &ec.EcEcOrderPacketNewRequest{
 		EcID:       plan.EcID.ValueString(),
 		RegionID:   plan.RegionID.ValueString(),
-		PacketName: plan.PacketName.ValueString(),
+		PacketName: plan.Name.ValueString(),
 		Bandwidth:  int32(plan.Bandwidth.ValueInt64()),
-		CycleType:  plan.CycleType.ValueString(),
-		CycleCount: int32(plan.CycleCount.ValueInt64()),
 		AreaA:      plan.AreaA.ValueStringPointer(),
+		CycleType:  strings.ToUpper(plan.CycleType.ValueString()),
+		CycleCount: int32(plan.CycleCount.ValueInt64()),
 		AreaB:      plan.AreaB.ValueStringPointer(),
-	}
-
-	if !plan.OnDemand.IsNull() {
-
-		newReq.OnDemand = plan.OnDemand.ValueBool()
 	}
 
 	if !plan.AreaA.IsNull() {
@@ -611,8 +596,8 @@ func (c *CtyunEcPacket) create(ctx context.Context, plan *CtyunEcPacketConfig) (
 	}
 
 	tflog.Info(ctx, "创建云间高速带宽包订购订单", map[string]interface{}{
-		"ec_id":       plan.EcID.ValueString(),
-		"packet_name": plan.PacketName.ValueString(),
+		"ec_id": plan.EcID.ValueString(),
+		"name":  plan.Name.ValueString(),
 	})
 
 	resp, err := c.meta.Apis.SdkEcApis.EcEcOrderPacketNewApi.Do(ctx, c.meta.SdkCredential, newReq)

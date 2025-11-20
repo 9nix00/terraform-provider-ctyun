@@ -18,9 +18,9 @@ resource "ctyun_express_connect" "example" {
 # 创建云间高速带宽包
 resource "ctyun_ec_packet" "example" {
   ec_id        = ctyun_express_connect.example.id
-  packet_name  = "example-ec-packet"
+  name = "example-ec-packet"
   bandwidth    = 10
-  cycle_type   = "MONTH"
+  cycle_type   = "month"
   cycle_count  = 1
 
   # 可选参数

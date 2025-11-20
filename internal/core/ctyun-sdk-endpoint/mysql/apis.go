@@ -62,6 +62,8 @@ type Apis struct {
 	TeledbGetAuditStatusApi                *TeledbGetAuditStatusApi
 	TeledbUpdateRdsTemplateParameterApi    *TeledbUpdateRdsTemplateParameterApi
 	TeledbGetRdsParameterTemplateDetailApi *TeledbGetRdsParameterTemplateDetailApi
+	TeledbGetIDByOrderApi                  *TeledbGetIDByOrderApi
+	TeledbGetStatusByIDApi                 *TeledbGetStatusByIDApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -131,5 +133,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		TeledbGetAuditStatusApi:                NewTeledbGetAuditStatusApi(client),
 		TeledbUpdateRdsTemplateParameterApi:    NewTeledbUpdateRdsTemplateParameterApi(client),
 		TeledbGetRdsParameterTemplateDetailApi: NewTeledbGetRdsParameterTemplateDetailApi(client),
+		TeledbGetIDByOrderApi:                  NewTeledbGetIDByOrderApi(client),
+		TeledbGetStatusByIDApi:                 NewTeledbGetStatusByIDApi(client),
 	}
 }
