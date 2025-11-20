@@ -34,7 +34,7 @@ func (c *CtyunOceanfsInstances) Metadata(ctx context.Context, request datasource
 
 func (c *CtyunOceanfsInstances) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10088966/10115906",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:            true,
@@ -217,11 +217,9 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf(" API return error. Message: %s", resp.Message)
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
 	}
-	var vpceSharePath []CtyunOceanfsInfoModel
+
+	var oceanfsInstances []CtyunOceanfsInfoModel
 	for _, item := range resp.ReturnObj.List {
 		var info CtyunOceanfsInfoModel
 		info.SfsName = types.StringValue(item.SfsName)
@@ -245,7 +243,7 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 		info.CephID = types.StringValue(item.CephID)
 		info.UsedSizeCharge = types.BoolValue(item.UsedSizeCharge)
 		var vpcesharePath []VpceSharePathModel
-		for _, v := range item.PhySharePath {
+		for _, v := range item.VpceSharePath {
 			vpcesharePath = append(vpcesharePath, VpceSharePathModel{
 				VpcID:              types.StringValue(v.VpcID),
 				VpcName:            types.StringValue(v.VpcName),
@@ -256,8 +254,9 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 			})
 		}
 		info.VpceSharePath = vpcesharePath
+		oceanfsInstances = append(oceanfsInstances, info)
 	}
-	config.OceanfsInstances = vpceSharePath
+	config.OceanfsInstances = oceanfsInstances
 	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -306,10 +305,10 @@ type CtyunOceanfsInstancesConfig struct {
 }
 
 type VpceSharePathModel struct {
-	VpcID              types.String `json:"vpc_id"`
-	VpcName            types.String `json:"vpc_name"`
-	SharePath          types.String `json:"share_path"`
-	SharePathV6        types.String `json:"share_path_v6"`
+	VpcID              types.String `tfsdk:"vpc_id"`
+	VpcName            types.String `tfsdk:"vpc_name"`
+	SharePath          types.String `tfsdk:"share_path"`
+	SharePathV6        types.String `tfsdk:"share_path_v6"`
 	WindowsSharePath   types.String `tfsdk:"windows_share_path"`
 	WindowsSharePathV6 types.String `tfsdk:"windows_share_path_v6"`
 }

@@ -98,7 +98,7 @@ type OceanfsListSfsReturnObjItemResponse struct {
 	MountCount         int32                                             `json:"mountCount"`
 	CephID             string                                            `json:"cephId"`
 	UsedSizeCharge     bool                                              `json:"usedSizeCharge"`
-	PhySharePath       []OceanfsListSfsReturnObjItemPhySharePathResponse `json:"phySharePath"`
+	VpceSharePath      []OceanfsListSfsReturnObjItemPhySharePathResponse `json:"vpceSharePath"`
 }
 
 type OceanfsListSfsResponse struct {
