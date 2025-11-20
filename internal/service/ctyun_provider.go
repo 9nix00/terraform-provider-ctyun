@@ -58,6 +58,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
 	scaling2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/scaling"
+	sdwan2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/sdwan"
 	sfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/sfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpc"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/vpce"
@@ -357,7 +358,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 	resp.DataSourceData = metadata
 }
 
-func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+func (c *CtyunProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return c.buildDataSource(
 		common2.NewCtyunRegions(),
 		common2.NewCtyunServices(),
@@ -483,10 +484,13 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		ec2.NewCtyunExpressConnectionVpcInstances(),
 		ec2.NewCtyunEcSdwanInstances(),
 		ec2.NewCtyunEcCdaInstances(),
+
+		// 添加SD-WAN数据源
+		sdwan2.NewCtyunSdwans(),
 	)
 }
 
-func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource {
+func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resource {
 	return c.buildResource(
 		iam.NewCtyunPolicy(),
 		vpc.NewCtyunVpc(),
@@ -633,6 +637,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		ec2.NewCtyunEcSdwanInstance(),
 		ec2.NewCtyunEcCdaInstance(),
 		ec2.NewCtyunEcCloudGatewaySdwanAssociation(),
+		// 添加SD-WAN资源
+		sdwan2.NewCtyunSdwan(),
 	)
 }
 
