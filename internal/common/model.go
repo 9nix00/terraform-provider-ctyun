@@ -29,6 +29,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/oceanfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
@@ -101,4 +102,5 @@ type Apis struct {
 	SdkEcApis       *ec.Apis
 	SdkCdaApis      *cda.Apis
 	SdkSdwanApis    *sdwan.Apis
+	SdkOceanfsApis  *oceanfs.Apis
 }
