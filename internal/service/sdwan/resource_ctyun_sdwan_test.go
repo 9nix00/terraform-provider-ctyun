@@ -18,8 +18,8 @@ func TestAccCtyunSdwan_basic(t *testing.T) {
 	resourceFile := "resource_ctyun_sdwan.tf"
 
 	name := utils.GenerateRandomString()
-	desc := "provider 测试创建专用"
-	descUpdate := "provider 测试更新专用"
+	desc := "provider测试创建专用"
+	descUpdate := "provider测试更新专用"
 
 	//datasourceName := "data.ctyun_sdwans." + dnd
 	//datasourceFile := "datasource_ctyun_sdwans.tf"
@@ -39,7 +39,7 @@ func TestAccCtyunSdwan_basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "desc", desc),
+					resource.TestCheckResourceAttr(resourceName, "description", desc),
 				),
 			},
 			//// 更新SD-WAN测试
