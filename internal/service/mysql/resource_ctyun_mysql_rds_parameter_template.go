@@ -29,7 +29,8 @@ var (
 )
 
 type CtyunMysqlRdsParameterTemplate struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlRdsParameterTemplate) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -45,6 +46,7 @@ func (c *CtyunMysqlRdsParameterTemplate) Configure(ctx context.Context, request 
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.mysqlService = business.NewMysqlService(meta)
 }
 
 func (c *CtyunMysqlRdsParameterTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -123,7 +125,17 @@ func (c *CtyunMysqlRdsParameterTemplate) Create(ctx context.Context, request res
 	if response.Diagnostics.HasError() {
 		return
 	}
-
+	err = c.mysqlService.WaitInstanceStatus(
+		ctx,
+		plan.InstID.ValueString(),
+		plan.ProjectID.ValueString(),
+		plan.RegionID.ValueString(),
+		business.MysqlRunningStatusStarted,
+		business.MysqlOrderStatusStarted,
+	)
+	if err != nil {
+		return
+	}
 	err = c.create(ctx, &plan)
 	if err != nil {
 		return

@@ -707,7 +707,7 @@ func (c *ctyunKafkaInstance) createPrePayOrder(ctx context.Context, plan CtyunKa
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -752,7 +752,7 @@ func (c *ctyunKafkaInstance) createPostPayOrder(ctx context.Context, plan CtyunK
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -950,7 +950,7 @@ func (c *ctyunKafkaInstance) transToPrePaid(ctx context.Context, plan, state Cty
 		return
 	}
 	masterOrderID := utils.SecString(resp.ReturnObj.Data.MasterOrderId)
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -974,7 +974,7 @@ func (c *ctyunKafkaInstance) transChargeType(ctx context.Context, plan, state Ct
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data[0].MasterOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1035,7 +1035,7 @@ func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKa
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1122,7 +1122,7 @@ func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKa
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1209,7 +1209,7 @@ func (c *ctyunKafkaInstance) specShrink(ctx context.Context, plan, state CtyunKa
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1233,7 +1233,7 @@ func (c *ctyunKafkaInstance) specExtend(ctx context.Context, plan, state CtyunKa
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1373,7 +1373,7 @@ func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, state CtyunKafkaIn
 		return
 	}
 	masterOrderID := resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents[0].NewOrderId
-	_, err = c.orderLooper.OrderLoop(ctx, c.meta.Credential, masterOrderID)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 

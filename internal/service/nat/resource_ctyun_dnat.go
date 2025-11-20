@@ -87,9 +87,9 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"external_port": schema.Int32Attribute{
 				Required:    true,
-				Description: "弹性IP公网端口，1 - 1024，支持更新",
+				Description: "弹性IP公网端口，1 - 65535，支持更新",
 				Validators: []validator.Int32{
-					int32validator.Between(1, 1024),
+					int32validator.Between(1, 65535),
 				},
 			},
 			"internal_port": schema.Int32Attribute{
