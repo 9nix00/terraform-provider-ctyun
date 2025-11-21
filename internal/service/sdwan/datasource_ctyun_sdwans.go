@@ -32,18 +32,10 @@ type CtyunSdwansConfig struct {
 }
 
 type CtyunSdwanInfos struct {
-	ID            types.String `tfsdk:"id"`
-	Name          types.String `tfsdk:"name"`
-	Desc          types.String `tfsdk:"desc"`
-	Status        types.String `tfsdk:"status"`
-	CreatedTime   types.String `tfsdk:"created_time"`
-	ProjectID     types.String `tfsdk:"projectID"`     /*  企业项目ID  */
-	Description   types.String `tfsdk:"description"`   /*  描述  */
-	EcName        types.String `tfsdk:"ecName"`        /*  云间高速name  */
-	EcID          types.String `tfsdk:"ecID"`          /*  云间高速 id  */
-	EdgeNum       types.Int32  `tfsdk:"edgeNum"`       /*  设备数量  */
-	OnlineEdgeNum types.Int32  `tfsdk:"onlineEdgeNum"` /*  在线设备数量  */
-	CreateTime    types.String `tfsdk:"createTime"`    /*  创建时间  */
+	ID          types.String `tfsdk:"id"`
+	Name        types.String `tfsdk:"name"`
+	Desc        types.String `tfsdk:"description"`
+	CreatedTime types.String `tfsdk:"created_time"`
 }
 
 func (c *CtyunSdwans) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -85,13 +77,9 @@ func (c *CtyunSdwans) Schema(ctx context.Context, req datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "SD-WAN名称",
 						},
-						"desc": schema.StringAttribute{
+						"description": schema.StringAttribute{
 							Computed:    true,
 							Description: "SD-WAN描述",
-						},
-						"status": schema.StringAttribute{
-							Computed:    true,
-							Description: "SD-WAN状态",
 						},
 						"created_time": schema.StringAttribute{
 							Computed:    true,
@@ -149,25 +137,15 @@ func (c *CtyunSdwans) Read(ctx context.Context, req datasource.ReadRequest, resp
 	var sdwanList []CtyunSdwanInfos
 	for _, sdwanItem := range response.ReturnObj.Result {
 		sdwanInfo := CtyunSdwanInfos{
-			ID:            types.StringValue(*sdwanItem.SdwanID),
-			Name:          types.StringValue(*sdwanItem.SdwanName),
-			EdgeNum:       types.Int32Value(sdwanItem.EdgeNum),
-			OnlineEdgeNum: types.Int32Value(sdwanItem.OnlineEdgeNum),
-			CreatedTime:   types.StringValue(*sdwanItem.CreateTime),
+			ID:          types.StringValue(*sdwanItem.SdwanID),
+			Name:        types.StringValue(*sdwanItem.SdwanName),
+			CreatedTime: types.StringValue(*sdwanItem.CreateTime),
 		}
 
 		if sdwanItem.Description != nil {
 			sdwanInfo.Desc = types.StringValue(*sdwanItem.Description)
 		}
-		if sdwanItem.ProjectID != nil {
-			sdwanInfo.ProjectID = types.StringValue(*sdwanItem.ProjectID)
-		}
-		if sdwanItem.EcName != nil {
-			sdwanInfo.EcName = types.StringValue(*sdwanItem.EcName)
-		}
-		if sdwanItem.EcID != nil {
-			sdwanInfo.EcID = types.StringValue(*sdwanItem.EcID)
-		}
+
 		sdwanList = append(sdwanList, sdwanInfo)
 	}
 
