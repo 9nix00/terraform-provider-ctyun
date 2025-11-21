@@ -78,6 +78,7 @@ type CtyunRedisInstanceConfig struct {
 	MaintenanceTime     types.String                    `tfsdk:"maintenance_time"`
 	ConnectionAddress   types.String                    `tfsdk:"connection_address"`
 	ProtectionStatus    types.Bool                      `tfsdk:"protection_status"`
+	Vip                 types.String                    `tfsdk:"vip"`
 	BackupPolicy        *CtyunRedisInstanceBackupPolicy `tfsdk:"backup_policy"`
 	SslEnabled          types.Bool                      `tfsdk:"ssl_enabled"`
 	TemplateID          types.String                    `tfsdk:"template_id"`
@@ -413,6 +414,13 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Default:     stringdefault.StaticString("00:00-02:00"),
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile("^([0-1][0-9]|2[0-3]):[0-5][0-9]-([0-1][0-9]|2[0-3]):[0-5][0-9]$"), "时间格式错误"),
+				},
+			},
+			"vip": schema.StringAttribute{
+				Computed:    true,
+				Description: "VIP地址",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"protection_status": schema.BoolAttribute{
@@ -885,6 +893,7 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 		plan.AutoRenewCycleCount = types.Int32Null()
 	}
 	plan.ConnectionAddress = types.StringValue(instance.ConnectionAddress)
+	plan.Vip = types.StringValue(instance.Vip)
 	plan.MaintenanceTime = types.StringValue(instance.MaintenanceTime)
 	plan.ProtectionStatus = utils.SecBoolValue(instance.ProtectionStatus)
 	plan.EngineVersion = types.StringValue(instance.EngineVersion)
