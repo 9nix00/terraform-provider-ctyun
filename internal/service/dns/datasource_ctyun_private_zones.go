@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -40,11 +40,12 @@ func (c *CtyunPrivateZones) Metadata(ctx context.Context, request datasource.Met
 
 func (c *CtyunPrivateZones) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026757/10033667",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
-				Required:    true,
-				Description: "区域ID",
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池ID，默认使用provider配置",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -58,20 +59,20 @@ func (c *CtyunPrivateZones) Schema(ctx context.Context, request datasource.Schem
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
-				Description: "内网DNS名称",
+				Description: "内网DNS名称，精确匹配",
 			},
-			"page_no": schema.Int64Attribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Description: "分页页码，默认为1",
-				Validators: []validator.Int64{
-					int64validator.AtLeast(1),
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
 				},
 			},
-			"page_size": schema.Int64Attribute{
+			"page_size": schema.Int32Attribute{
 				Optional:    true,
 				Description: "每页记录数，默认为10，最大50",
-				Validators: []validator.Int64{
-					int64validator.Between(1, 50),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 50),
 				},
 			},
 			"zones": schema.ListNestedAttribute{

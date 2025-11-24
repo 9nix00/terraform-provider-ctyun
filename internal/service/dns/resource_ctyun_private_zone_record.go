@@ -10,11 +10,13 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -52,14 +54,13 @@ func (c *CtyunPrivateZoneRecord) ImportState(ctx context.Context, request resour
 		}
 	}()
 	var config CtyunPrivateZoneRecordConfig
-	var ID, regionId, projectId, vpcId, name string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId, &name)
+	var ID, regionId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId)
 	if err != nil {
 		return
 	}
 	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
-	config.Name = types.StringValue(name)
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
@@ -69,7 +70,7 @@ func (c *CtyunPrivateZoneRecord) ImportState(ctx context.Context, request resour
 
 func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026757/10224466",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -91,8 +92,14 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 				},
 			},
 			"type": schema.StringAttribute{
-				Required:    true,
-				Description: "内网DNS记录类型，支持: A / CNAME / MX / AAAA / TXT, 大小写不敏感",
+				Required: true,
+				Description: "内网DNS记录类型，支持: A / CNAME / MX / AAAA / TXT, 大小写不敏感。" +
+					"A-将域名指向一个IPv4地址；" +
+					"CNAME-将域名指向另一个域名；MX-邮件交换记录，用于指定接收电子邮件的服务器；" +
+					"MX-邮件交换记录，用于指定接收电子邮件的服务器；" +
+					"AAAA-将域名指向一个IPv6地址；" +
+					"TXT-文本记录，可以包含任意文本信息；",
+				//"SRV-记录提供特定服务的服务器",
 				Validators: []validator.String{
 					stringvalidator.OneOf("A", "CNAME", "MX", "AAAA", "TXT"),
 				},
@@ -100,12 +107,20 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 			"value_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "最多同时支持 8 个",
+				Description: "当type=A，value_list必须是 IPv4 地址；" +
+					"当type=CNAME，value_list填写您要指向的别名，只能写一个域名；" +
+					"当type=MX，value_list 填写邮箱服务器地址，最多可以输入8个不重复地址；" +
+					"当type=AAAA，valueList 填写IPv6地址，最多可以输入8个不重复地址；" +
+					"当type= TXT 时，valueList 填写文本记录值(合法字符包含大小写字母、数字、空格，文本记录)",
+				//"当type=SRV时，valueList填写指定服务的服务器地址，最多可以输入8个不重复地址。 数组中元素格式要求如下：_服务名._协议名.主机名:端口号；",
+				Validators: []validator.Set{
+					setvalidator.SizeBetween(1, 8),
+				},
 			},
 			"ttl": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "zone ttl, ",
+				Description: "zone ttl，TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。",
 				Default:     int32default.StaticInt32(300),
 				Validators: []validator.Int32{
 					int32validator.Between(300, 2147483647),
@@ -113,7 +128,7 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 			},
 			"name": schema.StringAttribute{
 				Optional:    true,
-				Description: "DNS记录集的 name 长度",
+				Description: "DNS记录集的 name",
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -130,6 +145,15 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间",
+			},
+			"enabled": schema.StringAttribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "是否开启解析记录，默认启用。启用：enable,不启用：disable",
+				Default:     stringdefault.StaticString(business.AclEnable),
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.AclEnable, business.AclDisable),
+				},
 			},
 		},
 	}
@@ -265,6 +289,10 @@ func (c *CtyunPrivateZoneRecord) create(ctx context.Context, config *CtyunPrivat
 		return err
 	}
 	params.ValueList = values
+	if !config.Description.IsNull() && !config.Description.IsUnknown() {
+		params.Description = config.Description.ValueStringPointer()
+	}
+
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreatePrivateZoneRecordApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err
@@ -279,6 +307,11 @@ func (c *CtyunPrivateZoneRecord) create(ctx context.Context, config *CtyunPrivat
 		return err
 	}
 	config.ID = types.StringValue(*resp.ReturnObj.ZoneRecordID)
+	// 是否需要关闭解析
+	err = c.controlEnable(ctx, config)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -302,7 +335,7 @@ func (c *CtyunPrivateZoneRecord) getAndMerge(ctx context.Context, config *CtyunP
 	}
 	config.Name = types.StringValue(*resp.ReturnObj.Name)
 	config.Description = types.StringValue(*resp.ReturnObj.Description)
-	config.ZoneID = types.StringValue(*resp.ReturnObj.ZoneRecordID)
+	config.ZoneID = types.StringValue(*resp.ReturnObj.ZoneID)
 	config.Type = types.StringValue(*resp.ReturnObj.RawType)
 	config.TTL = types.Int32Value(resp.ReturnObj.TTL)
 	config.CreatedTime = types.StringValue(*resp.ReturnObj.CreatedAt)
@@ -310,7 +343,16 @@ func (c *CtyunPrivateZoneRecord) getAndMerge(ctx context.Context, config *CtyunP
 	// 处理value
 	var values []string
 	for _, value := range resp.ReturnObj.Value {
-		values = append(values, *value)
+		if value == nil {
+			continue
+		}
+		if config.Type.ValueString() == "TXT" {
+			result := strings.Trim(*value, `"`)
+			values = append(values, result)
+		} else {
+			values = append(values, *value)
+		}
+
 	}
 	valueTmp, diags := types.SetValueFrom(ctx, types.StringType, values)
 	if diags.HasError() {
@@ -325,6 +367,7 @@ func (c *CtyunPrivateZoneRecord) update(ctx context.Context, state *CtyunPrivate
 	params := &ctvpc.CtvpcUpdatePrivateZoneRecordAttributeRequest{
 		RegionID:     state.RegionID.ValueString(),
 		ZoneRecordID: state.ID.ValueString(),
+		TTL:          plan.TTL.ValueInt32(),
 	}
 	var values []string
 	diags := plan.ValueList.ElementsAs(ctx, &values, false)
@@ -333,9 +376,7 @@ func (c *CtyunPrivateZoneRecord) update(ctx context.Context, state *CtyunPrivate
 		return err
 	}
 	params.ValueList = values
-	if !plan.TTL.Equal(state.TTL) {
-		params.TTL = plan.TTL.ValueInt32()
-	}
+
 	if !plan.Description.Equal(state.Description) {
 		params.Description = plan.Description.ValueStringPointer()
 	}
@@ -350,11 +391,18 @@ func (c *CtyunPrivateZoneRecord) update(ctx context.Context, state *CtyunPrivate
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return err
 	}
+	plan.ID = state.ID
+	err = c.controlEnable(ctx, plan)
+	if err != nil {
+		return err
+	}
+	state.Enabled = plan.Enabled
 	return nil
 }
 
 func (c *CtyunPrivateZoneRecord) delete(ctx context.Context, config CtyunPrivateZoneRecordConfig) error {
 	params := &ctvpc.CtvpcDeletePrivateZoneRecordRequest{
+		ClientToken:  uuid.NewString(),
 		RegionID:     config.RegionID.ValueString(),
 		ZoneRecordID: config.ID.ValueString(),
 	}
@@ -371,6 +419,60 @@ func (c *CtyunPrivateZoneRecord) delete(ctx context.Context, config CtyunPrivate
 	return nil
 }
 
+func (c *CtyunPrivateZoneRecord) controlEnable(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
+	if config.Enabled.ValueString() == business.AclEnable {
+		err := c.enableRecord(ctx, config)
+		if err != nil {
+			return err
+		}
+	} else if config.Enabled.ValueString() == business.AclDisable {
+		err := c.diableRecord(ctx, config)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := fmt.Errorf("未知的enabled参数值(%s)", config.Enabled.ValueString())
+		return err
+	}
+	return nil
+}
+
+func (c *CtyunPrivateZoneRecord) enableRecord(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
+	params := &ctvpc.CtvpcEnablePrivateZoneRecordRequest{
+		RegionID:     config.RegionID.ValueString(),
+		ZoneRecordID: config.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcEnablePrivateZoneRecordApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("开启内网DNS记录(id=%s)失败，接口返回nil，请联系研发确认问题原因！", config.ID.ValueString())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return err
+	}
+	return nil
+}
+
+func (c *CtyunPrivateZoneRecord) diableRecord(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
+	params := &ctvpc.CtvpcDisablePrivateZoneRecordRequest{
+		RegionID:     config.RegionID.ValueString(),
+		ZoneRecordID: config.ID.ValueString(),
+	}
+	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcDisablePrivateZoneRecordApi.Do(ctx, c.meta.SdkCredential, params)
+	if err != nil {
+		return err
+	} else if resp == nil {
+		err = fmt.Errorf("关闭内网DNS记录(id=%s)失败，接口返回nil，请联系研发确认问题原因！", config.ID.ValueString())
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return err
+	}
+	return nil
+}
+
 type CtyunPrivateZoneRecordConfig struct {
 	RegionID    types.String `tfsdk:"region_id"`
 	ZoneID      types.String `tfsdk:"zone_id"`
@@ -379,6 +481,7 @@ type CtyunPrivateZoneRecordConfig struct {
 	TTL         types.Int32  `tfsdk:"ttl"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
+	Enabled     types.String `tfsdk:"enabled"`
 	ID          types.String `tfsdk:"id"`
 	CreatedTime types.String `tfsdk:"create_time"`
 	UpdatedTime types.String `tfsdk:"update_time"`

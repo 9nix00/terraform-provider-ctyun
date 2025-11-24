@@ -34,7 +34,7 @@ func (c *CtyunAclRules) Metadata(ctx context.Context, request datasource.Metadat
 
 func (c *CtyunAclRules) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "查询访问控制列表(ACL)规则信息",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028588",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

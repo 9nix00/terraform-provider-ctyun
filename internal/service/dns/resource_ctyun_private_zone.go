@@ -17,10 +17,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strings"
+	"time"
 )
 
 type CtyunPrivateZone struct {
@@ -54,14 +56,13 @@ func (c *CtyunPrivateZone) ImportState(ctx context.Context, request resource.Imp
 		}
 	}()
 	var config CtyunPrivateZoneConfig
-	var ID, regionId, projectId, vpcId, name string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId, &name)
+	var ID, regionId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId)
 	if err != nil {
 		return
 	}
 	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
-	config.Name = types.StringValue(name)
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
@@ -71,7 +72,7 @@ func (c *CtyunPrivateZone) ImportState(ctx context.Context, request resource.Imp
 
 func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026757/10033657",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -87,6 +88,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			},
 			"vpc_id_list": schema.SetAttribute{
 				Required:    true,
+				ElementType: types.StringType,
 				Description: "关联的vpc，最多同时支持 5 个 VPC",
 				Validators: []validator.Set{
 					setvalidator.SizeBetween(1, 5),
@@ -107,6 +109,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			"proxy_pattern": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
+				Default:     stringdefault.StaticString("zone"),
 				Description: "zone：当前可用区不进行递归解析。 record：不完全劫持，进行递归解析代理, 大小写不敏感",
 			},
 			"ttl": schema.Int32Attribute{
@@ -278,14 +281,15 @@ func (c *CtyunPrivateZone) create(ctx context.Context, config *CtyunPrivateZoneC
 		return err
 	}
 	params := &ctvpc.CtvpcCreatePrivateZoneRequest{
-		ClientToken: uuid.NewString(),
-		RegionID:    config.RegionID.ValueString(),
-		Name:        config.Name.ValueString(),
-		TTL:         config.TTL.ValueInt32(),
-		VpcIDList:   strings.Join(vpcIds, ","),
+		ClientToken:  uuid.NewString(),
+		RegionID:     config.RegionID.ValueString(),
+		Name:         config.Name.ValueString(),
+		TTL:          config.TTL.ValueInt32(),
+		VpcIDList:    strings.Join(vpcIds, ","),
+		ProxyPattern: config.ProxyPattern.ValueStringPointer(),
 	}
-	if !config.ProxyPattern.IsNull() && !config.ProxyPattern.IsUnknown() {
-		params.ProxyPattern = config.ProxyPattern.ValueStringPointer()
+	if !config.Description.IsNull() && !config.Description.IsUnknown() {
+		params.Description = config.Description.ValueStringPointer()
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcCreatePrivateZoneApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -301,6 +305,7 @@ func (c *CtyunPrivateZone) create(ctx context.Context, config *CtyunPrivateZoneC
 		return err
 	}
 	config.ID = types.StringValue(*resp.ReturnObj.ZoneID)
+	time.Sleep(2 * time.Second)
 	// 标签处理
 	if !config.Tags.IsNull() && !config.Tags.IsUnknown() {
 		err = c.addLabel(ctx, config)
@@ -322,15 +327,22 @@ func (c *CtyunPrivateZone) getAndMerge(ctx context.Context, config *CtyunPrivate
 	config.CreateTime = types.StringValue(*detailResp.CreatedAt)
 	config.UpdateTime = types.StringValue(*detailResp.UpdatedAt)
 	config.ProxyPattern = types.StringValue(*detailResp.ProxyPattern)
-	vpcIds, diags := types.SetValueFrom(ctx, types.StringType, detailResp.VpcAssociations)
+	var vpcIds []string
+	for _, vpcItem := range detailResp.VpcAssociations {
+		vpcIds = append(vpcIds, *vpcItem.VpcID)
+	}
+	vpcIdsTmp, diags := types.SetValueFrom(ctx, types.StringType, vpcIds)
 	if diags.HasError() {
 		return fmt.Errorf(diags[0].Detail())
 	}
-	config.VpcIDList = vpcIds
+	config.VpcIDList = vpcIdsTmp
 
 	var tags []CtyunPrivateZoneTagModel
 	// 获取tags列表
 	respTags, err := c.getTags(ctx, config)
+	if err != nil {
+		return err
+	}
 	for _, tagItem := range respTags {
 		var tag CtyunPrivateZoneTagModel
 		tag.TagID = types.StringValue(*tagItem.LabelID)
@@ -370,8 +382,10 @@ func (c *CtyunPrivateZone) getPrivateZoneDetail(ctx context.Context, config *Cty
 func (c *CtyunPrivateZone) update(ctx context.Context, state *CtyunPrivateZoneConfig, plan *CtyunPrivateZoneConfig) error {
 
 	params := &ctvpc.CtvpcUpdatePrivateZoneAttributeRequest{
-		RegionID: state.RegionID.ValueString(),
-		ZoneID:   state.ID.ValueString(),
+		RegionID:     state.RegionID.ValueString(),
+		ZoneID:       state.ID.ValueString(),
+		TTL:          plan.TTL.ValueInt32(),
+		ProxyPattern: plan.ProxyPattern.ValueStringPointer(),
 	}
 	if !plan.VpcIDList.Equal(state.VpcIDList) {
 		var vpcIds []string
@@ -383,11 +397,8 @@ func (c *CtyunPrivateZone) update(ctx context.Context, state *CtyunPrivateZoneCo
 		vpcIdsStr := strings.Join(vpcIds, ",")
 		params.VpcIDList = &vpcIdsStr
 	}
-	if !plan.ProxyPattern.IsNull() && !plan.ProxyPattern.Equal(state.ProxyPattern) {
-		params.ProxyPattern = state.ProxyPattern.ValueStringPointer()
-	}
-	if !plan.TTL.Equal(state.TTL) {
-		params.TTL = state.TTL.ValueInt32()
+	if !plan.Description.IsNull() && !plan.Description.IsUnknown() {
+		params.Description = plan.Description.ValueStringPointer()
 	}
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcUpdatePrivateZoneAttributeApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -556,11 +567,11 @@ func (c *CtyunPrivateZone) getLabelID(ctx context.Context, config *CtyunPrivateZ
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return "", err
-	} else if resp.ReturnObj == nil || len(resp.ReturnObj) < 1 {
+	} else if resp.ReturnObj == nil || len(resp.ReturnObj.Results) < 1 {
 		err = common.InvalidReturnObjError
 		return "", err
 	}
-	for _, result := range resp.ReturnObj[0].Results {
+	for _, result := range resp.ReturnObj.Results {
 		if result.LabelKey != nil && *result.LabelKey == key {
 			return *result.LabelID, nil
 		}
@@ -579,15 +590,11 @@ func (c *CtyunPrivateZone) getTags(ctx context.Context, config *CtyunPrivateZone
 	if err != nil {
 		return nil, err
 	}
-	if len(resp.ReturnObj) < 1 {
-		err = common.InvalidReturnObjError
-		return nil, err
-	}
-	if len(resp.ReturnObj) > 1 {
-		err = fmt.Errorf("获取内网DNS(id=%s)标签列表，查询到多个returnObj结果。", config.ID.ValueString())
-		return nil, err
-	}
-	return resp.ReturnObj[0].Results, err
+	//if len(resp.ReturnObj.Results) < 1 {
+	//	err = common.InvalidReturnObjError
+	//	return nil, err
+	//}
+	return resp.ReturnObj.Results, err
 }
 
 type CtyunPrivateZoneTagModel struct {
