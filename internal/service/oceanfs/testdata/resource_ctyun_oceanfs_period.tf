@@ -8,3 +8,4 @@ resource "ctyun_oceanfs" "%[1]s" {
   subnet_id    = "%[8]s"
   tags         = [%[9]s]
 }
+

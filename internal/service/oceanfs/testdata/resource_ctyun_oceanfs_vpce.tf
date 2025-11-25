@@ -3,8 +3,8 @@ resource "ctyun_oceanfs" "%[1]s" {
   name         = "%[3]s"
   sfs_size     = "%[4]d"
   cycle_type   = "%[5]s"
-  az_name      = "%[6]s"
-  vpc_id       = "%[7]s"
-  subnet_id    = "%[8]s"
-  is_vpce      = "%[9]t"
+  vpc_id       = "%[6]s"
+  subnet_id    = "%[7]s"
+  is_vpce      = "%[8]t"
 }
+

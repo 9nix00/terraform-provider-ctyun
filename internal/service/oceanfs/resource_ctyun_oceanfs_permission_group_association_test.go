@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunOceanfsPermissionGroupAssociation(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_oceanfs_permission_group_association." + rnd
 	resourceFile := "resource_ctyun_oceanfs_permission_group_association.tf"

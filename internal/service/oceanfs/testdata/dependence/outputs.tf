@@ -22,8 +22,6 @@ output "permission_group_id1" {
   value = ctyun_oceanfs_permission_group.test1.id
 }
 
-
-
 output "oceanfs_id" {
   value = ctyun_oceanfs.test.id
 }

@@ -5,3 +5,4 @@ resource "ctyun_oceanfs_permission_group_association" "%[1]s" {
   subnet_id           = "%[5]s"
   is_vpce             = %[6]t
 }
+

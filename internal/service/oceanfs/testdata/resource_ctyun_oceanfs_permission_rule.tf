@@ -4,3 +4,4 @@ resource "ctyun_oceanfs_permission_rule" "%[1]s" {
   rw_permission            = "%[4]s"
   permission_rule_priority = %[5]d
 }
+

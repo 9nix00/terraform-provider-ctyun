@@ -163,8 +163,8 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "可用区名称",
-				// az时候有必要设定默认值
+				Description: "可用区名称，若未填写，默认从环境变量中读取。",
+				// az有必要设定默认值
 				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

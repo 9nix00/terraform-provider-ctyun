@@ -10,7 +10,6 @@ import (
 )
 
 func TestAccCtyunOceanfsPermissionRule(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_oceanfs_permission_rule." + rnd
 	resourceFile := "resource_ctyun_oceanfs_permission_rule.tf"
@@ -93,7 +92,6 @@ func TestAccCtyunOceanfsPermissionRule(t *testing.T) {
 
 // 测试用例2: IPv6地址测试
 func TestAccCtyunOceanfsPermissionRuleIPv6(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_oceanfs_permission_rule." + rnd
 	resourceFile := "resource_ctyun_oceanfs_permission_rule.tf"
