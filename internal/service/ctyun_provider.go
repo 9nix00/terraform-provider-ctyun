@@ -352,7 +352,6 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCdaApis:      cda.NewApis(fmt.Sprintf(endpointUrl, cda.EndpointName), coreClient),
 			SdkEcApis:       ec.NewApis(fmt.Sprintf(endpointUrl, ec.EndpointName), coreClient),
 			SdkSdwanApis:    sdwan.NewApis(fmt.Sprintf(endpointUrl, sdwan.EndpointName), coreClient),
-			SdkOceanfsApis:  oceanfs.NewApis(fmt.Sprintf(endpointUrl, oceanfs.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
