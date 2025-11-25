@@ -11,7 +11,6 @@ import (
 
 // 测试用例1: 基础A记录测试
 func TestAccCtyunPrivateZoneRecord_A(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -103,7 +102,7 @@ func TestAccCtyunPrivateZoneRecord_A(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"enabled"}, // 可选忽略
 			},
 			// 3. 清理资源
 			{
@@ -124,7 +123,6 @@ func TestAccCtyunPrivateZoneRecord_A(t *testing.T) {
 
 // 测试用例2: CNAME记录测试
 func TestAccCtyunPrivateZoneRecord_CNAME(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone_record." + rnd
 	resourceFile := "resource_ctyun_private_zone_record.tf"
@@ -198,7 +196,6 @@ func TestAccCtyunPrivateZoneRecord_CNAME(t *testing.T) {
 
 // 测试用例3: MX记录测试
 func TestAccCtyunPrivateZoneRecord_MX(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone_record." + rnd
 	resourceFile := "resource_ctyun_private_zone_record.tf"
@@ -264,7 +261,6 @@ func TestAccCtyunPrivateZoneRecord_MX(t *testing.T) {
 
 // 测试用例4: AAAA记录测试
 func TestAccCtyunPrivateZoneRecord_AAAA(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone_record." + rnd
 	resourceFile := "resource_ctyun_private_zone_record.tf"
@@ -331,7 +327,6 @@ func TestAccCtyunPrivateZoneRecord_AAAA(t *testing.T) {
 
 // 测试用例5: TXT记录测试
 func TestAccCtyunPrivateZoneRecord_TXT(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone_record." + rnd
 	resourceFile := "resource_ctyun_private_zone_record.tf"

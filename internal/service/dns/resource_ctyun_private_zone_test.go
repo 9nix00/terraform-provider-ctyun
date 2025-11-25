@@ -11,7 +11,6 @@ import (
 
 // 测试用例1: 基础创建测试
 func TestAccCtyunPrivateZone_Basic(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone." + rnd
@@ -92,7 +91,6 @@ func TestAccCtyunPrivateZone_Basic(t *testing.T) {
 
 // 测试用例2: 测试带标签的Private Zone
 func TestAccCtyunPrivateZone_WithTags(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_private_zone." + rnd
 	resourceFile := "resource_ctyun_private_zone_tag.tf"
@@ -165,7 +163,6 @@ func TestAccCtyunPrivateZone_WithTags(t *testing.T) {
 
 // 测试用例3: 测试多VPC关联
 func TestAccCtyunPrivateZone_MultipleVPCs(t *testing.T) {
-	t.Setenv("TF_ACC", "1")
 	rnd := utils.GenerateRandomString()
 	resourceFile := "resource_ctyun_private_zone.tf"
 	resourceName := "ctyun_private_zone." + rnd
