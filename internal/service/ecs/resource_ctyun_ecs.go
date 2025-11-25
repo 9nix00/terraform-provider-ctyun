@@ -32,6 +32,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -553,7 +554,12 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 	// 先检查状态
 	err := c.ecsService.CheckEcsStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+		if strings.Contains(err.Error(), "不存在") {
+			response.State.RemoveResource(ctx)
+			err = nil
+		} else {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
 		return
 	}
 	// 先关机或者节省关机，因为销毁是默认用户意识到资料销毁的动作，所以直接关机是ok的
