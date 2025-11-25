@@ -718,6 +718,9 @@ func (c *ctyunEcs) createInstance(ctx context.Context, plan *CtyunEcsConfig) err
 		LabelList:       labels,
 		AffinityGroupID: plan.AffinityGroupId.ValueStringPointer(),
 	}
+	if plan.ProjectId.ValueString() != "" {
+		params.ProjectID = plan.ProjectId.ValueStringPointer()
+	}
 	if keyPairID != "" {
 		params.KeyPairID = &keyPairID
 	} else {
