@@ -241,11 +241,19 @@ func (c *CtyunOceanfsPermissionGroup) create(ctx context.Context, config *CtyunO
 
 	// 通过查询列表，获取id
 	permissions, err := c.getPermissionGroupList(ctx, config)
+	if err != nil {
+		return err
+	}
+
 	for _, permission := range permissions {
 		if permission.PermissionGroupName == config.Name.ValueString() {
 			config.ID = types.StringValue(permission.PermissionGroupFuid)
 			break
 		}
+	}
+	if config.ID.IsUnknown() || config.ID.IsNull() {
+		err = fmt.Errorf("未查询到name=%s的海量文件存储权限组！", config.Name.ValueString())
+		return err
 	}
 	return nil
 }

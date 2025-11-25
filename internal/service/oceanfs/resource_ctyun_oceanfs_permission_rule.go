@@ -353,6 +353,7 @@ func (c *CtyunOceanfsPermissionRule) update(ctx context.Context, state *CtyunOce
 		return err
 	} else if resp == nil {
 		err = fmt.Errorf("更新权限规则失败(id=%s)，接口返回nil。请与研发联系确认问题原因。", state.ID.ValueString())
+		return err
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return err

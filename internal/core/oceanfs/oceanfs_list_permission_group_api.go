@@ -57,7 +57,6 @@ type OceanfsListPermissionGroupRequest struct {
 	PermissionGroupFuid string `json:"permissionGroupFuid,omitempty"` /*  权限组的Fuid  */
 	PageSize            int32  `json:"pageSize,omitempty"`            /*  每页个数。默认为10  */
 	PageNo              int32  `json:"pageNo,omitempty"`              /*  页数。默认为1  */
-
 }
 
 type OceanfsListPermissionGroupResponse struct {

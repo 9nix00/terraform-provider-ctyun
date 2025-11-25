@@ -260,6 +260,9 @@ func (c *CtyunOceanfsPermissionGroupAssociation) create(ctx context.Context, con
 
 	// 绑定后需要轮询下
 	err = c.bindLoop(ctx, config)
+	if err != nil {
+		return err
+	}
 
 	config.ID = types.StringValue(fmt.Sprintf("%s,%s,%s", config.VpcID.ValueString(), config.SfsUID.ValueString(), config.RegionID.ValueString()))
 	return nil
