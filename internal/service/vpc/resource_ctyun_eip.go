@@ -311,6 +311,10 @@ func (c *ctyunEip) Delete(ctx context.Context, request resource.DeleteRequest, r
 		return
 	}
 	time.Sleep(1 * time.Second)
+	if state.Id.ValueString() == "" {
+		response.State.RemoveResource(ctx)
+		return
+	}
 	resp, err := c.meta.Apis.CtVpcApis.EipDeleteApi.Do(ctx, c.meta.Credential, &ctvpc.EipDeleteRequest{
 		EipId:       state.Id.ValueString(),
 		RegionId:    state.RegionId.ValueString(),

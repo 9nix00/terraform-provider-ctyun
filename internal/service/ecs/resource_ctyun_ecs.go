@@ -14,6 +14,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -24,6 +25,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -32,6 +35,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -296,6 +300,22 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
+			"bandwidth": schema.Int32Attribute{
+				Optional:    true,
+				Computed:    true,
+				Description: "带宽大小，传递时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]",
+				Default:     int32default.StaticInt32(0),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 2000),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
+			},
+			"eip_address": schema.StringAttribute{
+				Computed:    true,
+				Description: "弹性IP地址",
+			},
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -553,7 +573,12 @@ func (c *ctyunEcs) Delete(ctx context.Context, request resource.DeleteRequest, r
 	// 先检查状态
 	err := c.ecsService.CheckEcsStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+		if strings.Contains(err.Error(), "不存在") {
+			response.State.RemoveResource(ctx)
+			err = nil
+		} else {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
 		return
 	}
 	// 先关机或者节省关机，因为销毁是默认用户意识到资料销毁的动作，所以直接关机是ok的
@@ -717,6 +742,13 @@ func (c *ctyunEcs) createInstance(ctx context.Context, plan *CtyunEcsConfig) err
 		PayVoucherPrice: float32(plan.PayVoucherPrice.ValueFloat64()),
 		LabelList:       labels,
 		AffinityGroupID: plan.AffinityGroupId.ValueStringPointer(),
+	}
+	if plan.Bandwidth.ValueInt32() > 0 {
+		params.ExtIP = "1"
+		params.Bandwidth = plan.Bandwidth.ValueInt32()
+	}
+	if plan.ProjectId.ValueString() != "" {
+		params.ProjectID = plan.ProjectId.ValueStringPointer()
 	}
 	if keyPairID != "" {
 		params.KeyPairID = &keyPairID
@@ -1356,10 +1388,14 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 		InstanceID: cfg.Id.ValueString(),
 	})
 	if err != nil {
-		// 实例已经被退订的情况
-		if *resp.ErrorCode == common.EcsInstanceNotFound {
-			return nil, nil
-		}
+		return nil, err
+	} else if utils.SecString(resp.ErrorCode) == common.EcsInstanceNotFound {
+		return nil, nil
+	} else if resp.StatusCode == common.ErrorStatusCode {
+		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+		return nil, err
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return nil, err
 	}
 	instance_details_resp := resp.ReturnObj
@@ -1368,6 +1404,7 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	cfg.InstanceName = types.StringValue(*instance_details_resp.InstanceName)
 	cfg.DisplayName = types.StringValue(*instance_details_resp.DisplayName)
 	cfg.Name = cfg.DisplayName
+	cfg.EipAddress = utils.SecStringValue(instance_details_resp.FloatingIP)
 	if cfg.FlavorId != types.StringNull() {
 		cfg.FlavorId = types.StringValue(*instance_details_resp.Flavor.FlavorID)
 	}
@@ -1928,6 +1965,7 @@ type CtyunEcsConfig struct {
 	UserData               types.String  `tfsdk:"user_data"`
 	MasterOrderId          types.String  `tfsdk:"master_order_id"`
 	ProjectId              types.String  `tfsdk:"project_id"`
+	Bandwidth              types.Int32   `tfsdk:"bandwidth"`
 	RegionId               types.String  `tfsdk:"region_id"`
 	AzName                 types.String  `tfsdk:"az_name"`
 	IsDestroyInstance      types.Bool    `tfsdk:"is_destroy_instance"`
@@ -1937,6 +1975,7 @@ type CtyunEcsConfig struct {
 	Labels                 []Label       `tfsdk:"labels"`
 	AffinityGroupId        types.String  `tfsdk:"affinity_group_id"`
 	FlavorName             types.String  `tfsdk:"flavor_name"`
+	EipAddress             types.String  `tfsdk:"eip_address"`
 }
 
 type Label struct {
