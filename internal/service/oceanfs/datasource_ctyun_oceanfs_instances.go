@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/oceanfs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
 type CtyunOceanfsInstances struct {
@@ -229,9 +229,9 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 		info.SfsProtocol = types.StringValue(item.SfsProtocol)
 		info.SfsStatus = types.StringValue(item.SfsStatus)
 		info.UsedSize = types.Int32Value(item.UsedSize)
-		info.CreateTime = types.StringValue(c.timestampToStr(item.CreateTime))
-		info.UpdateTime = types.StringValue(c.timestampToStr(item.UpdateTime))
-		info.ExpireTime = types.StringValue(c.timestampToStr(item.ExpireTime))
+		info.CreateTime = types.StringValue(utils.FromUnixToUTC(item.CreateTime))
+		info.UpdateTime = types.StringValue(utils.FromUnixToUTC(item.UpdateTime))
+		info.ExpireTime = types.StringValue(utils.FromUnixToUTC(item.ExpireTime))
 		info.ProjectID = types.StringValue(item.ProjectID)
 		info.OnDemand = types.BoolValue(false)
 		info.RegionID = types.StringValue(item.RegionID)
@@ -261,15 +261,6 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 	if response.Diagnostics.HasError() {
 		return
 	}
-}
-
-func (c *CtyunOceanfsInstances) timestampToStr(timestamp int64) string {
-	// 将时间戳转换为time.Time
-	t := time.Unix(timestamp, 0)
-
-	// 转换为RFC3339格式（包含毫秒）
-	rfc3339WithMillis := t.UTC().Format("2006-01-02T15:04:05.000Z")
-	return rfc3339WithMillis
 }
 
 type CtyunOceanfsInfoModel struct {
