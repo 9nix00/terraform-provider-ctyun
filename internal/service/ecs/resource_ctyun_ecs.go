@@ -26,6 +26,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/float64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -302,10 +303,13 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"bandwidth": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "带宽大小，大于0时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]",
+				Description: "带宽大小，传递时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]",
 				Default:     int32default.StaticInt32(0),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 2000),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"eip_address": schema.StringAttribute{

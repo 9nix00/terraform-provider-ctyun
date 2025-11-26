@@ -63,7 +63,7 @@ data "ctyun_ecs_flavors" "ecs_flavor_test2" {
 
 resource "ctyun_ecs" "ecs_test" {
   instance_name       = "tf-ecs-for-snapshot"
-  display_name        = "tf-ecs-for-snapshot"
+  display_name        = "tf-ecs-for-snapshot1"
   flavor_id           = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].id
   image_id            = data.ctyun_images.image_test.images[0].id
   system_disk_type    = "sata"
