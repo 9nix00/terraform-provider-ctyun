@@ -426,7 +426,7 @@ func (c *CtyunPrivateZoneRecord) controlEnable(ctx context.Context, config *Ctyu
 			return err
 		}
 	} else if config.Enabled.ValueString() == business.AclDisable {
-		err := c.diableRecord(ctx, config)
+		err := c.disableRecord(ctx, config)
 		if err != nil {
 			return err
 		}
@@ -455,7 +455,7 @@ func (c *CtyunPrivateZoneRecord) enableRecord(ctx context.Context, config *Ctyun
 	return nil
 }
 
-func (c *CtyunPrivateZoneRecord) diableRecord(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
+func (c *CtyunPrivateZoneRecord) disableRecord(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
 	params := &ctvpc.CtvpcDisablePrivateZoneRecordRequest{
 		RegionID:     config.RegionID.ValueString(),
 		ZoneRecordID: config.ID.ValueString(),

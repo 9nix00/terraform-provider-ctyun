@@ -1,4 +1,3 @@
-# 不使用eip方案
 resource "ctyun_scaling_config" "%[1]s" {
   name            = "%[2]s"
   image_id        = "%[3]s"
@@ -9,5 +8,5 @@ resource "ctyun_scaling_config" "%[1]s" {
   monitor_service = %[8]t
   tags            = %[9]s
   volumes         = %[10]s
+  az_names        = %[11]s
 }
-
