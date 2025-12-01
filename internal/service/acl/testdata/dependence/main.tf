@@ -24,7 +24,6 @@ resource "ctyun_acl" "acl_test" {
   description = "terraform测试使用"
 }
 
-
 resource "ctyun_acl" "acl_subnet_test" {
   project_id  = "0"
   vpc_id      = ctyun_vpc.vpc_test.id
