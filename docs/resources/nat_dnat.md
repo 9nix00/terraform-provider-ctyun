@@ -67,7 +67,7 @@ resource "ctyun_nat_dnat" "dnat_test"{
 
 - `dnat_type` (String) dnat规则类型，支持传递instance或custom，支持更新
 - `external_id` (String) 弹性IP的ID，形如eip-xxxxx，支持更新
-- `external_port` (Number) 弹性IP公网端口，1 - 1024，支持更新
+- `external_port` (Number) 弹性IP公网端口，1 - 65535，支持更新
 - `internal_port` (Number) 主机内网端口，1 - 65535，支持更新
 - `nat_gateway_id` (String) NAT网关Id
 - `protocol` (String) 协议：tcp/udp，支持更新

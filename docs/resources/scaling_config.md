@@ -64,7 +64,7 @@ resource "ctyun_scaling_config" "scaling_config_example" {
 
 ### Optional
 
-- `az_names` (Set of String) 可用区列表，仅多可用区资源池支持，支持更新
+- `az_names` (Set of String) 可用区列表，不填写默认包含该资源池下所有AZ，支持更新
 - `bandwidth` (Number) 弹性IP带宽(Mbps)，范围1-3000，支持更新
 - `key_pair_id` (String) 密钥对ID，login_mode为key_pair时必填，支持更新
 - `monitor_service` (Boolean) 是否开启详细监控，支持更新

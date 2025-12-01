@@ -186,13 +186,12 @@ resource "ctyun_postgresql_instance" "test" {
 - `prod_id` (String) 产品ID，支持更新。取值范围包括：Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(prod_id)扩容同时进行
 - `security_group_id` (String) 安全组Id
 - `storage_space` (Number) 主存储空间(单位:G，范围100-32768)。支持更新，扩容过程中不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(pord_id)扩容同时进行
-- `storage_type` (String) 主存储类型: SSD=超高IO, SATA=普通IO, SAS=高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
+- `storage_type` (String) 主存储类型: SSD=超高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
 
 ### Optional
 
-- `appoint_vip` (String) 指定VIP
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写，当cycle_count<12，到期自动续订1个月，当cycle_count>=12，到期自动续订12个月
 - `availability_zone_info` (Attributes List) pgsql实例节点指定可用区字段，选填，若未填写根据实例节点数分配至各个az。示例：若创建一个一主两备的pgsql，对应的availability_zone_info为：[{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:master},{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:slave},{availabilityZoneName:cn-huadong1-jsnj1A-public-ctcloud,availabilityZoneCount:1,nodeType:slave}] (see [below for nested schema](#nestedatt--availability_zone_info))
 - `backup_storage_space` (Number) 备份存储空间大小。支持更新，主存储空间(storage_space)若备份存储空间(backup_storage_space)同时更新，先更新backup_storage_space。
@@ -204,6 +203,7 @@ resource "ctyun_postgresql_instance" "test" {
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID。若环境变量为空，则默认为0
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 - `running_control` (String) 控制是否暂停，启用和重启实例。支持更新，取值范围：stop, start, restart
+- `vip` (String) VIP地址
 
 ### Read-Only
 

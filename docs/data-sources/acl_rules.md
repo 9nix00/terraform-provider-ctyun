@@ -1,5 +1,5 @@
 # ctyun_acl_rules (Data Source)
-查询访问控制列表(ACL)规则信息
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028588
 
 
 
