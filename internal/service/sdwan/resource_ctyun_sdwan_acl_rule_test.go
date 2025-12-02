@@ -14,6 +14,8 @@ func TestAccCtyunSdwanAclRule_basic(t *testing.T) {
 
 	resourceName := "ctyun_sdwan_acl_rule." + rnd
 	resourceFile := "resource_ctyun_sdwan_acl_rule.tf"
+	datasourceName := "data.ctyun_sdwan_acl_rules." + rnd
+	datasourceFile := "datasource_ctyun_sdwan_acl_rules.tf"
 
 	// 先创建一个ACL用于测试
 	aclRnd := utils.GenerateRandomString()
@@ -78,7 +80,14 @@ func TestAccCtyunSdwanAclRule_basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"ip_version"}, // 项目ID可能变化
 
 			},
-
+			// datasource 测试
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, aclId, "out", "tcp", "IPv4", "192.168.0.0/24", "80-443", "50", "deny", "10.0.0.0/24", "80-443") + "\n" +
+					utils.LoadTestCase(datasourceFile, rnd, aclId),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(datasourceName, "id"),
+				),
+			},
 			{
 				Config:  utils.LoadTestCase("resource_ctyun_sdwan_acl.tf", aclRnd, aclName, "in", "udp", "IPv4", "10.0.0.0/16", "-1/-1", 100, "allow", "10.0.0.0/16", "-1/-1"),
 				Destroy: true,
