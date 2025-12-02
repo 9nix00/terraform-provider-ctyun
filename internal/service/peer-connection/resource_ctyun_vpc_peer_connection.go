@@ -54,14 +54,15 @@ func (c *CtyunVpcPeerConnection) ImportState(ctx context.Context, request resour
 		}
 	}()
 	var config CtyunVpcPeerConnectionConfig
-	var ID, regionId, projectId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId)
+	var ID, regionId, projectId, instanceId string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &instanceId)
 	if err != nil {
 		return
 	}
 	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 	config.ProjectID = types.StringValue(projectId)
+	config.InstanceID = types.StringValue(instanceId)
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
@@ -132,7 +133,6 @@ func (c *CtyunVpcPeerConnection) Schema(ctx context.Context, request resource.Sc
 			"accept_email": schema.StringAttribute{
 				Description: "对端vpc账户的邮箱，当建立跨帐号的对等连接，需要对端同意。可调用ctyun_vpc_peer_connection_attch实现",
 				Optional:    true,
-				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -397,8 +397,6 @@ func (c *CtyunVpcPeerConnection) getVpcDetail(ctx context.Context, regionID stri
 }
 
 func (c *CtyunVpcPeerConnection) getAndMerge(ctx context.Context, config *CtyunVpcPeerConnectionConfig) error {
-	fmt.Println("查询对等连接详细信息：")
-	fmt.Println(c.meta.SdkCredential.GetAccessKey(), c.meta.SdkCredential.GetSecretKey())
 	resp, err := c.getPeerConnectionDetail(ctx, config)
 	if err != nil {
 		return err

@@ -10,12 +10,12 @@ import (
 const dependenceDir = "testdata/dependence"
 
 type Dependence struct {
-	vpcID1            string
-	vpcID2            string
-	crossAccountVpcID string
-	crossAccountEmail string
-	peerConnectionID  string
-	rtbID             string
+	vpcID1 string
+	vpcID2 string
+	//crossAccountVpcID string
+	//crossAccountEmail string
+	peerConnectionID string
+	rtbID            string
 }
 
 var dependence Dependence
@@ -32,12 +32,12 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 	dependence = Dependence{
-		vpcID1:            outputs["vpc_id"].Value,
-		vpcID2:            outputs["vpc_id1"].Value,
-		crossAccountVpcID: outputs["vpc_id2"].Value,
-		crossAccountEmail: "925415014@qq.com",
-		peerConnectionID:  outputs["peer_connection_id"].Value,
-		rtbID:             outputs["rtb_id"].Value,
+		vpcID1: outputs["vpc_id"].Value,
+		vpcID2: outputs["vpc_id1"].Value,
+		//crossAccountVpcID: outputs["vpc_id2"].Value,
+		//crossAccountEmail: "925415014@qq.com",
+		peerConnectionID: outputs["peer_connection_id"].Value,
+		rtbID:            outputs["rtb_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

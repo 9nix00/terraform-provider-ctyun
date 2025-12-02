@@ -1,8 +1,8 @@
 
 provider "ctyun" {
   alias           = "default"
-  ak              = "0e302bf7a4ce433c9763a1d8bcf9f05c"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_AK
-  sk              = "cf2b7f46b9d2479fa6a20a62655635ce"
+  ak              = ""                                    # 如果此值不填，则默认读取环境变量中的CTYUN_AK
+  sk              = ""
   env             = "prod"
 }
 

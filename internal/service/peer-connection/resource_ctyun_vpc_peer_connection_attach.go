@@ -134,8 +134,6 @@ func (c *CtyunVpcPeerConnectionAttach) agree(ctx context.Context, config *CtyunV
 		InstanceID: config.PeerConnectionID.ValueString(),
 		RegionID:   config.RegionID.ValueString(),
 	}
-	fmt.Println("建立同意连接：")
-	fmt.Println(c.meta.SdkCredential.GetAccessKey(), c.meta.SdkCredential.GetSecretKey())
 	resp, err := c.meta.Apis.SdkCtVpcApis.CtvpcAgreeVpcPeerRequestApi.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return err
@@ -160,7 +158,7 @@ func (c *CtyunVpcPeerConnectionAttach) reject(ctx context.Context, config *Ctyun
 	} else if resp == nil {
 		err = fmt.Errorf("拒绝建立对等连接失败，对等连接id=%s，接口返回nil，请联系研发确认问题原因！", config.PeerConnectionID.ValueString())
 		return err
-	} else if resp.StatusCode == common.NormalStatusCode {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 		return err
 	}

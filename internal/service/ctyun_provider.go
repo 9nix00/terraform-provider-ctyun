@@ -493,7 +493,6 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		dns.NewCtyunPrivateZoneRecords(),
 		oceanfs2.NewCtyunOceanfsInstances(),
 		peer_connection2.NewCtyunVpcPeerConnections(),
-		peer_connection2.NewCtyunVpcPeerConnectionRoutes(),
 	)
 }
 
@@ -651,7 +650,6 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		oceanfs2.NewCtyunOceanfsPermissionRule(),
 		peer_connection2.NewCtyunVpcPeerConnection(),
 		peer_connection2.NewCtyunVpcPeerConnectionAttach(),
-		peer_connection2.NewCtyunVpcPeerConnectionRoute(),
 	)
 }
 

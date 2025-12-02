@@ -85,10 +85,11 @@ func TestAccCtyunVpcPeerConnection_Basic(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s",
+					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
@@ -190,67 +191,67 @@ func TestAccCtyunVpcPeerConnection_WithTags(t *testing.T) {
 	})
 }
 
-func TestAccCtyunVpcPeerConnection_CrossAccount(t *testing.T) {
-	rnd := utils.GenerateRandomString()
-	resourceName := "ctyun_vpc_peer_connection." + rnd
-	resourceFile := "resource_ctyun_vpc_peer_connection_cross_account.tf"
-
-	attchResourceName := "ctyun_vpc_peer_connection_attach." + rnd
-	attchResourceFile := "resource_ctyun_vpc_peer_connection_attach.tf"
-
-	// 配置测试环境需要的动态值
-	requestVpcID := dependence.vpcID1
-	acceptVpcID := dependence.crossAccountVpcID // 跨账号VPC
-	acceptEmail := dependence.crossAccountEmail // 对端账号邮箱
-	name := "peer-conn-cross-" + utils.GenerateRandomString()
-	description := "test cross account peer connection"
-	projectID := "0"
-	resource.Test(t, resource.TestCase{
-		PreCheck: func() {
-			fmt.Printf("Testing cross-account VPC peer connection\n")
-		},
-		CheckDestroy: func(s *terraform.State) error {
-			_, exists := s.RootModule().Resources[resourceName]
-			if exists {
-				return fmt.Errorf("resource destroy failed")
-			}
-			return nil
-		},
-		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
-		Steps: []resource.TestStep{
-			// 1. 创建跨账号对等连接
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name, description, requestVpcID, acceptVpcID, acceptEmail),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "name", name),
-					resource.TestCheckResourceAttr(resourceName, "accept_email", acceptEmail),
-					resource.TestCheckResourceAttr(resourceName, "request_vpc_id", requestVpcID),
-					resource.TestCheckResourceAttr(resourceName, "accept_vpc_id", acceptVpcID),
-				),
-			},
-			// 2. 更新名称和描述
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", name+"-new"),
-					resource.TestCheckResourceAttr(resourceName, "description", description+" updated"),
-				),
-			},
-			// 3. 验证对等连接状态为已接受
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail) +
-					utils.LoadTestCase(attchResourceFile, rnd, fmt.Sprintf("%s.id", resourceName), "enable"),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					//resource.TestCheckResourceAttr(resourceName, "status", "agree"),
-					resource.TestCheckResourceAttrSet(attchResourceName, "id")),
-			},
-			// 4. 销毁资源
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail) +
-					utils.LoadTestCase(attchResourceFile, rnd, fmt.Sprintf("%s.id", resourceName), "enable"),
-				Destroy: true,
-			},
-		},
-	})
-}
+//func TestAccCtyunVpcPeerConnection_CrossAccount(t *testing.T) {
+//	rnd := utils.GenerateRandomString()
+//	resourceName := "ctyun_vpc_peer_connection." + rnd
+//	resourceFile := "resource_ctyun_vpc_peer_connection_cross_account.tf"
+//
+//	attchResourceName := "ctyun_vpc_peer_connection_attach." + rnd
+//	attchResourceFile := "resource_ctyun_vpc_peer_connection_attach.tf"
+//
+//	// 配置测试环境需要的动态值
+//	requestVpcID := dependence.vpcID1
+//	acceptVpcID := dependence.crossAccountVpcID // 跨账号VPC
+//	acceptEmail := dependence.crossAccountEmail // 对端账号邮箱
+//	name := "peer-conn-cross-" + utils.GenerateRandomString()
+//	description := "test cross account peer connection"
+//	projectID := "0"
+//	resource.Test(t, resource.TestCase{
+//		PreCheck: func() {
+//			fmt.Printf("Testing cross-account VPC peer connection\n")
+//		},
+//		CheckDestroy: func(s *terraform.State) error {
+//			_, exists := s.RootModule().Resources[resourceName]
+//			if exists {
+//				return fmt.Errorf("resource destroy failed")
+//			}
+//			return nil
+//		},
+//		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+//		Steps: []resource.TestStep{
+//			// 1. 创建跨账号对等连接
+//			{
+//				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name, description, requestVpcID, acceptVpcID, acceptEmail),
+//				Check: resource.ComposeAggregateTestCheckFunc(
+//					resource.TestCheckResourceAttrSet(resourceName, "id"),
+//					resource.TestCheckResourceAttr(resourceName, "name", name),
+//					resource.TestCheckResourceAttr(resourceName, "accept_email", acceptEmail),
+//					resource.TestCheckResourceAttr(resourceName, "request_vpc_id", requestVpcID),
+//					resource.TestCheckResourceAttr(resourceName, "accept_vpc_id", acceptVpcID),
+//				),
+//			},
+//			// 2. 更新名称和描述
+//			{
+//				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail),
+//				Check: resource.ComposeAggregateTestCheckFunc(
+//					resource.TestCheckResourceAttr(resourceName, "name", name+"-new"),
+//					resource.TestCheckResourceAttr(resourceName, "description", description+" updated"),
+//				),
+//			},
+//			// 3. 验证对等连接状态为已接受
+//			{
+//				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail) +
+//					utils.LoadTestCase(attchResourceFile, rnd, fmt.Sprintf("%s.id", resourceName), "enable"),
+//				Check: resource.ComposeAggregateTestCheckFunc(
+//					//resource.TestCheckResourceAttr(resourceName, "status", "agree"),
+//					resource.TestCheckResourceAttrSet(attchResourceName, "id")),
+//			},
+//			// 4. 销毁资源
+//			{
+//				Config: utils.LoadTestCase(resourceFile, rnd, projectID, name+"-new", description+" updated", requestVpcID, acceptVpcID, acceptEmail) +
+//					utils.LoadTestCase(attchResourceFile, rnd, fmt.Sprintf("%s.id", resourceName), "enable"),
+//				Destroy: true,
+//			},
+//		},
+//	})
+//}

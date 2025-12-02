@@ -28,21 +28,21 @@ resource "ctyun_vpc_peer_connection" "test" {
 }
 
 
-provider "ctyun" {
-  alias           = "test_accpet"
-  ak              = "4f996ee252e84b358a4c3f9b042f646b"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_AK
-  sk              = "d22076b320d7424399e4235cb626f07a"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_SK
-  env             = "prod"                                     # 如果此值不填，则默认读取环境变量中的CTYUN_ENV
-}
-
-
-resource "ctyun_vpc" "vpc_test2" {
-  provider    = ctyun.test_accpet
-  name        = "tf-vpc-for-peer_connect"
-  cidr        = "192.168.0.0/16"
-  description = "terraform测试使用"
-  enable_ipv6 = true
-}
+# provider "ctyun" {
+#   alias           = "test_accpet"
+#   ak              = "xxx"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_AK
+#   sk              = "xxx"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_SK
+#   env             = "prod"                                     # 如果此值不填，则默认读取环境变量中的CTYUN_ENV
+# }
+#
+#
+# resource "ctyun_vpc" "vpc_test2" {
+#   provider    = ctyun.test_accpet
+#   name        = "tf-vpc-for-peer_connect"
+#   cidr        = "192.168.0.0/16"
+#   description = "terraform测试使用"
+#   enable_ipv6 = true
+# }
 
 data "ctyun_vpc_route_tables" "route_table_test" {
   vpc_id = ctyun_vpc.vpc_test.id
