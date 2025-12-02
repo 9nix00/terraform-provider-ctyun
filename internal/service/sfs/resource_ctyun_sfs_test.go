@@ -17,7 +17,6 @@ func TestAccCtyunSfs(t *testing.T) {
 	resourceFile1 := "resource_ctyun_sfs_onDemand_readonly.tf"
 
 	// 配置测试环境需要的动态值（实际测试时替换为有效值）
-	azName := "cn-huadong1-jsnj1A-public-ctcloud"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	sfsType := "performance"
@@ -41,7 +40,7 @@ func TestAccCtyunSfs(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 1. 基础创建测试
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, name, sfsSize, cycleType, azName, vpcID, subnetID),
+				Config: utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, name, sfsSize, cycleType, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
@@ -54,7 +53,7 @@ func TestAccCtyunSfs(t *testing.T) {
 			},
 			// 2. 资源更新测试（名称/大小/只读）
 			{
-				Config: utils.LoadTestCase(resourceFile1, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID),
+				Config: utils.LoadTestCase(resourceFile1, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
@@ -63,7 +62,7 @@ func TestAccCtyunSfs(t *testing.T) {
 			},
 			// 3. 资源导入测试
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, azName, vpcID, subnetID),
+				Config:  utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, vpcID, subnetID),
 				Destroy: true,
 			},
 		},

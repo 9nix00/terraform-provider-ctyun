@@ -1,82 +1,32 @@
-data "ctyun_vpcs" "vpc_test" {
-  page_size = 50
-}
-
-locals {
-  vpcs        = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-iaas"]
-  data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
-}
-
 resource "ctyun_vpc" "vpc_test" {
-  count       = local.data_vpc_id == "" ? 1 : 0
-  name        = "tf-vpc-for-iaas"
+  name        = "tf-vpc-for-acl"
   cidr        = "192.168.0.0/16"
   description = "terraform-iaas测试使用"
   enable_ipv6 = true
 }
 
-locals {
-  real_vpc_id = local.data_vpc_id == "" ? try(ctyun_vpc.vpc_test[0].id, "") : local.data_vpc_id
-}
-
-
-data "ctyun_subnets" "subnet_test" {
-  vpc_id = local.real_vpc_id
-}
-
-locals {
-  subnets = [
-    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-iaas-1"
-  ]
-  data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
-
-  subnets2 = [
-    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-iaas-2"
-  ]
-  data_subnet_id2 = length(local.subnets2) > 0 ? local.subnets2[0].subnet_id : ""
-}
-
 resource "ctyun_subnet" "subnet_test" {
-  count       = local.data_vpc_id=="" ? 1 : 0
-  vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-iaas-1"
-  cidr        = "192.168.1.0/24"
+  count       = 2
+  vpc_id      = ctyun_vpc.vpc_test.id
+  name        = "tf-subnet-for-acl-${count.index+1}"
+  cidr        = "192.168.${count.index+1}.0/24"
   description = "terraform测试使用"
   dns = [
     "8.8.8.8",
     "8.8.4.4"
   ]
 }
-
-resource "ctyun_subnet" "subnet_test2" {
-  count       = local.data_vpc_id=="" ? 1 : 0
-  vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-iaas-2"
-  cidr        = "192.168.2.0/24"
-  description = "terraform测试使用"
-  dns = [
-    "8.8.8.8",
-    "8.8.4.4"
-  ]
-}
-
-locals {
-  real_subnet_id = local.data_subnet_id == "" ? try(ctyun_subnet.subnet_test[0].id, "") : local.data_subnet_id
-  real_subnet_id2 = local.data_subnet_id2 == "" ? try(ctyun_subnet.subnet_test2[0].id, "") : local.data_subnet_id2
-}
-
 
 resource "ctyun_acl" "acl_test" {
   project_id  = "0"
-  vpc_id      = local.real_vpc_id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "acl-terraform-test"
   description = "terraform测试使用"
 }
 
-
 resource "ctyun_acl" "acl_subnet_test" {
   project_id  = "0"
-  vpc_id      = local.real_vpc_id
+  vpc_id      = ctyun_vpc.vpc_test.id
   name        = "acl-subnet-terraform-test"
   description = "terraform测试使用"
 }

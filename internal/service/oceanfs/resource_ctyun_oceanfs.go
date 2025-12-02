@@ -10,6 +10,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -493,9 +494,9 @@ func (c *CtyunOceanfs) getAndMerge(ctx context.Context, config *CtyunOceanfsConf
 	config.AzName = types.StringValue(returnObj.AzName)
 	config.Status = types.StringValue(returnObj.SfsStatus)
 	config.UsedSize = types.Int32Value(returnObj.UsedSize)
-	config.CreateTime = types.StringValue(c.timestampToStr(returnObj.CreateTime))
-	config.UpdateTime = types.StringValue(c.timestampToStr(returnObj.UpdateTime))
-	config.ExpireTime = types.StringValue(c.timestampToStr(returnObj.ExpireTime))
+	config.CreateTime = types.StringValue(utils.FromUnixToUTC(returnObj.CreateTime))
+	config.UpdateTime = types.StringValue(utils.FromUnixToUTC(returnObj.UpdateTime))
+	config.ExpireTime = types.StringValue(utils.FromUnixToUTC(returnObj.ExpireTime))
 
 	if config.Tags.IsNull() || config.Tags.IsUnknown() {
 		config.Tags = types.SetNull(types.ObjectType{
@@ -506,15 +507,6 @@ func (c *CtyunOceanfs) getAndMerge(ctx context.Context, config *CtyunOceanfsConf
 		})
 	}
 	return nil
-}
-
-func (c *CtyunOceanfs) timestampToStr(timestamp int64) string {
-	// 将时间戳转换为time.Time
-	t := time.Unix(timestamp, 0)
-
-	// 转换为RFC3339格式（包含毫秒）
-	rfc3339WithMillis := t.UTC().Format("2006-01-02T15:04:05.000Z")
-	return rfc3339WithMillis
 }
 
 func (c *CtyunOceanfs) update(ctx context.Context, state *CtyunOceanfsConfig, plan *CtyunOceanfsConfig) error {
