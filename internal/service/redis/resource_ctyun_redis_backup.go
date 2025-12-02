@@ -352,7 +352,7 @@ func (c *ctyunRedisBackup) getAndMerge(ctx context.Context, plan *CtyunRedisBack
 
 	// 设置备份信息
 	plan.Name = types.StringValue(backupData.RestoreName)
-	plan.CreateTime = types.StringValue(utils.FromLocalToUTCZ(backupData.CreateTime))
+	plan.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(backupData.CreateTime))
 	plan.Status = types.StringValue(backupData.Status)
 	plan.Type = types.Int32Value(backupData.RawType)
 	if backupData.Remark != "" {
