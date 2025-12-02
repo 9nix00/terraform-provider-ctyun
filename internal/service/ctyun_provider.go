@@ -487,6 +487,8 @@ func (c *CtyunProvider) DataSources(ctx context.Context) []func() datasource.Dat
 
 		// 添加SD-WAN数据源
 		sdwan2.NewCtyunSdwans(),
+		sdwan2.NewCtyunSdwanEdges(),
+		sdwan2.NewCtyunSdwanAcls(),
 	)
 }
 
@@ -639,6 +641,10 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		ec2.NewCtyunEcCloudGatewaySdwanAssociation(),
 		// 添加SD-WAN资源
 		sdwan2.NewCtyunSdwan(),
+		sdwan2.NewCtyunSdwanEdge(),
+		sdwan2.NewCtyunSdwanAcl(),
+		sdwan2.NewCtyunSdwanAclRule(),
+		sdwan2.NewCtyunSdwanBandwidthPackage(),
 	)
 }
 
