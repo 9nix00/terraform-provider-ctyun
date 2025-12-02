@@ -69,4 +69,8 @@ type AmqpTransChargeTypeReturnObjResponse struct {
 	Data []*AmqpTransChargeTypeReturnObjDataResponse `json:"data"` /*  返回数据。  */
 }
 
-type AmqpTransChargeTypeReturnObjDataResponse struct{}
+type AmqpTransChargeTypeReturnObjDataResponse struct {
+	MasterOrderId   string `json:"masterOrderId"`
+	MasterOrderNo   string `json:"masterOrderNo"`
+	MasterOrderType string `json:"masterOrderType"`
+}

@@ -198,8 +198,9 @@ func (c *ctyunEbsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Description: "云硬盘备份存储库名称",
 			},
 			"created_time": schema.StringAttribute{
-				Computed:    true,
-				Description: "创建时间",
+				Computed:      true,
+				Description:   "创建时间",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}

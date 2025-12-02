@@ -245,13 +245,13 @@ func (c *ctyunImageFromEcs) Create(ctx context.Context, request resource.CreateR
 
 	switch imageType {
 	case "system_disk":
-		c.createSystemDiskImage(ctx, &plan, response)
+		err = c.createSystemDiskImage(ctx, &plan, response)
 	case "data_disk":
-		c.createDataDiskImage(ctx, &plan, response)
+		err = c.createDataDiskImage(ctx, &plan, response)
 	case "entire_machine":
-		c.createEntireMachineImage(ctx, &plan, response)
-	default:
-		response.Diagnostics.AddError("参数错误", "未提供有效的创建参数组合")
+		err = c.createEntireMachineImage(ctx, &plan, response)
+	}
+	if err != nil {
 		return
 	}
 	// 查询镜像状态信息

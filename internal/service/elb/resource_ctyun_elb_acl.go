@@ -80,11 +80,11 @@ func (c *CtyunElbAcl) Schema(ctx context.Context, request resource.SchemaRequest
 			},
 			"source_ips": schema.SetAttribute{
 				Required:    true,
-				Description: "IP地址的集合或者CIDR, 单次最多添加 10 条数据，支持更新",
+				Description: "IP地址的集合或者CIDR, 单次最多添加 50 条数据，支持更新",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
-					setvalidator.SizeAtMost(10),
+					setvalidator.SizeAtMost(50),
 					setvalidator.ValueStringsAre(stringvalidator.UTF8LengthAtLeast(1)),
 				},
 			},

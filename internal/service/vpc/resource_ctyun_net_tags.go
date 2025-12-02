@@ -127,7 +127,7 @@ func (c *ctyunNetTags) Create(ctx context.Context, request resource.CreateReques
 		return
 	}
 
-	err = c.tagsService.BundTags(ctx, plan.RegionID.ValueString(), plan.ResourceType.ValueString(), plan.ResourceID.ValueString(), &plan.Tags)
+	err = c.tagsService.BindTags(ctx, plan.RegionID.ValueString(), plan.ResourceType.ValueString(), plan.ResourceID.ValueString(), &plan.Tags)
 	if err != nil {
 		return
 	}

@@ -7,8 +7,8 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cluster_domain = "www.ctyun.com"
     network_plugin = "cubecni"
     pod_subnet_id_list = ["%[5]s"]
-    start_port = 30000
-    end_port   = 65535
+    start_port = 30001
+    end_port   = 32767
     elb_prod_code = "standardI"
     cycle_type  = "on_demand"
     container_runtime = "containerd"
@@ -16,7 +16,8 @@ resource "ctyun_ccse_cluster" "%[1]s" {
     cluster_version = "1.29.3"
     deploy_type   = "single"
     kube_proxy    = "iptables"
-    series_type = "managedbase"
+    series_type = "%[7]s"
+    node_scale = %[8]d
   }
 
   slave_host = {

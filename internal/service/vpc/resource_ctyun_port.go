@@ -438,7 +438,7 @@ func (c *ctyunNetworkInterface) createNetworkInterface(ctx context.Context, plan
 		return
 	}
 	if resp.ReturnObj == nil || resp.ReturnObj.NetworkInterfaceID == nil {
-		return fmt.Errorf("API返回数据: %s", *resp.ErrorCode)
+		return fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 	}
 	// 更新计划中的所有字段
 	plan.Id = types.StringPointerValue(resp.ReturnObj.NetworkInterfaceID)

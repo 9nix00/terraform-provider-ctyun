@@ -8,6 +8,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -147,16 +148,12 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 }
 
 func (c *ctyunEcsPortAssociation) create(ctx context.Context, plan CtyunEcsPortAssociationConfig) (err error) {
-	regionId := c.meta.GetExtraIfEmpty(plan.RegionID.ValueString(), common.ExtraRegionId)
-	projectId := c.meta.GetExtraIfEmpty(plan.ProjectID.ValueString(), common.ExtraProjectId)
-	azName := c.meta.GetExtraIfEmpty(plan.AzName.ValueString(), common.ExtraAzName)
-
 	// 绑定弹性网卡到云主机
 	attachRequest := &ctecs.CtecsPortsAttachInstanceV41Request{
 		ClientToken:        uuid.NewString(),
-		RegionID:           regionId,
-		ProjectID:          projectId,
-		AzName:             azName,
+		RegionID:           plan.RegionID.ValueString(),
+		ProjectID:          plan.ProjectID.ValueString(),
+		AzName:             plan.AzName.ValueString(),
 		NetworkInterfaceID: plan.PortID.ValueString(),
 		InstanceID:         plan.InstanceID.ValueString(),
 		InstanceType:       3, // 3-虚拟机
@@ -214,7 +211,7 @@ func (c *ctyunEcsPortAssociation) getAndMerge(ctx context.Context, state *CtyunE
 	// 检查弹性网卡是否仍然绑定到该云主机
 	if describeResponse.ReturnObj != nil {
 		for _, networkCard := range describeResponse.ReturnObj.NetworkCardList {
-			if networkCard != nil && networkCard.NetworkCardID == state.PortID.ValueString() {
+			if networkCard != nil && utils.SecString(networkCard.NetworkCardID) == state.PortID.ValueString() {
 				return nil
 			}
 		}

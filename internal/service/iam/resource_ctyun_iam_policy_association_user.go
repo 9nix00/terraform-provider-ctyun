@@ -7,11 +7,11 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctiam"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -66,7 +66,7 @@ func (c *ctyunPolicyAssociationUser) Schema(_ context.Context, _ resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: stringdefault.StaticString(""),
+				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, false),
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
@@ -205,9 +205,9 @@ func (c *ctyunPolicyAssociationUser) checkAndGetRangeType(ctx context.Context, c
 			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为资源池级别的范围，授权时必须填写资源池ID")
 		}
 	case business.PolicyRangeGlobal:
-		// 如果是全局级别的范围，用户又填写资源池ID，报错
+		// 如果是全局级别的范围，用户又填写资源池ID，忽略
 		if !cfg.RegionId.IsNull() && !cfg.RegionId.IsUnknown() && cfg.RegionId.ValueString() != "" {
-			return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为全局级别的范围，授权时不能填写资源池ID")
+			//return "", errors.New("策略：" + cfg.PolicyId.ValueString() + "为全局级别的范围，授权时不能填写资源池ID")
 		}
 	}
 	key, err2 := business.PolicyRangeMap.Map(resp.PolicyRange, business.PolicyRangeMapScene1, business.PolicyRangeMapScene2)
@@ -234,15 +234,15 @@ func (c *ctyunPolicyAssociationUser) getAndMergeIamPolicyAssociationUser(ctx con
 		return nil, err
 	}
 
-	regionId := ""
-	if resp.RegionId != "No ProjectID" {
-		regionId = resp.RegionId
-	}
+	//regionId := ""
+	//if resp.RegionId != "No ProjectID" {
+	//	regionId = resp.RegionId
+	//}
 
 	cfg.Id = types.StringValue(resp.PrivilegeId)
 	cfg.UserId = types.StringValue(resp.Id)
 	cfg.PolicyId = types.StringValue(resp.PolicyId)
-	cfg.RegionId = types.StringValue(regionId)
+	//cfg.RegionId = types.StringValue(regionId)
 	return &cfg, nil
 }
 

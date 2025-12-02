@@ -18,7 +18,7 @@ data "ctyun_ccse_template_market" "test" {
 }
 
 resource "ctyun_ccse_template_instance" "test_template" {
-  cluster_id = "f440fe8c26c94dd88adea41a08a5353d"
+  cluster_id = "514616f92bc44882a48eca8cb17abe59"
   tpl_name = "elasticsearch"
   tpl_version = "7.10.2"
   name = "tf-ccse-12"

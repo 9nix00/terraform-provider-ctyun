@@ -33,8 +33,7 @@ resource "ctyun_subnet" "subnet_test" {
   description = "terraform测试使用"
   dns         = [
     "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
+    "8.8.8.8"
   ]
 }
 
@@ -77,7 +76,7 @@ resource "ctyun_rabbitmq_instance" "test" {
 
 ### Required
 
-- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需，支持更新。当此值为month时，cycle_count为必填
 - `disk_size` (Number) 单个节点的磁盘存储空间，单位为GB，必须为100的倍数，实例总存储空间为diskSize * nodeNum，支持更新
 - `disk_type` (String) 磁盘类型，通常支持SAS、SSD、FAST-SSD
 - `instance_name` (String) 实例名称，支持更新
@@ -96,6 +95,11 @@ resource "ctyun_rabbitmq_instance" "test" {
 
 ### Read-Only
 
+- `actual_cycle_type` (String) 服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。
+- `create_time` (String) 创建时间，UTC格式
+- `endpoint` (String) 接入点
+- `expire_time` (String) 过期时间，UTC格式，按需时为空
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `name` (String) 名称
+- `ssl_endpoint` (String) SSL接入点

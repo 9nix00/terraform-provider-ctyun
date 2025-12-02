@@ -64,7 +64,7 @@ locals {
 }
 
 resource "ctyun_security_group" "security_group_test1" {
-  count = local.data_vpc_id=="" ? 1 : 0
+  count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas"
   description = "terraform测试使用"
@@ -73,7 +73,7 @@ resource "ctyun_security_group" "security_group_test1" {
   }
 }
 resource "ctyun_security_group" "security_group_test2" {
-  count = local.data_vpc_id=="" ? 1 : 0
+  count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
   name        = "tf-sg-for-paas2"
   description = "terraform测试使用2"
@@ -84,7 +84,7 @@ resource "ctyun_security_group" "security_group_test2" {
 
 locals {
   real_security_group_id1 = local.data_security_group_id == "" ? try(ctyun_security_group.security_group_test1[0].id, "") : local.data_security_group_id
-  real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id
+  real_security_group_id2 = local.data_security_group_id2 == "" ? try(ctyun_security_group.security_group_test2[0].id, "") : local.data_security_group_id2
 }
 
 resource "ctyun_eip" "eip_test" {
@@ -94,15 +94,13 @@ resource "ctyun_eip" "eip_test" {
   demand_billing_type = "upflowc"
 }
 
-
-
 resource "ctyun_postgresql_instance" "test" {
   cycle_type            = "on_demand"
   prod_id               = "Single1222"
-  flavor_name           = "s7.large.2"
-  storage_type          = "SATA"
+  flavor_name           = "c7.xlarge.2"
+  storage_type          = "SSD"
   storage_space         = 100
-  name                  = "pgsql-test-2"
+  name                  = "pgsql-test-tf"
   password              = var.password
   case_sensitive        = true
   vpc_id                = local.real_vpc_id
@@ -118,4 +116,46 @@ variable "password" {
 
 data "ctyun_zones" "az" {
 
+}
+
+data "ctyun_postgresql_param_templates" "param_templates" {
+
+}
+
+data "ctyun_postgresql_character_set" "charsets" {
+}
+#
+data "ctyun_postgresql_collation_time_zone" "collations" {
+  inst_id    = ctyun_postgresql_instance.test.id
+}
+
+resource "ctyun_postgresql_account" "account_test" {
+  project_id = "0"
+  inst_id = ctyun_postgresql_instance.test.id
+  name = "kqjwyk"
+  password = var.password
+  user_type = "normal"
+  description = "terraform测试预置条件"
+}
+
+data "ctyun_postgresql_accounts" "accounts" {
+  depends_on = [ctyun_postgresql_account.account_test]
+  inst_id = ctyun_postgresql_instance.test.id
+}
+
+resource "ctyun_postgresql_database" "test" {
+  project_id   = "0"
+  inst_id      = ctyun_postgresql_instance.test.id
+  name         = "test"
+  charset_name = "UTF8"
+  owner        = ctyun_postgresql_account.account_test.name
+}
+
+resource "ctyun_postgresql_database" "test1" {
+  project_id   = "0"
+  inst_id      = ctyun_postgresql_instance.test.id
+  name         = "test1"
+  charset_name = "UTF8"
+  owner        = ctyun_postgresql_account.account_test.name
+  depends_on = [ctyun_postgresql_database.test]
 }

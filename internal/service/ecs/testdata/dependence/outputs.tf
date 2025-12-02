@@ -22,6 +22,10 @@ output "flavor_id2" {
   value = data.ctyun_ecs_flavors.ecs_flavor_test2.flavors[0].id
 }
 
+output "flavor_name" {
+  value = data.ctyun_ecs_flavors.ecs_flavor_test.flavors[0].name
+}
+
 output "affinity_group_id" {
   value = ctyun_ecs_affinity_group.affinity_group_test.id
 }
@@ -38,13 +42,20 @@ output "ecs_id" {
   value = ctyun_ecs.ecs_test.id
 }
 
+output "ebs_id" {
+  value = ctyun_ebs.ebs_test[0].id
+}
+
+output "ebs_id2" {
+  value = ctyun_ebs.ebs_test[1].id
+}
+
+output "ebs_id3" {
+  value = ctyun_ebs.ebs_test[2].id
+}
 
 output "instance_id" {
   value = ctyun_ecs.ecs_test.id
-}
-
-output "data_disk_id" {
-  value = ctyun_ebs.data_disk_test.id
 }
 
 output "ecs_port_for_association_id" {
