@@ -13,3 +13,7 @@ output "vpc_id2" {
 output "peer_connection_id" {
   value = ctyun_vpc_peer_connection.test.id
 }
+
+output "rtb_id" {
+  value = data.ctyun_vpc_route_tables.route_table_test.route_tables[0].route_table_id
+}

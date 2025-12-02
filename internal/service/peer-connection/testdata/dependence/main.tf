@@ -43,3 +43,7 @@ resource "ctyun_vpc" "vpc_test2" {
   description = "terraform测试使用"
   enable_ipv6 = true
 }
+
+data "ctyun_vpc_route_tables" "route_table_test" {
+  vpc_id = ctyun_vpc.vpc_test.id
+}
