@@ -133,10 +133,45 @@ func TestAccCtyunAclRule(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s,%s,%s",
 						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["region_id"],
+						rs.Primary.Attributes["direction"],
 						rs.Primary.Attributes["acl_id"],
 						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 可选忽略
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["direction"],
+						rs.Primary.Attributes["acl_id"],
+						rs.Primary.Attributes["project_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 可选忽略
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["id"],
+						rs.Primary.Attributes["direction"],
+						rs.Primary.Attributes["acl_id"],
 					), nil
 				},
 				ImportStateVerify:       true,

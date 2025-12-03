@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
 )
 
 type CtyunAclRule struct {
@@ -50,20 +51,55 @@ func (c *CtyunAclRule) ImportState(ctx context.Context, request resource.ImportS
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID], [aclId], [direction],[projectId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunAclRuleConfig
-	var ID, regionId, aclId, projectId, direction string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &aclId, &projectId, &direction)
-	if err != nil {
+	var ID, aclId, direction, projectId, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &direction, &aclId)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 3 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &direction, &aclId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &direction, &aclId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 
+	if aclId == "" {
+		err = fmt.Errorf("aclId不能为空")
+		return
+	}
+	if direction == "" {
+		err = fmt.Errorf("direction不能为空")
+		return
+	}
 	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 	config.AclID = types.StringValue(aclId)
-	if regionId != "" {
+	if projectId != "" {
 		config.ProjectID = types.StringValue(projectId)
 	}
 	config.Direction = types.StringValue(direction)
