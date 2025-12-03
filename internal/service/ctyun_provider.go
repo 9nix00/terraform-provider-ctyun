@@ -609,6 +609,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		rabbitmq.NewCtyunRabbitmqQueue(),
 		vpc.NewCtyunVip(),
 		vpc.NewCtyunVipAssociation(),
+		vpc.NewCtyunDhcpOptionSet(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpc(),
 		mysql2.NewCtyunMysqlAccount(),
 		mysql2.NewCtyunMysqlBackup(),
 		mysql2.NewCtyunMysqlBackupCancel(),
