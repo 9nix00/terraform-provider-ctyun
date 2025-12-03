@@ -41,11 +41,11 @@ type CtyunSdwanAclConfig struct {
 
 type SdwanAclRule struct {
 	Direction    types.String `tfsdk:"direction"`
-	Protocol     types.Int32  `tfsdk:"protocol"`
+	Protocol     types.String `tfsdk:"protocol"`
 	IpVersion    types.String `tfsdk:"ip_version"`
 	DstCidr      types.String `tfsdk:"dst_cidr"`
 	DstPortRange types.String `tfsdk:"dst_port_range"`
-	Priority     types.String `tfsdk:"priority"`
+	Priority     types.Int32  `tfsdk:"priority"`
 	Action       types.String `tfsdk:"action"`
 	SrcCidr      types.String `tfsdk:"src_cidr"`
 	SrcPortRange types.String `tfsdk:"src_port_range"`
@@ -209,11 +209,13 @@ func (c *CtyunSdwanAcl) Update(ctx context.Context, req resource.UpdateRequest, 
 	// SD-WAN ACL 不支持更新操作，直接返回
 	var plan CtyunSdwanAclConfig
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	var state CtyunSdwanAclConfig
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	err = c.update(ctx, &plan)
+	err = c.update(ctx, &plan, &state)
 	if err != nil {
 		return
 	}
@@ -379,20 +381,318 @@ func (c *CtyunSdwanAcl) delete(ctx context.Context, state *CtyunSdwanAclConfig) 
 	return
 }
 
-func (c *CtyunSdwanAcl) update(ctx context.Context, plan *CtyunSdwanAclConfig) (err error) {
-	updateReq := &sdwan.SdwanUpdateSdwanAclRequest{
-		AclID:   plan.ID.ValueString(),
-		AclName: plan.Name.ValueString(),
-	}
+func (c *CtyunSdwanAcl) update(ctx context.Context, plan *CtyunSdwanAclConfig, state *CtyunSdwanAclConfig) (err error) {
+	if plan.Name.ValueString() != state.Name.ValueString() {
+		updateReq := &sdwan.SdwanUpdateSdwanAclRequest{
+			AclID:   plan.ID.ValueString(),
+			AclName: plan.Name.ValueString(),
+		}
 
-	resp, err := c.meta.Apis.SdkSdwanApis.SdwanUpdateSdwanAclApi.Do(ctx, c.meta.SdkCredential, updateReq)
-	if err != nil {
-		return err
-	} else if resp.StatusCode != common.NormalStatusCode {
-		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+		resp, err := c.meta.Apis.SdkSdwanApis.SdwanUpdateSdwanAclApi.Do(ctx, c.meta.SdkCredential, updateReq)
+		if err != nil {
+			return err
+		} else if resp.StatusCode != common.NormalStatusCode {
+			return fmt.Errorf("API return error. Message: %s", *resp.Message)
+		}
+	} else if !plan.Rules.Equal(state.Rules) {
+		// 规则发生变化，需要找出新增、删除和更新的规则
+		planRules, err := c.extractRulesFromList(ctx, plan.Rules)
+		if err != nil {
+			return err
+		}
+
+		stateRules, err := c.extractRulesFromList(ctx, state.Rules)
+		if err != nil {
+			return err
+		}
+
+		// 找出需要新增、删除和更新的规则
+		toAdd, toDelete, toUpdate := c.diffRules(planRules, stateRules)
+
+		// 执行删除操作
+		if len(toDelete) > 0 {
+			err = c.deleteRules(ctx, plan.ID.ValueString(), toDelete)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 执行新增操作
+		if len(toAdd) > 0 {
+			err = c.addRules(ctx, plan.ID.ValueString(), toAdd)
+			if err != nil {
+				return err
+			}
+		}
+
+		// 执行更新操作
+		if len(toUpdate) > 0 {
+			err = c.updateRules(ctx, plan.ID.ValueString(), toUpdate)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	// 等待更新完成
 	time.Sleep(3 * time.Second)
+	return
+}
+
+// extractRulesFromList 从types.List中提取规则
+func (c *CtyunSdwanAcl) extractRulesFromList(ctx context.Context, rulesList types.List) ([]*SdwanAclRule, error) {
+	var rules []*SdwanAclRule
+
+	if rulesList.IsNull() || rulesList.IsUnknown() {
+		return rules, nil
+	}
+
+	for _, ruleValue := range rulesList.Elements() {
+		// 将规则值转换为对象
+		ruleObj, ok := ruleValue.(types.Object)
+		if !ok {
+			return nil, fmt.Errorf("failed to convert rule value to object")
+		}
+
+		attributes := ruleObj.Attributes()
+
+		rule := &SdwanAclRule{
+			Direction:    attributes["direction"].(types.String),
+			Protocol:     attributes["protocol"].(types.String),
+			IpVersion:    attributes["ip_version"].(types.String),
+			DstCidr:      attributes["dst_cidr"].(types.String),
+			DstPortRange: attributes["dst_port_range"].(types.String),
+			Priority:     attributes["priority"].(types.Int32),
+			Action:       attributes["action"].(types.String),
+			SrcCidr:      attributes["src_cidr"].(types.String),
+			SrcPortRange: attributes["src_port_range"].(types.String),
+		}
+
+		rules = append(rules, rule)
+	}
+
+	return rules, nil
+}
+
+// diffRules 比较计划和状态中的规则，找出需要新增、删除和更新的规则
+func (c *CtyunSdwanAcl) diffRules(planRules, stateRules []*SdwanAclRule) ([]*SdwanAclRule, []*SdwanAclRule, []*SdwanAclRule) {
+	var toAdd, toDelete, toUpdate []*SdwanAclRule
+
+	// 创建state规则的映射，用于快速查找
+	stateRuleMap := make(map[string]*SdwanAclRule)
+	for _, rule := range stateRules {
+		key := c.ruleKey(rule)
+		stateRuleMap[key] = rule
+	}
+
+	// 创建plan规则的映射，用于快速查找
+	planRuleMap := make(map[string]*SdwanAclRule)
+	for _, rule := range planRules {
+		key := c.ruleKey(rule)
+		planRuleMap[key] = rule
+	}
+
+	// 找出需要新增的规则（存在于plan但不存在于state）
+	for key, rule := range planRuleMap {
+		if _, exists := stateRuleMap[key]; !exists {
+			toAdd = append(toAdd, rule)
+		}
+	}
+
+	// 找出需要删除的规则（存在于state但不存在于plan）
+	for key, rule := range stateRuleMap {
+		if _, exists := planRuleMap[key]; !exists {
+			toDelete = append(toDelete, rule)
+		}
+	}
+
+	// 找出需要更新的规则（同时存在于plan和state，但内容不同）
+	for key, planRule := range planRuleMap {
+		if stateRule, exists := stateRuleMap[key]; exists {
+			// 如果规则存在但内容不同，则需要更新
+			if !c.rulesEqual(planRule, stateRule) {
+				toUpdate = append(toUpdate, planRule)
+			}
+		}
+	}
+
+	return toAdd, toDelete, toUpdate
+}
+
+// ruleKey 生成规则的唯一键
+func (c *CtyunSdwanAcl) ruleKey(rule *SdwanAclRule) string {
+	// 使用方向、源CIDR、目的CIDR、协议作为规则的唯一标识
+	return fmt.Sprintf("%s_%s_%s_%s",
+		rule.Direction.ValueString(),
+		rule.SrcCidr.ValueString(),
+		rule.DstCidr.ValueString(),
+		rule.Protocol.ValueString())
+}
+
+// rulesEqual 比较两个规则是否相等
+func (c *CtyunSdwanAcl) rulesEqual(rule1, rule2 *SdwanAclRule) bool {
+	return rule1.Direction.Equal(rule2.Direction) &&
+		rule1.Protocol.Equal(rule2.Protocol) &&
+		rule1.IpVersion.Equal(rule2.IpVersion) &&
+		rule1.DstCidr.Equal(rule2.DstCidr) &&
+		rule1.DstPortRange.Equal(rule2.DstPortRange) &&
+		rule1.Priority.Equal(rule2.Priority) &&
+		rule1.Action.Equal(rule2.Action) &&
+		rule1.SrcCidr.Equal(rule2.SrcCidr) &&
+		rule1.SrcPortRange.Equal(rule2.SrcPortRange)
+}
+
+// deleteRules 删除规则
+func (c *CtyunSdwanAcl) deleteRules(ctx context.Context, aclID string, rulesToDelete []*SdwanAclRule) error {
+	// 首先获取现有的规则以获得规则ID
+	listReq := &sdwan.SdwanGetSdwanAclRuleRequest{
+		PageNo:   1,
+		PageSize: 1000,
+		AclID:    &aclID,
+	}
+
+	resp, err := c.meta.Apis.SdkSdwanApis.SdwanGetSdwanAclRuleApi.Do(ctx, c.meta.SdkCredential, listReq)
+	if err != nil {
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
+	}
+
+	// 创建规则映射以便快速查找规则ID
+	ruleIDMap := make(map[string]string)
+	for _, rule := range resp.ReturnObj.Result {
+		if rule.AclRuleID != nil && rule.Direction != nil && rule.SrcCidr != nil && rule.DstCidr != nil && rule.Protocol != nil {
+			key := fmt.Sprintf("%s_%s_%s_%s", *rule.Direction, *rule.SrcCidr, *rule.DstCidr, *rule.Protocol)
+			ruleIDMap[key] = *rule.AclRuleID
+		}
+	}
+
+	// 收集要删除的规则ID
+	var ruleIDsToDelete []*string
+	for _, rule := range rulesToDelete {
+		key := c.ruleKey(rule)
+		if ruleID, exists := ruleIDMap[key]; exists {
+			ruleIDsToDelete = append(ruleIDsToDelete, &ruleID)
+		}
+	}
+
+	// 执行删除操作
+	if len(ruleIDsToDelete) > 0 {
+		deleteReq := &sdwan.SdwanDeleteSdwanAclRuleRequest{
+			AclID:       aclID,
+			DeleteRules: ruleIDsToDelete,
+		}
+
+		deleteResp, err := c.meta.Apis.SdkSdwanApis.SdwanDeleteSdwanAclRuleApi.Do(ctx, c.meta.SdkCredential, deleteReq)
+		if err != nil {
+			return err
+		} else if deleteResp.StatusCode != common.NormalStatusCode {
+			return fmt.Errorf("API return error. Message: %s", *deleteResp.Message)
+		}
+	}
+
+	return nil
+}
+
+// addRules 添加新规则
+func (c *CtyunSdwanAcl) addRules(ctx context.Context, aclID string, rulesToAdd []*SdwanAclRule) error {
+	var addRules []*sdwan.SdwanCreateSdwanAclRuleAddRulesRequest
+
+	for _, rule := range rulesToAdd {
+		addRules = append(addRules, &sdwan.SdwanCreateSdwanAclRuleAddRulesRequest{
+			Direction:    rule.Direction.ValueStringPointer(),
+			Protocol:     rule.Protocol.ValueStringPointer(),
+			IpVersion:    rule.IpVersion.ValueStringPointer(),
+			DstCidr:      rule.DstCidr.ValueStringPointer(),
+			DstPortRange: rule.DstPortRange.ValueStringPointer(),
+			Priority:     rule.Priority.ValueInt32(),
+			Action:       rule.Action.ValueStringPointer(),
+			SrcCidr:      rule.SrcCidr.ValueStringPointer(),
+			SrcPortRange: rule.SrcPortRange.ValueStringPointer(),
+		})
+	}
+
+	if len(addRules) > 0 {
+		createReq := &sdwan.SdwanCreateSdwanAclRuleRequest{
+			AclID:    aclID,
+			AddRules: addRules,
+		}
+
+		resp, err := c.meta.Apis.SdkSdwanApis.SdwanCreateSdwanAclRuleApi.Do(ctx, c.meta.SdkCredential, createReq)
+		if err != nil {
+			return err
+		} else if resp.StatusCode != common.NormalStatusCode {
+			return fmt.Errorf("API return error. Message: %s", *resp.Message)
+		}
+	}
+
+	return nil
+}
+
+// updateRules 更新现有规则
+func (c *CtyunSdwanAcl) updateRules(ctx context.Context, aclID string, rulesToUpdate []*SdwanAclRule) error {
+	// 首先获取现有的规则以获得规则ID
+	listReq := &sdwan.SdwanGetSdwanAclRuleRequest{
+		PageNo:   1,
+		PageSize: 1000,
+		AclID:    &aclID,
+	}
+
+	resp, err := c.meta.Apis.SdkSdwanApis.SdwanGetSdwanAclRuleApi.Do(ctx, c.meta.SdkCredential, listReq)
+	if err != nil {
+		return err
+	} else if resp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *resp.Message)
+	} else if resp.ReturnObj == nil {
+		return common.InvalidReturnObjError
+	}
+
+	// 创建规则映射以便快速查找规则ID
+	ruleIDMap := make(map[string]string)
+	for _, rule := range resp.ReturnObj.Result {
+		if rule.AclRuleID != nil && rule.Direction != nil && rule.SrcCidr != nil && rule.DstCidr != nil && rule.Protocol != nil {
+			key := fmt.Sprintf("%s_%s_%s_%s", *rule.Direction, *rule.SrcCidr, *rule.DstCidr, *rule.Protocol)
+			ruleIDMap[key] = *rule.AclRuleID
+		}
+	}
+
+	// 准备更新规则列表
+	var updateRules []*sdwan.SdwanUpdateSdwanAclRuleUpdateRulesRequest
+
+	for _, rule := range rulesToUpdate {
+		key := c.ruleKey(rule)
+		if ruleID, exists := ruleIDMap[key]; exists {
+			updateRules = append(updateRules, &sdwan.SdwanUpdateSdwanAclRuleUpdateRulesRequest{
+				AclRuleID:    &ruleID,
+				Direction:    rule.Direction.ValueStringPointer(),
+				Protocol:     rule.Protocol.ValueStringPointer(),
+				IpVersion:    rule.IpVersion.ValueStringPointer(),
+				DstCidr:      rule.DstCidr.ValueStringPointer(),
+				DstPortRange: rule.DstPortRange.ValueStringPointer(),
+				Priority:     rule.Priority.ValueInt32(),
+				Action:       rule.Action.ValueStringPointer(),
+				SrcCidr:      rule.SrcCidr.ValueStringPointer(),
+				SrcPortRange: rule.SrcPortRange.ValueStringPointer(),
+			})
+		}
+	}
+
+	// 执行更新操作
+	if len(updateRules) > 0 {
+		updateReq := &sdwan.SdwanUpdateSdwanAclRuleRequest{
+			AclID:       aclID,
+			UpdateRules: updateRules,
+		}
+
+		updateResp, err := c.meta.Apis.SdkSdwanApis.SdwanUpdateSdwanAclRuleApi.Do(ctx, c.meta.SdkCredential, updateReq)
+		if err != nil {
+			return err
+		} else if updateResp.StatusCode != common.NormalStatusCode {
+			return fmt.Errorf("API return error. Message: %s", *updateResp.Message)
+		}
+	}
+
 	return nil
 }
