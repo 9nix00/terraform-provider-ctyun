@@ -38,9 +38,10 @@ var (
 )
 
 type ctyunKafkaInstance struct {
-	meta       *common.CtyunMetadata
-	vpcService *business.VpcService
-	sgService  *business.SecurityGroupService
+	meta        *common.CtyunMetadata
+	vpcService  *business.VpcService
+	sgService   *business.SecurityGroupService
+	orderLooper *business.OrderLooper
 }
 
 func NewCtyunKafkaInstance() resource.Resource {
@@ -282,7 +283,7 @@ func (c *ctyunKafkaInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			"retention_hours": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，支持更新",
+				Description: "实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，重启后生效，支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 10000),
 				},
@@ -505,7 +506,6 @@ func (c *ctyunKafkaInstance) Delete(ctx context.Context, request resource.Delete
 		if err != nil {
 			return
 		}
-		time.Sleep(120 * time.Second)
 	}
 	// 销毁
 	err = c.destroy(ctx, state)
@@ -528,6 +528,7 @@ func (c *ctyunKafkaInstance) Configure(_ context.Context, request resource.Confi
 	c.meta = meta
 	c.vpcService = business.NewVpcService(meta)
 	c.sgService = business.NewSecurityGroupService(meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
@@ -706,6 +707,7 @@ func (c *ctyunKafkaInstance) createPrePayOrder(ctx context.Context, plan CtyunKa
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -750,6 +752,7 @@ func (c *ctyunKafkaInstance) createPostPayOrder(ctx context.Context, plan CtyunK
 		return
 	}
 	masterOrderID = resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -911,7 +914,7 @@ func (c *ctyunKafkaInstance) checkAfterRestart(ctx context.Context, state CtyunK
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("重启时间过长")
+		err = fmt.Errorf("实例 %s(%s) 重启时间过长", state.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -946,6 +949,8 @@ func (c *ctyunKafkaInstance) transToPrePaid(ctx context.Context, plan, state Cty
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := utils.SecString(resp.ReturnObj.Data.MasterOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -968,6 +973,8 @@ func (c *ctyunKafkaInstance) transChargeType(ctx context.Context, plan, state Ct
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data[0].MasterOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1027,13 +1034,14 @@ func (c *ctyunKafkaInstance) diskExtend(ctx context.Context, plan, state CtyunKa
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
 // checkAfterUpdateDiskSize 检查磁盘大小是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1045,10 +1053,6 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 			if utils.StringToInt32Must(instance.Space) != plan.DiskSize.ValueInt32() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			successCnt++
-			if successCnt < 3 {
-				return true
-			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1056,7 +1060,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateDiskSize(ctx context.Context, plan,
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("磁盘变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 磁盘变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -1117,13 +1121,14 @@ func (c *ctyunKafkaInstance) nodeExtend(ctx context.Context, plan, state CtyunKa
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
 // checkAfterUpdateNodeNum 检查节点数量是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1135,10 +1140,6 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 			if len(instance.NodeList) != int(plan.NodeNum.ValueInt32()) || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			successCnt++
-			if successCnt < 3 {
-				return true
-			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1146,7 +1147,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateNodeNum(ctx context.Context, plan, 
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("节点数量变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 节点数量变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -1207,6 +1208,8 @@ func (c *ctyunKafkaInstance) specShrink(ctx context.Context, plan, state CtyunKa
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1229,13 +1232,14 @@ func (c *ctyunKafkaInstance) specExtend(ctx context.Context, plan, state CtyunKa
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
 // checkAfterUpdateSpec 检查规格是否变更成功
 func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
-	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1247,10 +1251,6 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 			if instance.Specifications != plan.SpecName.ValueString() || instance.Status != business.KafkaStatusRunning {
 				return true
 			}
-			successCnt++
-			if successCnt < 3 {
-				return true
-			}
 			executeSuccessFlag = true
 			return false
 		})
@@ -1258,7 +1258,7 @@ func (c *ctyunKafkaInstance) checkAfterUpdateSpec(ctx context.Context, plan, sta
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("规格变配时间过长")
+		err = fmt.Errorf("实例 %s(%s) 规格变配时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -1309,7 +1309,8 @@ func (c *ctyunKafkaInstance) updateRetentionHours(ctx context.Context, plan, sta
 		return fmt.Errorf("API return error. Data: %s", resp.ReturnObj.Data)
 	}
 	// 更新后需要重启
-	return c.reboot(ctx, plan, state)
+	//return c.reboot(ctx, plan, state)
+	return nil
 }
 
 // reboot 重启实例
@@ -1348,16 +1349,16 @@ func (c *ctyunKafkaInstance) reboot(ctx context.Context, plan, state CtyunKafkaI
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("重启时间过长")
+		err = fmt.Errorf("实例 %s(%s) 重启时间过长", plan.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
 
 // unsubscribe 退订
-func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, state CtyunKafkaInstanceConfig) (err error) {
 	params := &ctgkafka.CtgkafkaUnsubscribeInstV3Request{
-		RegionId:   plan.RegionID.ValueString(),
-		ProdInstId: plan.ID.ValueString(),
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaUnsubscribeInstV3Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -1365,21 +1366,25 @@ func (c *ctyunKafkaInstance) unsubscribe(ctx context.Context, plan CtyunKafkaIns
 	} else if resp.StatusCode != common.NormalStatusCodeString {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
-	} else if resp.ReturnObj == nil {
+	} else if resp.ReturnObj == nil ||
+		len(resp.ReturnObj.Data.BatchOrderPlacementResults) == 0 ||
+		len(resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents) == 0 {
 		err = common.InvalidReturnObjError
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.BatchOrderPlacementResults[0].OrderPlacedEvents[0].NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
 // unsubscribe 退订后检查
-func (c *ctyunKafkaInstance) checkAfterUnsubscribe(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+func (c *ctyunKafkaInstance) checkAfterUnsubscribe(ctx context.Context, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
 			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
+			instance, err = c.getByNameOrID(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1393,16 +1398,16 @@ func (c *ctyunKafkaInstance) checkAfterUnsubscribe(ctx context.Context, plan Cty
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("退订时间过长")
+		err = fmt.Errorf("实例 %s(%s) 退订时间过长", state.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
 
 // destroy 销毁
-func (c *ctyunKafkaInstance) destroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+func (c *ctyunKafkaInstance) destroy(ctx context.Context, state CtyunKafkaInstanceConfig) (err error) {
 	params := &ctgkafka.CtgkafkaInstanceDeleteV3Request{
-		RegionId:   plan.RegionID.ValueString(),
-		ProdInstId: plan.ID.ValueString(),
+		RegionId:   state.RegionID.ValueString(),
+		ProdInstId: state.ID.ValueString(),
 	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaInstanceDeleteV3Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
@@ -1418,13 +1423,13 @@ func (c *ctyunKafkaInstance) destroy(ctx context.Context, plan CtyunKafkaInstanc
 }
 
 // unsubscribe 销毁后检查
-func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKafkaInstanceConfig) (err error) {
+func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, state CtyunKafkaInstanceConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
 			var instance *ctgkafka.CtgkafkaInstQueryReturnObjDataResponse
-			instance, err = c.getByNameOrID(ctx, plan)
+			instance, err = c.getByNameOrID(ctx, state)
 			if err != nil {
 				return false
 			}
@@ -1438,7 +1443,7 @@ func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKa
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("销毁时间过长")
+		err = fmt.Errorf("实例 %s(%s) 销毁时间过长", state.InstanceName.ValueString(), state.ID.ValueString())
 	}
 	return
 }
@@ -1446,7 +1451,6 @@ func (c *ctyunKafkaInstance) checkAfterDestroy(ctx context.Context, plan CtyunKa
 // checkAfterCreate 创建后检查
 func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKafkaInstanceConfig) (id string, err error) {
 	var executeSuccessFlag bool
-	var successCnt int
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
@@ -1458,11 +1462,6 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 			if instance == nil || instance.Status != business.KafkaStatusRunning || instance.ProdInstId == "" {
 				return true
 			}
-			// 等待订单完成
-			successCnt++
-			if successCnt < 3 {
-				return true
-			}
 			id = instance.ProdInstId
 			executeSuccessFlag = true
 			return false
@@ -1471,7 +1470,7 @@ func (c *ctyunKafkaInstance) checkAfterCreate(ctx context.Context, plan CtyunKaf
 		return
 	}
 	if !executeSuccessFlag {
-		err = fmt.Errorf("创建时间过长")
+		err = fmt.Errorf("实例 %s 创建时间过长", plan.InstanceName.ValueString())
 	}
 	return
 }

@@ -111,16 +111,13 @@ resource "ctyun_ec_cloud_gateway" "cloud_gateway_wulumuqi7" {
   region_name = "cn-xj-urc7-1a-public-ctcloud"
 }
 
-
-
 resource "ctyun_ec_packet" "packet_test" {
   ec_id        = ctyun_express_connect.express_connect_dependence.id
-  packet_name  = "packet_region_peer_test"
+  name = "packet_region_peer_test"
   bandwidth    = 10
-  cycle_type   = "MONTH"
+  cycle_type   = "month"
   cycle_count  = 1
 }
-
 
 resource "ctyun_ec_region_peer" "region_peer_test" {
   name        = "region_peer_test"

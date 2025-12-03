@@ -3,11 +3,9 @@ output "ctyun_express_connect_id" {
   value = ctyun_express_connect.express_connect_dependence.id
 }
 
-
 output "ctyun_ec_cloud_gateway_id"{
   value = ctyun_ec_cloud_gateway.cloud_gateway_dependence.id
 }
-
 
 output "vpc_id" {
   value = ctyun_vpc.vpc_test.id
@@ -20,6 +18,7 @@ output "subnet_id" {
 output "subnet_id2" {
   value = ctyun_subnet.subnet_test2.id
 }
+
 output "rtb_id"{
   value = ctyun_ec_cloud_gateway.cloud_gateway_dependence.rtb_id
 }

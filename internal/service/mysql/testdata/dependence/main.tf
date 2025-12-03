@@ -106,7 +106,7 @@ resource "ctyun_mysql_instance" "mysql_test" {
   flavor_name           = "c7.large.2"
   prod_id               = "Single57"
   subnet_id             = local.real_subnet_id
-  security_group_id     = [local.real_security_group_id]
+  security_group_id     = local.real_security_group_id
   name                  = local.mysql_name
   storage_type          = "SATA"
   storage_space         = 100
@@ -120,6 +120,7 @@ resource "ctyun_mysql_backup" "backup_test" {
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"
+  depends_on = [ctyun_mysql_database.db3]
 }
 
 data "ctyun_mysql_recoverable_time_points" "time_point_test" {

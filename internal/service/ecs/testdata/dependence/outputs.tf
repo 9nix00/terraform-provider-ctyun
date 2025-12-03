@@ -42,13 +42,20 @@ output "ecs_id" {
   value = ctyun_ecs.ecs_test.id
 }
 
+output "ebs_id" {
+  value = ctyun_ebs.ebs_test[0].id
+}
+
+output "ebs_id2" {
+  value = ctyun_ebs.ebs_test[1].id
+}
+
+output "ebs_id3" {
+  value = ctyun_ebs.ebs_test[2].id
+}
 
 output "instance_id" {
   value = ctyun_ecs.ecs_test.id
-}
-
-output "data_disk_id" {
-  value = ctyun_ebs.data_disk_test.id
 }
 
 output "ecs_port_for_association_id" {

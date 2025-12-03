@@ -15,6 +15,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	ctiam2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctiam"
 	sdkctimage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
@@ -327,6 +328,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			CtImageApis:     ctimage.NewApis(client),
 			CtVpcApis:       ctvpc.NewApis(client),
 			CtEbmApis:       ctebm.NewApis(fmt.Sprintf(endpointUrl, ctebm.EndpointName), coreClient),
+			SdkCtIamApis:    ctiam2.NewApis(fmt.Sprintf(endpointUrl, ctiam2.EndpointName), coreClient),
 			SdkCtEbsApis:    ctebs2.NewApis(fmt.Sprintf(endpointUrl, ctebs2.EndpointName), coreClient),
 			SdkCtEcsApis:    ctecs2.NewApis(fmt.Sprintf(endpointUrl, ctecs2.EndpointName), coreClient),
 			SdkCtVpcApis:    ctvpc2.NewApis(fmt.Sprintf(endpointUrl, ctvpc2.EndpointName), coreClient),
@@ -489,6 +491,9 @@ func (c *CtyunProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		sdwan2.NewCtyunSdwans(),
 		sdwan2.NewCtyunSdwanAcls(),
 		sdwan2.NewCtyunSdwanAclRules(),
+		iam.NewCtyunIamUserAks(),
+		iam.NewCtyunIamUsers(),
+		iam.NewCtyunIamPolicies(),
 	)
 }
 
@@ -594,6 +599,7 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		//ccse.NewCtyunCcseTemplateInstance(),
 		scaling2.NewCtyunScalingEcsProtection(),
 		mongodb.NewCtyunMongodbAssociationEip(),
+		ecs.NewCtyunEcsDataVolume(),
 		mongodb.NewCtyunMongodbAccount(),
 		mongodb.NewCtyunMongodbWhiteList(),
 		mongodb.NewCtyunMongodbBackupResource(),
@@ -643,6 +649,7 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		sdwan2.NewCtyunSdwan(),
 		sdwan2.NewCtyunSdwanAcl(),
 		sdwan2.NewCtyunSdwanAclRule(),
+		iam.NewCtyunIamUserAk(),
 	)
 }
 

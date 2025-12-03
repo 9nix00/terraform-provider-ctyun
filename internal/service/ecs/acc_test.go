@@ -20,8 +20,10 @@ type Dependence struct {
 	keyPairName2            string
 	securityGroupID         string
 	ecsID                   string
+	ebsID                   string
+	ebsID2                  string
+	ebsID3                  string
 	instanceID              string
-	dataDiskID              string
 	ecsPortForAssociationId string
 	flavorName              string
 }
@@ -48,8 +50,10 @@ func TestMain(m *testing.M) {
 		keyPairName2:            outputs["key_pair_name2"].Value,
 		securityGroupID:         outputs["security_group_id"].Value,
 		ecsID:                   outputs["ecs_id"].Value,
+		ebsID:                   outputs["ebs_id"].Value,
+		ebsID2:                  outputs["ebs_id2"].Value,
+		ebsID3:                  outputs["ebs_id3"].Value,
 		instanceID:              outputs["instance_id"].Value,
-		dataDiskID:              outputs["data_disk_id"].Value,
 		ecsPortForAssociationId: outputs["ecs_port_for_association_id"].Value,
 		flavorName:              outputs["flavor_name"].Value,
 	}

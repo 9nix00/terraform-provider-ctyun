@@ -11,6 +11,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebsbackup"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	sdkCtelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	ctiam2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctiam"
 	sdkCtImage "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctimage"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctnat"
 	ctvpc2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
@@ -78,6 +79,7 @@ type Apis struct {
 	CtEbsBackupApis *ctebsbackup.Apis
 	CtEcsApis       *ctecs.Apis
 	CtIamApis       *ctiam.Apis
+	SdkCtIamApis    *ctiam2.Apis
 	CtImageApis     *ctimage.Apis
 	CtVpcApis       *ctvpc.Apis
 	CtEbmApis       *ctebm.Apis

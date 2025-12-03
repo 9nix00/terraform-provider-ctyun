@@ -2,6 +2,7 @@ package ec
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
@@ -47,15 +48,19 @@ func (c *CtyunExpressConnectRegionPeer) ImportState(ctx context.Context, request
 		}
 	}()
 	var config CtyunExpressConnectRegionPeerConfig
-	var ID, ecId, packetId, srcCgwId string
-	err = terraform_extend.Split(request.ID, &ID, &ecId, &packetId, &srcCgwId)
+	var id, ecId, packetId, srcCgwId string
+	err = terraform_extend.Split(request.ID, &id, &ecId, &packetId, &srcCgwId)
 	if err != nil {
 		return
 	}
-	config.ID = types.StringValue(ID)
+	config.ID = types.StringValue(id)
 	config.EcID = types.StringValue(ecId)
 	config.PacketID = types.StringValue(packetId)
 	config.SrcCgwID = types.StringValue(srcCgwId)
+	err = c.getAndMerge(ctx, &config)
+	if err != nil {
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 func (c *CtyunExpressConnectRegionPeer) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -198,8 +203,10 @@ func (c *CtyunExpressConnectRegionPeer) Read(ctx context.Context, request resour
 	// 查询远端
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
-		response.State.RemoveResource(ctx)
-		err = nil
+		if errors.Is(err, common.ResourceNotExistError) {
+			response.State.RemoveResource(ctx)
+			err = nil
+		}
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
@@ -296,6 +303,10 @@ func (c *CtyunExpressConnectRegionPeer) create(ctx context.Context, config *Ctyu
 
 func (c *CtyunExpressConnectRegionPeer) getAndMerge(ctx context.Context, config *CtyunExpressConnectRegionPeerConfig) error {
 	regionPeerList, err := c.getRegionPeerList(ctx, config)
+	if err != nil {
+		return err
+	}
+
 	for _, regionPeer := range regionPeerList {
 		if *regionPeer.PeerID == config.ID.ValueString() {
 			config.Name = types.StringValue(*regionPeer.PeerName)
@@ -308,10 +319,10 @@ func (c *CtyunExpressConnectRegionPeer) getAndMerge(ctx context.Context, config 
 			config.DstRegionID = types.StringValue(*regionPeer.DstDcID)
 			config.PeerType = types.Int32Value(*regionPeer.PeerType)
 			config.UpdateTime = types.StringValue(*regionPeer.UpdateDate)
-			break
+			return nil
 		}
 	}
-	return err
+	return common.ResourceNotExistError
 }
 
 func (c *CtyunExpressConnectRegionPeer) getRegionPeerList(ctx context.Context, config *CtyunExpressConnectRegionPeerConfig) ([]*ec.EcRegionPeerListReturnObjResultsResponse, error) {

@@ -17,7 +17,7 @@ func TestAccCtyunPgsqlInstanceCycle(t *testing.T) {
 	resourceFile := "resource_ctyun_pgsql_instance.tf"
 	cycleType := "month"
 	prodId := "Single1222"
-	storageType := "SATA"
+	storageType := "SSD"
 	StorageSpace := 100
 	name := "pgsql-" + utils.GenerateRandomString()
 	//password := "VqOcfgJ6Nf2houSe5C9sxgM4ycExVK+F0bBZwBGdiy8DCVXoSyck0lPxw9XMRgHur2lQYenOJ5K/FxZ30qlwbKG3NfgNoPq+AXDeSDdycGTqa1TzLdGnYwAeC/hEa8pyUKS9LdlW7nnM1nGUvGCXkGdzJP8lbHCwonzazEnF3RI="

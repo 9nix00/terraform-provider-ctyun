@@ -9,7 +9,6 @@ resource "ctyun_sfs" "%[1]s" {
   cycle_count = %[9]d
   vpc_id       = "%[10]s"
   subnet_id    = "%[11]s"
-  read_only    = %[12]t
 }
 
 

@@ -33,8 +33,7 @@ resource "ctyun_subnet" "subnet_test" {
   description = "terraform测试使用"
   dns         = [
     "114.114.114.114",
-    "8.8.8.8",
-    "8.8.4.4"
+    "8.8.8.8"
   ]
   enable_ipv6 = true
   type = "common"
@@ -158,6 +157,7 @@ resource "ctyun_ebm" "ebm_test2" {
 - `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询
 - `eip_id` (String) 弹性公网IP的ID
 - `key_pair_name` (String) 密钥对名词，和password只能传其中之一
+- `metadata` (Map of String) 物理机元数据信息，键值对形式 支持更新
 - `password` (String, Sensitive) 密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

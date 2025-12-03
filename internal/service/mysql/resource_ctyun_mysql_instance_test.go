@@ -16,7 +16,7 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -67,7 +67,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 	cycleType := "on_demand"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	prodID := "Single57"
@@ -107,7 +107,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single57"),
 				),
 			},
@@ -121,7 +121,7 @@ func TestAccCtyunMysqlInstance(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "flavor_name", flavorName),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
-					resource.TestCheckResourceAttr(resourceName, "security_group_id.#", "1"),
+					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 					resource.TestCheckResourceAttr(resourceName, "auto_renew", "false"),
 					resource.TestCheckResourceAttr(resourceName, "prod_id", "Single57"),
 					resource.TestCheckResourceAttr(resourceName, "write_port", "13306"),
@@ -177,7 +177,7 @@ func TestAccCtyunMysqlInstanceMonth(t *testing.T) {
 	resourceFile := "resource_ctyun_mysql_instance.tf"
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := fmt.Sprintf(`"%s"`, dependence.securityGroupID)
+	securityGroupID := dependence.securityGroupID
 	name := "tf-mysql-" + utils.GenerateRandomString()
 	password := "Kyk111*" + utils.GenerateRandomString()
 	cycleCount := "cycle_count=1"

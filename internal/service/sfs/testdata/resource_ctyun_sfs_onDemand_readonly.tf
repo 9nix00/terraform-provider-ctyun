@@ -7,6 +7,5 @@ resource "ctyun_sfs" "%[1]s" {
   az_name      = "%[7]s"
   vpc_id       = "%[8]s"
   subnet_id    = "%[9]s"
-  read_only    = %[10]t
 }
 
