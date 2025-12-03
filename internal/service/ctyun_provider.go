@@ -58,6 +58,7 @@ import (
 	mysql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/nat"
 	oceanfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/oceanfs"
+	peer_connection2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/peer-connection"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
@@ -491,6 +492,7 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		dns.NewCtyunPrivateZones(),
 		dns.NewCtyunPrivateZoneRecords(),
 		oceanfs2.NewCtyunOceanfsInstances(),
+		peer_connection2.NewCtyunVpcPeerConnections(),
 	)
 }
 
@@ -646,6 +648,8 @@ func (c *CtyunProvider) Resources(_ context.Context) []func() resource.Resource 
 		oceanfs2.NewCtyunOceanfsPermissionGroup(),
 		oceanfs2.NewCtyunOceanfsPermissionGroupAssociation(),
 		oceanfs2.NewCtyunOceanfsPermissionRule(),
+		peer_connection2.NewCtyunVpcPeerConnection(),
+		peer_connection2.NewCtyunVpcPeerConnectionAttach(),
 	)
 }
 
