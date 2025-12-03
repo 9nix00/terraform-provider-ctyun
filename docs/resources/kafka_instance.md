@@ -63,7 +63,7 @@ resource "ctyun_kafka_instance" "tbidgqvfbs" {
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `restart` (Boolean) 是否重启，默认为false
-- `retention_hours` (Number) 实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，支持更新
+- `retention_hours` (Number) 实例消息保留时长，单位小时。默认为72小时，可选1~10000小时，重启后生效，支持更新
 - `sasl_port` (Number) 安全接入点(SASL_PLAINTEXT)端口，范围在8000到9100之间，默认为8092
 - `ssl_port` (Number) SSL接入点(SASL_SSL)端口，范围在8000到9100之间，默认为8098。
 

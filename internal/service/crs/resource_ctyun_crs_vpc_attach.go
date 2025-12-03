@@ -195,6 +195,7 @@ func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.Im
 			err = fmt.Errorf("regionID不能为空")
 			return
 		}
+		vpcID = request.ID
 	} else {
 		err = terraform_extend.Split(request.ID, &vpcID, &regionID)
 		if err != nil {

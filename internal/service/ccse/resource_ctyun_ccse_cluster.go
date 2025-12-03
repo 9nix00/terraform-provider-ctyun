@@ -140,9 +140,11 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
-				Computed:      true,
-				Description:   "ID",
+				Computed:    true,
+				Description: "ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Computed:    true,
@@ -1279,8 +1281,8 @@ func (c *ctyunCcseCluster) getAndMerge(ctx context.Context, plan *CtyunCcseClust
 		return fmt.Errorf("集群 %s 处于退订状态", plan.ID.ValueString())
 	}
 	plan.Name = types.StringValue(instance.ClusterName)
-	plan.CreateTime = types.StringValue(utils.FromLocalToUTCZ(instance.CreatedTime))
-	plan.ExpireTime = types.StringValue(utils.FromLocalToUTCZ(instance.ExpireTime))
+	plan.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(instance.CreatedTime))
+	plan.ExpireTime = types.StringValue(utils.FromBJTimeToUTCZ(instance.ExpireTime))
 	plan.BaseInfo.VpcID = types.StringValue(instance.VpcId)
 	plan.BaseInfo.SecurityGroupID = types.StringValue(instance.SecurityGroupId)
 	plan.BaseInfo.SubnetID = types.StringValue(instance.SubnetUuid)

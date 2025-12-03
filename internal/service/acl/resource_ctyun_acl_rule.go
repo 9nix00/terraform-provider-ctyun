@@ -210,6 +210,9 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "acl 规则id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}

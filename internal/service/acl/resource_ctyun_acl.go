@@ -109,14 +109,14 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "acl名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持修改",
+				Description: "acl名称，支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "acl备注，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持修改",
+				Description: "acl备注，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
 				},
@@ -142,6 +142,17 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "更新时间，为UTC格式",
 			},
 		},
 	}
@@ -309,6 +320,8 @@ func (c *CtyunAcl) getAndMerge(ctx context.Context, config *CtyunAclConfig) erro
 	config.ApplyToPublicLb = types.BoolValue(*detail.ApplyToPublicLb)
 	config.Enabled = types.StringValue(*detail.Enabled)
 	config.Name = types.StringValue(*detail.Name)
+	config.CreateTime = types.StringValue(*detail.CreatedAt)
+	config.UpdateTime = types.StringValue(*detail.UpdatedAt)
 	return nil
 }
 
@@ -390,4 +403,6 @@ type CtyunAclConfig struct {
 	ApplyToPublicLb types.Bool   `tfsdk:"apply_to_public_lb"`
 	Enabled         types.String `tfsdk:"enabled"`
 	ID              types.String `tfsdk:"id"`
+	CreateTime      types.String `tfsdk:"create_time"`
+	UpdateTime      types.String `tfsdk:"update_time"`
 }

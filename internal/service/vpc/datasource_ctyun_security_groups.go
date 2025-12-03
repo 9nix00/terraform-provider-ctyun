@@ -185,7 +185,7 @@ func (c *ctyunSecurityGroups) Schema(_ context.Context, _ datasource.SchemaReque
 									},
 									"create_time": schema.StringAttribute{
 										Computed:    true,
-										Description: "创建时间，UTC时间。",
+										Description: "创建时间，为UTC时间",
 									},
 									"rule_id": schema.StringAttribute{
 										Computed:    true,
@@ -287,7 +287,7 @@ func (c *ctyunSecurityGroups) Read(ctx context.Context, request datasource.ReadR
 				Range:           utils.SecStringValue(r.RawRange),
 				DestCidrIp:      utils.SecStringValue(r.DestCidrIp),
 				Description:     utils.SecStringValue(r.Description),
-				CreateTime:      utils.SecStringValue(r.CreateTime),
+				CreateTime:      types.StringValue(utils.ConvertToUTCZ(utils.SecString(r.CreateTime))),
 				RuleID:          utils.SecStringValue(r.Id),
 				SecurityGroupID: utils.SecStringValue(r.SecurityGroupID),
 				Action:          utils.SecStringValue(r.Action),

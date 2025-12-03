@@ -15,7 +15,7 @@ func FromRFC3339ToLocal(timeStr string) string {
 // 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"，无效输入返回空
 func FromUnixToUTC(timestamp int64) string {
 	// 调整范围校验：包含13位合理最大值（约2286年）
-	if timestamp < 0 || timestamp > 3000000000000 {
+	if timestamp <= 0 || timestamp > 3000000000000 {
 		return ""
 	}
 
@@ -31,29 +31,41 @@ func FromUnixToUTC(timestamp int64) string {
 	return t.Format(time.RFC3339)
 }
 
-// ConvertToUTCZ 将带时区的时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式
+// ConvertToUTCZ 将时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式
 // input: 输入时间字符串，如"2025-09-09T11:42:52+08:00"
-// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"，及可能的错误
+// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
 func ConvertToUTCZ(input string) string {
-	// 解析输入时间
 	t, err := time.Parse(time.RFC3339, input)
 	if err != nil {
 		return ""
 	}
-	// 转换为UTC时区并格式化
 	return t.UTC().Format(time.RFC3339)
 }
 
-// FromLocalToUTCZ 将本地时间格式(yyyy-MM-dd HH:mm:ss)转换为UTC时间格式(yyyy-MM-ddTHH:mm:ssZ)
-// input: 输入时间字符串，如"2022-08-20 11:53:51"
-// 返回值: 转换后的UTC时间字符串，如"2022-08-20T11:53:51Z"
-func FromLocalToUTCZ(input string) string {
-	// 解析输入时间
-	t, err := time.Parse(time.DateOnly+" "+time.TimeOnly, input)
+// ConvertToUTCZ2 将时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式
+// input: 输入时间字符串，如"2025-12-02 03:27:23 +0000 UTC"
+// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
+func ConvertToUTCZ2(input string) string {
+	layout := "2006-01-02 15:04:05 -0700 MST"
+	t, err := time.Parse(layout, input)
 	if err != nil {
 		return ""
 	}
+	return t.Format(time.RFC3339)
+}
 
-	// 转换为UTC时区并格式化为RFC3339格式
+// FromBJTimeToUTCZ 修正版：将北京时间（YYYY-MM-DD HH:MM:SS）转换为UTC时间的RFC3399格式（带Z）
+// 入参：input - 北京时间字符串（格式：2025-12-02 13:37:32）
+// 出参：UTC时间的RFC3399字符串，解析失败返回空字符串
+func FromBJTimeToUTCZ(input string) string {
+	layout := time.DateOnly + " " + time.TimeOnly
+	shanghaiLoc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		return ""
+	}
+	t, err := time.ParseInLocation(layout, input, shanghaiLoc)
+	if err != nil {
+		return ""
+	}
 	return t.UTC().Format(time.RFC3339)
 }
