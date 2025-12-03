@@ -183,7 +183,9 @@ func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.Im
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [vpcID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunCrsVpcAttachConfig
@@ -191,16 +193,20 @@ func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.Im
 	// 根据分隔符数量判断是否输入了regionID
 	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
-		if regionID == "" {
-			err = fmt.Errorf("regionID不能为空")
-			return
-		}
 		vpcID = request.ID
 	} else {
 		err = terraform_extend.Split(request.ID, &vpcID, &regionID)
 		if err != nil {
 			return
 		}
+	}
+	if vpcID == "" {
+		err = fmt.Errorf("vpcID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.VpcID = types.StringValue(vpcID)
