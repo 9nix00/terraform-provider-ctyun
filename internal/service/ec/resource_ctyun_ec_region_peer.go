@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -318,7 +319,7 @@ func (c *CtyunExpressConnectRegionPeer) getAndMerge(ctx context.Context, config 
 			config.SrcRegionID = types.StringValue(*regionPeer.SrcDcID)
 			config.DstRegionID = types.StringValue(*regionPeer.DstDcID)
 			config.PeerType = types.Int32Value(*regionPeer.PeerType)
-			config.UpdateTime = types.StringValue(*regionPeer.UpdateDate)
+			config.UpdateTime = types.StringValue(utils.FromBJTimeToUTCZ(*regionPeer.UpdateDate))
 			return nil
 		}
 	}

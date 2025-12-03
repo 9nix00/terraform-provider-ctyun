@@ -131,7 +131,7 @@ func (c *CtyunScalingPolicies) Schema(ctx context.Context, request datasource.Sc
 							Computed:    true,
 							Description: "企业项目ID",
 						},
-						"create_date": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
@@ -350,7 +350,7 @@ type CtyunScalingPolicyList struct {
 	Day                           types.Set    `tfsdk:"day"`                               // 执行日期 (列表)
 	GroupID                       types.Int32  `tfsdk:"group_id"`                          // 伸缩组ID
 	ProjectID                     types.String `tfsdk:"project_id"`                        // 企业项目ID
-	CreateDate                    types.String `tfsdk:"create_date"`                       // 创建时间
+	CreateDate                    types.String `tfsdk:"create_time"`                       // 创建时间
 	UpdateDate                    types.String `tfsdk:"update_date"`                       // 更新时间
 	TriggerID                     types.String `tfsdk:"trigger_id"`                        // 告警规则ID
 	TriggerName                   types.String `tfsdk:"trigger_name"`                      // 告警规则名称

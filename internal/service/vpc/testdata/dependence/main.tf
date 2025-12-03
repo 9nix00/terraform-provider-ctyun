@@ -88,3 +88,16 @@ resource "ctyun_vip" "vip_test" {
   vip_type   = "v4"
 }
 
+resource "ctyun_vpc" "vpc_test2" {
+  name        = "tf-vpc-for-vpc2"
+  cidr        = "192.168.0.0/16"
+  description = "terraform测试使用"
+  enable_ipv6 = true
+}
+
+resource "ctyun_dhcpoptionset" "test" {
+  name         = "tf-dhcpoption-set"
+  description  = "test"
+  domain_name  = "www.ctyun.cn"
+  dns_list     = ["114.114.114.114"]
+}

@@ -18,9 +18,9 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 	dataSourceFile := "datasource_ctyun_dhcpoptionset_association_vpcs.tf"
 
 	// 测试参数
-	dhcpOptionSetsId := "dopt-i543qdzbw0"
-	vpcIds := fmt.Sprintf(`"%s"`, "vpc-ff96ycah87")
-	updatedVpcIds := fmt.Sprintf(`"%s","%s"`, "vpc-ff96ycah87", "vpc-cgny4bplv8")
+	dhcpOptionSetsId := dependence.dhcpID
+	vpcIds := fmt.Sprintf(`"%s"`, dependence.vpcID)
+	updatedVpcIds := fmt.Sprintf(`"%s","%s"`, dependence.vpcID, dependence.vpcID)
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

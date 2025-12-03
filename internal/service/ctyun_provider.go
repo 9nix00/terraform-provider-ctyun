@@ -493,6 +493,9 @@ func (c *CtyunProvider) DataSources(_ context.Context) []func() datasource.DataS
 		dns.NewCtyunPrivateZoneRecords(),
 		oceanfs2.NewCtyunOceanfsInstances(),
 		peer_connection2.NewCtyunVpcPeerConnections(),
+		vpc.NewCtyunVips(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpcs(),
+		vpc.NewCtyunDhcpOptionSets(),
 	)
 }
 
