@@ -98,6 +98,21 @@ func TestAccCtyunPrefix(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{}, // 不可更新的属性
 			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不可更新的属性
+			},
 			// 4. 清理资源
 			{
 				Config: utils.LoadTestCase(

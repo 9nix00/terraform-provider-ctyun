@@ -17,6 +17,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
+)
+
+var (
+	_ resource.Resource                = &CtyunSubnetAssociationAcl{}
+	_ resource.ResourceWithConfigure   = &CtyunSubnetAssociationAcl{}
+	_ resource.ResourceWithImportState = &CtyunSubnetAssociationAcl{}
 )
 
 type CtyunSubnetAssociationAcl struct {
@@ -46,21 +53,58 @@ func (c *CtyunSubnetAssociationAcl) ImportState(ctx context.Context, request res
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[subnetId],[aclId],[projectId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunSubnetAssociationAclConfig
-	var ID, regionId, projectId, aclId, subnetId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &aclId, &subnetId)
-	if err != nil {
+	var ID, subnetId, aclId, projectId, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &subnetId, &aclId)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 3 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &subnetId, &aclId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &subnetId, &aclId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
 		return
 	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
+		return
+	}
+
+	if subnetId == "" {
+		err = fmt.Errorf("subnetId不能为空")
+		return
+	}
+	if aclId == "" {
+		err = fmt.Errorf("aclId不能为空")
+		return
+	}
+
+	config.ID = types.StringValue(ID)
+	config.SubnetID = types.StringValue(subnetId)
+	config.AclID = types.StringValue(aclId)
 	if projectId != "" {
 		config.ProjectID = types.StringValue(projectId)
 	}
-	config.ID = types.StringValue(ID)
-	config.AclID = types.StringValue(aclId)
-	config.SubnetID = types.StringValue(subnetId)
 	config.RegionID = types.StringValue(regionId)
 
 	err = c.getAndMerge(ctx, &config)

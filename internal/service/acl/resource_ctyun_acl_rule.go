@@ -24,6 +24,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &CtyunAclRule{}
+	_ resource.ResourceWithConfigure   = &CtyunAclRule{}
+	_ resource.ResourceWithImportState = &CtyunAclRule{}
+)
+
 type CtyunAclRule struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService
