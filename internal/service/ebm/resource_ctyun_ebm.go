@@ -639,24 +639,48 @@ func (c *ctyunEbm) ImportState(ctx context.Context, request resource.ImportState
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[projectId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var plan CtyunEbmConfig
-	var instanceUUID, regionID, azName string
-	err = terraform_extend.Split(request.ID, &instanceUUID, &regionID, &azName)
-	if err != nil {
-		return
+	var config CtyunEbmConfig
+
+	var instanceUUID, azName, regionID string
+	// 根据分隔符数量判断是否输入了regionID,azName
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		azName = c.meta.GetExtraIfEmpty(azName, common.ExtraAzName)
+		instanceUUID = request.ID
+	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &instanceUUID, &azName)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &instanceUUID, &azName, &regionID)
+		if err != nil {
+			return
+		}
 	}
 
-	plan.InstanceID = types.StringValue(instanceUUID)
-	plan.AzName = types.StringValue(azName)
-	plan.RegionID = types.StringValue(regionID)
-	err = c.getAndMerge(ctx, &plan)
+	if instanceUUID == "" {
+		err = fmt.Errorf("instanceID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.InstanceID = types.StringValue(instanceUUID)
+	config.RegionID = types.StringValue(regionID)
+	config.AzName = types.StringValue(azName)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 // createInstance 创建物理机
