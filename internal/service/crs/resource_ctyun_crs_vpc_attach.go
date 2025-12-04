@@ -178,7 +178,6 @@ func (c *ctyunCrsVpcAttach) Delete(ctx context.Context, request resource.DeleteR
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [vpcID],[regionID]
 func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
@@ -200,6 +199,7 @@ func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.Im
 			return
 		}
 	}
+
 	if vpcID == "" {
 		err = fmt.Errorf("vpcID不能为空")
 		return
@@ -208,6 +208,7 @@ func (c *ctyunCrsVpcAttach) ImportState(ctx context.Context, request resource.Im
 		err = fmt.Errorf("regionID不能为空")
 		return
 	}
+
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.VpcID = types.StringValue(vpcID)
 	err = c.getAndMerge(ctx, &cfg)
