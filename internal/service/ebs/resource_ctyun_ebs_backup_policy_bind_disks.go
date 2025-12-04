@@ -405,19 +405,43 @@ func (c *ctyunEcsBackupPolicyBindDisks) ImportState(ctx context.Context, request
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [policyID],[diskIDList],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunEcsBackupPolicyBindDisksConfig
-	var diskIDList, policyID, regionID string
-	err = terraform_extend.Split(request.ID, &policyID, &diskIDList, &regionID)
-	if err != nil {
-		return
+
+	var diskIDList, policyID, regionId string
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &policyID, &diskIDList)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &policyID, &diskIDList, &regionId)
+		if err != nil {
+			return
+		}
 	}
 
+	if policyID == "" {
+		err = fmt.Errorf("policyID不能为空")
+		return
+	}
+	if diskIDList == "" {
+		err = fmt.Errorf("diskIDList不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
 	cfg.DiskIDList = types.StringValue(diskIDList)
 	cfg.PolicyID = types.StringValue(policyID)
-	cfg.RegionID = types.StringValue(regionID)
+	cfg.RegionID = types.StringValue(regionId)
 
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)

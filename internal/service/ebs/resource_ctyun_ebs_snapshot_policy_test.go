@@ -104,15 +104,32 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 				ResourceName: resourceName,
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					ds := s.RootModule().Resources[resourceName].Primary
-					id := ds.ID
-					regionId := ds.Attributes["region_id"]
-					return fmt.Sprintf("%s,%s", id, regionId), nil
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
 				},
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"project_id", "is_enabled", "bound_disk_num",
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_id", "is_enabled", "bound_disk_num"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
 				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_id", "is_enabled", "bound_disk_num"},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true) +
