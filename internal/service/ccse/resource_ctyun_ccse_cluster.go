@@ -1020,20 +1020,40 @@ func (c *ctyunCcseCluster) Delete(ctx context.Context, request resource.DeleteRe
 	response.Diagnostics.AddWarning("删除CCSE集群成功", "集群退订后，若立即删除子网或安全组可能会失败，需要等待底层资源释放")
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称],[clusterID],[regionID]
 func (c *ctyunCcseCluster) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [clusterID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunCcseClusterConfig
 	var clusterID, regionID string
-	err = terraform_extend.Split(request.ID, &clusterID, &regionID)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &clusterID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &clusterID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if clusterID == "" {
+		err = fmt.Errorf("clusterID不能为空")
 		return
 	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.ID = types.StringValue(clusterID)
 	// 查询远端
@@ -1698,4 +1718,48 @@ func (c *ctyunCcseCluster) checkAfterUpdateManagedSeries(ctx context.Context, pl
 		return
 	}
 	return
+}
+
+func (c *ctyunCcseCluster) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [clusterID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var cfg CtyunCcseClusterConfig
+	var clusterID, regionID string
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &clusterID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &clusterID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if clusterID == "" {
+		err = fmt.Errorf("clusterID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
+	cfg.RegionID = types.StringValue(regionID)
+	cfg.ID = types.StringValue(clusterID)
+	// 查询远端
+	err = c.getAndMerge(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
