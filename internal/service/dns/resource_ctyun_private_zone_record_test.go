@@ -104,6 +104,22 @@ func TestAccCtyunPrivateZoneRecord_A(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"enabled"}, // 可选忽略
 			},
+			// import state 验证 - 仅ID
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"enabled", "region_id"}, // 可选忽略
+			},
 			// 3. 清理资源
 			{
 				Config: utils.LoadTestCase(

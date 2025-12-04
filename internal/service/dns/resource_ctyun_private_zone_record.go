@@ -50,13 +50,30 @@ func (c *CtyunPrivateZoneRecord) ImportState(ctx context.Context, request resour
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunPrivateZoneRecordConfig
 	var ID, regionId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 	config.ID = types.StringValue(ID)
