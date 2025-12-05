@@ -50,18 +50,37 @@ func (c *CtyunExpressConnectVpcInstance) ImportState(ctx context.Context, reques
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[ecID],[cgwID],[projectID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunExpressConnectVpcInstanceConfig
+
 	var ID, ecID, cgwID string
+
 	err = terraform_extend.Split(request.ID, &ID, &ecID, &cgwID)
 	if err != nil {
 		return
 	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if ecID == "" {
+		err = fmt.Errorf("ecID不能为空")
+		return
+	}
+	if cgwID == "" {
+		err = fmt.Errorf("cgwID不能为空")
+		return
+	}
+
 	config.ID = types.StringValue(ID)
 	config.EcID = types.StringValue(ecID)
 	config.CgwID = types.StringValue(cgwID)
+
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return

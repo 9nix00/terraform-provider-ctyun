@@ -7,7 +7,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -43,7 +42,6 @@ type CtyunEcCloudGatewayConfig struct {
 	DcID        types.String `tfsdk:"region_id"`
 	//DcType      types.String `tfsdk:"region_type"`
 	CreateDate types.String `tfsdk:"create_date"`
-	ProjectID  types.String `tfsdk:"project_id"`
 	RtbID      types.String `tfsdk:"rtb_id"`
 }
 
@@ -135,18 +133,6 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "创建时间",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"project_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
-				Validators: []validator.String{
-					validator2.Project(),
 				},
 			},
 		},
@@ -249,30 +235,41 @@ func (c *CtyunEcCloudGateway) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
-func (c *CtyunEcCloudGateway) ImportState(ctx context.Context, request resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (c *CtyunEcCloudGateway) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ecId],[cgwID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunEcCloudGatewayConfig
+	var config CtyunEcCloudGatewayConfig
+
 	var ecId, cgwID string
+
 	err = terraform_extend.Split(request.ID, &ecId, &cgwID)
 	if err != nil {
-		resp.Diagnostics.AddError(err.Error(), err.Error())
+		return
+	}
+	if ecId == "" {
+		err = fmt.Errorf("ecId不能为空")
+		return
+	}
+	if cgwID == "" {
+		err = fmt.Errorf("cgwID不能为空")
 		return
 	}
 
-	cfg.EcID = types.StringValue(ecId)
-	cfg.ID = types.StringValue(cgwID)
+	config.EcID = types.StringValue(ecId)
+	config.ID = types.StringValue(cgwID)
 
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunEcCloudGateway) checkBeforeCreate(ctx context.Context, c2 *CtyunEcCloudGatewayConfig) (err error) {

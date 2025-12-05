@@ -45,20 +45,47 @@ func (c *CtyunExpressConnectRoute) ImportState(ctx context.Context, request reso
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[ecId],[cgwId],[rtbId],[nextHopId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunExpressConnectRouteConfig
+
 	var ID, ecId, cgwId, rtbId, nextHopId string
+
 	err = terraform_extend.Split(request.ID, &ID, &ecId, &cgwId, &rtbId, &nextHopId)
 	if err != nil {
 		return
 	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if ecId == "" {
+		err = fmt.Errorf("ecId不能为空")
+		return
+	}
+	if cgwId == "" {
+		err = fmt.Errorf("cgwId不能为空")
+		return
+	}
+	if rtbId == "" {
+		err = fmt.Errorf("rtbId不能为空")
+		return
+	}
+	if nextHopId == "" {
+		err = fmt.Errorf("nextHopId不能为空")
+		return
+	}
+
 	config.ID = types.StringValue(ID)
 	config.EcID = types.StringValue(ecId)
 	config.CgwID = types.StringValue(cgwId)
 	config.RtbID = types.StringValue(rtbId)
 	config.NextHopID = types.StringValue(nextHopId)
+
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return

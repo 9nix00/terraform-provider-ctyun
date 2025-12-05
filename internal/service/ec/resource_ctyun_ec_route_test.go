@@ -193,7 +193,7 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 								return "", fmt.Errorf("resource not found: %s", resourceName)
 							}
 							return fmt.Sprintf("%s,%s,%s,%s,%s",
-								rs.Primary.Attributes["id"],
+								rs.Primary.ID,
 								rs.Primary.Attributes["ec_id"],
 								rs.Primary.Attributes["cgw_id"],
 								rs.Primary.Attributes["rtb_id"],
@@ -201,7 +201,7 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 							), nil
 						},
 						ImportStateVerify:       true,
-						ImportStateVerifyIgnore: []string{"exclusive_id", "project_id", "is_black_hole_route"}, // 子网列表可能变化
+						ImportStateVerifyIgnore: []string{"exclusive_id", "is_black_hole_route"}, // 子网列表可能变化
 
 					},
 					// 2. 清理资源
