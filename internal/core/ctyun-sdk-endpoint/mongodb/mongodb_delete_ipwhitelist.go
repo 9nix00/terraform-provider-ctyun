@@ -18,7 +18,7 @@ func NewMongodbDeleteIpWhitelistApi(client *ctyunsdk.CtyunClient) *MongodbDelete
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/DDS2/v2/openApi/deleteIPWhitelist",
+			UrlPath: "/DDS2/v2/openApi/deleteWhiteList",
 		},
 	}
 }
@@ -54,8 +54,8 @@ func (this *MongodbDeleteIpWhitelistApi) Do(ctx context.Context, credential ctyu
 }
 
 type MongodbDeleteIpWhitelistRequest struct {
-	ProdInstId string `json:"prodInstId"`      // 实例ID
-	GroupName  string `json:"ipWhitelistName"` // 白名单分组名称
+	ProdInstId  string `json:"prodInstId"`  // 实例ID
+	WhiteListId string `json:"whiteListId"` // 白名单分组名称
 }
 
 type MongodbDeleteIpWhitelistRequestHeaders struct {

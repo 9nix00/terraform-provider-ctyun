@@ -88,7 +88,7 @@ type SdwanGetSdwanAclReturnObjResponse struct {
 
 type SdwanGetSdwanAclReturnObjResultResponse struct {
 	AclID          *string `json:"aclID"`          /*  ACL ID  */
-	Name           *string `json:"name"`           /*  名称  */
+	Name           *string `json:"aclName"`        /*  名称  */
 	ProjectID      *string `json:"projectID"`      /*  企业项目  */
 	RuleCount      int32   `json:"ruleCount"`      /*  规则数量  */
 	RuleErrorCount int32   `json:"ruleErrorCount"` /*  错误的规则数量  */

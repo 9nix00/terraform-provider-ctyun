@@ -11,6 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 )
 
 var (
@@ -100,9 +101,10 @@ func (c *CtyunMongodbWhiteLists) Read(ctx context.Context, req datasource.ReadRe
 	describeReq := &mongodb.MongodbDescribeIpWhitelistRequest{
 		ProdInstId: data.InstanceID.ValueString(),
 	}
+	regionId := c.meta.GetExtraIfEmpty(data.RegionID.ValueString(), common.ExtraRegionId)
 
 	headers := &mongodb.MongodbDescribeIpWhitelistRequestHeaders{
-		RegionID: data.RegionID.ValueString(),
+		RegionID: regionId,
 	}
 	if !data.ProjectID.IsNull() {
 		headers.ProjectID = data.ProjectID.ValueStringPointer()
@@ -135,14 +137,20 @@ func (c *CtyunMongodbWhiteLists) Read(ctx context.Context, req datasource.ReadRe
 	// 转换API响应数据到Terraform模型
 	var whiteLists []MongodbWhiteListModel
 	for _, group := range describeResp.ReturnObj.WhitelistGroup {
-		ipList, diags := types.ListValueFrom(ctx, types.StringType, group.IpList)
+		// 处理IP列表，API返回的是逗号分隔的字符串
+		var ipListSlice []string
+		if group.IpList != "" {
+			ipListSlice = strings.Split(group.IpList, ",")
+		}
+
+		ipList, diags := types.ListValueFrom(ctx, types.StringType, ipListSlice)
 		resp.Diagnostics.Append(diags...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
 
 		whiteLists = append(whiteLists, MongodbWhiteListModel{
-			IpWhitelistName: types.StringValue(group.IpWhitelistName),
+			IpWhitelistName: types.StringValue(group.GroupName),
 			IpList:          ipList,
 		})
 	}

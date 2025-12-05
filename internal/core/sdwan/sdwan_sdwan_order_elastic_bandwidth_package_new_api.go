@@ -56,7 +56,7 @@ type SdwanSdwanOrderElasticBandwidthPackageNewRequest struct {
 	Bandwidth     int32   `json:"bandwidth"`               /*  智能网关APP 带宽  */
 	OnDemand      bool    `json:"onDemand"`                /*  是否按需下单。默认为false  */
 	CycleType     *string `json:"cycleType,omitempty"`     /*  本参数表示包周期类型<br/><br/>取值范围:<br/>DAY:按天<br/>onDemand为False时，必须指定。  */
-	CycleCount    int32   `json:"cycleCount"`              /*  包周期数。onDemand为False时必须指定。周期最大长度不能超过30天  */
+	CycleCount    int64   `json:"cycleCount"`              /*  包周期数。onDemand为False时必须指定。周期最大长度不能超过30天  */
 	EffectiveTime *string `json:"effectiveTime,omitempty"` /*  生效时间，如果没有设置实时生效，如果设置时间只能设置当前时间之后的时间点  */
 }
 

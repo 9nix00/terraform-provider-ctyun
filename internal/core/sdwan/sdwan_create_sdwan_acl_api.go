@@ -61,7 +61,7 @@ type SdwanCreateSdwanAclRulesRequest struct {
 	IpVersion    string `json:"ipVersion"`    /*  本参数表示IP协议版本<br/><br/>取值范围:<br/>IPv4:IPv4<br/>IPv6:IPv6  */
 	DstCidr      string `json:"dstCidr"`      /*  目的网段  */
 	DstPortRange string `json:"dstPortRange"` /*  目的端口范围（例如1-200， -1/-1为默认值，表示1-65535）  */
-	Priority     string `json:"priority"`     /*  priority  */
+	Priority     int32  `json:"priority"`     /*  priority  */
 	Action       string `json:"action"`       /*  本参数表示策略类型<br/><br/>取值范围:<br/>allow:允许<br/>deny:拒绝  */
 	SrcCidr      string `json:"srcCidr"`      /*  源网段  */
 	SrcPortRange string `json:"srcPortRange"` /*  源端口范围（例如1-200， -1/-1为默认值，表示1-65535）  */
