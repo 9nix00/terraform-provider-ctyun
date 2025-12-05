@@ -165,11 +165,18 @@ func (c *ctyunPolicyAssociationUserGroup) Delete(ctx context.Context, request re
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [privilegeId]
 func (c *ctyunPolicyAssociationUserGroup) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [privilegeId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunPolicyAssociationUserGroupConfig
 	var privilegeId string
-	err := terraform_extend.Split(request.ID, &privilegeId)
+	err = terraform_extend.Split(request.ID, &privilegeId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -177,7 +184,6 @@ func (c *ctyunPolicyAssociationUserGroup) ImportState(ctx context.Context, reque
 
 	instance, err := c.getAndMergeIamPolicyAssociationUserGroup(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

@@ -71,9 +71,18 @@ func TestAccCtyunEnterpriseProject(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, updatedDescription),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
+				},
 				ImportStateVerifyIgnore: []string{},
 			},
 			{
