@@ -14,6 +14,7 @@ type Dependence struct {
 	subnetID         string
 	securityGroupID  string
 	securityGroupID2 string
+	securityGroupID3 string
 	eipID            string
 	pgsqlID          string
 	azName           string
@@ -43,6 +44,7 @@ func TestMain(m *testing.M) {
 		subnetID:         outputs["subnet_id"].Value,
 		securityGroupID:  outputs["security_group_id1"].Value,
 		securityGroupID2: outputs["security_group_id2"].Value,
+		securityGroupID3: outputs["security_group_id3"].Value,
 		eipID:            outputs["eip_id"].Value,
 		pgsqlID:          outputs["pgsql_id"].Value,
 		azName:           outputs["az_name"].Value,

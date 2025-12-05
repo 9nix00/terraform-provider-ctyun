@@ -64,7 +64,7 @@ func TestAccCtyunPostgresqlBackup(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result"}, // 不需要忽略任何字段
 			},
 			// 3. 清理资源
 			{

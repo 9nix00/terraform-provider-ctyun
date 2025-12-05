@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 )
 
@@ -45,5 +46,29 @@ func (u MongodbService) GetMongodbFlavorByProdIdAndFlavorName(ctx context.Contex
 		}
 	}
 	err = fmt.Errorf("invalid %s for %s", flavorName, prodID)
+	return
+}
+
+func (u MongodbService) GetIDByOrder(ctx context.Context, masterOrderID string, projectID string) (id string, err error) {
+	params := mongodb.MongodbGetIDByOrderRequest{
+		OrderID: masterOrderID,
+	}
+	header := mongodb.MongodbGetIDByOrderRequestHeader{}
+	if projectID != "" {
+		header.ProjectID = projectID
+	}
+	resp, err := u.meta.Apis.SdkMongodbApis.MongodbGetIDByOrderApi.Do(ctx, u.meta.Credential, &params, &header)
+	if err != nil {
+		return
+	} else if resp.StatusCode != 200 {
+		err = fmt.Errorf("API return error. Message: %s", resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return
+	}
+	if len(resp.ReturnObj.Data) > 0 {
+		id = resp.ReturnObj.Data[0]
+	}
 	return
 }
