@@ -11,7 +11,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
-	
+
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
@@ -2041,11 +2041,9 @@ func (c *ctyunEcs) ImportState(ctx context.Context, request resource.ImportState
 	config.RegionId = types.StringValue(regionId)
 	config.ProjectId = types.StringValue(projectId)
 
-	
 	// 调用Read方法获取最新状态
 	state := &resource.ReadRequest{}
 	readResponse := &resource.ReadResponse{}
-	readResponse.State = &response.State
 	c.Read(ctx, *state, readResponse)
 	if readResponse.Diagnostics.HasError() {
 		err = fmt.Errorf("读取资源状态失败")

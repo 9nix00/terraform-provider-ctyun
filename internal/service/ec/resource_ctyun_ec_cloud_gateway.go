@@ -7,7 +7,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -44,8 +43,6 @@ type CtyunEcCloudGatewayConfig struct {
 	DcID        types.String `tfsdk:"region_id"`
 	//DcType      types.String `tfsdk:"region_type"`
 	CreateTime types.String `tfsdk:"create_time"`
-	ProjectID  types.String `tfsdk:"project_id"`
-	CreateDate types.String `tfsdk:"create_date"`
 	RtbID      types.String `tfsdk:"rtb_id"`
 }
 

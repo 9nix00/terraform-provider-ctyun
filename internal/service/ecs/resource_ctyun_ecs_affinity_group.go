@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -238,7 +239,6 @@ func (c *ctyunEcsAffinityGroup) ImportState(ctx context.Context, request resourc
 	}
 	config.AffinityGroupID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
-	config.ProjectID = types.StringValue(projectId)
 
 	// 调用Read方法获取最新状态
 	err = c.getAndMerge(ctx, &config)
