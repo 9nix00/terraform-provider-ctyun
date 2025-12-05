@@ -18,7 +18,6 @@ func TestAccCtyunOceanfs(t *testing.T) {
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
 	//sfsProtocol := "nfs"
-	name := "oceanfs-" + utils.GenerateRandomString()
 	sfsSize := 100 // 最小值100GB
 	cycleType := "on_demand"
 	projectID := "0"
@@ -27,6 +26,7 @@ func TestAccCtyunOceanfs(t *testing.T) {
 	proctcols := []string{"nfs", "cifs"}
 	for _, sfsProtocol := range proctcols {
 		fmt.Println(fmt.Sprintf("protocol= %s 的oceanfs 验证", sfsProtocol))
+		name := "oceanfs-" + utils.GenerateRandomString() + "-" + sfsProtocol
 		resource.Test(t, resource.TestCase{
 			CheckDestroy: func(s *terraform.State) error {
 				_, exists := s.RootModule().Resources[resourceName]

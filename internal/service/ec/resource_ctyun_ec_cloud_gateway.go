@@ -7,6 +7,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -41,6 +43,8 @@ type CtyunEcCloudGatewayConfig struct {
 	DcName      types.String `tfsdk:"region_name"`
 	DcID        types.String `tfsdk:"region_id"`
 	//DcType      types.String `tfsdk:"region_type"`
+	CreateTime types.String `tfsdk:"create_time"`
+	ProjectID  types.String `tfsdk:"project_id"`
 	CreateDate types.String `tfsdk:"create_date"`
 	RtbID      types.String `tfsdk:"rtb_id"`
 }
@@ -128,7 +132,7 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 			//		stringvalidator.OneOf("CNP", "MAZ", "PRVT"),
 			//	},
 			//},
-			"create_date": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
 				PlanModifiers: []planmodifier.String{
@@ -312,10 +316,6 @@ func (c *CtyunEcCloudGateway) create(ctx context.Context, plan *CtyunEcCloudGate
 
 	plan.ID = types.StringValue(*resp.ReturnObj.CgwID)
 
-	if resp.ReturnObj.CreateDate != nil {
-		plan.CreateDate = types.StringValue(*resp.ReturnObj.CreateDate)
-	}
-
 	return
 }
 func (c *CtyunEcCloudGateway) getAndMerge(ctx context.Context, plan *CtyunEcCloudGatewayConfig) (err error) {
@@ -372,7 +372,7 @@ func (c *CtyunEcCloudGateway) getAndMerge(ctx context.Context, plan *CtyunEcClou
 	}
 
 	if result.CreateDate != nil {
-		plan.CreateDate = types.StringValue(*result.CreateDate)
+		plan.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(*result.CreateDate))
 	}
 	if result.DefaultRtbID != nil {
 		plan.RtbID = types.StringValue(*result.DefaultRtbID)
