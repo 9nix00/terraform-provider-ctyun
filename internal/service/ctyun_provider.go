@@ -34,6 +34,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	hpfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/oceanfs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/scaling"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sfs"
@@ -43,6 +44,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ccse"
 	common2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/crs"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/dns"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebm"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/ebs"
 	ec2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/ec"
@@ -55,6 +57,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/mongodb"
 	mysql2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/nat"
+	oceanfs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/oceanfs"
+	peer_connection2 "github.com/ctyun-it/terraform-provider-ctyun/internal/service/peer-connection"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/pgsql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/rabbitmq"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service/redis"
@@ -350,6 +354,7 @@ func (c *CtyunProvider) Configure(ctx context.Context, req provider.ConfigureReq
 			SdkCdaApis:      cda.NewApis(fmt.Sprintf(endpointUrl, cda.EndpointName), coreClient),
 			SdkEcApis:       ec.NewApis(fmt.Sprintf(endpointUrl, ec.EndpointName), coreClient),
 			SdkSdwanApis:    sdwan.NewApis(fmt.Sprintf(endpointUrl, sdwan.EndpointName), coreClient),
+			SdkOceanfsApis:  oceanfs.NewApis(fmt.Sprintf(endpointUrl, oceanfs.EndpointName), coreClient),
 		},
 		*credential,
 		*SdkCredential,
@@ -494,6 +499,13 @@ func (c *CtyunProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		iam.NewCtyunIamUserAks(),
 		iam.NewCtyunIamUsers(),
 		iam.NewCtyunIamPolicies(),
+		dns.NewCtyunPrivateZones(),
+		dns.NewCtyunPrivateZoneRecords(),
+		oceanfs2.NewCtyunOceanfsInstances(),
+		peer_connection2.NewCtyunVpcPeerConnections(),
+		vpc.NewCtyunVips(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpcs(),
+		vpc.NewCtyunDhcpOptionSets(),
 	)
 }
 
@@ -610,6 +622,8 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		rabbitmq.NewCtyunRabbitmqQueue(),
 		vpc.NewCtyunVip(),
 		vpc.NewCtyunVipAssociation(),
+		vpc.NewCtyunDhcpOptionSet(),
+		vpc.NewCtyunDhcpOptionSetAssociationVpc(),
 		mysql2.NewCtyunMysqlAccount(),
 		mysql2.NewCtyunMysqlBackup(),
 		mysql2.NewCtyunMysqlBackupCancel(),
@@ -650,6 +664,14 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		sdwan2.NewCtyunSdwanAcl(),
 		sdwan2.NewCtyunSdwanAclRule(),
 		iam.NewCtyunIamUserAk(),
+		dns.NewCtyunPrivateZone(),
+		dns.NewCtyunPrivateZoneRecord(),
+		oceanfs2.NewCtyunOceanfs(),
+		oceanfs2.NewCtyunOceanfsPermissionGroup(),
+		oceanfs2.NewCtyunOceanfsPermissionGroupAssociation(),
+		oceanfs2.NewCtyunOceanfsPermissionRule(),
+		peer_connection2.NewCtyunVpcPeerConnection(),
+		peer_connection2.NewCtyunVpcPeerConnectionAttach(),
 	)
 }
 

@@ -129,6 +129,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `name` (String) 名称
 - `protected_conn` (String) 受保护的连接地址
 - `tls_version` (String) TLS版本
+- `vip` (String) VIP地址
 
 <a id="nestedatt--backup_policy"></a>
 ### Nested Schema for `backup_policy`

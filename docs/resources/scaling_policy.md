@@ -71,7 +71,7 @@ resource "ctyun_scaling_config" "config_test" {
   name            = "sc-for-policy"
   image_id        =  local.image_id
   flavor_name     = "s7.large.2"
-  use_floatings   = "diable"
+  use_floatings   = "disable"
   login_mode      = "key_pair"
   key_pair_id     = ctyun_keypair.scaling_test.id
   monitor_service = true

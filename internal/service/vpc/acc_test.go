@@ -20,6 +20,8 @@ type Dependence struct {
 	dataDiskID         string
 	networkInterfaceID string
 	vipId              string
+	vpcID2             string
+	dhcpID             string
 }
 
 var dependence Dependence
@@ -44,6 +46,8 @@ func TestMain(m *testing.M) {
 		subnetID:           outputs["subnet_id"].Value,
 		networkInterfaceID: outputs["network_interface_id"].Value,
 		vipId:              outputs["vip_id"].Value,
+		vpcID2:             outputs["vpc_id2"].Value,
+		dhcpID:             outputs["dhcp_id"].Value,
 	}
 	fmt.Println("依赖资源初始化完毕")
 

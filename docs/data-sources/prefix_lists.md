@@ -1,5 +1,5 @@
 # ctyun_prefix_lists (Data Source)
-查询前缀列表信息
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10298321
 
 
 

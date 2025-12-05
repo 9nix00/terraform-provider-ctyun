@@ -61,5 +61,5 @@ type AmqpInstancesNodeExtendResponseReturnObjData struct {
 	Submitted  bool   `json:"submitted"`
 	NewOrderId string `json:"newOrderId"`
 	NewOrderNo string `json:"newOrderNo"`
-	TotalPrice string `json:"totalPrice"`
+	//TotalPrice string `json:"totalPrice"`
 }

@@ -72,7 +72,7 @@ func (c *CtyunSubnetAssociationAcl) ImportState(ctx context.Context, request res
 
 func (c *CtyunSubnetAssociationAcl) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028591",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -112,6 +112,9 @@ func (c *CtyunSubnetAssociationAcl) Schema(ctx context.Context, request resource
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}

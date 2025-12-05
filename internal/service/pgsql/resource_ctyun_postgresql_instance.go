@@ -179,6 +179,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Computed:    true,
 				Description: "VIP地址",
 				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{

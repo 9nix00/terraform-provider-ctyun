@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -195,7 +196,7 @@ func (c *CtyunExpressConnectionRegionPeer) Read(ctx context.Context, request dat
 		regionPeer.PeerType = types.Int32Value(*peerItem.PeerType)
 		regionPeer.Rate = types.Int32Value(*peerItem.Rate)
 		regionPeer.Status = types.StringValue(*peerItem.Status)
-		regionPeer.UpdateTime = types.StringValue(*peerItem.UpdateDate)
+		regionPeer.UpdateTime = types.StringValue(utils.FromBJTimeToUTCZ(*peerItem.UpdateDate))
 
 		regionPeers = append(regionPeers, regionPeer)
 	}

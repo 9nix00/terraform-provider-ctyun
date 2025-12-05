@@ -28,7 +28,7 @@ resource "ctyun_ec_packet" "example" {
   ec_id        = ctyun_express_connect.example.id
   name = "example-ec-packet"
   bandwidth    = 10
-  cycle_type   = "MONTH"
+  cycle_type   = "month"
   cycle_count  = 1
 
   # 可选参数
@@ -45,17 +45,16 @@ resource "ctyun_ec_packet" "example" {
 ### Required
 
 - `bandwidth` (Number) 带宽，单位MB
-- `cycle_count` (Number) 包周期数。onDemand为False时必须指定。周期最大长度不能超过36个月
-- `cycle_type` (String) 包周期类型，当onDemand为False时，必须指定，取值如下：YEAR: 包年，MONTH:包月
+- `cycle_count` (Number) 订购时长，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-3年
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年
 - `ec_id` (String) 云间高速ID
-- `packet_name` (String) 带宽包名字
+- `name` (String) 带宽包名字
 
 ### Optional
 
 - `area_a` (String) 区域A类型，取值如下：china: 中国大陆, APAC:亚太，默认china
 - `area_b` (String) 区域B类型，取值如下：china: 中国大陆, APAC:亚太，默认china
 - `client_token` (String) 客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一
-- `on_demand` (Boolean) 布尔类型，是否按需下单。默认为false
 - `pay_voucher_price` (String) 代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

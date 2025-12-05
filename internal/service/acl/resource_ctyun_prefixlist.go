@@ -67,7 +67,7 @@ func (c *CtyunPrefix) ImportState(ctx context.Context, request resource.ImportSt
 
 func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10298321",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -107,7 +107,7 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 			},
 			"address_type": schema.StringAttribute{
 				Required:    true,
-				Description: "地址类型，取值范围：ipv4， ipv6",
+				Description: "地址类型，取值范围：ipv4，ipv6",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.PrefixAddressTypeIpv4, business.PrefixAddressTypeIpv6),
 				},
@@ -136,15 +136,21 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"update_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "更新时间",
+				Description: "更新时间，为UTC格式",
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "前缀列表id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -285,8 +291,8 @@ func (c *CtyunPrefix) getAndMerge(ctx context.Context, config *CtyunPrefixConfig
 	config.Limit = types.Int32Value(returnObj.Limit)
 	config.AddressType = types.StringValue(business.PrefixAddressTyperRevMap[returnObj.AddressType])
 	config.Description = types.StringValue(*returnObj.Description)
-	config.CreateTime = types.StringValue(*returnObj.CreatedAt)
-	config.UpdateTime = types.StringValue(*returnObj.UpdatedAt)
+	config.CreateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(returnObj.CreatedAt)))
+	config.UpdateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(returnObj.UpdatedAt)))
 	rules := returnObj.PrefixListRules
 	var prefixRules []CtyunPrefixModel
 	for _, ruleItem := range rules {

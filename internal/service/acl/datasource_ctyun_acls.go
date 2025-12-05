@@ -41,7 +41,7 @@ func (c *ctyunAcls) Metadata(ctx context.Context, request datasource.MetadataReq
 
 func (c *ctyunAcls) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "查询访问控制列表(ACL)信息",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028583",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -120,11 +120,11 @@ func (c *ctyunAcls) Schema(ctx context.Context, request datasource.SchemaRequest
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"subnet_ids": schema.SetAttribute{
 							Computed:    true,

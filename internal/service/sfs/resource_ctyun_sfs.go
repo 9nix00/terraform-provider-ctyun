@@ -159,7 +159,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 			"az_name": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME，4.0资源池必须",
+				Description: "可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME。获取不到则使用资源池第一个可用区",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

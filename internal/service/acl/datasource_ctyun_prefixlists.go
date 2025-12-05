@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -41,7 +42,7 @@ func (c *CtyunPrefixLists) Metadata(ctx context.Context, request datasource.Meta
 
 func (c *CtyunPrefixLists) Schema(ctx context.Context, request datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		Description: "查询前缀列表信息",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10298321",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -102,11 +103,11 @@ func (c *CtyunPrefixLists) Schema(ctx context.Context, request datasource.Schema
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"prefix_list_rules": schema.ListNestedAttribute{
 							Computed: true,
@@ -187,8 +188,8 @@ func (c *CtyunPrefixLists) Read(ctx context.Context, request datasource.ReadRequ
 		prefix.Limit = types.Int32Value(prefixItem.Limit)
 		prefix.AddressType = types.StringValue(business.PrefixAddressTyperRevMap[prefixItem.AddressType])
 		prefix.Description = types.StringValue(*prefixItem.Description)
-		prefix.CreateTime = types.StringValue(*prefixItem.CreatedAt)
-		prefix.UpdateTime = types.StringValue(*prefixItem.UpdatedAt)
+		prefix.CreateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(prefixItem.CreatedAt)))
+		prefix.UpdateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(prefixItem.UpdatedAt)))
 		for _, rule := range prefixItem.PrefixListRules {
 			var ruleModel CtyunPrefixRuleModel
 			ruleModel.PrefixListRuleID = types.StringValue(*rule.PrefixListRuleID)

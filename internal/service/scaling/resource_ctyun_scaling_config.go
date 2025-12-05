@@ -157,7 +157,7 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			},
 			"use_floatings": schema.StringAttribute{
 				Required:    true,
-				Description: "是否使用弹性IP: diable-不使用, auto-自动分配。支持更新",
+				Description: "是否使用弹性IP: disable-不使用, auto-自动分配。支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ScalingUseFloatings...),
 				},
@@ -244,7 +244,8 @@ func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.Schema
 			"az_names": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
-				Description: "可用区列表，仅多可用区资源池支持，支持更新",
+				Computed:    true,
+				Description: "可用区列表，不填写默认包含该资源池下所有AZ，支持更新",
 			},
 			"monitor_service": schema.BoolAttribute{
 				Optional:    true,
@@ -412,15 +413,15 @@ func (c *ctyunScalingConfig) createScalingConfig(ctx context.Context, config *Ct
 		MonitorService: config.MonitorService.ValueBoolPointer(),
 	}
 
-	// 判断资源池是否为多AZ
+	// 获取资源池内所有AZ
 	zones, err2 := c.regionService.GetZonesByRegionID(ctx, config.RegionID.ValueString())
 	if err2 != nil {
 		return err2
 	}
-	isNaz := false
-	if len(zones) > 1 {
-		isNaz = true
-	}
+	//isNaz := false
+	//if len(zones) > 1 {
+	//	isNaz = true
+	//}
 	//// 当AZ必填
 	//if !config.SecurityGroupIDList.IsNull() && !config.SecurityGroupIDList.IsUnknown() && !isNaz {
 	//	var securityGroupIDList []string
@@ -432,7 +433,7 @@ func (c *ctyunScalingConfig) createScalingConfig(ctx context.Context, config *Ct
 	//	params.SecurityGroupIDList = securityGroupIDList
 	//}
 
-	if !config.AzNames.IsNull() && !config.AzNames.IsUnknown() && isNaz {
+	if !config.AzNames.IsNull() && !config.AzNames.IsUnknown() {
 		var azNames []string
 		diags := config.AzNames.ElementsAs(ctx, &azNames, true)
 		if diags.HasError() {
@@ -440,6 +441,8 @@ func (c *ctyunScalingConfig) createScalingConfig(ctx context.Context, config *Ct
 			return err
 		}
 		params.AzNames = azNames
+	} else {
+		params.AzNames = zones
 	}
 	if !config.Volumes.IsNull() && !config.Volumes.IsUnknown() {
 		var volumeList []CtyunVolumesModel
@@ -729,6 +732,14 @@ func (c *ctyunScalingConfig) updateScalingConfig(ctx context.Context, state *Cty
 	if !plan.AzNames.IsNull() && !plan.AzNames.IsUnknown() {
 		var azNames []string
 		diags := plan.AzNames.ElementsAs(ctx, &azNames, true)
+		if diags.HasError() {
+			err := errors.New(diags[0].Detail())
+			return err
+		}
+		params.AzNames = azNames
+	} else {
+		var azNames []string
+		diags := state.AzNames.ElementsAs(ctx, &azNames, true)
 		if diags.HasError() {
 			err := errors.New(diags[0].Detail())
 			return err
