@@ -54,6 +54,19 @@ func TestAccCtyunKeyPairImport(t *testing.T) {
 				},
 			},
 			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					return fmt.Sprintf("%s", name), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"project_id",
+				},
+			},
+			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, keyName, publicKey),
 				Destroy: true,
 			},

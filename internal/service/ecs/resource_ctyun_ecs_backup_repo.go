@@ -518,7 +518,9 @@ package ecs
 //	var err error
 //	defer func() {
 //		if err != nil {
-//			response.Diagnostics.AddError(err.Error(), err.Error())
+//			title := "导入失败：" + err.Error()
+//			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+//			response.Diagnostics.AddError(title, detail)
 //		}
 //	}()
 //	var cfg CtyunEcsBackupRepoConfig
@@ -527,6 +529,16 @@ package ecs
 //	if err != nil {
 //		return
 //	}
+
+//	if id == "" {
+//		err = fmt.Errorf("ID不能为空")
+//		return
+//	}
+//	if regionID == "" {
+//		err = fmt.Errorf("regionID不能为空")
+//		return
+//	}
+
 //	cfg.RegionID = types.StringValue(regionID)
 //	cfg.Id = types.StringValue(id)
 //	// 查询远端
@@ -534,6 +546,6 @@ package ecs
 //	if err != nil {
 //		return
 //	}
-//
+
 //	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 //}

@@ -2001,29 +2001,14 @@ func (c *ctyunEcs) ImportState(ctx context.Context, request resource.ImportState
 		}
 	}()
 	var config CtyunEcsConfig
-
-	var ID, projectId, azName, regionId string
-	// 根据分隔符数量判断是否输入了regionID,azName,projectId
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID,
 	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		azName = c.meta.GetExtraIfEmpty(azName, common.ExtraAzName)
-		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
 		ID = request.ID
-	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		azName = c.meta.GetExtraIfEmpty(azName, common.ExtraAzName)
-		err = terraform_extend.Split(request.ID, &ID, &projectId)
-		if err != nil {
-			return
-		}
-	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		err = terraform_extend.Split(request.ID, &ID, &projectId, &azName)
-		if err != nil {
-			return
-		}
 	} else {
-		err = terraform_extend.Split(request.ID, &ID, &projectId, &azName, &regionId)
+
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
 		if err != nil {
 			return
 		}
@@ -2039,14 +2024,10 @@ func (c *ctyunEcs) ImportState(ctx context.Context, request resource.ImportState
 	}
 	config.Id = types.StringValue(ID)
 	config.RegionId = types.StringValue(regionId)
-	config.ProjectId = types.StringValue(projectId)
 
-	// 调用Read方法获取最新状态
-	state := &resource.ReadRequest{}
-	readResponse := &resource.ReadResponse{}
-	c.Read(ctx, *state, readResponse)
-	if readResponse.Diagnostics.HasError() {
-		err = fmt.Errorf("读取资源状态失败")
+	cfg, err := c.getAndMergeEcs(ctx, config)
+	if err != nil {
 		return
 	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }

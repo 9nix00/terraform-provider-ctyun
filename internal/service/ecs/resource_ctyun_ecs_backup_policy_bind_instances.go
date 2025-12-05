@@ -421,13 +421,33 @@ func (c *ctyunEcsBackupPolicyBindInstances) ImportState(ctx context.Context, req
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [policyID],[instanceIDList],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunEcsBackupPolicyBindInstancesConfig
 	var instanceIDList, policyID, regionID string
-	err = terraform_extend.Split(request.ID, &policyID, &instanceIDList, &regionID)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &policyID, &instanceIDList)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &policyID, &instanceIDList, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if policyID == "" {
+		err = fmt.Errorf("policyID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 

@@ -269,15 +269,39 @@ func (c *ctyunEcsPortAssociation) ImportState(ctx context.Context, req resource.
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [regionId],[instanceId],[networkInterfaceId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunEcsPortAssociationConfig
 	var regionId, instanceId, networkInterfaceId string
-	err = terraform_extend.Split(req.ID, &regionId, &instanceId, &networkInterfaceId)
-	if err != nil {
+
+	if strings.Count(req.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(req.ID, &instanceId, &networkInterfaceId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(req.ID, &instanceId, &networkInterfaceId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
 		return
 	}
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
+		return
+	}
+	if networkInterfaceId == "" {
+		err = fmt.Errorf("networkInterfaceId不能为空")
+		return
+	}
+
 	cfg.ID = types.StringValue(req.ID)
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.InstanceID = types.StringValue(instanceId)

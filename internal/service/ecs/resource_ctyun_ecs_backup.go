@@ -465,21 +465,15 @@ func (c *ctyunEcsBackup) ImportState(ctx context.Context, request resource.Impor
 		}
 	}()
 	var config CtyunEcsBackupConfig
-
-	var ID, projectId, regionId string
-	// 根据分隔符数量判断是否输入了regionID,projectId
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID
 	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+
 		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
 		ID = request.ID
-	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		err = terraform_extend.Split(request.ID, &ID, &projectId)
-		if err != nil {
-			return
-		}
+
 	} else {
-		err = terraform_extend.Split(request.ID, &ID, &projectId, &regionId)
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
 		if err != nil {
 			return
 		}
@@ -495,7 +489,6 @@ func (c *ctyunEcsBackup) ImportState(ctx context.Context, request resource.Impor
 	}
 	config.Id = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
-	config.ProjectID = types.StringValue(projectId)
 
 	// 调用Read方法获取最新状态
 	err = c.getAndMerge(ctx, &config)
