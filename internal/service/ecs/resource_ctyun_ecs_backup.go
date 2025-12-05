@@ -459,22 +459,48 @@ func (c *ctyunEcsBackup) ImportState(ctx context.Context, request resource.Impor
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunEcsBackupConfig
-	var id, regionID string
-	err = terraform_extend.Split(request.ID, &id, &regionID)
-	if err != nil {
-		return
-	}
-	cfg.RegionID = types.StringValue(regionID)
-	cfg.Id = types.StringValue(id)
-	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
-	if err != nil {
-		return
+	var config CtyunEcsBackupConfig
+
+	var ID, projectId, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		ID = request.ID
+	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectId, &regionId)
+		if err != nil {
+			return
+		}
 	}
 
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.Id = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+
+	// 调用Read方法获取最新状态
+	err = c.getAndMerge(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
