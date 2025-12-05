@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -94,7 +95,7 @@ func (c *ctyunEcCloudGateways) Schema(_ context.Context, _ datasource.SchemaRequ
 							Computed:    true,
 							Description: "连接实例数量",
 						},
-						"create_date": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
@@ -226,7 +227,7 @@ func (c *ctyunEcCloudGateways) Read(ctx context.Context, req datasource.ReadRequ
 		}
 
 		if r.CreateDate != nil {
-			cloudGateway.CreateDate = types.StringValue(*r.CreateDate)
+			cloudGateway.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(*r.CreateDate))
 		}
 
 		if r.DefaultRtbID != nil {
@@ -265,7 +266,7 @@ type CtyunEcCloudGatewaysCloudGatewaysConfig struct {
 	RouteCount   types.Int64  `tfsdk:"route_count"`
 	PolicyCount  types.Int64  `tfsdk:"policy_count"`
 	InsCount     types.Int64  `tfsdk:"ins_count"`
-	CreateDate   types.String `tfsdk:"create_date"`
+	CreateTime   types.String `tfsdk:"create_time"`
 	DefaultRtbID types.String `tfsdk:"rtb_id"`
 	HasMonitor   types.Bool   `tfsdk:"has_monitor"`
 }

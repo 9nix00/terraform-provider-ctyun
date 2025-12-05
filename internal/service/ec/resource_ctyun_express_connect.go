@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -38,7 +39,7 @@ type CtyunExpressConnectConfig struct {
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 	Status      types.Int64  `tfsdk:"status"`
-	CreateDate  types.String `tfsdk:"create_date"`
+	CreateTime  types.String `tfsdk:"create_time"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	ResourceID  types.String `tfsdk:"resource_id"`
 	RegionId    types.String `tfsdk:"region_id"`
@@ -87,7 +88,7 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 					int64planmodifier.UseStateForUnknown(),
 				},
 			},
-			"create_date": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
 				PlanModifiers: []planmodifier.String{
@@ -264,7 +265,6 @@ func (c *CtyunExpressConnect) create(ctx context.Context, plan *CtyunExpressConn
 	}
 	plan.ID = types.StringValue(*resp.ReturnObj.EcID)
 	plan.Status = types.Int64Value(int64(*resp.ReturnObj.Status))
-	plan.CreateDate = types.StringValue(*resp.ReturnObj.CreateDate)
 	return
 }
 func (c *CtyunExpressConnect) getAndMerge(ctx context.Context, plan *CtyunExpressConnectConfig) (err error) {
@@ -289,7 +289,7 @@ func (c *CtyunExpressConnect) getAndMerge(ctx context.Context, plan *CtyunExpres
 	result := resp.ReturnObj.Results[0]
 	plan.Name = types.StringValue(*result.EcName)
 	plan.Status = types.Int64Value(int64(*result.Status))
-	plan.CreateDate = types.StringValue(*result.CreateDate)
+	plan.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(utils.SecString(result.CreateDate)))
 
 	if result.EcDescription != nil {
 		plan.Description = types.StringValue(*result.EcDescription)

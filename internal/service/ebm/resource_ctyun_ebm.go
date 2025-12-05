@@ -86,6 +86,9 @@ type CtyunEbmConfig struct {
 	PortID               types.String `tfsdk:"port_id"`
 	InterfaceID          types.String `tfsdk:"interface_id"`
 	Metadata             types.Map    `tfsdk:"metadata"`
+	CreateTime           types.String `tfsdk:"create_time"`
+	UpdateTime           types.String `tfsdk:"update_time"`
+	ExpireTime           types.String `tfsdk:"expire_time"`
 }
 
 func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -417,6 +420,21 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "物理机元数据信息，键值对形式 支持更新",
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "更新时间，为UTC格式",
+			},
+			"expire_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "到期时间，为UTC格式",
 			},
 		},
 	}
@@ -1009,7 +1027,9 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.ActualImageID = utils.SecStringValue(instance.ImageID)
 	cfg.VpcID = utils.SecStringValue(instance.VpcID)
 	cfg.Status = utils.SecLowerStringValue(instance.EbmState)
-
+	cfg.CreateTime = types.StringPointerValue(instance.CreateTime)
+	cfg.UpdateTime = types.StringPointerValue(instance.UpdatedTime)
+	cfg.ExpireTime = types.StringPointerValue(instance.ExpiredTime)
 	eipAddress := utils.SecString(instance.PublicIP)
 	cfg.EipAddress = types.StringValue(eipAddress)
 	if eipAddress != "" {

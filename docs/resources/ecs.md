@@ -130,6 +130,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 - `affinity_group_id` (String) 云主机组ID 支持更新
 - `auto_renew` (Boolean) 是否自动续订，此参数在包周期情况下才有效，当为包周期时此值默认为true
 - `az_name` (String) 可用区id，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
+- `bandwidth` (Number) 带宽大小，传递时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]
 - `cycle_count` (Number) 订购时长，该参数在cycle_type为month或year时才生效，当cycle_type=month，支持订购1-11个月；当cycle_type=year，支持订购1-5年 支持更新
 - `deletion_protection` (Boolean) 是否开启实例删除保护，默认为false 包年包月实例不支持更新实例删除保护参数 支持更新
 - `flavor_id` (String) 规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机 支持更新
@@ -150,6 +151,7 @@ resource "ctyun_ecs" "jdxutuzpfr" {
 
 - `actual_image_id` (String) 实际镜像id，重装、集群纳管等操作会导致actual_image_id与image_id不同
 - `default_security_group_id` (String) 默认加入安全组id
+- `eip_address` (String) 弹性IP地址
 - `expire_time` (String) 到期时间
 - `fixed_ip` (String) 加入子网后的ip地址
 - `id` (String) id

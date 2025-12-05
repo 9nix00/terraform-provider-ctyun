@@ -7,7 +7,7 @@ import (
 )
 
 // EcEcUpdateSDWANInstanceApi
-/* 更新sdwan网络实例，将sdwan下所有网段同步到云间高速。 */
+/* 更新sdwan网络实例，将sdwan下所有网段同步到云间高速 */
 type EcEcUpdateSDWANInstanceApi struct {
 	template core.CtyunRequestTemplate
 	client   *core.CtyunClient
@@ -50,18 +50,18 @@ func (a *EcEcUpdateSDWANInstanceApi) Do(ctx context.Context, credential core.Cre
 }
 
 type EcEcUpdateSDWANInstanceRequest struct {
-	SdwanID string `json:"sdwanID"` /*  sdwan ID  */
+	SdwanID string `json:"sdwanID"` /* sdwan ID */
 }
 
 type EcEcUpdateSDWANInstanceResponse struct {
-	TraceID     *string                                   `json:"traceID"`     /*  链路追踪ID  */
-	StatusCode  *int32                                    `json:"statusCode"`  /*  返回状态码<br/>取值范围:<br/>800:成功<br/>900:失败  */
-	ErrorCode   *string                                   `json:"errorCode"`   /*  业务细分码，为product.module.code三段式码  */
-	Message     *string                                   `json:"message"`     /*  失败时的错误描述，一般为英文描述  */
-	Description *string                                   `json:"description"` /*  失败时的错误描述，一般为中文描述  */
-	ReturnObj   *EcEcUpdateSDWANInstanceReturnObjResponse `json:"returnObj"`   /*  返回参数  */
+	TraceID     *string                                   `json:"traceID"`     /* 链路追踪ID */
+	StatusCode  *int32                                    `json:"statusCode"`  /* 返回状态码<br/>取值范围:<br/>800:成功<br/>900:失败 */
+	ErrorCode   *string                                   `json:"errorCode"`   /* 业务细分码，为product.module.code三段式码 */
+	Message     *string                                   `json:"message"`     /* 失败时的错误描述，一般为英文描述 */
+	Description *string                                   `json:"description"` /* 失败时的错误描述，一般为中文描述 */
+	ReturnObj   *EcEcUpdateSDWANInstanceReturnObjResponse `json:"returnObj"`   /* 返回参数 */
 }
 
 type EcEcUpdateSDWANInstanceReturnObjResponse struct {
-	OplogID *string `json:"oplogID"` /*  操作日志id  */
+	OplogID *string `json:"oplogID"` /* 操作日志id */
 }

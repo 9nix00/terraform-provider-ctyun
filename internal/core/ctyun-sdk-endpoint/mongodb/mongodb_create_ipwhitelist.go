@@ -54,11 +54,11 @@ func (this *MongodbCreateIpWhitelistApi) Do(ctx context.Context, credential ctyu
 }
 
 type MongodbCreateIpWhitelistRequest struct {
-	ProdInstId    string   `json:"prodInstId"`    // 实例ID
-	GroupName     string   `json:"groupName"`     // 白名单分组名
-	IpType        string   `json:"ipType"`        // 白名单分组名
-	WhiteListType string   `json:"whiteListType"` // 白名单分组名
-	IpList        []string `json:"ipList"`        // IP列表
+	ProdInstId    string `json:"prodInstId"`    // 实例ID
+	GroupName     string `json:"groupName"`     // 白名单分组名
+	IpType        string `json:"ipType"`        // 白名单分组名
+	WhiteListType string `json:"whiteListType"` // 白名单分组名
+	IpList        string `json:"ipList"`        // IP列表
 }
 
 type MongodbCreateIpWhitelistRequestHeaders struct {

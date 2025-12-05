@@ -20,7 +20,12 @@ func TestAccMongodbWhiteList_basic(t *testing.T) {
 	groupName := utils.GenerateRandomString()
 	ipType := "ipv4"
 	whiteListType := "2"
-	ipList := "10.138.16.8"
+	ipList := "[\"10.138.16.8\",\"10.138.16.10\"]"
+	ipListUpdate := "[\"10.138.16.8\",\"10.138.16.119\",\"10.138.16.118\"]"
+
+	datasourceName := "data.ctyun_mongodb_white_lists." + rnd
+	datasourceFile := "data_source_ctyun_mongodb_white_lists.tf"
+
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -36,35 +41,51 @@ func TestAccMongodbWhiteList_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipList),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "name", groupName),
-					resource.TestCheckResourceAttr(resourceName, "ipType", ipType),
-					resource.TestCheckResourceAttr(resourceName, "whiteListType", whiteListType),
-					resource.TestCheckResourceAttr(resourceName, "ipList", ipList),
+					resource.TestCheckResourceAttr(resourceName, "group_name", groupName),
+					resource.TestCheckResourceAttr(resourceName, "ip_type", ipType),
+					resource.TestCheckResourceAttr(resourceName, "white_list_type", whiteListType),
+					resource.TestCheckResourceAttr(resourceName, "ip_list.#", "2"),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipList),
+				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipListUpdate),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "name", groupName),
-					resource.TestCheckResourceAttr(resourceName, "ipType", ipType),
-					resource.TestCheckResourceAttr(resourceName, "whiteListType", whiteListType),
-					resource.TestCheckResourceAttr(resourceName, "ipList", ipList),
+					resource.TestCheckResourceAttr(resourceName, "group_name", groupName),
+					resource.TestCheckResourceAttr(resourceName, "ip_type", ipType),
+					resource.TestCheckResourceAttr(resourceName, "white_list_type", whiteListType),
+					resource.TestCheckResourceAttr(resourceName, "ip_list.#", "3"),
 				),
 			},
+			// 3. 导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["group_name"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_id"}, // 项目ID可能变化
 
+			},
+			//datasource 测试
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipList),
+				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipListUpdate) + "\n" + utils.LoadTestCase(datasourceFile, rnd, instance_id),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "name", groupName),
-					resource.TestCheckResourceAttr(resourceName, "ipType", ipType),
-					resource.TestCheckResourceAttr(resourceName, "whiteListType", whiteListType),
-					resource.TestCheckResourceAttr(resourceName, "ipList", ipList),
+					resource.TestCheckResourceAttrSet(datasourceName, "id"),
+					resource.TestCheckResourceAttrSet(datasourceName, "white_lists.#"),
 				),
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipList),
+				Config:  utils.LoadTestCase(resourceFile, rnd, instance_id, groupName, ipType, whiteListType, ipListUpdate),
 				Destroy: true,
 			},
 		},

@@ -58,6 +58,8 @@ type EcEcAddCDANetworkRequest struct {
 	CdaCidrV6List []*string `json:"cdaCidrV6List,omitempty"` /*  已选择的V6子网列表，值类型为String  */
 	RtbID         string    `json:"rtbID"`                   /*  路由表ID  */
 	CdaInfo       string    `json:"cdaInfo"`                 /*  云专线信息，json格式的字符串  */
+	Account       *string   `json:"account,omitempty"`       /*  天翼云客户邮箱  */
+	DcID          *string   `json:"dcID,omitempty"`          /*  资源池ID  */
 	Weights       *int32    `json:"weights,omitempty"`       /*  权重，专线默认50，无冗余实例则不传  */
 	RouteLearn    *int32    `json:"routeLearn,omitempty"`    /*  路由学习开关，开启后云网关自动学习网络实例路由<br/>取值范围:<br/>1:学习<br/>0:不学习<br/>默认学习  */
 	RouteSync     *int32    `json:"routeSync,omitempty"`     /*  路由同步开关，开启后云网关路由自动同步到网络实例<br/>取值范围:<br/>1:同步<br/>0:不同步<br/>默认同步  */

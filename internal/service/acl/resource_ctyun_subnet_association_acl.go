@@ -112,6 +112,9 @@ func (c *CtyunSubnetAssociationAcl) Schema(ctx context.Context, request resource
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}

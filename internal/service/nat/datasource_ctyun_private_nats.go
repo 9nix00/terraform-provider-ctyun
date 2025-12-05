@@ -120,7 +120,7 @@ func (c *ctyunPrivateNats) Schema(_ context.Context, _ datasource.SchemaRequest,
 							Computed:    true,
 							Description: "可用区ID",
 						},
-						"create_date": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
@@ -250,5 +250,5 @@ type CtyunPrivateNatsModel struct {
 	ProjectID    types.String `tfsdk:"project_id"`     //项目 ID
 	ProjectName  types.String `tfsdk:"project_name"`   //项目名称
 	AzID         types.String `tfsdk:"az_id"`          //可用区ID
-	CreateDate   types.String `tfsdk:"create_date"`    //创建时间
+	CreateDate   types.String `tfsdk:"create_time"`    //创建时间
 }

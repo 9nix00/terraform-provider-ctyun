@@ -2381,6 +2381,11 @@ func (c *CtyunMongodbInstance) afterUpdateSpecLoop(ctx context.Context, state *C
 }
 
 func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
+	// 确认实例处于运行状态
+	_, err = c.PreCheckUpdateLoop(ctx, plan, 60)
+	if err != nil {
+		return err
+	}
 	if plan.Password.IsNull() || plan.Password.IsUnknown() {
 		return
 	}

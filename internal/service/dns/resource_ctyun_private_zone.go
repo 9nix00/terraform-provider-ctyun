@@ -124,14 +124,20 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "zone id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"update_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "更新时间",
+				Description: "更新时间，为UTC格式",
 			},
 			"tags": schema.SetNestedAttribute{
 				Optional:    true,

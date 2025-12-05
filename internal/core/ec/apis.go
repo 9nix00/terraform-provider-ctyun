@@ -53,6 +53,7 @@ type Apis struct {
 	EcEcListSDWANInstanceApi                 *EcEcListSDWANInstanceApi
 	EcEcUpdateSDWANInstanceApi               *EcEcUpdateSDWANInstanceApi
 	EcEcDeleteSDWANInstanceApi               *EcEcDeleteSDWANInstanceApi
+	EcEcUpdateWeightsApi                     *EcEcUpdateWeightsApi
 	EcEcListSDWANApi                         *EcEcListSDWANApi
 	EcEcCheckSDWANApi                        *EcEcCheckSDWANApi
 	EcEcBindSDWANApi                         *EcEcBindSDWANApi
@@ -62,11 +63,12 @@ type Apis struct {
 	EcEcCgwBillNewApi    *EcEcCgwBillNewApi
 	EcEcCgwBillRefundApi *EcEcCgwBillRefundApi
 	// 按需订单查询API
-	EcEcTgwOrderQueryApi *EcEcTgwOrderQueryApi
-	EcCreateRegionPeerApi                    *EcCreateRegionPeerApi
-	EcDeleteRegionPeerApi                    *EcDeleteRegionPeerApi
-	EcRegionPeerListApi                      *EcRegionPeerListApi
-	EcRegionPeerUpdateApi                    *EcRegionPeerUpdateApi
+	EcEcTgwOrderQueryApi    *EcEcTgwOrderQueryApi
+	EcCreateRegionPeerApi   *EcCreateRegionPeerApi
+	EcDeleteRegionPeerApi   *EcDeleteRegionPeerApi
+	EcRegionPeerListApi     *EcRegionPeerListApi
+	EcRegionPeerUpdateApi   *EcRegionPeerUpdateApi
+	EcEcBindCloudGatewayApi *EcEcBindCloudGatewayApi
 }
 
 func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
@@ -121,6 +123,7 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcListSDWANInstanceApi:                 NewEcEcListSDWANInstanceApi(client),
 		EcEcUpdateSDWANInstanceApi:               NewEcEcUpdateSDWANInstanceApi(client),
 		EcEcDeleteSDWANInstanceApi:               NewEcEcDeleteSDWANInstanceApi(client),
+		EcEcUpdateWeightsApi:                     NewEcEcUpdateWeightsApi(client),
 		EcEcListSDWANApi:                         NewEcEcListSDWANApi(client),
 		EcEcCheckSDWANApi:                        NewEcEcCheckSDWANApi(client),
 		EcEcBindSDWANApi:                         NewEcEcBindSDWANApi(client),
@@ -130,10 +133,11 @@ func NewApis(endpointUrl string, client *core.CtyunClient) *Apis {
 		EcEcCgwBillNewApi:    NewEcEcCgwBillNewApi(client),
 		EcEcCgwBillRefundApi: NewEcEcCgwBillRefundApi(client),
 		// 注册按需订单查询API
-		EcEcTgwOrderQueryApi: NewEcEcTgwOrderQueryApi(client),
-		EcCreateRegionPeerApi:                    NewEcCreateRegionPeerApi(client),
-		EcDeleteRegionPeerApi:                    NewEcDeleteRegionPeerApi(client),
-		EcRegionPeerListApi:                      NewEcRegionPeerListApi(client),
-		EcRegionPeerUpdateApi:                    NewEcRegionPeerUpdateApi(client),
+		EcEcTgwOrderQueryApi:    NewEcEcTgwOrderQueryApi(client),
+		EcCreateRegionPeerApi:   NewEcCreateRegionPeerApi(client),
+		EcDeleteRegionPeerApi:   NewEcDeleteRegionPeerApi(client),
+		EcRegionPeerListApi:     NewEcRegionPeerListApi(client),
+		EcRegionPeerUpdateApi:   NewEcRegionPeerUpdateApi(client),
+		EcEcBindCloudGatewayApi: NewEcEcBindCloudGatewayApi(client),
 	}
 }

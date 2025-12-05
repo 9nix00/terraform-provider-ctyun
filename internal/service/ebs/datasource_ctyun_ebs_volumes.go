@@ -36,9 +36,9 @@ type CtyunEbsVolumesModel struct {
 	Size            types.Int32                  `tfsdk:"size"`
 	Status          types.String                 `tfsdk:"status"`
 	IsEncrypt       types.Bool                   `tfsdk:"is_encrypt"`
-	CreateTime      types.Int64                  `tfsdk:"create_time"`
-	UpdateTime      types.Int64                  `tfsdk:"update_time"`
-	ExpireTime      types.Int64                  `tfsdk:"expire_time"`
+	CreateTime      types.String                 `tfsdk:"create_time"`
+	UpdateTime      types.String                 `tfsdk:"update_time"`
+	ExpireTime      types.String                 `tfsdk:"expire_time"`
 	IsSystemVolume  types.Bool                   `tfsdk:"is_system_volume"`
 	IsPackaged      types.Bool                   `tfsdk:"is_packaged"`
 	InstanceName    types.String                 `tfsdk:"instance_name"`
@@ -136,17 +136,17 @@ func (c *ctyunEbsVolumes) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "参考云硬盘使用状态",
 						},
-						"create_time": schema.Int64Attribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时刻，epoch时戳，精度毫秒",
+							Description: "创建时间，为UTC格式",
 						},
-						"update_time": schema.Int64Attribute{
+						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时刻，epoch时戳，精度毫秒",
+							Description: "更新时间，为UTC格式",
 						},
-						"expire_time": schema.Int64Attribute{
+						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "过期时刻，epoch时戳，精度毫秒",
+							Description: "过期时间，为UTC格式",
 						},
 						"is_system_volume": schema.BoolAttribute{
 							Computed:    true,
@@ -296,9 +296,9 @@ func (c *ctyunEbsVolumes) getByID(ctx context.Context, config *CtyunEbsVolumesCo
 		Type:            utils.SecStringValue(&disk.DiskType),
 		Mode:            utils.SecStringValue(&disk.DiskMode),
 		Status:          utils.SecStringValue(&disk.DiskStatus),
-		CreateTime:      types.Int64Value(disk.CreateTime),
-		UpdateTime:      types.Int64Value(disk.UpdateTime),
-		ExpireTime:      types.Int64Value(disk.ExpireTime),
+		CreateTime:      types.StringValue(utils.FromUnixToUTC(disk.CreateTime)),
+		UpdateTime:      types.StringValue(utils.FromUnixToUTC(disk.UpdateTime)),
+		ExpireTime:      types.StringValue(utils.FromUnixToUTC(disk.ExpireTime)),
 		IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
 		IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
 		InstanceName:    utils.SecStringValue(&disk.InstanceName),
@@ -357,9 +357,9 @@ func (c *ctyunEbsVolumes) getByName(ctx context.Context, config *CtyunEbsVolumes
 		Type:            utils.SecStringValue(disk.DiskType),
 		Mode:            utils.SecStringValue(disk.DiskMode),
 		Status:          utils.SecStringValue(disk.DiskStatus),
-		CreateTime:      types.Int64Value(disk.CreateTime),
-		UpdateTime:      types.Int64Value(disk.UpdateTime),
-		ExpireTime:      types.Int64Value(disk.ExpireTime),
+		CreateTime:      types.StringValue(utils.FromUnixToUTC(disk.CreateTime)),
+		UpdateTime:      types.StringValue(utils.FromUnixToUTC(disk.UpdateTime)),
+		ExpireTime:      types.StringValue(utils.FromUnixToUTC(disk.ExpireTime)),
 		IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
 		IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
 		InstanceName:    utils.SecStringValue(disk.InstanceName),
@@ -428,9 +428,9 @@ func (c *ctyunEbsVolumes) getByPage(ctx context.Context, config *CtyunEbsVolumes
 			Type:            utils.SecStringValue(disk.DiskType),
 			Mode:            utils.SecStringValue(disk.DiskMode),
 			Status:          utils.SecStringValue(disk.DiskStatus),
-			CreateTime:      types.Int64Value(disk.CreateTime),
-			UpdateTime:      types.Int64Value(disk.UpdateTime),
-			ExpireTime:      types.Int64Value(disk.ExpireTime),
+			CreateTime:      types.StringValue(utils.FromUnixToUTC(disk.CreateTime)),
+			UpdateTime:      types.StringValue(utils.FromUnixToUTC(disk.UpdateTime)),
+			ExpireTime:      types.StringValue(utils.FromUnixToUTC(disk.ExpireTime)),
 			IsSystemVolume:  utils.SecBoolValue(disk.IsSystemVolume),
 			IsPackaged:      utils.SecBoolValue(disk.IsPackaged),
 			InstanceName:    utils.SecStringValue(disk.InstanceName),

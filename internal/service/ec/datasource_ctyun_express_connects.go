@@ -62,7 +62,7 @@ func (c *ctyunExpressConnects) Schema(_ context.Context, _ datasource.SchemaRequ
 							Computed:    true,
 							Description: "运行状态，取值范围: 1:不可用 2:可用",
 						},
-						"create_date": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
@@ -250,7 +250,7 @@ func (c *ctyunExpressConnects) Read(ctx context.Context, req datasource.ReadRequ
 			Id:           types.StringValue(*r.EcID),
 			Name:         types.StringValue(*r.EcName),
 			Status:       types.Int64Value(int64(*r.Status)),
-			CreateDate:   types.StringValue(*r.CreateDate),
+			CreateTime:   types.StringValue(*r.CreateDate),
 			Vrf:          types.Int64Value(int64(*r.Vrf)),
 			Email:        types.StringValue(*r.Email),
 			VpcCount:     types.Int64Value(int64(*r.VpcCount)),
@@ -288,7 +288,7 @@ type CtyunExpressConnectsExpressConnectsConfig struct {
 	Name         types.String `tfsdk:"name"`
 	Description  types.String `tfsdk:"description"`
 	Status       types.Int64  `tfsdk:"status"`
-	CreateDate   types.String `tfsdk:"create_date"`
+	CreateTime   types.String `tfsdk:"create_time"`
 	Vrf          types.Int64  `tfsdk:"vrf"`
 	Email        types.String `tfsdk:"email"`
 	VpcCount     types.Int64  `tfsdk:"vpc_count"`

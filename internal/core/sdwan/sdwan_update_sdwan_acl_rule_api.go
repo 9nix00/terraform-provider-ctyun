@@ -61,7 +61,7 @@ type SdwanUpdateSdwanAclRuleUpdateRulesRequest struct {
 	IpVersion    *string `json:"ipVersion,omitempty"`    /*  本参数表示IP协议版本<br/><br/>取值范围:<br/>IPv4:IPv4<br/>IPv6:IPv6  */
 	DstCidr      *string `json:"dstCidr,omitempty"`      /*  目的网段  */
 	DstPortRange *string `json:"dstPortRange,omitempty"` /*  目的端口范围  */
-	Priority     *string `json:"priority,omitempty"`     /*  priority  */
+	Priority     int32   `json:"priority,omitempty"`     /*  priority  */
 	Action       *string `json:"action,omitempty"`       /*  本参数表示策略类型<br/><br/>取值范围:<br/>allow:允许<br/>deny:拒绝  */
 	SrcCidr      *string `json:"srcCidr,omitempty"`      /*  源网段  */
 	SrcPortRange *string `json:"srcPortRange,omitempty"` /*  源端口范围  */

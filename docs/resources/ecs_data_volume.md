@@ -96,7 +96,7 @@ resource "ctyun_ecs_data_volume" "test" {
 
 ### Required
 
-- `ebs_ids` (Set of String) 磁盘ID列表
+- `ebs_ids` (List of String) 磁盘ID列表
 - `instance_id` (String) 云主机ID，多可用区资源池下，云硬盘和云主机必须在同个az才能支持挂载
 
 ### Optional

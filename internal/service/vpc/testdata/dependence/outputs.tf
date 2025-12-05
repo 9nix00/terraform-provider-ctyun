@@ -29,3 +29,10 @@ output "vip_id" {
   value = ctyun_vip.vip_test.id
 }
 
+output "vpc_id2" {
+  value = ctyun_vpc.vpc_test2.id
+}
+
+output "dhcp_id" {
+  value = ctyun_dhcpoptionset.test.id
+}
