@@ -24,8 +24,8 @@ func TestMain(m *testing.M) {
 	if skip := os.Getenv("SKIP_SFS_TEST"); skip != "" {
 		return
 	}
-	os.Setenv("CTYUN_REGION_ID", "200000001852")
-	os.Setenv("CTYUN_AZ_NAME", "cn-huabei2-tj1A-public-ctcloud")
+	os.Setenv("CTYUN_REGION_ID", "200000003573")
+	os.Setenv("CTYUN_AZ_NAME", "cn-nm-het3-1a-public-ctcloud")
 	fmt.Println("开始初始化依赖资源")
 	outputs, err := terraform.ApplyResource(dependenceDir)
 	if err != nil {

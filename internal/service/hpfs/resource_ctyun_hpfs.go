@@ -395,6 +395,7 @@ func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*h
 		SfsSize:     config.SfsSize.ValueInt32(),
 		Vpc:         config.VpcID.ValueString(),
 		Subnet:      config.SubnetID.ValueString(),
+		AzName:      config.AzName.ValueString(),
 	}
 	if config.CycleType.ValueString() == business.HpfsCycleTypeOnDemand {
 		onDemand := true
@@ -404,9 +405,6 @@ func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*h
 	}
 	if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
 		params.ProjectID = config.ProjectID.ValueString()
-	}
-	if !config.AzName.IsNull() && !config.AzName.IsUnknown() {
-		params.AzName = config.AzName.ValueString()
 	}
 	if !config.ClusterName.IsNull() && !config.ClusterName.IsUnknown() {
 		params.ClusterName = config.ClusterName.ValueString()

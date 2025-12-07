@@ -147,14 +147,14 @@ func (o *OrderLooper) WaitOrderFinish(ctx context.Context, credential ctyunsdk.C
 			default:
 				// 其他状态
 				sta := OrderStatusName[status]
-				respError = errors.New("轮询订购订单状态失败，轮询到的订单状态为：" + sta)
+				respError = errors.New("等待订单状态失败，轮询到的订单状态为：" + sta)
 				return false
 			}
 		},
 	)
 	if result.ReturnReason == ReachMaxLoopTime {
 		// 这里出来的全都是异常的
-		return errors.New("轮询订购订单状态失败，已超过最大轮询次数，订单号：" + masterOrderId)
+		return errors.New("等待订单完成失败，已超过最大轮询次数，订单号：" + masterOrderId)
 	}
 	return respError
 }

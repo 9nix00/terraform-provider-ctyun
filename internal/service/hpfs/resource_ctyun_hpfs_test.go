@@ -69,20 +69,16 @@ func TestAccCtyunHpfs(t *testing.T) {
 	})
 }
 
-// 指定AZ，指定集群和baseline
+// 指定集群和baseline
 func TestAccCtyunHpfs1(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_hpfs." + rnd
 	resourceFile := "resource_ctyun_hpfs1.tf"
-	//
-	//vpcID := dependence.vpcID
-	//subnetID := dependence.subnetID
 	sfsProtocol := "hpfs"
-	cluster := "hdRoce01"
+	cluster := dependence.clusterName
 	baseline := "200"
 	sfsName := "hpfs-" + utils.GenerateRandomString()
 	updatedSfsName := "hpfs-" + utils.GenerateRandomString() + "-new"
-	azName := "cn-huadong1-jsnj1A-public-ctcloud"
 	sfsSize := 512
 	updatedSfsSize := 512
 	resource.Test(t, resource.TestCase{
@@ -95,9 +91,8 @@ func TestAccCtyunHpfs1(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// 开通hpfs，
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, azName, cluster, baseline),
+				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, cluster, baseline),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
 					resource.TestCheckResourceAttr(resourceName, "name", sfsName),
@@ -108,7 +103,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 			},
 			// 变配sfs name 和 SIZE规格 512->1024
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, azName, cluster, baseline),
+				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, cluster, baseline),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedSfsName),
@@ -118,7 +113,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 				),
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, azName, cluster, baseline),
+				Config:  utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, cluster, baseline),
 				Destroy: true,
 			},
 		},
