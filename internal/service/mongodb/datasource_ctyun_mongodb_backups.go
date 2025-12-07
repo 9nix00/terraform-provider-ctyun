@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -17,21 +16,21 @@ import (
 
 // Ensure provider defined types fully satisfy framework interfaces.
 var (
-	_ datasource.DataSource              = &CtyunMongodbBackupsDataSource{}
-	_ datasource.DataSourceWithConfigure = &CtyunMongodbBackupsDataSource{}
+	_ datasource.DataSource              = &CtyunMongodbBackups{}
+	_ datasource.DataSourceWithConfigure = &CtyunMongodbBackups{}
 )
 
-func NewCtyunMongodbBackupsDataSource() datasource.DataSource {
-	return &CtyunMongodbBackupsDataSource{}
+func NewCtyunMongodbBackups() datasource.DataSource {
+	return &CtyunMongodbBackups{}
 }
 
-// CtyunMongodbBackupsDataSource defines the data source implementation.
-type CtyunMongodbBackupsDataSource struct {
+// CtyunMongodbBackups defines the data source implementation.
+type CtyunMongodbBackups struct {
 	meta *common.CtyunMetadata
 }
 
-// CtyunMongodbBackupsDataSourceModel describes the data source data model.
-type CtyunMongodbBackupsDataSourceModel struct {
+// CtyunMongodbBackupsConfig describes the data source data model.
+type CtyunMongodbBackupsConfig struct {
 	ID         types.String              `tfsdk:"id"`
 	RegionID   types.String              `tfsdk:"region_id"`
 	ProjectID  types.String              `tfsdk:"project_id"`
@@ -56,11 +55,11 @@ type CtyunMongodbBackupModel struct {
 	BackupTriggerType types.String `tfsdk:"backup_trigger_type"`
 }
 
-func (d *CtyunMongodbBackupsDataSource) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *CtyunMongodbBackups) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_mongodb_backups"
 }
 
-func (d *CtyunMongodbBackupsDataSource) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
 		MarkdownDescription: "天翼云MongoDB备份数据源",
@@ -71,12 +70,14 @@ func (d *CtyunMongodbBackupsDataSource) Schema(ctx context.Context, req datasour
 				Description: "数据源ID",
 			},
 			"region_id": schema.StringAttribute{
-				Required:    true,
-				Description: "资源池ID",
+				Optional:    true,
+				Computed:    true,
+				Description: "资源池id",
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "企业项目ID",
+				Computed:    true,
+				Description: "项目id",
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
@@ -162,7 +163,7 @@ func (d *CtyunMongodbBackupsDataSource) Schema(ctx context.Context, req datasour
 	}
 }
 
-func (d *CtyunMongodbBackupsDataSource) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *CtyunMongodbBackups) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -170,12 +171,12 @@ func (d *CtyunMongodbBackupsDataSource) Configure(ctx context.Context, req datas
 	d.meta = meta
 }
 
-func (d *CtyunMongodbBackupsDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var data CtyunMongodbBackupsDataSourceModel
+func (d *CtyunMongodbBackups) Read(ctx context.Context, req datasource.ReadRequest, response *datasource.ReadResponse) {
+	var data CtyunMongodbBackupsConfig
 
 	// Read Terraform configuration data into the model
-	resp.Diagnostics.Append(req.Config.Get(ctx, &data)...)
-	if resp.Diagnostics.HasError() {
+	response.Diagnostics.Append(req.Config.Get(ctx, &data)...)
+	if response.Diagnostics.HasError() {
 		return
 	}
 
@@ -185,7 +186,7 @@ func (d *CtyunMongodbBackupsDataSource) Read(ctx context.Context, req datasource
 		pageNo = data.PageNo.ValueInt32()
 	}
 
-	pageSize := int32(20)
+	pageSize := int32(1000)
 	if !data.PageSize.IsNull() {
 		pageSize = data.PageSize.ValueInt32()
 	}
@@ -204,31 +205,32 @@ func (d *CtyunMongodbBackupsDataSource) Read(ctx context.Context, req datasource
 	if !data.BackupType.IsNull() {
 		describeReq.BackupType = data.BackupType.ValueStringPointer()
 	}
+	regionId := d.meta.GetExtraIfEmpty(data.RegionID.ValueString(), common.ExtraRegionId)
 
 	header := &mongodb.MongodbDescribeBackupsRequestHeaders{
-		RegionID: data.RegionID.ValueString(),
+		RegionID: regionId,
 	}
 
 	if !data.ProjectID.IsNull() {
 		header.ProjectID = data.ProjectID.ValueStringPointer()
 	}
 
-	response, err := d.meta.Apis.SdkMongodbApis.MongodbDescribeBackupsApi.Do(ctx, d.meta.Credential, describeReq, header)
+	resp, err := d.meta.Apis.SdkMongodbApis.MongodbDescribeBackupsApi.Do(ctx, d.meta.Credential, describeReq, header)
 	if err != nil {
-		resp.Diagnostics.AddError("查询MongoDB备份列表失败", err.Error())
 		return
-	}
-
-	if response.StatusCode != 200 {
-		resp.Diagnostics.AddError("查询MongoDB备份列表失败", fmt.Sprintf("API返回错误，状态码: %d, 错误信息: %s", response.StatusCode, response.Error))
+	} else if resp.StatusCode != common.NormalStatusCode {
+		err = fmt.Errorf("API return error. Message: %s ", *resp.Message)
+		return
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
 		return
 	}
 
 	// 转换备份信息
 	var backups []CtyunMongodbBackupModel
-	for _, item := range response.ReturnObj.List {
+	for _, item := range resp.ReturnObj.List {
 		backup := CtyunMongodbBackupModel{
-			BackupID:          types.StringValue(item.BackupId),
+			BackupID:          types.StringValue(fmt.Sprintf("%d", item.BackupId)),
 			BackupName:        types.StringValue(item.BackupName),
 			BackupMethod:      types.StringValue(item.BackupMethod),
 			BackupType:        types.StringValue(item.BackupType),
@@ -250,5 +252,5 @@ func (d *CtyunMongodbBackupsDataSource) Read(ctx context.Context, req datasource
 	data.ID = types.StringValue(fmt.Sprintf("%s:%s", data.RegionID.ValueString(), data.InstanceID.ValueString()))
 
 	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	response.Diagnostics.Append(response.State.Set(ctx, &data)...)
 }

@@ -198,7 +198,7 @@ func (r *CtyunMongodbBackupResource) delete(ctx context.Context, plan CtyunMongo
 	// 删除备份
 	deleteReq := &mongodb.MongodbDeleteBackupRequest{
 		ProdInstId: plan.InstanceID.ValueString(),
-		BackupId:   plan.BackupName.ValueString(),
+		BackupId:   plan.ID.ValueString(),
 	}
 
 	header := &mongodb.MongodbDeleteBackupRequestHeaders{
@@ -226,13 +226,14 @@ func (r *CtyunMongodbBackupResource) ImportState(ctx context.Context, req resour
 		}
 	}()
 	var cfg CtyunMongodbBackupConfig
-	var instanceID, backupName string
-	err = terraform_extend.Split(req.ID, &instanceID, &backupName)
+	var instanceID, backupName, regionID string
+	err = terraform_extend.Split(req.ID, &instanceID, &backupName, &regionID)
 	if err != nil {
 		return
 	}
 	cfg.InstanceID = types.StringValue(instanceID)
 	cfg.BackupName = types.StringValue(backupName)
+	cfg.RegionID = types.StringValue(regionID)
 	// 查询远端
 	err = r.getAndMerge(ctx, &cfg)
 	if err != nil {
@@ -276,7 +277,7 @@ func (r *CtyunMongodbBackupResource) create(ctx context.Context, plan *CtyunMong
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	}
-	plan.ID = types.StringValue(plan.InstanceID.ValueString() + "," + plan.BackupName.ValueString())
+	//plan.ID = types.StringValue(plan.InstanceID.ValueString() + "," + plan.BackupName.ValueString())
 
 	return
 }
@@ -286,7 +287,7 @@ func (r *CtyunMongodbBackupResource) getAndMerge(ctx context.Context, plan *Ctyu
 		ProdInstId: plan.InstanceID.ValueString(),
 		BackupName: plan.BackupName.ValueStringPointer(),
 		PageNow:    1,
-		PageSize:   100,
+		PageSize:   1000,
 	}
 
 	header := &mongodb.MongodbDescribeBackupsRequestHeaders{
@@ -315,10 +316,16 @@ func (r *CtyunMongodbBackupResource) getAndMerge(ctx context.Context, plan *Ctyu
 			break
 		}
 	}
-
 	if backupInfo == nil {
 		return
 	}
-
+	plan.ID = types.StringValue(fmt.Sprintf("%d", backupInfo.BackupId))
+	if backupInfo.BackupName != "" {
+		plan.BackupName = types.StringValue(backupInfo.BackupName)
+	}
+	// 添加 Description 字段的空指针检查
+	if backupInfo.Description != nil {
+		plan.Description = types.StringValue(*backupInfo.Description)
+	}
 	return
 }

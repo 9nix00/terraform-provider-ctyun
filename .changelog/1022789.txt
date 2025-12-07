@@ -1,0 +1,9 @@
+release-note:new-resource
+ctyun_sdwan
+
+release-note:new-resource
+ctyun_sdwan_acl
+
+release-note:new-resource
+ctyun_sdwan_acl_rules
+

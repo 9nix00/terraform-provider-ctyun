@@ -13,6 +13,10 @@ output "security_group_id2" {
   value = local.real_security_group_id2
 }
 
+output "security_group_id3" {
+  value = local.real_security_group_id3
+}
+
 output "eip_id" {
   value = ctyun_eip.eip_test.id
 }

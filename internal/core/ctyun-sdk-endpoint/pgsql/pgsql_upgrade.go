@@ -44,8 +44,18 @@ type PgsqlUpgradeResponse struct {
 	ReturnObj  *PgsqlUpgradeResponseReturnObj `json:"returnObj"`  // 返回对象，类型为 DataObject
 }
 
+type PgsqlUpgradeResponseReturnObjData struct {
+	NewOrderId   string  `json:"newOrderId"`
+	NewOrderNo   string  `json:"newOrderNo"`
+	ErrorMessage string  `json:"errorMessage"`
+	Submitted    bool    `json:"submitted"`
+	TotalPrice   float64 `json:"totalPrice"`
+	StatusCode   int32   `json:"statusCode"`
+	Message      string  `json:"message"`
+}
+
 type PgsqlUpgradeResponseReturnObj struct {
-	NewOrderId string `json:"newOrderId"`
+	Data *PgsqlUpgradeResponseReturnObjData `json:"data"`
 }
 
 func (this *PgsqlUpgradeApi) Do(ctx context.Context, credential ctyunsdk.Credential, req *PgsqlUpgradeRequest, header *PgsqlUpgradeRequestHeader) (upgrade *PgsqlUpgradeResponse, err error) {

@@ -2,7 +2,10 @@ package mongodb
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -11,11 +14,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
+	"time"
 )
 
 var (
@@ -37,10 +43,11 @@ type CtyunMongodbWhiteListConfig struct {
 	InstanceID    types.String `tfsdk:"instance_id"`
 	RegionID      types.String `tfsdk:"region_id"`
 	ProjectID     types.String `tfsdk:"project_id"`
-	IpList        types.List   `tfsdk:"ip_list"`
+	IpList        types.Set    `tfsdk:"ip_list"`
 	GroupName     types.String `tfsdk:"group_name"`      // 白名单分组名
-	IpType        types.String `tfsdk:"ip_type"`         // 白名单分组名
-	WhiteListType types.String `tfsdk:"white_list_type"` // 白名单分组名
+	IpType        types.String `tfsdk:"ip_type"`         // 白名单类型
+	WhiteListType types.String `tfsdk:"white_list_type"` // 白名单分组类型
+	WhiteListId   types.Int32  `tfsdk:"white_list_id"`   // 白名单分组Id
 
 }
 
@@ -105,7 +112,14 @@ func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaR
 				Required:    true,
 				Description: "白名单分组名",
 			},
-			"ip_list": schema.ListAttribute{
+			"white_list_id": schema.Int32Attribute{
+				Computed:    true,
+				Description: "白名单分组Id",
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.UseStateForUnknown(),
+				},
+			},
+			"ip_list": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
 				Description: "IP列表",
@@ -135,18 +149,13 @@ func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	// 获取IP列表
-	var ipList []string
-	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
+
 	if resp.Diagnostics.HasError() {
 		return
 	}
 	// 创建前检查
-	err = c.checkBeforeCreate(ctx, &plan)
-	if err != nil {
-		return
-	}
-	err = c.create(ctx, &plan, ipList)
+
+	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -154,10 +163,6 @@ func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateR
 	if err != nil {
 		return
 	}
-
-	// 设置ID
-	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
-
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
@@ -171,6 +176,10 @@ func (c *CtyunMongodbWhiteList) Read(ctx context.Context, req resource.ReadReque
 	var state CtyunMongodbWhiteListConfig
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
+		return
+	}
+	err = c.checkBeforeUpdate(ctx, &state)
+	if err != nil {
 		return
 	}
 	err = c.getAndMerge(ctx, &state)
@@ -192,14 +201,11 @@ func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// 获取IP列表
-	var ipList []string
-	resp.Diagnostics.Append(plan.IpList.ElementsAs(ctx, &ipList, false)...)
-	if resp.Diagnostics.HasError() {
+	err = c.checkBeforeUpdate(ctx, &plan)
+	if err != nil {
 		return
 	}
-	err = c.update(ctx, plan, ipList)
+	err = c.update(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -218,8 +224,11 @@ func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	err = c.delete(ctx, state)
+	err = c.checkBeforeUpdate(ctx, &state)
+	if err != nil {
+		return
+	}
+	err = c.delete(ctx, &state)
 	if err != nil {
 		return
 	}
@@ -233,13 +242,14 @@ func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.Im
 		}
 	}()
 	var cfg CtyunMongodbWhiteListConfig
-	var instanceID, groupName string
-	err = terraform_extend.Split(req.ID, &instanceID, &groupName)
+	var instanceID, groupName, regionId string
+	err = terraform_extend.Split(req.ID, &instanceID, &groupName, &regionId)
 	if err != nil {
 		return
 	}
 	cfg.InstanceID = types.StringValue(instanceID)
 	cfg.GroupName = types.StringValue(groupName)
+	cfg.RegionID = types.StringValue(regionId)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {
@@ -248,16 +258,83 @@ func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
 }
 
-func (c *CtyunMongodbWhiteList) checkBeforeCreate(ctx context.Context, c2 *CtyunMongodbWhiteListConfig) (err error) {
-	return nil
+func (c *CtyunMongodbWhiteList) checkBeforeUpdate(ctx context.Context, state *CtyunMongodbWhiteListConfig, loopCount ...int) (err error) {
+
+	count := 60
+	if len(loopCount) > 0 {
+		count = loopCount[0]
+	}
+	syncCount := 3
+	retryer, err := business.NewRetryer(time.Second*30, count)
+	if err != nil {
+		return
+	}
+
+	listHeader := &mongodb.MongodbGetListHeaders{
+		RegionID: state.RegionID.ValueString(),
+	}
+	if state.ProjectID.ValueString() != "" {
+		listHeader.ProjectID = state.ProjectID.ValueStringPointer()
+	}
+
+	result := retryer.Start(
+		func(currentTime int) bool {
+
+			detailParams := &mongodb.MongodbQueryDetailRequest{
+				ProdInstId: state.ID.ValueString(),
+			}
+			detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
+				RegionID: state.RegionID.ValueString(),
+			}
+			if state.ProjectID.ValueString() != "" {
+				detailHeader.ProjectID = state.ProjectID.ValueStringPointer()
+			}
+			detailResp, err3 := c.meta.Apis.SdkMongodbApis.MongodbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeader)
+			if err3 != nil {
+				err = err3
+				return false
+			} else if detailResp.StatusCode != 800 {
+				err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
+				return false
+			} else if detailResp.ReturnObj == nil {
+				err = common.InvalidReturnObjError
+				return false
+			}
+
+			if detailResp.ReturnObj.ProdRunningStatus == business.MongodbRunningStatusStarted {
+				if syncCount > 0 {
+					syncCount--
+					return true
+				}
+				return false
+			}
+			return true
+		})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，实例仍未运行成功！")
+	}
+	return
 }
-func (c *CtyunMongodbWhiteList) create(ctx context.Context, plan *CtyunMongodbWhiteListConfig, ipList []string) (err error) {
+
+func (c *CtyunMongodbWhiteList) create(ctx context.Context, plan *CtyunMongodbWhiteListConfig) (err error) {
+	// 将types.Set转换为字符串切片，然后转换为JSON数组字符串
+	var ipList []string
+	diag := plan.IpList.ElementsAs(ctx, &ipList, false)
+	if diag.HasError() {
+		return
+	}
+	ipListBytes, err := json.Marshal(ipList)
+	if err != nil {
+		return fmt.Errorf("failed to marshal ip_list to JSON: %w", err)
+	}
+	ipListValue := string(ipListBytes)
+
 	// 创建白名单分组
 	createReq := &mongodb.MongodbCreateIpWhitelistRequest{
 		ProdInstId:    plan.InstanceID.ValueString(),
 		GroupName:     plan.GroupName.ValueString(),
 		IpType:        plan.IpType.ValueString(),
-		IpList:        ipList,
+		IpList:        ipListValue,
 		WhiteListType: plan.WhiteListType.ValueString(),
 	}
 
@@ -307,12 +384,26 @@ func (c *CtyunMongodbWhiteList) getAndMerge(ctx context.Context, plan *CtyunMong
 	// 查找对应的白名单分组
 	var found bool
 	for _, group := range resp.ReturnObj.WhitelistGroup {
-		if group.IpWhitelistName == plan.GroupName.ValueString() {
+		if group.GroupName == plan.GroupName.ValueString() {
 			// 更新状态
-			ipList, _ := types.ListValueFrom(ctx, types.StringType, group.IpList)
-			plan.IpList = ipList
+			plan.ID = types.StringValue(fmt.Sprintf("%d,%s", group.Id, plan.InstanceID.ValueString()))
+			plan.WhiteListId = types.Int32Value(group.Id)
+
+			// 设置IP列表，API返回的是逗号分隔的字符串
+			var ipList []string
+			if group.IpList != "" {
+				ipList = strings.Split(group.IpList, ",")
+			}
+
+			ipListSet, diags := types.SetValueFrom(ctx, types.StringType, ipList)
+			if diags.HasError() {
+				return fmt.Errorf("failed to set ip_list value")
+			}
+			plan.IpList = ipListSet
+			plan.IpType = types.StringValue(group.IpType)
+			plan.WhiteListType = types.StringValue(fmt.Sprintf("%d", group.WhiteListType))
+
 			found = true
-			break
 		}
 	}
 	if !found {
@@ -320,12 +411,27 @@ func (c *CtyunMongodbWhiteList) getAndMerge(ctx context.Context, plan *CtyunMong
 	}
 	return
 }
-func (c *CtyunMongodbWhiteList) update(ctx context.Context, plan CtyunMongodbWhiteListConfig, ipList []string) (err error) {
+func (c *CtyunMongodbWhiteList) update(ctx context.Context, plan *CtyunMongodbWhiteListConfig) (err error) {
 	// 更新白名单分组
+	// 将types.Set转换为字符串切片，然后转换为JSON数组字符串
+	var ipList []string
+	diag := plan.IpList.ElementsAs(ctx, &ipList, false)
+	if diag.HasError() {
+		return
+	}
+	ipListBytes, err := json.Marshal(ipList)
+	if err != nil {
+		return fmt.Errorf("failed to marshal ip_list to JSON: %w", err)
+	}
+	ipListValue := string(ipListBytes)
+
 	updateReq := &mongodb.MongodbUpdateIpWhitelistRequest{
-		ProdInstId:      plan.InstanceID.ValueString(),
-		IpWhitelistName: plan.GroupName.ValueString(),
-		IpList:          ipList,
+		ProdInstId:    plan.InstanceID.ValueString(),
+		GroupName:     plan.GroupName.ValueString(),
+		IpType:        plan.IpType.ValueString(),
+		IpList:        ipListValue,
+		WhiteListType: plan.WhiteListType.ValueString(),
+		WhiteListId:   fmt.Sprintf("%d", plan.WhiteListId.ValueInt32()),
 	}
 
 	headers := &mongodb.MongodbUpdateIpWhitelistRequestHeaders{
@@ -335,11 +441,6 @@ func (c *CtyunMongodbWhiteList) update(ctx context.Context, plan CtyunMongodbWhi
 		headers.ProjectID = plan.ProjectID.ValueStringPointer()
 	}
 
-	tflog.Info(ctx, "更新MongoDB白名单分组", map[string]interface{}{
-		"instance_id":       plan.InstanceID.ValueString(),
-		"ip_whitelist_name": plan.GroupName.ValueString(),
-	})
-
 	resp, err := c.meta.Apis.SdkMongodbApis.MongodbUpdateIpWhitelistApi.Do(ctx, c.meta.Credential, updateReq, headers)
 	if err != nil {
 		return
@@ -348,11 +449,11 @@ func (c *CtyunMongodbWhiteList) update(ctx context.Context, plan CtyunMongodbWhi
 	}
 	return
 }
-func (c *CtyunMongodbWhiteList) delete(ctx context.Context, state CtyunMongodbWhiteListConfig) (err error) {
+func (c *CtyunMongodbWhiteList) delete(ctx context.Context, state *CtyunMongodbWhiteListConfig) (err error) {
 	// 删除白名单分组
 	deleteReq := &mongodb.MongodbDeleteIpWhitelistRequest{
-		ProdInstId: state.InstanceID.ValueString(),
-		GroupName:  state.GroupName.ValueString(),
+		ProdInstId:  state.InstanceID.ValueString(),
+		WhiteListId: fmt.Sprintf("%d", state.WhiteListId.ValueInt32()),
 	}
 
 	headers := &mongodb.MongodbDeleteIpWhitelistRequestHeaders{

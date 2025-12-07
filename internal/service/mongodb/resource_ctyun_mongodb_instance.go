@@ -42,6 +42,7 @@ type CtyunMongodbInstance struct {
 	meta           *common.CtyunMetadata
 	ecsService     *business.EcsService
 	mongodbService *business.MongodbService
+	orderLooper    *business.OrderLooper
 }
 
 func (c *CtyunMongodbInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -56,6 +57,7 @@ func (c *CtyunMongodbInstance) Configure(ctx context.Context, request resource.C
 	c.meta = meta
 	c.ecsService = business.NewEcsService(c.meta)
 	c.mongodbService = business.NewMongodbService(c.meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
 func NewCtyunMongodbInstance() resource.Resource {
@@ -223,21 +225,9 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 				Computed:    true,
 				Description: "主机ip",
 			},
-			"innodb_buffer_pool_size": schema.StringAttribute{
-				Computed:    true,
-				Description: "缓存池大小",
-			},
-			"innodb_thread_concurrency": schema.Int64Attribute{
-				Computed:    true,
-				Description: "线程数",
-			},
 			"prod_running_status": schema.Int32Attribute{
 				Computed:    true,
 				Description: "实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中, 3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中",
-			},
-			"prod_running_status_desc": schema.StringAttribute{
-				Computed:    true,
-				Description: "实例运行状态解释字段",
 			},
 			"eip_id": schema.StringAttribute{
 				Computed:    true,
@@ -380,18 +370,26 @@ func (c *CtyunMongodbInstance) Create(ctx context.Context, request resource.Crea
 	}
 	// 如果ReadPort不为空，需要暂存下来，否则merge操作后会被默认端口覆盖
 	var updatedReadPort int32
-	var needUpatePort bool
+	var needUpdatePort bool
 	if !plan.ReadPort.IsNull() && !plan.ReadPort.IsUnknown() {
 		updatedReadPort = plan.ReadPort.ValueInt32()
-		needUpatePort = true
+		needUpdatePort = true
 	}
+
+	// 通过order id 获取instance id
+	id, err := c.acquireAndSetIdIfOrderNotFinished(ctx, plan)
+	if err != nil {
+		return
+	}
+	plan.ID = types.StringValue(id)
+
 	// 创建完成后，同步云端信息
 	err = c.getAndMergeMongodbInstance(ctx, &plan)
 	if err != nil {
 		return
 	}
 	// 确保实例创建成功后，判断port是否需要指定
-	if needUpatePort {
+	if needUpdatePort {
 		plan.ReadPort = types.Int32Value(updatedReadPort)
 		err = c.updateReadPort(ctx, &plan, &plan)
 		if err != nil {
@@ -526,12 +524,10 @@ func (c *CtyunMongodbInstance) Delete(ctx context.Context, request resource.Dele
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
-	// 轮询确认时候退订成功
-	err = c.DeleteLoop(ctx, &state, 60)
-	if err != nil {
-		return
-	}
-	time.Sleep(30 * time.Second)
+
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
+
 	err = c.destroy(ctx, state)
 	if err != nil {
 		return
@@ -541,7 +537,6 @@ func (c *CtyunMongodbInstance) Delete(ctx context.Context, request resource.Dele
 }
 
 func (c *CtyunMongodbInstance) CreateMongodbInstance(ctx context.Context, config *CtyunMongodbInstanceConfig) (err error) {
-
 	cycleType := config.CycleType.ValueString()
 	params := &mongodb.MongodbCreateRequest{
 		BillMode:          business.MysqlBillMode[cycleType],
@@ -611,72 +606,32 @@ func (c *CtyunMongodbInstance) CreateMongodbInstance(ctx context.Context, config
 		return
 	}
 	// 保存newOrderId
-	config.MasterOrderID = utils.SecStringValue(resp.ReturnObj.Data.NewOrderId)
+	masterOrderID := utils.SecString(resp.ReturnObj.Data.NewOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
+	if err != nil {
+		return
+	}
+	config.MasterOrderID = types.StringValue(masterOrderID)
 	return
 }
 
 func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, config *CtyunMongodbInstanceConfig) (err error) {
 
-	listParams := &mongodb.MongodbGetListRequest{
-		PageNow:      1,
-		PageSize:     100,
-		ProdInstName: config.Name.ValueStringPointer(),
-	}
-	listHeader := &mongodb.MongodbGetListHeaders{
-		RegionID: config.RegionID.ValueString(),
-	}
-	if config.ProjectID.ValueString() != "" {
-		listHeader.ProjectID = config.ProjectID.ValueStringPointer()
-	}
 	// 若实例id为空，实例刚刚创建，还未查询到id，需要轮询列表获取实例信息
+	if config.ID.IsNull() || config.ID.IsUnknown() || config.ID.ValueString() == "" {
+		var id string
+		id, err = c.acquireAndSetIdIfOrderNotFinished(ctx, *config)
+		if err != nil {
+			return err
+		}
+		config.ID = types.StringValue(id)
+	}
+
 	if config.ID.ValueString() == "" {
-		resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbGetListApi.Do(ctx, c.meta.Credential, listParams, listHeader)
-		if err2 != nil {
-			err = err2
-			return
-		}
-		if len(resp.ReturnObj.List) > 1 {
-			err = errors.New("实例名重复！")
-			return
-		} else if len(resp.ReturnObj.List) < 1 {
-			//若根据name查询不到机器，可能存在还未创建好的情况，需要轮询
-			resp, err = c.ListLoop(ctx, listParams, listHeader, 60)
-			if err != nil {
-				return
-			} else if resp == nil {
-				err = errors.New("获取mongodb列表信息，返回Nil")
-				return
-			}
-
-			if len(resp.ReturnObj.List) != 1 {
-				err = errors.New("未查询该实例mysql，mysql name:" + config.Name.ValueString())
-				return
-			}
-			// 查询到实例后，保存id
-			if resp.ReturnObj.List[0].ProdInstId == "" {
-				err = errors.New("实例创建后，实例id仍为空")
-				return
-			}
-			config.ID = types.StringValue(resp.ReturnObj.List[0].ProdInstId)
-		}
-	}
-	// 确认实例id不为空后,分两步查询实例详情
-	// 1）轮询实例状态，确认已经正常运行，并获取实例部门详情：读端口、缓冲池信息和安全组信息
-	listResp, err := c.RunningLoop(ctx, listParams, listHeader, 60)
-	if err != nil {
-		return err
-	} else if listResp == nil {
-		err = fmt.Errorf("列表查询返回为nil")
-		return
-	} else if listResp.StatusCode != 800 {
-		err = fmt.Errorf("API return error. Message: %s", *listResp.Message)
-		return
-	} else if listResp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
+		err = errors.New("实例id为空")
 		return
 	}
-	listReturnObj := listResp.ReturnObj.List[0]
-
+	// 确认实例id不为空后,查询实例详情
 	if config.ID.ValueString() == "" {
 		err = errors.New("查询实例详情时，实例id为空")
 	}
@@ -686,24 +641,16 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	if err != nil {
 		return
 	}
-
+	config.VpcID = types.StringValue(detailReturnObj.VpcID)
+	config.Name = types.StringValue(detailReturnObj.ProdInstName)
+	config.SecurityGroupID = types.StringValue(detailReturnObj.SecurityGroupId)
+	config.ProdRunningStatus = types.Int32Value(detailReturnObj.ProdRunningStatus)
 	port, err := strconv.ParseInt(detailReturnObj.Port, 10, 32)
 	if err != nil {
 		return
 	}
 	config.ReadPort = types.Int32Value(int32(port))
-	config.InnodbBufferPoolSize = types.StringValue(listReturnObj.InnodbBufferPoolSize)
-	config.InnodbThreadConcurrency = types.Int64Value(listReturnObj.InnodbThreadConcurrency)
-	config.ProdRunningStatus = types.Int32Value(listReturnObj.ProdRunningStatus)
-	config.ProdRunningStatusDesc = types.StringValue(business.MongodbStatusDescDict[listReturnObj.ProdRunningStatus])
 	config.EipID = types.StringValue(detailReturnObj.NodeInfoVOS[0].OuterElasticIpId)
-	config.Name = types.StringValue(listReturnObj.ProdInstName)
-	config.SecurityGroupID = types.StringValue(listReturnObj.SecurityGroupId)
-	//prodID, err := strconv.ParseInt(listReturnObj.ProdId, 10, 64)
-	//if err != nil {
-	//	return
-	//}
-	//config.ProdID = types.StringValue(business.MongodbProdIDRevDict[prodID])
 	config.HostIp = types.StringValue(detailReturnObj.Host)
 	config.StorageSpace = types.Int32Value(detailReturnObj.DiskSize)
 	if detailReturnObj.Backup != nil {
@@ -715,12 +662,6 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 		}
 		config.BackupStorageSpace = types.Int32Value(int32(backupStorageSpace))
 
-		//if strings.Contains(config.ProdID.ValueString(), "Cluster") {
-		//	backupStorageSpaceAvg := int32(backupStorageSpace) / config.ShardNum.ValueInt32()
-		//	config.BackupStorageSpace = types.Int32Value(backupStorageSpaceAvg)
-		//} else {
-		//	config.BackupStorageSpace = types.Int32Value(int32(backupStorageSpace))
-		//}
 	} else {
 		config.BackupStorageSpace = types.Int32Value(0)
 	}
@@ -728,10 +669,6 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 }
 
 func (c *CtyunMongodbInstance) updateMongodbInstance(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
-	if state.ID.ValueString() == "" {
-		err = errors.New("在变配实例过程中， 实例id为空")
-		return
-	}
 	// prod_id（节点） 和 flavor不可同时升级
 	if !plan.FlavorName.Equal(state.FlavorName) && !plan.ProdID.Equal(state.ProdID) {
 		err = fmt.Errorf("mongodb flavor_name（cpu 内存规格） 和 prod id（节点） 不可同时更新")
@@ -826,9 +763,9 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 	if state.ProjectID.ValueString() != "" {
 		listHeader.ProjectID = state.ProjectID.ValueStringPointer()
 	}
-
 	result := retryer.Start(
 		func(currentTime int) bool {
+			var mongoInst mongodb.MongodbGetListResponseReturnDetailList
 			resp, err2 := c.meta.Apis.SdkMongodbApis.MongodbGetListApi.Do(ctx, c.meta.Credential, listParams, listHeader)
 			if err2 != nil {
 				err = err2
@@ -840,11 +777,23 @@ func (c *CtyunMongodbInstance) PreCheckUpdateLoop(ctx context.Context, state *Ct
 				err = common.InvalidReturnObjError
 				return false
 			}
-			if len(resp.ReturnObj.List) != 1 {
-				err = errors.New("实例name不唯一，有误！")
+			if len(resp.ReturnObj.List) < 1 {
+				err = fmt.Errorf("未查询到name=%s的mongodb实例", state.Name.ValueString())
 				return false
 			}
-			if resp.ReturnObj.List[0].ProdRunningStatus == business.MongodbRunningStatusStarted && resp.ReturnObj.List[0].ProdOrderStatus == business.MongodbOrderStatusStarted {
+			// 若查询name查询到多个实例，通过id鉴别
+			if len(resp.ReturnObj.List) > 1 {
+				for _, instItem := range resp.ReturnObj.List {
+					if instItem.ProdInstId == state.ID.ValueString() {
+						mongoInst = instItem
+						break
+					}
+				}
+			} else {
+				mongoInst = resp.ReturnObj.List[0]
+			}
+
+			if mongoInst.ProdRunningStatus == business.MongodbRunningStatusStarted && mongoInst.ProdOrderStatus == business.MongodbOrderStatusStarted {
 				if syncCount > 0 {
 					syncCount--
 					return true
@@ -1740,6 +1689,17 @@ func (c *CtyunMongodbInstance) upgradeStorage(ctx context.Context, state *CtyunM
 		planNodeInfo.NodeType = types.StringValue(nodeType)
 		planNodeInfo.StorageSpace = types.Int32Value(plan.StorageSpace.ValueInt32())
 
+		// 拿到masterOrderId，轮询确认订单结束
+		masterOrderID := resp.ReturnObj.Data.NewOrderId
+		if masterOrderID == nil {
+			err = fmt.Errorf("pgsql升配返回masterOrderId为空！")
+			return err
+		}
+		err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, *masterOrderID)
+		if err != nil {
+			return err
+		}
+
 		// 轮询确认是否已扩容完成
 		err = c.UpgradeStorageLoop(ctx, state, plan, planNodeInfo, 60)
 		if err != nil {
@@ -1903,11 +1863,22 @@ func (c *CtyunMongodbInstance) upgradeSpec(ctx context.Context, state *CtyunMong
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return err
 	}
-	// 轮询确保接口执行后进入升配状态
-	err = c.afterUpdateSpecLoop(ctx, state)
+	// 拿到masterOrderId，轮询确认订单结束
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	if masterOrderID == nil {
+		err = fmt.Errorf("pgsql升配返回masterOrderId为空！")
+		return err
+	}
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, *masterOrderID)
 	if err != nil {
 		return err
 	}
+
+	// 轮询确保接口执行后进入升配状态
+	//err = c.afterUpdateSpecLoop(ctx, state)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -2141,7 +2112,20 @@ func (c *CtyunMongodbInstance) upgradeNode(ctx context.Context, state *CtyunMong
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return err
 	}
-	err = c.afterUpdateSpecLoop(ctx, state)
+
+	// 拿到masterOrderId，轮询确认订单结束
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	if masterOrderID == nil {
+		err = fmt.Errorf("pgsql升配返回masterOrderId为空！")
+		return err
+	}
+
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, *masterOrderID)
+	if err != nil {
+		return err
+	}
+
+	//err = c.afterUpdateSpecLoop(ctx, state)
 	state.ProdID = plan.ProdID
 	return nil
 }
@@ -2397,6 +2381,11 @@ func (c *CtyunMongodbInstance) afterUpdateSpecLoop(ctx context.Context, state *C
 }
 
 func (c *CtyunMongodbInstance) updateMongodbRootPassword(ctx context.Context, state *CtyunMongodbInstanceConfig, plan *CtyunMongodbInstanceConfig) (err error) {
+	// 确认实例处于运行状态
+	_, err = c.PreCheckUpdateLoop(ctx, plan, 60)
+	if err != nil {
+		return err
+	}
 	if plan.Password.IsNull() || plan.Password.IsUnknown() {
 		return
 	}
@@ -2532,8 +2521,12 @@ func (c *CtyunMongodbInstance) updateMongodbReadOnly(ctx context.Context, plan *
 		return fmt.Errorf("API返回错误，消息: %s", resp.Message)
 	}
 
-	// 等待操作完成
-	err = c.afterUpdateSpecLoop(ctx, plan)
+	masterOrderID := utils.SecString(resp.ReturnObj.Data.NewOrderId)
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
+	if err != nil {
+		return err
+	}
+	//err = c.afterUpdateSpecLoop(ctx, plan)
 	if err != nil {
 		return err
 	}
@@ -2621,44 +2614,64 @@ func (c *CtyunMongodbInstance) destroyLoop(ctx context.Context, config CtyunMong
 	return err
 }
 
+func (c *CtyunMongodbInstance) acquireAndSetIdIfOrderNotFinished(ctx context.Context, config CtyunMongodbInstanceConfig) (id string, err error) {
+	retryer, err := business.NewRetryer(time.Second*30, 60)
+	if err != nil {
+		return
+	}
+	result := retryer.Start(
+		func(currentTime int) bool {
+			id, err = c.mongodbService.GetIDByOrder(ctx, config.MasterOrderID.ValueString(), config.ProjectID.ValueString())
+			if err != nil {
+				return false
+			}
+			if id != "" {
+				return false
+			}
+			return true
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return "", fmt.Errorf("实例 %s 创建超时", config.Name.ValueString())
+	}
+	return
+}
+
 type CtyunMongodbInstanceConfig struct {
-	CycleType               types.String `tfsdk:"cycle_type"`                // 计费模式： 1是包周期，2是按需
-	RegionID                types.String `tfsdk:"region_id"`                 // 资源池Id
-	VpcID                   types.String `tfsdk:"vpc_id"`                    // 虚拟私有云Id
-	FlavorName              types.String `tfsdk:"flavor_name"`               // 规格名称
-	SubnetID                types.String `tfsdk:"subnet_id"`                 // 子网Id
-	SecurityGroupID         types.String `tfsdk:"security_group_id"`         // 安全组
-	Name                    types.String `tfsdk:"name"`                      // 集群名称
-	Password                types.String `tfsdk:"password"`                  // 管理员密码（RSA公钥加密）
-	CycleCount              types.Int32  `tfsdk:"cycle_count"`               // 购买时长：单位月（范围：1-36）
-	AutoRenew               types.Bool   `tfsdk:"auto_renew"`                // 自动续订状态（0-不自动续订，1-自动续订）
-	ProdID                  types.String `tfsdk:"prod_id"`                   // 产品id
-	ProjectID               types.String `tfsdk:"project_id"`                // 项目ID
-	MasterOrderID           types.String `tfsdk:"master_order_id"`           // 订单ID
-	ID                      types.String `tfsdk:"id"`                        // 实例ID
-	ReadPort                types.Int32  `tfsdk:"read_port"`                 // 读端口
-	InnodbBufferPoolSize    types.String `tfsdk:"innodb_buffer_pool_size"`   // 缓存池大小
-	InnodbThreadConcurrency types.Int64  `tfsdk:"innodb_thread_concurrency"` // 线程数
-	ProdRunningStatus       types.Int32  `tfsdk:"prod_running_status"`       // 实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中,3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中
-	ProdRunningStatusDesc   types.String `tfsdk:"prod_running_status_desc"`  // prod_running_status的解释版本
-	EipID                   types.String `tfsdk:"eip_id"`                    // eip id
-	IsUpgradeBackUp         types.Bool   `tfsdk:"is_upgrade_back_up"`        // DDS模块磁盘扩容时候会使用 是否主磁盘与备磁盘一起扩容
-	HostIp                  types.String `tfsdk:"host_ip"`                   // 主机ip
-	StorageType             types.String `tfsdk:"storage_type"`              // 存储类型
-	StorageSpace            types.Int32  `tfsdk:"storage_space"`             // 存储空间
-	AvailabilityZoneInfo    types.List   `tfsdk:"availability_zone_info"`    // 节点可用区信息
-	ShardNum                types.Int32  `tfsdk:"shard_num"`                 // 当实例为集群版，shard数量
-	MongosNum               types.Int32  `tfsdk:"mongos_num"`                // 当实例为集群版，mongos节点数量
-	BackupStorageSpace      types.Int32  `tfsdk:"backup_storage_space"`      // 备用节点磁盘空间
-	BackupStorageType       types.String `tfsdk:"backup_storage_type"`       // 备份节点存储类型
-	UpgradeNodeType         types.String `tfsdk:"upgrade_node_type"`         // 集群版mongodb升配规格时，
-	ReadOnlyCount           types.Int32  `tfsdk:"read_only_count"`
-	prodPerformanceSpec     string
-	instanceSeries          string
-	hostType                string
-	osType                  string
-	cpuType                 string
-	replicaNum              int32
+	CycleType            types.String `tfsdk:"cycle_type"`             // 计费模式： 1是包周期，2是按需
+	RegionID             types.String `tfsdk:"region_id"`              // 资源池Id
+	VpcID                types.String `tfsdk:"vpc_id"`                 // 虚拟私有云Id
+	FlavorName           types.String `tfsdk:"flavor_name"`            // 规格名称
+	SubnetID             types.String `tfsdk:"subnet_id"`              // 子网Id
+	SecurityGroupID      types.String `tfsdk:"security_group_id"`      // 安全组
+	Name                 types.String `tfsdk:"name"`                   // 集群名称
+	Password             types.String `tfsdk:"password"`               // 管理员密码（RSA公钥加密）
+	CycleCount           types.Int32  `tfsdk:"cycle_count"`            // 购买时长：单位月（范围：1-36）
+	AutoRenew            types.Bool   `tfsdk:"auto_renew"`             // 自动续订状态（0-不自动续订，1-自动续订）
+	ProdID               types.String `tfsdk:"prod_id"`                // 产品id
+	ProjectID            types.String `tfsdk:"project_id"`             // 项目ID
+	MasterOrderID        types.String `tfsdk:"master_order_id"`        // 订单ID
+	ID                   types.String `tfsdk:"id"`                     // 实例ID
+	ReadPort             types.Int32  `tfsdk:"read_port"`              // 读端口
+	ProdRunningStatus    types.Int32  `tfsdk:"prod_running_status"`    // 实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中,3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中
+	EipID                types.String `tfsdk:"eip_id"`                 // eip id
+	IsUpgradeBackUp      types.Bool   `tfsdk:"is_upgrade_back_up"`     // DDS模块磁盘扩容时候会使用 是否主磁盘与备磁盘一起扩容
+	HostIp               types.String `tfsdk:"host_ip"`                // 主机ip
+	StorageType          types.String `tfsdk:"storage_type"`           // 存储类型
+	StorageSpace         types.Int32  `tfsdk:"storage_space"`          // 存储空间
+	AvailabilityZoneInfo types.List   `tfsdk:"availability_zone_info"` // 节点可用区信息
+	ShardNum             types.Int32  `tfsdk:"shard_num"`              // 当实例为集群版，shard数量
+	MongosNum            types.Int32  `tfsdk:"mongos_num"`             // 当实例为集群版，mongos节点数量
+	BackupStorageSpace   types.Int32  `tfsdk:"backup_storage_space"`   // 备用节点磁盘空间
+	BackupStorageType    types.String `tfsdk:"backup_storage_type"`    // 备份节点存储类型
+	UpgradeNodeType      types.String `tfsdk:"upgrade_node_type"`      // 集群版mongodb升配规格时，
+	ReadOnlyCount        types.Int32  `tfsdk:"read_only_count"`
+	prodPerformanceSpec  string
+	instanceSeries       string
+	hostType             string
+	osType               string
+	cpuType              string
+	replicaNum           int32
 }
 
 type NodeInfoListModel struct {

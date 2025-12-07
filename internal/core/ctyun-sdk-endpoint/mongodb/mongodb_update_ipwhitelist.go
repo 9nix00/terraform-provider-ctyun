@@ -18,7 +18,7 @@ func NewMongodbUpdateIpWhitelistApi(client *ctyunsdk.CtyunClient) *MongodbUpdate
 		client: client,
 		CtyunRequestBuilder: ctyunsdk.CtyunRequestBuilder{
 			Method:  http.MethodPost,
-			UrlPath: "/DDS2/v2/openApi/updateIPWhitelist",
+			UrlPath: "/DDS2/v2/openApi/updateWhiteList",
 		},
 	}
 }
@@ -54,9 +54,12 @@ func (this *MongodbUpdateIpWhitelistApi) Do(ctx context.Context, credential ctyu
 }
 
 type MongodbUpdateIpWhitelistRequest struct {
-	ProdInstId      string   `json:"prodInstId"`      // 实例ID
-	IpWhitelistName string   `json:"ipWhitelistName"` // 白名单分组名称
-	IpList          []string `json:"ipList"`          // IP列表
+	ProdInstId    string `json:"prodInstId"`    // 实例ID
+	WhiteListId   string `json:"id"`            // 白名单分组序号
+	IpType        string `json:"ipType"`        // ip类型，取值ipv4或者ipv6
+	WhiteListType string `json:"whiteListType"` // 修改后的允许访问的白名单列表，JSON数组字符串，示例："[\"10.138.16.9\"]"
+	GroupName     string `json:"groupName"`     // 白名单分组名称
+	IpList        string `json:"ipList"`        // 修改后的允许访问的白名单列表，JSON数组字符串，示例："[\"10.138.16.9\"]"
 }
 
 type MongodbUpdateIpWhitelistRequestHeaders struct {

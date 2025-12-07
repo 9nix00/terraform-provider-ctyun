@@ -55,6 +55,7 @@ type Apis struct {
 	PgsqlUpdateParameterTemplateRemarkApi *PgsqlUpdateParameterTemplateRemarkApi
 	PgsqlUpdateWhiteListApi               *PgsqlUpdateWhiteListApi
 	PgsqlGetWhiteListApi                  *PgsqlGetWhiteListApi
+	PgsqlGetIDByOrderApi                  *PgsqlGetIDByOrderApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -119,6 +120,7 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		PgsqlUpdateParameterTemplateRemarkApi: NewPgsqlUpdateParameterTemplateRemarkApi(client),
 		PgsqlUpdateWhiteListApi:               NewPgsqlUpdateWhiteListApi(client),
 		PgsqlGetWhiteListApi:                  NewPgsqlGetWhiteListApi(client),
+		PgsqlGetIDByOrderApi:                  NewPgsqlGetIDByOrderApi(client),
 	}
 
 }

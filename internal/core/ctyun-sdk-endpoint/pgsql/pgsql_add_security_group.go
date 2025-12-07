@@ -36,6 +36,14 @@ func (this *PostgresqlAddSecurityGroupApi) Do(ctx context.Context, credential ct
 	}
 	builder.AddHeader("project-id", *header.ProjectId)
 
+	if req.SecurityGroupId == "" {
+		err = errors.New("missing required field: SecurityGroupId")
+		return
+	}
+	if req.InstanceId == "" {
+		err = errors.New("missing required field: InstanceName(实例名称)")
+	}
+
 	resp, err := this.client.RequestToEndpoint(ctx, EndpointNamePgSql, builder)
 	if err != nil {
 		return
@@ -58,8 +66,7 @@ type PostgresqlAddSecurityGroupRequestHeader struct {
 }
 
 type PostgresqlAddSecurityGroupResponse struct {
-	StatusCode int32    `json:"statusCode"` // 接口状态码，参考下方状态码
-	Error      string   `json:"error"`      // 错误码
-	Message    string   `json:"message"`    // 描述信息
-	ReturnObj  struct{} `json:"returnObj"`  // 返回对象
+	StatusCode int32  `json:"statusCode"` // 接口状态码，参考下方状态码
+	Error      string `json:"error"`      // 错误码
+	Message    string `json:"message"`    // 描述信息
 }

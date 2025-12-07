@@ -69,8 +69,12 @@ type SdwanGetSdwanAclRuleResponse struct {
 	ReturnObj   *SdwanGetSdwanAclRuleReturnObjResponse `json:"returnObj"`   /*  返回参数  */
 	Error       *string                                `json:"error"`       /*  业务细分码，为product.module.code三段式码  */
 }
-
 type SdwanGetSdwanAclRuleReturnObjResponse struct {
+	Result       []SdwanGetSdwanAclRuleReturnObjResponseResult `json:"result"`       /*  rule ID  */
+	CurrentCount int32                                         `json:"currentCount"` /*  acl id  */
+	TotalCount   int32                                         `json:"totalCount"`   /*  本参数表示控制方向<br/><br/>取值范围:<br/>in:入方向<br/>out:出方向  */
+}
+type SdwanGetSdwanAclRuleReturnObjResponseResult struct {
 	AclRuleID        *string `json:"aclRuleID"`        /*  rule ID  */
 	AclID            *string `json:"aclID"`            /*  acl id  */
 	Direction        *string `json:"direction"`        /*  本参数表示控制方向<br/><br/>取值范围:<br/>in:入方向<br/>out:出方向  */
@@ -81,6 +85,6 @@ type SdwanGetSdwanAclRuleReturnObjResponse struct {
 	DstCidr          *string `json:"dstCidr"`          /*  目的网段  */
 	SrcPortRange     *string `json:"srcPortRange"`     /*  源端口范围  */
 	DstPortRange     *string `json:"dstPortRange"`     /*  目的端口范围  */
-	Priority         *string `json:"priority"`         /*  priority  */
+	Priority         int32   `json:"priority"`         /*  priority  */
 	Status           *string `json:"status"`           /*  本参数表示状态<br/><br/>取值范围:<br/>normal:状态正常<br/>creating:正在创建</br>deleting:正在删除</br>failed:创建失败</br>error:删除失败  */
 }
