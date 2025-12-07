@@ -545,7 +545,7 @@ func (c *ctyunSfs) updateSfs(ctx context.Context, state *CtyunSfsConfig, plan *C
 		return err
 	}
 	// 扩容sfs
-	err = c.ResizeSfs(ctx, state, plan)
+	err = c.resizeSfs(ctx, state, plan)
 	if err != nil {
 		return err
 	}
@@ -606,7 +606,7 @@ func (c *ctyunSfs) renameLoop(ctx context.Context, plan CtyunSfsConfig) error {
 	return err
 }
 
-func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig) error {
+func (c *ctyunSfs) resizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig) error {
 	if plan.SfsSize.Equal(state.SfsSize) {
 		return nil
 	}
@@ -620,6 +620,8 @@ func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *C
 	if err != nil {
 		if !strings.Contains(err.Error(), "order in progress") {
 			return err
+		} else {
+			err = nil
 		}
 	} else if resp == nil {
 		return fmt.Errorf("扩容id为%s的弹性文件系统失败，接口返回nil。请与研发联系确认问题原因", state.ID.ValueString())
@@ -628,45 +630,12 @@ func (c *ctyunSfs) ResizeSfs(ctx context.Context, state *CtyunSfsConfig, plan *C
 			return fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		}
 	}
-	// 轮询确认是否扩容成功
-	err = c.resizeLoop(ctx, state, plan, 60)
+	masterOrderID := resp.ReturnObj.MasterOrderID
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (c *ctyunSfs) resizeLoop(ctx context.Context, state *CtyunSfsConfig, plan *CtyunSfsConfig, loopCount ...int) error {
-	var err error
-	count := 60
-	if len(loopCount) > 0 {
-		count = loopCount[0]
-	}
-	retryer, err := business.NewRetryer(time.Second*30, count)
-	if err != nil {
-		return err
-	}
-	result := retryer.Start(
-		func(currentTime int) bool {
-			// 轮询详情接口，确认sfs size是否与plan.sfsSize对应
-			resp, err2 := c.getSfsDetail(ctx, state)
-			if err2 != nil {
-				if !strings.Contains(err2.Error(), "order in progress") {
-					err = err2
-					return false
-				}
-				return true
-			}
-			sfsSize := resp.ReturnObj.SfsSize
-			if sfsSize == plan.SfsSize.ValueInt32() {
-				return false
-			}
-			return true
-		})
-	if result.ReturnReason == business.ReachMaxLoopTime {
-		return errors.New("轮询已达最大次数，弹性文件系统仍未扩容成功！")
-	}
-	return err
 }
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
