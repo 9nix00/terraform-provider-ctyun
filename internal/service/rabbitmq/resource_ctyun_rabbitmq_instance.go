@@ -647,7 +647,7 @@ func (c *ctyunRabbitmqInstance) getAndMerge(ctx context.Context, plan *CtyunRabb
 	plan.DiskSize = types.Int32Value(utils.StringToInt32Must(instance.Space) / instance.NodeCount)
 	plan.NodeNum = types.Int32Value(instance.NodeCount)
 	plan.SpecName = types.StringValue(instance.Prod)
-	cTime, eTime := utils.ConvertToUTCZ(instance.CreateTime), utils.ConvertToUTCZ(instance.ExpireTime)
+	cTime, eTime := utils.ConvertToUTCZ(time.RFC3339, instance.CreateTime), utils.ConvertToUTCZ(time.RFC3339, instance.ExpireTime)
 	plan.CreateTime = types.StringValue(cTime)
 	plan.ExpireTime = types.StringValue(eTime)
 	plan.Endpoint = types.StringValue(instance.Endpoint)

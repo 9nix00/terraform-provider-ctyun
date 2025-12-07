@@ -68,9 +68,9 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 	response.Schema = schema.Schema{
 		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027350/10192622`,
 		Attributes: map[string]schema.Attribute{
-			"permission_group_fuid": schema.StringAttribute{
+			"permission_group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "权限组FUID标识",
+				Description: "权限组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -104,14 +104,7 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 					stringvalidator.OneOf([]string{"rw", "ro"}...),
 				},
 			},
-			//"user_permission": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "用户权限，可选值: 'no_root_squash', 'root_squash'",
-			//	Validators: []validator.String{
-			//		stringvalidator.OneOf([]string{"no_root_squash", "root_squash"}...),
-			//	},
-			//},
-			"permission_rule_priority": schema.Int32Attribute{
+			"priority": schema.Int32Attribute{
 				Required:    true,
 				Description: "规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复，支持更新",
 				Validators: []validator.Int32{
@@ -396,12 +389,11 @@ func (c *ctyunSfsPermissionGroupRule) getRuleList(ctx context.Context, config *C
 }
 
 type CtyunSfsPermissionGroupRuleConfig struct {
-	PermissionGroupFuid types.String `tfsdk:"permission_group_fuid"`
-	RegionID            types.String `tfsdk:"region_id"`
-	AuthAddr            types.String `tfsdk:"auth_addr"`
-	RwPermission        types.String `tfsdk:"rw_permission"`
-	//UserPermission         types.String `hcl:"user_permission"`
-	PermissionRulePriority types.Int32  `tfsdk:"permission_rule_priority"`
+	PermissionGroupFuid    types.String `tfsdk:"permission_group_id"`
+	RegionID               types.String `tfsdk:"region_id"`
+	AuthAddr               types.String `tfsdk:"auth_addr"`
+	RwPermission           types.String `tfsdk:"rw_permission"`
+	PermissionRulePriority types.Int32  `tfsdk:"priority"`
 	ID                     types.String `tfsdk:"id"`
 	UpdateTime             types.String `tfsdk:"update_time"`
 }

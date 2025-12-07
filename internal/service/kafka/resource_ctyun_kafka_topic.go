@@ -78,11 +78,11 @@ type CtyunKafkaTopicPartitionDetail struct {
 
 var (
 	offsetAttrTypes = map[string]attr.Type{
-		"total":       types.Int64Type,
-		"begin":       types.Int64Type,
-		"end":         types.Int64Type,
-		"update_time": types.Int64Type,
-		"hw":          types.Int64Type,
+		"total":            types.Int64Type,
+		"begin":            types.Int64Type,
+		"end":              types.Int64Type,
+		"update_timestamp": types.Int64Type,
+		"hw":               types.Int64Type,
 	}
 
 	replicaAttrTypes = map[string]attr.Type{
@@ -286,7 +286,7 @@ func (c *ctyunKafkaTopic) Schema(_ context.Context, _ resource.SchemaRequest, re
 									Computed:    true,
 									Description: "分区leader副本的最小偏移量",
 								},
-								"update_time": schema.Int64Attribute{
+								"update_timestamp": schema.Int64Attribute{
 									Computed:    true,
 									Description: "分区最近写入消息的毫秒时间戳",
 								},
@@ -630,11 +630,11 @@ func (c *ctyunKafkaTopic) getAndMerge(ctx context.Context, plan *CtyunKafkaTopic
 			var offsetsObject basetypes.ObjectValue
 			if partition.Offsets != nil {
 				offsetsAttrs := map[string]attr.Value{
-					"total":       types.Int64Value(partition.Offsets.Total),
-					"begin":       types.Int64Value(partition.Offsets.Begin),
-					"end":         types.Int64Value(partition.Offsets.End),
-					"update_time": types.Int64Value(partition.Offsets.UpdateTime),
-					"hw":          types.Int64Value(partition.Offsets.Hw),
+					"total":            types.Int64Value(partition.Offsets.Total),
+					"begin":            types.Int64Value(partition.Offsets.Begin),
+					"end":              types.Int64Value(partition.Offsets.End),
+					"update_timestamp": types.Int64Value(partition.Offsets.UpdateTime),
+					"hw":               types.Int64Value(partition.Offsets.Hw),
 				}
 				offsetsObject, _ = types.ObjectValue(offsetAttrTypes, offsetsAttrs)
 			} else {

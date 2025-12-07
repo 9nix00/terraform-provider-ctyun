@@ -41,9 +41,9 @@ type ctyunEcsBackupsModel struct {
 	DiskTotalSize             types.Int64  `tfsdk:"disk_total_size"`
 	UsedSize                  types.Int64  `tfsdk:"used_size"`
 	DiskCount                 types.Int64  `tfsdk:"disk_count"`
-	RestoreFinishedTime       types.String `tfsdk:"restore_finished_time"`
-	CreatedTime               types.String `tfsdk:"created_time"`
-	FinishedTime              types.String `tfsdk:"finished_time"`
+	RestoreFinishedTime       types.String `tfsdk:"restore_finish_time"`
+	CreatedTime               types.String `tfsdk:"create_time"`
+	FinishedTime              types.String `tfsdk:"finish_time"`
 	ProjectID                 types.String `tfsdk:"project_id"`
 	BackupType                types.String `tfsdk:"backup_type"`
 }
@@ -163,15 +163,15 @@ func (c *ctyunEcsBackups) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "云硬盘数目",
 						},
-						"restore_finished_time": schema.StringAttribute{
+						"restore_finish_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份恢复完成时间",
 						},
-						"created_time": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
-						"finished_time": schema.StringAttribute{
+						"finish_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "完成时间",
 						},

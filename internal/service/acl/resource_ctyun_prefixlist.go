@@ -291,8 +291,8 @@ func (c *CtyunPrefix) getAndMerge(ctx context.Context, config *CtyunPrefixConfig
 	config.Limit = types.Int32Value(returnObj.Limit)
 	config.AddressType = types.StringValue(business.PrefixAddressTyperRevMap[returnObj.AddressType])
 	config.Description = types.StringValue(*returnObj.Description)
-	config.CreateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(returnObj.CreatedAt)))
-	config.UpdateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(returnObj.UpdatedAt)))
+	config.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout1, utils.SecString(returnObj.CreatedAt)))
+	config.UpdateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout1, utils.SecString(returnObj.UpdatedAt)))
 	rules := returnObj.PrefixListRules
 	var prefixRules []CtyunPrefixModel
 	for _, ruleItem := range rules {

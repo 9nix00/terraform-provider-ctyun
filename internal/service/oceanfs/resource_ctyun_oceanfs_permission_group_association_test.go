@@ -35,7 +35,7 @@ func TestAccCtyunOceanfsPermissionGroupAssociation(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					// 基本属性验证
 					resource.TestCheckResourceAttr(resourceName, "permission_group_id", permissionGroupID),
-					resource.TestCheckResourceAttr(resourceName, "sfs_id", sfsUID),
+					resource.TestCheckResourceAttr(resourceName, "oceanfs_id", sfsUID),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 					resource.TestCheckResourceAttr(resourceName, "is_vpce", fmt.Sprintf("%t", initialIsVpce)),
@@ -55,7 +55,7 @@ func TestAccCtyunOceanfsPermissionGroupAssociation(t *testing.T) {
 
 					// 验证其他属性保持不变
 					resource.TestCheckResourceAttr(resourceName, "permission_group_id", updatedPermissionGroupID),
-					resource.TestCheckResourceAttr(resourceName, "sfs_id", sfsUID),
+					resource.TestCheckResourceAttr(resourceName, "oceanfs_id", sfsUID),
 					resource.TestCheckResourceAttr(resourceName, "vpc_id", vpcID),
 					resource.TestCheckResourceAttr(resourceName, "subnet_id", subnetID),
 
@@ -75,7 +75,7 @@ func TestAccCtyunOceanfsPermissionGroupAssociation(t *testing.T) {
 					return fmt.Sprintf("%s,%s,%s,%s,%s",
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["permission_group_id"],
-						rs.Primary.Attributes["sfs_id"],
+						rs.Primary.Attributes["oceanfs_id"],
 						rs.Primary.Attributes["vpc_id"],
 						rs.Primary.Attributes["subnet_id"],
 					), nil

@@ -173,7 +173,7 @@ func (c *ctyunDnatResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 				Computed:    true,
 				Description: "运行状态: ACTIVE / FREEZING / CREATING",
 			},
-			"created_at": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
 			},
@@ -382,7 +382,7 @@ func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatC
 	dnat := resp.ReturnObj
 	cfg.DNatID = utils.SecStringValue(dnat.DNatID)
 	cfg.ID = utils.SecStringValue(dnat.DNatID)
-	cfg.CreatedAt = utils.SecStringValue(dnat.CreationTime)
+	cfg.CreatedAt = types.StringValue(utils.ConvertToUTCZ(time.RFC3339, utils.SecString(dnat.CreationTime)))
 	cfg.Description = utils.SecStringValue(dnat.Description)
 	cfg.IpExpireTime = utils.SecStringValue(dnat.IpExpireTime)
 	cfg.ExternalIP = utils.SecStringValue(dnat.ExternalIp)
@@ -572,7 +572,7 @@ type CtyunDnatConfig struct {
 	InstanceID   types.String `tfsdk:"instance_id"`
 	DnatType     types.String `tfsdk:"dnat_type"`
 	ServerType   types.String `tfsdk:"server_type"`    //当 virtualMachineType 为 1 时，serverType 必传，支持: VM / BM （仅支持大写）
-	CreatedAt    types.String `tfsdk:"created_at"`     //创建时间
+	CreatedAt    types.String `tfsdk:"create_time"`    //创建时间
 	IpExpireTime types.String `tfsdk:"ip_expire_time"` //ip到期时间
 }
 

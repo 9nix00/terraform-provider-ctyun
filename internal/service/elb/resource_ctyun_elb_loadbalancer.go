@@ -182,11 +182,11 @@ func (c *CtyunElbLoadBalancerResource) Schema(ctx context.Context, request resou
 				Computed:    true,
 				Description: "负载均衡状态: DOWN / ACTIVE",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
@@ -788,8 +788,8 @@ type CtyunElbLoadBalancerConfig struct {
 	EipInfo          types.List   `tfsdk:"eip_info"`           //弹性公网IP信息
 	AdminStatus      types.String `tfsdk:"admin_status"`       //管理状态: DOWN / ACTIVE
 	Status           types.String `tfsdk:"status"`             //负载均衡状态: DOWN / ACTIVE
-	CreatedTime      types.String `tfsdk:"created_time"`       //创建时间，为UTC格式
-	UpdatedTime      types.String `tfsdk:"updated_time"`       //更新时间，为UTC格式
+	CreatedTime      types.String `tfsdk:"create_time"`        //创建时间，为UTC格式
+	UpdatedTime      types.String `tfsdk:"update_time"`        //更新时间，为UTC格式
 	// 升级保障型负载均衡字段
 	CycleType       types.String `tfsdk:"cycle_type"`        //订购类型：month（包月） / year（包年）
 	CycleCount      types.Int64  `tfsdk:"cycle_count"`       //订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年

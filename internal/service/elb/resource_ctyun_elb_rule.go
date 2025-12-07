@@ -230,11 +230,11 @@ func (c *CtyunElbRule) Schema(ctx context.Context, request resource.SchemaReques
 				Computed:    true,
 				Description: "状态: ACTIVE / DOWN",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
@@ -668,8 +668,8 @@ type CtyunElbRuleConfig struct {
 	ProjectID                types.String `tfsdk:"project_id"`                  //	项目ID
 	LoadBalancerID           types.String `tfsdk:"load_balancer_id"`            //负载均衡ID
 	Status                   types.String `tfsdk:"status"`                      //状态: ACTIVE / DOWN
-	CreatedTime              types.String `tfsdk:"created_time"`                //创建时间，为UTC格式
-	UpdatedTime              types.String `tfsdk:"updated_time"`                //更新时间，为UTC格式
+	CreatedTime              types.String `tfsdk:"create_time"`                 //创建时间，为UTC格式
+	UpdatedTime              types.String `tfsdk:"update_time"`                 //更新时间，为UTC格式
 }
 
 type ConditionsModel struct {

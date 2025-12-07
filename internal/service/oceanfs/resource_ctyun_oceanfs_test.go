@@ -42,8 +42,8 @@ func TestAccCtyunOceanfs(t *testing.T) {
 					Config: utils.LoadTestCase(resourceFile, rnd, projectID, sfsProtocol, name, sfsSize, cycleType, vpcID, subnetID),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttrSet(resourceName, "id"),
-						resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
-						resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
+						resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", sfsSize)),
+						resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
 						resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 						resource.TestCheckResourceAttr(resourceName, "name", name),
 						resource.TestCheckResourceAttrSet(resourceName, "status"),
@@ -56,7 +56,7 @@ func TestAccCtyunOceanfs(t *testing.T) {
 					Config: utils.LoadTestCase(resourceFile, rnd, projectID, sfsProtocol, name, updatedSfsSize, cycleType, vpcID, subnetID),
 					Check: resource.ComposeAggregateTestCheckFunc(
 						resource.TestCheckResourceAttrSet(resourceName, "id"),
-						resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
+						resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", updatedSfsSize)),
 						resource.TestCheckResourceAttr(resourceName, "name", name),
 					),
 				},
@@ -126,8 +126,8 @@ func TestAccCtyunOceanfsWithVpce(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, name, sfsSize, cycleType, vpcID, subnetID, isVpce),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
-					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", sfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
 					resource.TestCheckResourceAttr(resourceName, "is_vpce", "true"),
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
 				),
@@ -137,7 +137,7 @@ func TestAccCtyunOceanfsWithVpce(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, name, updatedSfsSize, cycleType, vpcID, subnetID, isVpce),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 				),
 			},
@@ -146,7 +146,7 @@ func TestAccCtyunOceanfsWithVpce(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, name, updatedSfsSize, cycleType, vpcID, subnetID, isVpce) +
 					utils.LoadTestCase(datasourceFile, dnd),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(datasourceName, "oceanfs_instances.#"),
+					resource.TestCheckResourceAttrSet(datasourceName, "instances.#"),
 				),
 			},
 			// 4. 销毁资源
@@ -190,8 +190,8 @@ func TestAccCtyunOceanfsCycle(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, name, sfsSize, cycleType, cycleCount, vpcID, subnetID, tags),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
-					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", sfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", fmt.Sprintf("%d", cycleCount)),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
@@ -205,7 +205,7 @@ func TestAccCtyunOceanfsCycle(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsProtocol, name, updatedSfsSize, cycleType, cycleCount, vpcID, subnetID, tags),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", updatedSfsSize)),
 				),
 			},
 			{

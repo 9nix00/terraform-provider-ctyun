@@ -124,11 +124,11 @@ func (c *ctyunElbTargets) Schema(ctx context.Context, request datasource.SchemaR
 								stringvalidator.OneOf(business.ElbRuleStatus...),
 							},
 						},
-						"created_time": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间，为UTC格式",
 						},
-						"updated_time": schema.StringAttribute{
+						"update_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "更新时间，为UTC格式",
 						},
@@ -226,6 +226,6 @@ type ElbTargetModel struct {
 	HealthCheckStatus     types.String `tfsdk:"health_check_status"`      //IPv4的健康检查状态: offline / online / unknown
 	HealthCheckStatusIpv6 types.String `tfsdk:"health_check_status_ipv6"` //IPv6的健康检查状态: offline / online / unknown
 	Status                types.String `tfsdk:"status"`                   //状态: DOWN / ACTIVE
-	CreatedTime           types.String `tfsdk:"created_time"`             //创建时间，为UTC格式
-	UpdatedTime           types.String `tfsdk:"updated_time"`             //更新时间，为UTC格式
+	CreatedTime           types.String `tfsdk:"create_time"`              //创建时间，为UTC格式
+	UpdatedTime           types.String `tfsdk:"update_time"`              //更新时间，为UTC格式
 }

@@ -59,32 +59,32 @@ func (c *CtyunSfsInstances) Schema(ctx context.Context, request datasource.Schem
 				Optional:    true,
 				Description: "列表的分页页码，默认为1",
 			},
-			"sfs_list": schema.ListNestedAttribute{
+			"instances": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "弹性文件存储列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"sfs_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "弹性文件系统名称",
 						},
-						"sfs_uid": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "弹性文件系统唯一ID",
 						},
-						"sfs_size": schema.Int32Attribute{
+						"size": schema.Int32Attribute{
 							Computed:    true,
 							Description: "文件系统大小（GB）",
 						},
-						"sfs_type": schema.StringAttribute{
+						"type": schema.StringAttribute{
 							Computed:    true,
 							Description: "文件系统类型，capacity(标准型)或performance(性能型)",
 						},
-						"sfs_protocol": schema.StringAttribute{
+						"protocol": schema.StringAttribute{
 							Computed:    true,
 							Description: "挂载协议，nfs或cifs",
 						},
-						"sfs_status": schema.StringAttribute{
+						"status": schema.StringAttribute{
 							Computed:    true,
 							Description: "文件系统状态，creating/available/unusable/expired/fail",
 						},
@@ -301,12 +301,12 @@ func (c *CtyunSfsInstances) Read(ctx context.Context, request datasource.ReadReq
 }
 
 type CtyunSfsInfoModel struct {
-	SfsName            types.String `tfsdk:"sfs_name"`
-	SfsUID             types.String `tfsdk:"sfs_uid"`
-	SfsSize            types.Int32  `tfsdk:"sfs_size"`
-	SfsType            types.String `tfsdk:"sfs_type"`
-	SfsProtocol        types.String `tfsdk:"sfs_protocol"`
-	SfsStatus          types.String `tfsdk:"sfs_status"`
+	SfsName            types.String `tfsdk:"name"`
+	SfsUID             types.String `tfsdk:"id"`
+	SfsSize            types.Int32  `tfsdk:"size"`
+	SfsType            types.String `tfsdk:"type"`
+	SfsProtocol        types.String `tfsdk:"protocol"`
+	SfsStatus          types.String `tfsdk:"status"`
 	UsedSize           types.Int32  `tfsdk:"used_size"`
 	CreateTime         types.Int64  `tfsdk:"create_time"`
 	UpdateTime         types.Int64  `tfsdk:"update_time"`
@@ -341,5 +341,5 @@ type CtyunSfsInstancesConfig struct {
 	ProjectID types.String        `tfsdk:"project_id"`
 	PageSize  types.Int32         `tfsdk:"page_size"`
 	PageNo    types.Int32         `tfsdk:"page_no"`
-	SfsList   []CtyunSfsInfoModel `tfsdk:"sfs_list"`
+	SfsList   []CtyunSfsInfoModel `tfsdk:"instances"`
 }

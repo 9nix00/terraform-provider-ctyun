@@ -8,6 +8,7 @@ import (
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -48,7 +49,7 @@ type CtyunKafkaConsumerGroupConfig struct {
 	RegionID      types.String `tfsdk:"region_id"`
 	InstanceId    types.String `tfsdk:"instance_id"`
 	Description   types.String `tfsdk:"description"`
-	Ctime         types.String `tfsdk:"ctime"`
+	Ctime         types.String `tfsdk:"create_time"`
 	State         types.String `tfsdk:"state"`
 	CoordinatorId types.Int32  `tfsdk:"coordinator_id"`
 
@@ -61,7 +62,7 @@ type CtyunKafkaConsumerGroupResetConfig struct {
 	TopicName          types.String                                                      `tfsdk:"topic_name"`           /*  主题名称。  */
 	Type               types.Int32                                                       `tfsdk:"type"`                 /*  类型，<li>0：重置到latest。 <li>1：按时间重置。<li>2：重置到earliest。<li>3：按位点重置，此类型参数partitionShiftList为必填。  */
 	PartitionShiftList []*ctgkafka.CtgkafkaConsumerGroupResetV3PartitionShiftListRequest `tfsdk:"partition_shift_list"` /*  位点重置列表，当type为3时必填。  */
-	Time               types.Int64                                                       `tfsdk:"time"`                 /*  重置时间点毫秒时间戳，type=1时必填。  */
+	Time               types.Int64                                                       `tfsdk:"timestamp"`            /*  重置时间点毫秒时间戳，type=1时必填。  */
 }
 
 func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -114,9 +115,12 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"ctime": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"state": schema.StringAttribute{
 				Computed:    true,
@@ -146,7 +150,7 @@ func (c *ctyunKafkaConsumerGroup) Schema(_ context.Context, _ resource.SchemaReq
 							int32validator.Between(0, 3),
 						},
 					},
-					"time": schema.Int64Attribute{
+					"timestamp": schema.Int64Attribute{
 						Optional:    true,
 						Description: "重置时间点毫秒时间戳，type=1时必填 支持更新",
 						Validators: []validator.Int64{
@@ -452,8 +456,6 @@ func (c *ctyunKafkaConsumerGroup) checkAfterCreate(ctx context.Context, plan Cty
 			if plan.ID.IsNull() {
 				return true
 			}
-			// 等待订单完成
-			time.Sleep(30 * time.Second)
 			id = plan.ID.ValueInt32()
 			executeSuccessFlag = true
 			return false
@@ -487,7 +489,7 @@ func (c *ctyunKafkaConsumerGroup) getAndMerge(ctx context.Context, plan *CtyunKa
 	}
 	if len(resp.ReturnObj.Data) > 0 {
 		plan.ID = types.Int32Value(resp.ReturnObj.Data[0].Id)
-		plan.Ctime = types.StringValue(resp.ReturnObj.Data[0].Ctime)
+		plan.Ctime = types.StringValue(utils.ConvertToUTCZ(utils.Layout2, resp.ReturnObj.Data[0].Ctime))
 		plan.State = types.StringValue(resp.ReturnObj.Data[0].State)
 		plan.CoordinatorId = types.Int32Value(resp.ReturnObj.Data[0].CoordinatorId)
 		plan.Description = types.StringValue(resp.ReturnObj.Data[0].Description)

@@ -89,7 +89,7 @@ data "ctyun_zones" "test" {
 }
 
 resource "ctyun_kafka_instance" "test_kafka_instance" {
-  instance_name = "test-kafka-inst"
+  instance_name = "tf-kafka-inst1"
   engine_version = "3.6"
   spec_name = local.cluster_spec_name
   node_num = 3

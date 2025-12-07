@@ -39,7 +39,7 @@ func TestAccCtyunOceanfsPermissionRule(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "permission_group_id", permissionGroupFuid),
 					resource.TestCheckResourceAttr(resourceName, "auth_addr", initialAuthAddr),
 					resource.TestCheckResourceAttr(resourceName, "rw_permission", initialRwPermission),
-					resource.TestCheckResourceAttr(resourceName, "permission_rule_priority", fmt.Sprintf("%d", initialPriority)),
+					resource.TestCheckResourceAttr(resourceName, "priority", fmt.Sprintf("%d", initialPriority)),
 
 					// 系统生成属性验证
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -54,7 +54,7 @@ func TestAccCtyunOceanfsPermissionRule(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "auth_addr", updatedAuthAddr),
 					resource.TestCheckResourceAttr(resourceName, "rw_permission", updatedRwPermission),
-					resource.TestCheckResourceAttr(resourceName, "permission_rule_priority", fmt.Sprintf("%d", updatedPriority)),
+					resource.TestCheckResourceAttr(resourceName, "priority", fmt.Sprintf("%d", updatedPriority)),
 
 					// 验证ID保持不变
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -116,7 +116,7 @@ func TestAccCtyunOceanfsPermissionRuleIPv6(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "auth_addr", ipv6AuthAddr),
 					resource.TestCheckResourceAttr(resourceName, "rw_permission", rwPermission),
-					resource.TestCheckResourceAttr(resourceName, "permission_rule_priority", fmt.Sprintf("%d", priority)),
+					resource.TestCheckResourceAttr(resourceName, "priority", fmt.Sprintf("%d", priority)),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},

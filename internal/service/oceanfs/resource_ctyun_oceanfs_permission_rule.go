@@ -99,7 +99,7 @@ func (c *CtyunOceanfsPermissionRule) Schema(ctx context.Context, request resourc
 					stringvalidator.OneOf("ro", "rw"),
 				},
 			},
-			"permission_rule_priority": schema.Int32Attribute{
+			"priority": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(1),
@@ -384,6 +384,6 @@ type CtyunOceanfsPermissionRuleConfig struct {
 	RegionID               types.String `tfsdk:"region_id"`
 	AuthAddr               types.String `tfsdk:"auth_addr"`
 	RwPermission           types.String `tfsdk:"rw_permission"`
-	PermissionRulePriority types.Int32  `tfsdk:"permission_rule_priority"`
+	PermissionRulePriority types.Int32  `tfsdk:"priority"`
 	ID                     types.String `tfsdk:"id"`
 }

@@ -43,9 +43,9 @@ func TestAccCtyunSfs(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, sfsType, sfsProtocol, name, sfsSize, cycleType, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
-					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_type", sfsType),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", sfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
+					resource.TestCheckResourceAttr(resourceName, "type", sfsType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
@@ -56,7 +56,7 @@ func TestAccCtyunSfs(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile1, rnd, sfsType, sfsProtocol, updatedName, updatedSfsSize, cycleType, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 				),
 			},
@@ -120,9 +120,9 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					name, sfsSize, cycleType, cycleCount, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", sfsSize)),
-					resource.TestCheckResourceAttr(resourceName, "sfs_protocol", sfsProtocol),
-					resource.TestCheckResourceAttr(resourceName, "sfs_type", sfsType),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", sfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "protocol", sfsProtocol),
+					resource.TestCheckResourceAttr(resourceName, "type", sfsType),
 					resource.TestCheckResourceAttr(resourceName, "cycle_type", cycleType),
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttr(resourceName, "is_encrypt", "false"), // 验证加密
@@ -136,7 +136,7 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					updatedName, updatedSfsSize, cycleType, cycleCount, vpcID, subnetID),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
+					resource.TestCheckResourceAttr(resourceName, "size", fmt.Sprintf("%d", updatedSfsSize)),
 					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
 					// 保持加密设置不变
 					resource.TestCheckResourceAttr(resourceName, "is_encrypt", "false"),
@@ -151,12 +151,7 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(datasourceName, "region_id"),
-					resource.TestCheckResourceAttrSet(datasourceName, "sfs_list.#"),
-					//resource.TestCheckResourceAttr(datasourceName, "sfs_list.0.sfs_name", updatedName),
-					//resource.TestCheckResourceAttr(datasourceName, "sfs_list.0.sfs_size", fmt.Sprintf("%d", updatedSfsSize)),
-					//resource.TestCheckResourceAttr(datasourceName, "sfs_list.0.sfs_type", sfsType),
-					//resource.TestCheckResourceAttr(datasourceName, "sfs_list.0.sfs_protocol", sfsProtocol),
-					//resource.TestCheckResourceAttr(datasourceName, "sfs_list.0.is_encrypt", "false"),
+					resource.TestCheckResourceAttrSet(datasourceName, "instances.#"),
 				),
 			},
 			// 4. 资源导入测试
@@ -173,8 +168,18 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s", id, regionId, projectId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"cycle_count", "kms_uuid", "cycle_type", "is_encrypt", "vpc_id", "subnet_id", "az_name", "used_size"},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"cycle_count",
+					"kms_uuid",
+					"cycle_type",
+					"is_encrypt",
+					"vpc_id",
+					"subnet_id",
+					"az_name",
+					"used_size",
+					"update_time",
+				},
 			},
 			// 4. 清理资源
 			{

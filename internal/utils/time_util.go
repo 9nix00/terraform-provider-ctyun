@@ -4,6 +4,12 @@ import (
 	"time"
 )
 
+const (
+	Layout1 = "2006-01-02 15:04:05 -0700 MST"
+	Layout2 = "2006-01-02T15:04:05.000-07:00"
+	Layout3 = "2006-01-02T15:04:05-07:00"
+)
+
 // 从RFC3339转换到本地时间格式
 func FromRFC3339ToLocal(timeStr string) string {
 	t, _ := time.Parse(time.RFC3339, timeStr)
@@ -32,29 +38,16 @@ func FromUnixToUTC(timestamp int64) string {
 }
 
 // ConvertToUTCZ 将时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式
-// input: 输入时间字符串，如"2025-09-09T11:42:52+08:00"
 // 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
-func ConvertToUTCZ(input string) string {
-	t, err := time.Parse(time.RFC3339, input)
+func ConvertToUTCZ(layout, input string) string {
+	t, err := time.Parse(layout, input)
 	if err != nil {
 		return ""
 	}
 	return t.UTC().Format(time.RFC3339)
 }
 
-// ConvertToUTCZ2 将时间字符串转换为UTC时间，并格式化为2006-01-02T15:04:05Z格式
-// input: 输入时间字符串，如"2025-12-02 03:27:23 +0000 UTC"
-// 返回值: 转换后的UTC时间字符串，如"2025-09-09T03:42:52Z"
-func ConvertToUTCZ2(input string) string {
-	layout := "2006-01-02 15:04:05 -0700 MST"
-	t, err := time.Parse(layout, input)
-	if err != nil {
-		return ""
-	}
-	return t.Format(time.RFC3339)
-}
-
-// FromBJTimeToUTCZ 修正版：将北京时间（YYYY-MM-DD HH:MM:SS）转换为UTC时间的RFC3399格式（带Z）
+// FromBJTimeToUTC 将北京时间（YYYY-MM-DD HH:MM:SS）转换为UTC时间的RFC3399格式（带Z）
 // 入参：input - 北京时间字符串（格式：2025-12-02 13:37:32）
 // 出参：UTC时间的RFC3399字符串，解析失败返回空字符串
 func FromBJTimeToUTCZ(input string) string {

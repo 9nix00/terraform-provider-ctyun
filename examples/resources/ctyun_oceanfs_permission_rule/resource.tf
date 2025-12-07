@@ -23,6 +23,6 @@ resource "ctyun_oceanfs_permission_rule" "example" {
   permission_group_id      = ctyun_oceanfs_permission_group.example.id
   auth_addr                = "192.168.1.0/24"
   rw_permission            = "ro"
-  permission_rule_priority = 1
+  priority = 1
 }
 

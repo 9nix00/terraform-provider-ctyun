@@ -233,11 +233,11 @@ func (c *CtyunElbListener) Schema(ctx context.Context, request resource.SchemaRe
 				},
 				Default: stringdefault.StaticString(business.ElbRuleStatusACTIVE),
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
@@ -1056,8 +1056,8 @@ type CtyunElbListenerConfig struct {
 	AzName              types.String `tfsdk:"az_name"`               //可用区名称
 	ProjectID           types.String `tfsdk:"project_id"`            //项目ID
 	Status              types.String `tfsdk:"status"`                //监听器状态: DOWN / ACTIVE
-	CreatedTime         types.String `tfsdk:"created_time"`          //创建时间，为UTC格式
-	UpdatedTime         types.String `tfsdk:"updated_time"`          //更新时间，为UTC格式
+	CreatedTime         types.String `tfsdk:"create_time"`           //创建时间，为UTC格式
+	UpdatedTime         types.String `tfsdk:"update_time"`           //更新时间，为UTC格式
 	EnableNat64         types.Bool   `tfsdk:"enable_nat_64"`         //是否开启 nat64
 	ListenerQps         types.Int32  `tfsdk:"listener_qps"`          //qps 大小
 	EstablishTimeout    types.Int32  `tfsdk:"establish_timeout"`     //建立连接超时时间，单位秒，取值范围： 1 - 1800

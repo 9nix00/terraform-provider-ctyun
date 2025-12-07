@@ -2,6 +2,7 @@ package ecs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
@@ -140,7 +141,12 @@ func (c *ctyunKeypair) Read(ctx context.Context, request resource.ReadRequest, r
 
 	err := c.getAndMergeKeypair(ctx, &state)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+		if errors.Is(err, common.ResourceNotExistError) {
+			response.State.RemoveResource(ctx)
+			err = nil
+		} else {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, state)...)

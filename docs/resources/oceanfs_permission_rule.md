@@ -31,7 +31,7 @@ resource "ctyun_oceanfs_permission_rule" "example" {
   permission_group_id      = ctyun_oceanfs_permission_group.example.id
   auth_addr                = "192.168.1.0/24"
   rw_permission            = "ro"
-  permission_rule_priority = 1
+  priority = 1
 }
 ```
 
@@ -46,7 +46,7 @@ resource "ctyun_oceanfs_permission_rule" "example" {
 
 ### Optional
 
-- `permission_rule_priority` (Number) 规则优先级。可选范围为1-400，默认值为1，即最高优先级。
+- `priority` (Number) 规则优先级。可选范围为1-400，默认值为1，即最高优先级。
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 
 ### Read-Only

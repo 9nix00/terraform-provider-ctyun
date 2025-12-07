@@ -42,7 +42,7 @@ func TestAccCtyunSfsPermissionGroup(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttrSet(resourceName, "sfs_count"),
 					resource.TestCheckResourceAttrSet(resourceName, "permission_rule_count"),
-					resource.TestCheckResourceAttrSet(resourceName, "permission_group_is_default"),
+					resource.TestCheckResourceAttrSet(resourceName, "is_default"),
 				),
 			},
 			// 2. 资源更新测试（名称和描述）
@@ -55,7 +55,7 @@ func TestAccCtyunSfsPermissionGroup(t *testing.T) {
 					// 验证其他属性保持不变
 					resource.TestCheckResourceAttrSet(resourceName, "sfs_count"),
 					resource.TestCheckResourceAttrSet(resourceName, "permission_rule_count"),
-					resource.TestCheckResourceAttrSet(resourceName, "permission_group_is_default"),
+					resource.TestCheckResourceAttrSet(resourceName, "is_default"),
 				),
 			},
 			// 3. 资源导入测试
@@ -117,7 +117,7 @@ func TestAccCtyunSfsPermissionGroupNoneDesc(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", name),
 					resource.TestCheckResourceAttrSet(resourceName, "sfs_count"),
 					resource.TestCheckResourceAttrSet(resourceName, "permission_rule_count"),
-					resource.TestCheckResourceAttrSet(resourceName, "permission_group_is_default"),
+					resource.TestCheckResourceAttrSet(resourceName, "is_default"),
 				),
 			},
 			// 2. 资源更新测试（名称和描述）
@@ -129,7 +129,7 @@ func TestAccCtyunSfsPermissionGroupNoneDesc(t *testing.T) {
 					// 验证其他属性保持不变
 					resource.TestCheckResourceAttrSet(resourceName, "sfs_count"),
 					resource.TestCheckResourceAttrSet(resourceName, "permission_rule_count"),
-					resource.TestCheckResourceAttrSet(resourceName, "permission_group_is_default"),
+					resource.TestCheckResourceAttrSet(resourceName, "is_default"),
 				),
 			},
 			// 3. 资源导入测试

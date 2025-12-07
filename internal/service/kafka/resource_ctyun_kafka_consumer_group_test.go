@@ -27,7 +27,7 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 	resetConfig := fmt.Sprintf(`reset_config = {
       topic_name = "%s"
       type       = 1
-      time       = 1571299747516
+      timestamp       = 1571299747516
     }`, topicName)
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {

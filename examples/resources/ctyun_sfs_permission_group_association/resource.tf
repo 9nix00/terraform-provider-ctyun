@@ -55,7 +55,7 @@ resource "ctyun_sfs" "sfs_test" {
 
 
 resource "ctyun_sfs_permission_group_association" "sfs_permission_group_association_test" {
-  permission_group_fuid = ctyun_sfs_permission_group.sfs_permission_group_test.id
-  sfs_uid               = ctyun_sfs.sfs_test.id
+  permission_group_id = ctyun_sfs_permission_group.sfs_permission_group_test.id
+  sfs_id               = ctyun_sfs.sfs_test.id
   vpc_id                = ctyun_vpc.vpc_test1.id
 }

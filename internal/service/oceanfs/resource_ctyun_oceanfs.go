@@ -105,7 +105,7 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 					validator2.Project(),
 				},
 			},
-			"sfs_protocol": schema.StringAttribute{
+			"protocol": schema.StringAttribute{
 				Required:    true,
 				Description: "协议类型，nfs/cifs。nfs 适用于 Linux；cifs 适用于 Windows",
 				Validators: []validator.String{
@@ -125,7 +125,7 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"sfs_size": schema.Int32Attribute{
+			"size": schema.Int32Attribute{
 				Required:    true,
 				Description: "文件系统大小（GB）,取值范围默认为[100,1048576]，实际取值受限于用户剩余容量配额大小。为避免资源浪费，单用户单资源池默认分配500TB容量配额，可提交工单提升配额。",
 				Validators: []validator.Int32{
@@ -614,10 +614,10 @@ func (c *CtyunOceanfs) getOceanfsDetail(ctx context.Context, config *CtyunOceanf
 type CtyunOceanfsConfig struct {
 	RegionID  types.String `tfsdk:"region_id"`
 	ProjectID types.String `tfsdk:"project_id"`
-	//SfsType     types.String `tfsdk:"sfs_type"`
-	SfsProtocol types.String `tfsdk:"sfs_protocol"`
+	//SfsType     types.String `tfsdk:"type"`
+	SfsProtocol types.String `tfsdk:"protocol"`
 	Name        types.String `tfsdk:"name"`
-	SfsSize     types.Int32  `tfsdk:"sfs_size"`
+	SfsSize     types.Int32  `tfsdk:"size"`
 	CycleType   types.String `tfsdk:"cycle_type"`
 	CycleCount  types.Int64  `tfsdk:"cycle_count"`
 	AzName      types.String `tfsdk:"az_name"`

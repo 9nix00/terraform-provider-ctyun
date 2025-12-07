@@ -23,8 +23,8 @@ func TestAccCtyunKafkaAcl(t *testing.T) {
 	initName := "init-kafka-acl-" + rnd
 	instanceId := dependence.instanceID
 
-	initUseNewTopic := "2"
-	updateUseNewTopic := "1"
+	initUseNewTopic := false
+	updateUseNewTopic := true
 	userName := dependence.userName
 
 	resource.Test(t, resource.TestCase{
@@ -42,7 +42,7 @@ func TestAccCtyunKafkaAcl(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, initUseNewTopic, userName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttr(resourceName, "use_new_topic", initUseNewTopic),
+					resource.TestCheckResourceAttr(resourceName, "use_new_topic", fmt.Sprint(initUseNewTopic)),
 				),
 			},
 			// 更新
@@ -50,7 +50,7 @@ func TestAccCtyunKafkaAcl(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, instanceId, updateUseNewTopic, userName),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", initName),
-					resource.TestCheckResourceAttr(resourceName, "use_new_topic", updateUseNewTopic),
+					resource.TestCheckResourceAttr(resourceName, "use_new_topic", fmt.Sprint(updateUseNewTopic)),
 				),
 			},
 			// 查询

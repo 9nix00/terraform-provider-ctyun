@@ -33,10 +33,10 @@ resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
 
 
 resource "ctyun_sfs_permission_rule" "sfs_permission_rule_test" {
-  permission_group_fuid    =  ctyun_sfs_permission_group.sfs_permission_group_test.id
+  permission_group_id    =  ctyun_sfs_permission_group.sfs_permission_group_test.id
   auth_addr                = "192.168.1.0/24"
   rw_permission            = "ro"
-  permission_rule_priority = 200
+  priority = 200
 }
 ```
 
@@ -46,8 +46,8 @@ resource "ctyun_sfs_permission_rule" "sfs_permission_rule_test" {
 ### Required
 
 - `auth_addr` (String) 授权地址。支持IPv4和IPv6两种网络类型，可填写单个IP或者单个网段。同一权限组内，授权地址不能重复格式。ipv4格式为： 192.168.1.0/24，ipv6格式为：0000:0000:0000:0000:0000:0000:0000:0000/0。支持更新
-- `permission_group_fuid` (String) 权限组FUID标识
-- `permission_rule_priority` (Number) 规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复，支持更新
+- `permission_group_id` (String) 权限组FUID标识
+- `priority` (Number) 规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复，支持更新
 - `rw_permission` (String) 读写权限，可选值: 'rw' (读写), 'ro' (只读)，支持更新
 
 ### Optional

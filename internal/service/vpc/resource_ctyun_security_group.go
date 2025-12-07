@@ -8,6 +8,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -78,6 +79,13 @@ func (c *ctyunSecurityGroup) Schema(_ context.Context, _ resource.SchemaRequest,
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
 				Validators: []validator.String{
 					validator2.Project(),
+				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -257,6 +265,7 @@ func (c *ctyunSecurityGroup) getAndMergeSecurityGroup(ctx context.Context, cfg C
 	cfg.Id = types.StringValue(resp.Id)
 	cfg.VpcId = types.StringValue(resp.VpcId)
 	cfg.Name = types.StringValue(resp.SecurityGroupName)
+	cfg.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout3, resp.CreationTime))
 	cfg.Description = types.StringValue(resp.Description)
 	return &cfg, nil
 }
@@ -270,6 +279,7 @@ type CtyunSecurityGroupConfig struct {
 	Id          types.String `tfsdk:"id"`
 	VpcId       types.String `tfsdk:"vpc_id"`
 	Name        types.String `tfsdk:"name"`
+	CreateTime  types.String `tfsdk:"create_time"`
 	Description types.String `tfsdk:"description"`
 	ProjectId   types.String `tfsdk:"project_id"`
 	RegionId    types.String `tfsdk:"region_id"`

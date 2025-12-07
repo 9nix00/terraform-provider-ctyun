@@ -47,6 +47,8 @@ type CtyunEipConfig struct {
 	Address           types.String `tfsdk:"address"`
 	Status            types.String `tfsdk:"status"`
 	ExpireTime        types.String `tfsdk:"expire_time"`
+	CreateTime        types.String `tfsdk:"create_time"`
+	UpdateTime        types.String `tfsdk:"update_time"`
 	MasterOrderId     types.String `tfsdk:"master_order_id"`
 	ProjectId         types.String `tfsdk:"project_id"`
 	RegionId          types.String `tfsdk:"region_id"`
@@ -141,7 +143,18 @@ func (c *ctyunEip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "到期时间",
+				Description: "到期时间，为UTC格式",
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "更新时间，为UTC格式",
 			},
 			"master_order_id": schema.StringAttribute{
 				Computed:    true,
@@ -404,7 +417,9 @@ func (c *ctyunEip) getAndMergeEip(ctx context.Context, cfg CtyunEipConfig) (*Cty
 	cfg.BandwidthType = types.StringValue(bandwidthType)
 	cfg.Address = types.StringValue(resp.EipAddress)
 	cfg.Status = types.StringValue(statusResp.(string))
-	cfg.ExpireTime = types.StringValue(utils.FromRFC3339ToLocal(resp.ExpiredAt))
+	cfg.ExpireTime = types.StringValue(resp.ExpiredAt)
+	cfg.CreateTime = types.StringValue(resp.CreatedAt)
+	cfg.UpdateTime = types.StringValue(resp.UpdatedAt)
 	return &cfg, nil
 }
 

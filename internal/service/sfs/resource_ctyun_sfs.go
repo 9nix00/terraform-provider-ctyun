@@ -10,6 +10,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -29,6 +30,7 @@ import (
 type ctyunSfs struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService
+	orderLooper   *business.OrderLooper
 }
 
 func (c *ctyunSfs) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -42,6 +44,7 @@ func (c *ctyunSfs) Configure(_ context.Context, request resource.ConfigureReques
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.regionService = business.NewRegionService(c.meta)
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 
 }
 
@@ -93,7 +96,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 					validator2.Project(),
 				},
 			},
-			"sfs_type": schema.StringAttribute{
+			"type": schema.StringAttribute{
 				Required:    true,
 				Description: "存储类型，capacity(标准型)或performance（性能型）",
 				Validators: []validator.String{
@@ -103,7 +106,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"sfs_protocol": schema.StringAttribute{
+			"protocol": schema.StringAttribute{
 				Required:    true,
 				Description: "协议类型，nfs/cifs",
 				Validators: []validator.String{
@@ -120,7 +123,7 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"sfs_size": schema.Int32Attribute{
+			"size": schema.Int32Attribute{
 				Required:    true,
 				Description: "大小，单位GB，取值范围：[500GB, 32768GB]。支持更新。弹性文件只支持扩容，不支持缩容",
 				Validators: []validator.Int32{
@@ -216,6 +219,21 @@ func (c *ctyunSfs) Schema(ctx context.Context, request resource.SchemaRequest, r
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Description: "更新时间",
+				Computed:    true,
+			},
+			"expire_time": schema.StringAttribute{
+				Description: "过期时间",
+				Computed:    true,
 			},
 		},
 	}
@@ -342,7 +360,8 @@ func (c *ctyunSfs) Delete(ctx context.Context, request resource.DeleteRequest, r
 		err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 		return
 	}
-	time.Sleep(30 * time.Second)
+	masterOrderID := resp.ReturnObj.MasterOrderID
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -467,6 +486,9 @@ func (c *ctyunSfs) getAndMergeSfs(ctx context.Context, config *CtyunSfsConfig) e
 	config.SfsSize = types.Int32Value(returnObj.SfsSize)
 	config.SfsProtocol = types.StringValue(returnObj.SfsProtocol)
 	config.SfsType = types.StringValue(returnObj.SfsType)
+	config.CreateTime = types.StringValue(utils.FromUnixToUTC(returnObj.CreateTime))
+	config.UpdateTime = types.StringValue(utils.FromUnixToUTC(returnObj.UpdateTime))
+	config.ExpireTime = types.StringValue(utils.FromUnixToUTC(returnObj.ExpireTime))
 	//config.AzName = types.StringValue(returnObj.AzName)
 
 	return nil
@@ -678,10 +700,10 @@ type CtyunSfsConfig struct {
 	IsEncrypt    types.Bool   `tfsdk:"is_encrypt"`
 	KmsUUID      types.String `tfsdk:"kms_uuid"`
 	ProjectID    types.String `tfsdk:"project_id"`
-	SfsType      types.String `tfsdk:"sfs_type"`
-	SfsProtocol  types.String `tfsdk:"sfs_protocol"`
+	SfsType      types.String `tfsdk:"type"`
+	SfsProtocol  types.String `tfsdk:"protocol"`
 	Name         types.String `tfsdk:"name"`
-	SfsSize      types.Int32  `tfsdk:"sfs_size"`
+	SfsSize      types.Int32  `tfsdk:"size"`
 	CycleType    types.String `tfsdk:"cycle_type"`
 	CycleCount   types.Int64  `tfsdk:"cycle_count"`
 	AzName       types.String `tfsdk:"az_name"`
@@ -692,4 +714,7 @@ type CtyunSfsConfig struct {
 	UsedSize     types.Int32  `tfsdk:"used_size"`
 	SharePath    types.String `tfsdk:"share_path"`
 	SharePathWin types.String `tfsdk:"share_path_windows"`
+	CreateTime   types.String `tfsdk:"create_time"`
+	UpdateTime   types.String `tfsdk:"update_time"`
+	ExpireTime   types.String `tfsdk:"expire_time"`
 }

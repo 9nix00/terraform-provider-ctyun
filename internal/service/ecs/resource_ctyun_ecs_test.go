@@ -199,7 +199,7 @@ func TestAccCtyunEcs(t *testing.T) {
 				) + utils.LoadTestCase(associationFile, and, resourceName+".id", dependence.affinityGroupID) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "instances.0.affinity_group.affinity_group_id", dependence.affinityGroupID),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.affinity_group.id", dependence.affinityGroupID),
 				),
 			},
 			{

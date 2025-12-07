@@ -90,10 +90,6 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 					),
 				},
 			},
-			//"network_type": schema.StringAttribute{
-			//	Required:    true,
-			//	Description: "权限组网络类型：private_network（专有网络）",
-			//},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -104,7 +100,7 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "权限组Fuid",
+				Description: "权限组ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -117,7 +113,7 @@ func (c *ctyunSfsPermissionGroup) Schema(ctx context.Context, request resource.S
 				Computed:    true,
 				Description: "权限组规则个数",
 			},
-			"permission_group_is_default": schema.BoolAttribute{
+			"is_default": schema.BoolAttribute{
 				Computed:    true,
 				Description: "是否为默认权限组",
 			},
@@ -392,12 +388,11 @@ func (c *ctyunSfsPermissionGroup) updateSfsPermissionGroup(ctx context.Context, 
 }
 
 type CtyunSfsPermissionGroupConfig struct {
-	RegionID types.String `tfsdk:"region_id"`
-	Name     types.String `tfsdk:"name"`
-	//NetworkType types.String `tfsdk:"network_type"`
+	RegionID                 types.String `tfsdk:"region_id"`
+	Name                     types.String `tfsdk:"name"`
 	Description              types.String `tfsdk:"description"`
 	ID                       types.String `tfsdk:"id"`
 	SfsCount                 types.Int32  `tfsdk:"sfs_count"`
 	PermissionRuleCount      types.Int32  `tfsdk:"permission_rule_count"`
-	PermissionGroupIsDefault types.Bool   `tfsdk:"permission_group_is_default"`
+	PermissionGroupIsDefault types.Bool   `tfsdk:"is_default"`
 }
