@@ -72,12 +72,13 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 						return "", fmt.Errorf("not found: %s", resourceName)
 					}
 
+					projectId := rs.Primary.Attributes["project_id"]
 					regionId := rs.Primary.Attributes["region_id"]
 					if regionId == "" {
 						return "", fmt.Errorf("region_id is not set")
 					}
 
-					return fmt.Sprintf("%s,%s", rs.Primary.ID, regionId), nil
+					return fmt.Sprintf("%s,%s,%s", rs.Primary.ID, projectId, regionId), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
@@ -86,7 +87,6 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 					"repository_id",
 					"snapshot_id",
 					"image_type",
-					// 如果标签信息也无法通过API获取，也可以添加
 					"labels",
 				},
 			},
@@ -193,7 +193,6 @@ func TestAccCtyunImageFromEcsSystemDisk_case1(t *testing.T) {
 					"repository_id",
 					"snapshot_id",
 					"image_type",
-					// 如果标签信息也无法通过API获取，也可以添加
 					"labels",
 				},
 			},

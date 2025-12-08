@@ -23,6 +23,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsSnapshot{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsSnapshot{}
+	_ resource.ResourceWithImportState = &ctyunEbsSnapshot{}
+)
+
 func NewCtyunEbsSnapshot() resource.Resource {
 	return &ctyunEbsSnapshot{}
 }

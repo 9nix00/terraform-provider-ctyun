@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsBackupPolicyBindDisks{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsBackupPolicyBindDisks{}
+	_ resource.ResourceWithImportState = &ctyunEcsBackupPolicyBindDisks{}
+)
+
 /*
 云硬盘备份策略绑定云硬盘
 */

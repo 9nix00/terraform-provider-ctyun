@@ -23,6 +23,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &CtyunPrivateZoneRecord{}
+	_ resource.ResourceWithConfigure   = &CtyunPrivateZoneRecord{}
+	_ resource.ResourceWithImportState = &CtyunPrivateZoneRecord{}
+)
+
 type CtyunPrivateZoneRecord struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService

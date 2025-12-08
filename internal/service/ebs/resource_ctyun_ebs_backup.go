@@ -25,6 +25,11 @@ import (
 /*
 云硬盘备份
 */
+var (
+	_ resource.Resource                = &ctyunEbsBackup{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsBackup{}
+	_ resource.ResourceWithImportState = &ctyunEbsBackup{}
+)
 
 func NewCtyunEbsBackup() resource.Resource {
 	return &ctyunEbsBackup{}

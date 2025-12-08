@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsBackupPolicyBindRepo{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsBackupPolicyBindRepo{}
+	_ resource.ResourceWithImportState = &ctyunEbsBackupPolicyBindRepo{}
+)
+
 /*
 云硬盘备份策略绑定存储库
 */

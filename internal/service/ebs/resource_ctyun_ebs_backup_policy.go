@@ -25,6 +25,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsBackupPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsBackupPolicy{}
+	_ resource.ResourceWithImportState = &ctyunEbsBackupPolicy{}
+)
+
 /*
 云硬盘备份策略
 */

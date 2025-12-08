@@ -24,6 +24,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsSnapshotPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsSnapshotPolicy{}
+	_ resource.ResourceWithImportState = &ctyunEbsSnapshotPolicy{}
+)
+
 func NewCtyunEbsSnapshotPolicy() resource.Resource {
 	return &ctyunEbsSnapshotPolicy{}
 }

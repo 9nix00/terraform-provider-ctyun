@@ -25,6 +25,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &CtyunPrivateZone{}
+	_ resource.ResourceWithConfigure   = &CtyunPrivateZone{}
+	_ resource.ResourceWithImportState = &CtyunPrivateZone{}
+)
+
 type CtyunPrivateZone struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService

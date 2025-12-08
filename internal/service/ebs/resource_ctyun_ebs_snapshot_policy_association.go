@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsSnapshotPolicyAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsSnapshotPolicyAssociation{}
+	_ resource.ResourceWithImportState = &ctyunEbsSnapshotPolicyAssociation{}
+)
+
 /*
 将快照策略和云硬盘绑定
 */
