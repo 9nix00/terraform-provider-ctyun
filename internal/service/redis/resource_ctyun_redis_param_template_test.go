@@ -96,6 +96,18 @@ func TestAccCtyunRedisParamTemplate(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"params", "params_return"},
 			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+
+					templateId := ds.Attributes["id"]
+					return fmt.Sprintf("%s", templateId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"params", "params_return"},
+			},
 			// 清理
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, "Updated Redis template", cacheMode, false, `[

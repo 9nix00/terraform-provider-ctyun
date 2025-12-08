@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var (
@@ -367,17 +368,34 @@ func (c *ctyunRedisMigrationTask) ImportState(ctx context.Context, request resou
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [regionID]/[taskID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 
 	var cfg CtyunRedisMigrationTaskConfig
+
 	var regionId, taskId string
-	err = terraform_extend.Split(request.ID, &regionId, &taskId)
-	if err != nil {
-		return
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		taskId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &taskId, &regionId)
+		if err != nil {
+			return
+		}
 	}
 
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if taskId == "" {
+		err = fmt.Errorf("taskID不能为空")
+		return
+	}
 	cfg.RegionId = types.StringValue(regionId)
 	cfg.ID = types.StringValue(taskId)
 	// 查询远端
