@@ -8,7 +8,6 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -265,7 +264,7 @@ func (c *ctyunSecurityGroup) getAndMergeSecurityGroup(ctx context.Context, cfg C
 	cfg.Id = types.StringValue(resp.Id)
 	cfg.VpcId = types.StringValue(resp.VpcId)
 	cfg.Name = types.StringValue(resp.SecurityGroupName)
-	cfg.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout3, resp.CreationTime))
+	cfg.CreateTime = types.StringValue(resp.CreationTime)
 	cfg.Description = types.StringValue(resp.Description)
 	return &cfg, nil
 }

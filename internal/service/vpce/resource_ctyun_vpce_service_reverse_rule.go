@@ -49,6 +49,8 @@ type CtyunVpceServiceReverseRuleConfig struct {
 	TargetIP          types.String `tfsdk:"target_ip"`
 	TargetPort        types.Int32  `tfsdk:"target_port"`
 	Protocol          types.String `tfsdk:"protocol"`
+	CreateTime        types.String `tfsdk:"create_time"`
+	UpdateTime        types.String `tfsdk:"update_time"`
 }
 
 func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -141,6 +143,17 @@ func (c *ctyunVpceServiceReverseRule) Schema(_ context.Context, _ resource.Schem
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Description: "更新时间",
+				Computed:    true,
 			},
 		},
 	}
@@ -305,6 +318,8 @@ func (c *ctyunVpceServiceReverseRule) getAndMerge(ctx context.Context, plan *Cty
 			plan.TransitPort = types.Int32Value(rule.TransitPort)
 			plan.TargetPort = types.Int32Value(rule.TargetPort)
 			plan.Protocol = utils.SecStringValue(rule.Protocol)
+			plan.CreateTime = utils.SecStringValue(rule.CreatedAt)
+			plan.UpdateTime = utils.SecStringValue(rule.UpdatedAt)
 			exist = true
 		}
 	}

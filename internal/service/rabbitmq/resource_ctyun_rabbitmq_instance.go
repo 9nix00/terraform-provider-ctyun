@@ -250,9 +250,8 @@ func (c *ctyunRabbitmqInstance) Schema(_ context.Context, _ resource.SchemaReque
 				},
 			},
 			"expire_time": schema.StringAttribute{
-				Computed:      true,
-				Description:   "过期时间，UTC格式，按需时为空",
-				PlanModifiers: []planmodifier.String{},
+				Computed:    true,
+				Description: "过期时间，UTC格式，按需时为空",
 			},
 		},
 	}

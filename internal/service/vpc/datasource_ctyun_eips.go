@@ -46,9 +46,9 @@ type CtyunEipsModel struct {
 	BandwidthType    types.String `tfsdk:"bandwidth_type"`
 	Status           types.String `tfsdk:"status"`
 	Tags             types.String `tfsdk:"tags"`
-	CreatedAt        types.String `tfsdk:"created_at"`
-	UpdatedAt        types.String `tfsdk:"updated_at"`
-	ExpiredAt        types.String `tfsdk:"expired_at"`
+	CreatedAt        types.String `tfsdk:"create_time"`
+	UpdatedAt        types.String `tfsdk:"update_time"`
+	ExpiredAt        types.String `tfsdk:"expire_time"`
 }
 
 type CtyunEipsConfig struct {
@@ -178,15 +178,15 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 							Computed:    true,
 							Description: "EIP的标签集合",
 						},
-						"created_at": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
-						"updated_at": schema.StringAttribute{
+						"update_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "更新时间",
 						},
-						"expired_at": schema.StringAttribute{
+						"expire_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "到期时间",
 						},

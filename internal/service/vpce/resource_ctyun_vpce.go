@@ -56,6 +56,8 @@ type CtyunVpceConfig struct {
 	WhitelistFlag     types.Bool   `tfsdk:"whitelist_flag"`
 	WhitelistCidr     types.Set    `tfsdk:"whitelist_cidr"`
 	Status            types.Int32  `tfsdk:"status"`
+	CreateTime        types.String `tfsdk:"create_time"`
+	UpdateTime        types.String `tfsdk:"update_time"`
 }
 
 func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -158,6 +160,17 @@ func (c *ctyunVpce) Schema(_ context.Context, _ resource.SchemaRequest, response
 					setvalidator.SizeAtMost(20),
 					setvalidator.ValueStringsAre(validator2.Cidr()),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Description: "更新时间",
+				Computed:    true,
 			},
 		},
 	}
@@ -384,6 +397,9 @@ func (c *ctyunVpce) getAndMerge(ctx context.Context, plan *CtyunVpceConfig) (err
 	plan.Name = utils.SecStringValue(endpoint.Name)
 	plan.EndpointServiceID = utils.SecStringValue(endpoint.EndpointServiceID)
 	plan.Status = types.Int32Value(endpoint.Status)
+	plan.CreateTime = types.StringValue(utils.SecString(endpoint.CreatedTime))
+	plan.UpdateTime = types.StringValue(utils.SecString(endpoint.UpdatedTime))
+
 	Whitelist := utils.SecString(endpoint.Whitelist)
 	if len(Whitelist) > 0 {
 		t := strings.Split(Whitelist, ",")

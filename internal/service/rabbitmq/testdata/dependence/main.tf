@@ -121,3 +121,7 @@ locals {
     0, 10  # 截取前16个字符
   )
 }
+
+data "ctyun_rabbitmq_instances" "test" {
+
+}

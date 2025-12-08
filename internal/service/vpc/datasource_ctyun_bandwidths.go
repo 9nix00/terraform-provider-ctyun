@@ -40,8 +40,8 @@ type CtyunBandwidthsModel struct {
 	Bandwidth types.Int32          `tfsdk:"bandwidth"`
 	Status    types.String         `tfsdk:"status"`
 	Eips      []CtyunBandwidthsEip `tfsdk:"eips"`
-	CreatedAt types.String         `tfsdk:"created_at"`
-	ExpiredAt types.String         `tfsdk:"expired_at"`
+	CreatedAt types.String         `tfsdk:"create_time"`
+	ExpiredAt types.String         `tfsdk:"expire_time"`
 }
 
 type CtyunBandwidthsConfig struct {
@@ -117,11 +117,11 @@ func (c *ctyunBandwidths) Schema(_ context.Context, _ datasource.SchemaRequest, 
 							Computed:    true,
 							Description: "弹性ip状态，取值范围：active：有效，freezing：冻结中，expired：已过期",
 						},
-						"created_at": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
-						"expired_at": schema.StringAttribute{
+						"expire_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "到期时间",
 						},

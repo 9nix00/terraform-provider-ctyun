@@ -65,6 +65,7 @@ type CtyunZosBucketConfig struct {
 	RetentionMode  types.String `tfsdk:"retention_mode"`
 	RetentionDay   types.Int64  `tfsdk:"retention_day"`
 	RetentionYear  types.Int64  `tfsdk:"retention_year"`
+	CreateTime     types.String `tfsdk:"create_time"`
 }
 
 func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -250,6 +251,13 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 					stringvalidator.OneOf(business.ZosAzPolicySingle, business.ZosAzPolicyMulti),
 				},
 				Default: stringdefault.StaticString(business.ZosAzPolicySingle),
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -753,6 +761,7 @@ func (c *ctyunZosBucket) getAndMerge(ctx context.Context, plan *CtyunZosBucketCo
 	plan.AzPolicy = types.StringValue(b.AZPolicy)
 	plan.StorageType = types.StringValue(b.StorageType)
 	plan.CmkUUID = utils.SecStringValue(b.CmkUUID)
+	plan.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout4, b.Ctime))
 	if b.CmkUUID != nil {
 		plan.IsEncrypted = types.BoolValue(true)
 	} else {

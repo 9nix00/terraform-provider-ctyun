@@ -37,8 +37,8 @@ type CtyunDhcpOptionSetsModel struct {
 	DomainName  types.String `tfsdk:"domain_name"`
 	DnsList     []string     `tfsdk:"dns_list"`
 	VpcList     []string     `tfsdk:"vpc_list"`
-	CreatedAt   types.String `tfsdk:"created_at"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
+	CreatedAt   types.String `tfsdk:"create_time"`
+	UpdatedAt   types.String `tfsdk:"update_time"`
 }
 
 type CtyunDhcpOptionSetsConfig struct {
@@ -119,11 +119,11 @@ func (c *ctyunDhcpOptionSets) Schema(_ context.Context, _ datasource.SchemaReque
 							Description: "关联的VPC列表",
 							ElementType: types.StringType,
 						},
-						"created_at": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "创建时间",
 						},
-						"updated_at": schema.StringAttribute{
+						"update_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "更新时间",
 						},

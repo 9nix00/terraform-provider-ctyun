@@ -44,6 +44,8 @@ type CtyunVpceServiceTransitIPConfig struct {
 	RegionID          types.String `tfsdk:"region_id"`
 	SubnetID          types.String `tfsdk:"subnet_id"`
 	TransitIP         types.String `tfsdk:"transit_ip"`
+	CreateTime        types.String `tfsdk:"create_time"`
+	UpdateTime        types.String `tfsdk:"update_time"`
 }
 
 func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -97,6 +99,17 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Description: "更新时间",
+				Computed:    true,
 			},
 		},
 	}
@@ -260,6 +273,8 @@ func (c *ctyunVpceServiceTransitIP) getAndMerge(ctx context.Context, plan *Ctyun
 		if utils.SecStringValue(ip.TransitIP) == plan.ID {
 			plan.SubnetID = utils.SecStringValue(ip.SubnetID)
 			plan.TransitIP = utils.SecStringValue(ip.TransitIP)
+			plan.CreateTime = utils.SecStringValue(ip.CreatedAt)
+			plan.UpdateTime = utils.SecStringValue(ip.UpdatedAt)
 			exist = true
 		}
 	}

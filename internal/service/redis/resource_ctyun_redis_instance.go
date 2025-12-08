@@ -84,6 +84,8 @@ type CtyunRedisInstanceConfig struct {
 	TemplateID          types.String                    `tfsdk:"template_id"`
 	ProtectedConn       types.String                    `tfsdk:"protected_conn"`
 	TlsVersion          types.String                    `tfsdk:"tls_version"`
+	CreateTime          types.String                    `tfsdk:"create_time"`
+	ExpireTime          types.String                    `tfsdk:"expire_time"`
 }
 
 type CtyunRedisInstanceBackupPolicy struct {
@@ -490,6 +492,17 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(45, 45),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"expire_time": schema.StringAttribute{
+				Description: "到期时间",
+				Computed:    true,
 			},
 		},
 	}
@@ -908,6 +921,8 @@ func (c *ctyunRedisInstance) getAndMerge(ctx context.Context, plan *CtyunRedisIn
 	copiesCount, _ := strconv.Atoi(instance.CopiesCount)
 	plan.CopiesCount = types.Int32Value(int32(copiesCount))
 	plan.InstanceName = types.StringValue(instance.InstanceName)
+	plan.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(instance.CreateTime))
+	plan.ExpireTime = types.StringValue(utils.FromBJTimeToUTCZ(instance.ExpTime))
 	plan.Name = plan.InstanceName
 	for _, p := range instance.PaasInstAttrs {
 		switch p.AttrKey {

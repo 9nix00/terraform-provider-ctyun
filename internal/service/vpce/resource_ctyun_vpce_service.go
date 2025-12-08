@@ -55,6 +55,8 @@ type CtyunVpceServiceConfig struct {
 	AutoConnection types.Bool   `tfsdk:"auto_connection"`
 	Rules          types.Set    `tfsdk:"rules"`
 	WhitelistEmail types.Set    `tfsdk:"whitelist_email"`
+	CreateTime     types.String `tfsdk:"create_time"`
+	UpdateTime     types.String `tfsdk:"update_time"`
 	whitelist      []string
 	rules          []CtyunVpceServiceRule
 }
@@ -168,6 +170,17 @@ func (c *ctyunVpceService) Schema(_ context.Context, _ resource.SchemaRequest, r
 					setvalidator.ValueStringsAre(validator2.Email()),
 					setvalidator.SizeAtMost(10),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Description: "更新时间",
+				Computed:    true,
 			},
 			"rules": schema.SetNestedAttribute{
 				Optional: true,
@@ -471,7 +484,8 @@ func (c *ctyunVpceService) getAndMerge(ctx context.Context, plan *CtyunVpceServi
 	plan.Name = utils.SecStringValue(endpointService.Name)
 	plan.Type = utils.SecStringValue(endpointService.RawType)
 	plan.AutoConnection = utils.SecBoolValue(endpointService.AutoConnection)
-
+	plan.CreateTime = utils.SecStringValue(endpointService.CreatedAt)
+	plan.UpdateTime = utils.SecStringValue(endpointService.UpdatedAt)
 	if len(endpointService.Backends) != 0 {
 		backend := endpointService.Backends[0]
 		plan.InstanceType = utils.SecStringValue(backend.InstanceType)
