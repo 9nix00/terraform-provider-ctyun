@@ -74,7 +74,7 @@ func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, true),
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -245,20 +245,29 @@ func (c *CtyunSdwanAcl) ImportState(ctx context.Context, req resource.ImportStat
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID]"
+			resp.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunSdwanAclConfig
-	cfg.ID = types.StringValue(req.ID)
+	var config CtyunSdwanAclConfig
+
+	ID := req.ID
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+
+	config.ID = types.StringValue(ID)
 
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
 
 	// 导入时不设置 rules 字段，保持其为未知状态
-	cfg.Rules = types.ListNull(types.ObjectType{
+	config.Rules = types.ListNull(types.ObjectType{
 		AttrTypes: map[string]attr.Type{
 			"direction":      types.StringType,
 			"protocol":       types.StringType,
@@ -271,7 +280,7 @@ func (c *CtyunSdwanAcl) ImportState(ctx context.Context, req resource.ImportStat
 			"src_port_range": types.StringType,
 		},
 	})
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
 }
 
 func (c *CtyunSdwanAcl) create(ctx context.Context, plan *CtyunSdwanAclConfig) (err error) {
@@ -297,11 +306,15 @@ func (c *CtyunSdwanAcl) create(ctx context.Context, plan *CtyunSdwanAclConfig) (
 	}
 
 	createReq := &sdwan.SdwanCreateSdwanAclRequest{
-		AclName:   plan.Name.ValueString(),
-		ProjectID: plan.ProjectID.ValueString(),
-		Rules:     rules,
+		AclName: plan.Name.ValueString(),
+		Rules:   rules,
 	}
+	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() {
 
+		createReq.ProjectID = "0"
+	} else {
+		createReq.ProjectID = plan.ProjectID.ValueString()
+	}
 	resp, err := c.meta.Apis.SdkSdwanApis.SdwanCreateSdwanAclApi.Do(ctx, c.meta.SdkCredential, createReq)
 	if err != nil {
 		return

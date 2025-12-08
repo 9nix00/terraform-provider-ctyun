@@ -61,7 +61,7 @@ func (c *CtyunSdwan) Schema(ctx context.Context, req resource.SchemaRequest, res
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, true),
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				Validators: []validator.String{
 					validator2.Project(),
 				},
@@ -177,24 +177,30 @@ func (c *CtyunSdwan) ImportState(ctx context.Context, req resource.ImportStateRe
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID]"
+			resp.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunSdwanConfig
-	cfg.ID = types.StringValue(req.ID)
-
+	var config CtyunSdwanConfig
+	config.ID = types.StringValue(req.ID)
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
 }
 
 func (c *CtyunSdwan) create(ctx context.Context, plan *CtyunSdwanConfig) (err error) {
 	createReq := &sdwan.SdwanCreateSdwanRequest{
 		SdwanName: plan.Name.ValueString(),
-		ProjectID: plan.ProjectID.ValueString(),
+	}
+	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() {
+
+		createReq.ProjectID = "0"
+	} else {
+		createReq.ProjectID = plan.ProjectID.ValueString()
 	}
 
 	if !plan.Desc.IsNull() {
