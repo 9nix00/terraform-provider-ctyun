@@ -215,7 +215,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					id := ds.ID
 
-					return fmt.Sprintf("%s,%s", id), nil
+					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
