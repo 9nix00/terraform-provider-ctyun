@@ -73,7 +73,21 @@ func TestAccCtyunKafkaConsumerGroups(t *testing.T) {
 					regionId := ds.Attributes["region_id"]
 					instanceId := ds.Attributes["instance_id"]
 					groupName := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, groupName), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, groupName, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"project_id",
+				},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					instanceId := ds.Attributes["instance_id"]
+					groupName := ds.Attributes["name"]
+					return fmt.Sprintf("%s,%s", instanceId, groupName), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

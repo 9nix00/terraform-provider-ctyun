@@ -80,7 +80,20 @@ topic = "%s"}]`, topicName, topicName)
 					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
 					password := ds.Attributes["password"]
-					return fmt.Sprintf("%s,%s,%s,%s", instanceId, regionId, name, password), nil
+					return fmt.Sprintf("%s,%s,%s,%s", instanceId, name, password, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"id", "permission_info"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					instanceId := ds.Attributes["instance_id"]
+					name := ds.Attributes["name"]
+					password := ds.Attributes["password"]
+					return fmt.Sprintf("%s,%s,%s", instanceId, name, password), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id", "permission_info"},

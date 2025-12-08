@@ -68,7 +68,20 @@ func TestAccCtyunKafkaTopics(t *testing.T) {
 					regionId := ds.Attributes["region_id"]
 					instanceId := ds.Attributes["instance_id"]
 					name := ds.Attributes["name"]
-					return fmt.Sprintf("%s,%s,%s", instanceId, regionId, name), nil
+					return fmt.Sprintf("%s,%s,%s", instanceId, name, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"id"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+
+					instanceId := ds.Attributes["instance_id"]
+					name := ds.Attributes["name"]
+					return fmt.Sprintf("%s,%s", instanceId, name), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"id"},
