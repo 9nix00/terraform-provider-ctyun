@@ -22,6 +22,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &CtyunEcsDataVolume{}
+	_ resource.ResourceWithConfigure   = &CtyunEcsDataVolume{}
+	_ resource.ResourceWithImportState = &CtyunEcsDataVolume{}
+)
+
 func NewCtyunEcsDataVolume() resource.Resource {
 	return &CtyunEcsDataVolume{}
 }

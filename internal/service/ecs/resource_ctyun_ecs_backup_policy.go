@@ -23,6 +23,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsBackupPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsBackupPolicy{}
+	_ resource.ResourceWithImportState = &ctyunEcsBackupPolicy{}
+)
+
 /*
 云主机备份策略
 */

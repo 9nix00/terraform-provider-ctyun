@@ -22,6 +22,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsBackup{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsBackup{}
+	_ resource.ResourceWithImportState = &ctyunEcsBackup{}
+)
+
 /*
 云主机备份
 */

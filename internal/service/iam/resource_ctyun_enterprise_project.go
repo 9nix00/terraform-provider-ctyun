@@ -16,6 +16,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunEnterpriseProject{}
+	_ resource.ResourceWithConfigure   = &ctyunEnterpriseProject{}
+	_ resource.ResourceWithImportState = &ctyunEnterpriseProject{}
+)
+
 func NewCtyunEnterpriseProject() resource.Resource {
 	return &ctyunEnterpriseProject{}
 }

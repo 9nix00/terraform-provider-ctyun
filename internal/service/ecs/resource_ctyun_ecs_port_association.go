@@ -20,6 +20,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsPortAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsPortAssociation{}
+	_ resource.ResourceWithImportState = &ctyunEcsPortAssociation{}
+)
+
 type ctyunEcsPortAssociation struct {
 	meta *common.CtyunMetadata
 }

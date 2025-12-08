@@ -21,6 +21,11 @@ import (
 	"sync"
 )
 
+var (
+	_ resource.Resource              = &ctyunEnterpriseProjectAssociationUserGroup{}
+	_ resource.ResourceWithConfigure = &ctyunEnterpriseProjectAssociationUserGroup{}
+)
+
 func NewCtyunEnterpriseProjectAssociationUserGroup() resource.Resource {
 	return &ctyunEnterpriseProjectAssociationUserGroup{}
 }

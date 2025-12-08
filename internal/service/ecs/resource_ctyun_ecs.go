@@ -41,6 +41,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcs{}
+	_ resource.ResourceWithConfigure   = &ctyunEcs{}
+	_ resource.ResourceWithImportState = &ctyunEcs{}
+)
+
 func NewCtyunEcs() resource.Resource {
 	return &ctyunEcs{}
 }

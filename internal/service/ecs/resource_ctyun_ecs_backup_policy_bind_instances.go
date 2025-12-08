@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsBackupPolicyBindInstances{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsBackupPolicyBindInstances{}
+	_ resource.ResourceWithImportState = &ctyunEcsBackupPolicyBindInstances{}
+)
+
 /*
 云主机备份策略绑定云主机
 */

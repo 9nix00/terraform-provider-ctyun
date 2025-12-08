@@ -29,6 +29,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunImageFromEcs{}
+	_ resource.ResourceWithConfigure   = &ctyunImageFromEcs{}
+	_ resource.ResourceWithImportState = &ctyunImageFromEcs{}
+)
+
 func NewCtyunImageFromEcs() resource.Resource {
 	return &ctyunImageFromEcs{}
 }

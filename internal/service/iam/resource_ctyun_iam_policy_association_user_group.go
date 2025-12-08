@@ -17,6 +17,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunPolicyAssociationUserGroup{}
+	_ resource.ResourceWithConfigure   = &ctyunPolicyAssociationUserGroup{}
+	_ resource.ResourceWithImportState = &ctyunPolicyAssociationUserGroup{}
+)
+
 func NewCtyunPolicyAssociationUserGroup() resource.Resource {
 	return &ctyunPolicyAssociationUserGroup{}
 }

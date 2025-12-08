@@ -20,6 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+var (
+	_ resource.Resource                = &ctyunPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunPolicy{}
+	_ resource.ResourceWithImportState = &ctyunPolicy{}
+)
+
 func NewCtyunPolicy() resource.Resource {
 	return &ctyunPolicy{}
 }

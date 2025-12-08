@@ -14,6 +14,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunIamUserGroup{}
+	_ resource.ResourceWithConfigure   = &ctyunIamUserGroup{}
+	_ resource.ResourceWithImportState = &ctyunIamUserGroup{}
+)
+
 func NewCtyunIamUserGroup() resource.Resource {
 	return &ctyunIamUserGroup{}
 }

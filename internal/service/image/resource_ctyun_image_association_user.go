@@ -20,6 +20,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunImageAssociationUser{}
+	_ resource.ResourceWithConfigure   = &ctyunImageAssociationUser{}
+	_ resource.ResourceWithImportState = &ctyunImageAssociationUser{}
+)
+
 func NewCtyunImageAssociationUser() resource.Resource {
 	return &ctyunImageAssociationUser{}
 }

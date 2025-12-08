@@ -18,6 +18,12 @@ import (
 	"strconv"
 )
 
+var (
+	_ resource.Resource                = &ctyunIdp{}
+	_ resource.ResourceWithConfigure   = &ctyunIdp{}
+	_ resource.ResourceWithImportState = &ctyunIdp{}
+)
+
 func NewCtyunIdp() resource.Resource {
 	return &ctyunIdp{}
 }

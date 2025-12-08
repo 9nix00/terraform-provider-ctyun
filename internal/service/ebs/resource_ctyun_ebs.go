@@ -27,6 +27,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbs{}
+	_ resource.ResourceWithConfigure   = &ctyunEbs{}
+	_ resource.ResourceWithImportState = &ctyunEbs{}
+)
+
 type ctyunEbs struct {
 	meta       *common.CtyunMetadata
 	ebsService *business.EbsService

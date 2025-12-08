@@ -19,6 +19,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunKeypair{}
+	_ resource.ResourceWithConfigure   = &ctyunKeypair{}
+	_ resource.ResourceWithImportState = &ctyunKeypair{}
+)
+
 func NewCtyunKeypair() resource.Resource {
 	return &ctyunKeypair{}
 }

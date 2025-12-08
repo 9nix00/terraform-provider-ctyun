@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsSnapshot{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsSnapshot{}
+	_ resource.ResourceWithImportState = &ctyunEcsSnapshot{}
+)
+
 func NewCtyunEcsSnapshot() resource.Resource {
 	return &ctyunEcsSnapshot{}
 }

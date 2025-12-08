@@ -26,6 +26,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunImage{}
+	_ resource.ResourceWithConfigure   = &ctyunImage{}
+	_ resource.ResourceWithImportState = &ctyunImage{}
+)
+
 func NewCtyunImage() resource.Resource {
 	return &ctyunImage{}
 }

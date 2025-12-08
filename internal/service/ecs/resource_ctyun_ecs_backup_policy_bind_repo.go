@@ -21,6 +21,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsBackupPolicyBindRepo{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsBackupPolicyBindRepo{}
+	_ resource.ResourceWithImportState = &ctyunEcsBackupPolicyBindRepo{}
+)
+
 /*
 云主机备份策略绑定存储库
 */
