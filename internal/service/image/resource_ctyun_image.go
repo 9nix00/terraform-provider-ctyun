@@ -22,7 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
-	"strin
+	"strings"
 	"time"
 )
 
@@ -327,28 +327,21 @@ func (c *ctyunImage) ImportState(ctx context.Context, request resource.ImportSta
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[projectId],[regionId]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunImageConfig
-	var imageId, projectId, regionId string
+	var imageId, regionId string
 	// 根据分隔符数量判断是否输入了regionId,projectId
-	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
 		err = terraform_extend.Split(request.ID, &imageId)
 		if err != nil {
 			return
 		}
-	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		err = terraform_extend.Split(request.ID, &imageId, &projectId)
-		if err != nil {
-			return
-		}
 	} else {
-		err = terraform_extend.Split(request.ID, &imageId, &projectId, &regionId)
+		err = terraform_extend.Split(request.ID, &imageId, &regionId)
 		if err != nil {
 			return
 		}
@@ -365,9 +358,6 @@ func (c *ctyunImage) ImportState(ctx context.Context, request resource.ImportSta
 
 	cfg.Id = types.StringValue(imageId)
 	cfg.RegionId = types.StringValue(regionId)
-	if projectId != "" {
-		cfg.ProjectId = types.StringValue(projectId)
-	}
 
 	instance, err := c.getAndMergeImage(ctx, cfg)
 	if err != nil {

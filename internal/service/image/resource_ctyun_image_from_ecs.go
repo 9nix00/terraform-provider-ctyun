@@ -365,23 +365,16 @@ func (c *ctyunImageFromEcs) ImportState(ctx context.Context, request resource.Im
 		}
 	}()
 	var cfg CtyunImageFromEcsConfig
-	var imageId, projectId, regionId string
-	// 根据分隔符数量判断是否输入了regionId,projectId
-	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+	var imageId, regionId string
+	// 根据分隔符数量判断是否输入了regionId
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
 		err = terraform_extend.Split(request.ID, &imageId)
 		if err != nil {
 			return
 		}
-	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		err = terraform_extend.Split(request.ID, &imageId, &projectId)
-		if err != nil {
-			return
-		}
 	} else {
-		err = terraform_extend.Split(request.ID, &imageId, &projectId, &regionId)
+		err = terraform_extend.Split(request.ID, &imageId, &regionId)
 		if err != nil {
 			return
 		}
@@ -398,9 +391,6 @@ func (c *ctyunImageFromEcs) ImportState(ctx context.Context, request resource.Im
 
 	cfg.Id = types.StringValue(imageId)
 	cfg.RegionId = types.StringValue(regionId)
-	if projectId != "" {
-		cfg.ProjectId = types.StringValue(projectId)
-	}
 
 	err = c.getAndMergeImage(ctx, &cfg)
 	if err != nil {

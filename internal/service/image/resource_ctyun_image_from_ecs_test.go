@@ -91,6 +91,31 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 				},
 			},
 			{
+				// 测试导入
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+					regionId := rs.Primary.Attributes["region_id"]
+					if regionId == "" {
+						return "", fmt.Errorf("region_id is not set")
+					}
+					return fmt.Sprintf("%s,%s,%s", rs.Primary.ID, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"instance_id",
+					"data_disk_id",
+					"repository_id",
+					"snapshot_id",
+					"image_type",
+					"labels",
+				},
+			},
+			{
 				// 测试销毁
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,

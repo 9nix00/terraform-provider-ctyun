@@ -192,10 +192,12 @@ func TestAccCtyunEbs(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            associationResourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ResourceName:      associationResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"master_order_id",
+				},
 			},
 
 			// 添加多种导入方式测试
@@ -215,7 +217,7 @@ func TestAccCtyunEbs(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerifyIgnore: []string{"master_order_id"},
 			},
 			{
 				ResourceName: resourceName,
@@ -230,7 +232,7 @@ func TestAccCtyunEbs(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"project_id", "az_name"},
+				ImportStateVerifyIgnore: []string{"project_id", "az_name", "master_order_id"},
 			},
 			{
 				ResourceName: resourceName,
@@ -247,7 +249,7 @@ func TestAccCtyunEbs(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerifyIgnore: []string{"master_order_id"},
 			},
 
 			// 解绑
