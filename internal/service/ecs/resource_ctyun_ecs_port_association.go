@@ -132,7 +132,7 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 	if err != nil {
 		return
 	}
-	err = c.create(ctx, plan)
+	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -147,7 +147,7 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunEcsPortAssociation) create(ctx context.Context, plan CtyunEcsPortAssociationConfig) (err error) {
+func (c *ctyunEcsPortAssociation) create(ctx context.Context, plan *CtyunEcsPortAssociationConfig) (err error) {
 	// 绑定弹性网卡到云主机
 	attachRequest := &ctecs.CtecsPortsAttachInstanceV41Request{
 		ClientToken:        uuid.NewString(),
@@ -270,7 +270,7 @@ func (c *ctyunEcsPortAssociation) ImportState(ctx context.Context, req resource.
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [regionId],[instanceId],[networkInterfaceId]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[networkInterfaceId],[regionId]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
@@ -322,5 +322,5 @@ func (c *ctyunEcsPortAssociation) checkBeforeCreate(ctx context.Context, c2 *Cty
 }
 
 func generateEcsPortAssociationId(regionId, instanceId, networkInterfaceId string) string {
-	return fmt.Sprintf("%s,%s,%s", regionId, instanceId, networkInterfaceId)
+	return fmt.Sprintf("%s,%s,%s", instanceId, networkInterfaceId, regionId)
 }
