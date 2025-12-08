@@ -103,7 +103,7 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 					if regionId == "" {
 						return "", fmt.Errorf("region_id is not set")
 					}
-					return fmt.Sprintf("%s,%s,%s", rs.Primary.ID, regionId), nil
+					return fmt.Sprintf("%s,%s", rs.Primary.ID, regionId), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

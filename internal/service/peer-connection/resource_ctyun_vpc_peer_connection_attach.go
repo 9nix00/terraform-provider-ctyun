@@ -17,6 +17,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource              = &CtyunVpcPeerConnectionAttach{}
+	_ resource.ResourceWithConfigure = &CtyunVpcPeerConnectionAttach{}
+)
+
 type CtyunVpcPeerConnectionAttach struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService

@@ -23,6 +23,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &CtyunVpcPeerConnection{}
+	_ resource.ResourceWithConfigure   = &CtyunVpcPeerConnection{}
+	_ resource.ResourceWithImportState = &CtyunVpcPeerConnection{}
+)
+
 type CtyunVpcPeerConnection struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService
@@ -50,19 +56,51 @@ func (c *CtyunVpcPeerConnection) ImportState(ctx context.Context, request resour
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[instanceId],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunVpcPeerConnectionConfig
 	var ID, regionId, projectId, instanceId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &instanceId)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &instanceId)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &instanceId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &instanceId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
 		return
 	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
 	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
-	config.ProjectID = types.StringValue(projectId)
-	config.InstanceID = types.StringValue(instanceId)
+	if projectId != "" {
+		config.ProjectID = types.StringValue(projectId)
+	}
+	if instanceId != "" {
+		config.InstanceID = types.StringValue(instanceId)
+	}
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
