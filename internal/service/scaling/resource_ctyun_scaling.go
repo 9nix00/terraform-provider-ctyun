@@ -29,6 +29,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunScaling{}
+	_ resource.ResourceWithConfigure   = &ctyunScaling{}
+	_ resource.ResourceWithImportState = &ctyunScaling{}
+)
+
 type ctyunScaling struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService
@@ -52,40 +58,71 @@ func NewCtyunScaling() resource.Resource {
 	return &ctyunScaling{}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
 func (c *ctyunScaling) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[vpcId],[projectId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-
-	var cfg CtyunScalingConfig
-	var ID, regionId, projectId, vpcId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
+	var config CtyunScalingConfig
+	var ID, vpcId, projectId, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &vpcId)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &vpcId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &vpcId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
 	}
+
 	id, err := strconv.ParseInt(ID, 10, 64)
 	if err != nil {
+		err = fmt.Errorf("ID必须是有效数字")
 		return
 	}
-	cfg.ID = types.Int64Value(id)
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.ProjectID = types.StringValue(projectId)
-	cfg.VpcID = types.StringValue(vpcId)
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if vpcId == "" {
+		err = fmt.Errorf("vpcId不能为空")
+		return
+	}
 
-	cfg.AddInstanceUUIDList = types.SetNull(types.StringType)
-	cfg.RemoveInstanceUUIDList = types.SetNull(types.StringType)
+	config.ID = types.Int64Value(id)
+	config.RegionID = types.StringValue(regionId)
+	config.VpcID = types.StringValue(vpcId)
+	if projectId != "" {
+		config.ProjectID = types.StringValue(projectId)
+	}
 
-	err = c.getAndMergeScaling(ctx, &cfg)
+	config.AddInstanceUUIDList = types.SetNull(types.StringType)
+	config.RemoveInstanceUUIDList = types.SetNull(types.StringType)
+
+	err = c.getAndMergeScaling(ctx, &config)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
