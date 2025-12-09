@@ -287,10 +287,6 @@ func (c *ctyunVpcRouteTableRule) ImportState(ctx context.Context, request resour
 		err = fmt.Errorf("regionID不能为空")
 		return
 	}
-	err = terraform_extend.Split(request.ID, &ruleID, &routeTableID, &regionID)
-	if err != nil {
-		return
-	}
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.RouteTableID = types.StringValue(routeTableID)
 	cfg.RuleID = types.StringValue(ruleID)
