@@ -129,28 +129,43 @@ func (c *ctyunDhcpOptionSet) Configure(_ context.Context, request resource.Confi
 }
 
 func (c *ctyunDhcpOptionSet) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunDhcpOptionSetConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	err := c.create(ctx, &plan)
+	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
-
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
 func (c *ctyunDhcpOptionSet) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunDhcpOptionSetConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	err := c.getAndMerge(ctx, &state)
+	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		if strings.Contains(err.Error(), "not exist") {
 			response.State.RemoveResource(ctx)
@@ -162,17 +177,26 @@ func (c *ctyunDhcpOptionSet) Read(ctx context.Context, request resource.ReadRequ
 }
 
 func (c *ctyunDhcpOptionSet) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var plan CtyunDhcpOptionSetConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
 
-	err := c.update(ctx, &plan)
+	err = c.update(ctx, &plan)
 	if err != nil {
 		return
 	}
-
+	err = c.getAndMerge(ctx, &plan)
+	if err != nil {
+		return
+	}
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
@@ -224,7 +248,7 @@ func (c *ctyunDhcpOptionSet) create(ctx context.Context, plan *CtyunDhcpOptionSe
 	}
 
 	// 设置资源ID
-	plan.Id = types.StringValue(*resp.ReturnObj.DhcpOptionSetsID)
+	plan.Id = utils.SecStringValue(resp.ReturnObj.DhcpOptionSetsID)
 
 	return nil
 }
@@ -251,7 +275,7 @@ func (c *ctyunDhcpOptionSet) getAndMerge(ctx context.Context, state *CtyunDhcpOp
 	state.Name = utils.SecStringValue(resp.ReturnObj.Name)
 	state.Description = utils.SecStringValue(resp.ReturnObj.Description)
 
-	state.DomainName = types.StringValue(*resp.ReturnObj.DomainName)
+	state.DomainName = utils.SecStringValue(resp.ReturnObj.DomainName)
 
 	// 更新DNS列表
 	state.DnsList = []types.String{}

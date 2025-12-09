@@ -214,13 +214,13 @@ func (c *ctyunEcsAffinityGroup) ImportState(ctx context.Context, request resourc
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectId],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunEcsAffinityGroupConfig
 	var ID, regionId string
-	// 根据分隔符数量判断是否输入了regionID,projectId
+	// 根据分隔符数量判断是否输入了regionID
 	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
 		ID = request.ID
@@ -231,10 +231,10 @@ func (c *ctyunEcsAffinityGroup) ImportState(ctx context.Context, request resourc
 			return
 		}
 	}
-	cfg.RegionID = types.StringValue(regionID)
-	cfg.ID = types.StringValue(groupID)
+	config.RegionID = types.StringValue(regionId)
+	config.ID = types.StringValue(ID)
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 
 	if ID == "" {
 		err = fmt.Errorf("ID不能为空")
@@ -244,7 +244,7 @@ func (c *ctyunEcsAffinityGroup) ImportState(ctx context.Context, request resourc
 		err = fmt.Errorf("regionID不能为空")
 		return
 	}
-	config.AffinityGroupID = types.StringValue(ID)
+	config.ID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 
 	// 调用Read方法获取最新状态

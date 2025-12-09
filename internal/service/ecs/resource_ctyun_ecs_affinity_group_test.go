@@ -70,7 +70,7 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s,%s",
-						rs.Primary.Attributes["affinity_group_id"],
+						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["region_id"],
 					), nil
 				},
@@ -86,7 +86,7 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s",
-						rs.Primary.Attributes["affinity_group_id"],
+						rs.Primary.Attributes["id"],
 					), nil
 				},
 				ImportStateVerify:       true,
