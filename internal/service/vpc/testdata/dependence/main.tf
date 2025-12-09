@@ -96,7 +96,7 @@ resource "ctyun_vpc" "vpc_test2" {
 }
 
 resource "ctyun_dhcpoptionset" "test" {
-  name         = "tf-dhcpoption-set"
+  name         = "tf_dhcpoption_set"
   description  = "test"
   domain_name  = "www.ctyun.cn"
   dns_list     = ["114.114.114.114"]
