@@ -19,6 +19,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &CtyunVip{}
+	_ resource.ResourceWithConfigure   = &CtyunVip{}
+	_ resource.ResourceWithImportState = &CtyunVip{}
+)
+
 func NewCtyunVip() resource.Resource {
 	return &CtyunVip{}
 }
@@ -176,11 +182,32 @@ func (c *CtyunVip) Delete(ctx context.Context, request resource.DeleteRequest, r
 }
 
 func (c *CtyunVip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID],[projectID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var state CtyunVipConfig
 	var vipId, regionId string
-	err := terraform_extend.Split(request.ID, &vipId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		vipId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &vipId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if vipId == "" {
+		err = fmt.Errorf("vipId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 

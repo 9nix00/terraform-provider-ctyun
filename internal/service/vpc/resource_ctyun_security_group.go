@@ -2,6 +2,7 @@ package vpc
 
 import (
 	"context"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctvpc"
@@ -18,6 +19,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
+)
+
+var (
+	_ resource.Resource                = &ctyunSecurityGroup{}
+	_ resource.ResourceWithConfigure   = &ctyunSecurityGroup{}
+	_ resource.ResourceWithImportState = &ctyunSecurityGroup{}
 )
 
 func NewCtyunSecurityGroup() resource.Resource {
@@ -213,11 +221,32 @@ func (c *ctyunSecurityGroup) Delete(ctx context.Context, request resource.Delete
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [securityGroupId],[regionId]
 func (c *ctyunSecurityGroup) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [securityGroupId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunSecurityGroupConfig
 	var securityGroupId, regionId string
-	err := terraform_extend.Split(request.ID, &securityGroupId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		securityGroupId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &securityGroupId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if securityGroupId == "" {
+		err = fmt.Errorf("securityGroupId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 

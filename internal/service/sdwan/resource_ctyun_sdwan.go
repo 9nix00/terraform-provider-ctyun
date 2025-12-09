@@ -64,6 +64,7 @@ func (c *CtyunSdwan) Schema(ctx context.Context, req resource.SchemaRequest, res
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 				Validators: []validator.String{
 					validator2.Project(),
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"name": schema.StringAttribute{

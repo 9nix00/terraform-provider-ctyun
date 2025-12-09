@@ -18,6 +18,11 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource              = &ctyunVipAssociation{}
+	_ resource.ResourceWithConfigure = &ctyunVipAssociation{}
+)
+
 func NewCtyunVipAssociation() resource.Resource {
 	return &ctyunVipAssociation{}
 }

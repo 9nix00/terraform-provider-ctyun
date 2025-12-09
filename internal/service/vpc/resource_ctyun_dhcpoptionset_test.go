@@ -59,23 +59,23 @@ func TestAccCtyunDhcpOptionSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dns_list.2", "8.8.4.4"),
 				),
 			},
-			//{
-			//	ResourceName: resourceName,
-			//	ImportState:  true,
-			//	ImportStateIdFunc: func(s *terraform.State) (string, error) {
-			//		ds := s.RootModule().Resources[resourceName].Primary
-			//		id := ds.ID
-			//		regionId := ds.Attributes["region_id"]
-			//		if id == "" || regionId == "" {
-			//			return "", fmt.Errorf("id or region_id is required")
-			//		}
-			//		return fmt.Sprintf("%s,%s", id, regionId), nil
-			//	},
-			//	ImportStateVerify: true,
-			//	ImportStateVerifyIgnore: []string{
-			//		"region_id",
-			//	},
-			//},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"region_id",
+				},
+			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, updatedDescription, updatedDomainName, updatedDnsList),
 				Destroy: true,

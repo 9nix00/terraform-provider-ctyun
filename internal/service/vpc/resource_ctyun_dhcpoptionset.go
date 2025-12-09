@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -17,12 +18,58 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunDhcpOptionSet{}
+	_ resource.ResourceWithConfigure   = &ctyunDhcpOptionSet{}
+	_ resource.ResourceWithImportState = &ctyunDhcpOptionSet{}
+)
+
 func NewCtyunDhcpOptionSet() resource.Resource {
 	return &ctyunDhcpOptionSet{}
 }
 
 type ctyunDhcpOptionSet struct {
 	meta *common.CtyunMetadata
+}
+
+func (c *ctyunDhcpOptionSet) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunDhcpOptionSetConfig
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
+	config.Id = types.StringValue(ID)
+	config.RegionId = types.StringValue(regionId)
+	err = c.getAndMerge(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *ctyunDhcpOptionSet) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -204,9 +251,7 @@ func (c *ctyunDhcpOptionSet) getAndMerge(ctx context.Context, state *CtyunDhcpOp
 	state.Name = utils.SecStringValue(resp.ReturnObj.Name)
 	state.Description = utils.SecStringValue(resp.ReturnObj.Description)
 
-	if len(resp.ReturnObj.DomainName) > 0 && resp.ReturnObj.DomainName[0] != nil {
-		state.DomainName = types.StringValue(*resp.ReturnObj.DomainName[0])
-	}
+	state.DomainName = types.StringValue(*resp.ReturnObj.DomainName)
 
 	// 更新DNS列表
 	state.DnsList = []types.String{}
