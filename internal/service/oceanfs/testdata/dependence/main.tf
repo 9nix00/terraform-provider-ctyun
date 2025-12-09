@@ -47,9 +47,9 @@ resource "ctyun_oceanfs_permission_group" "test1" {
 }
 
 resource "ctyun_oceanfs" "test" {
-  sfs_protocol = "nfs"
+  protocol      = "nfs"
   name         = "oceanfs-for-tf"
-  sfs_size     = 100
+  size          = 100
   cycle_type   = "on_demand"
   vpc_id       = ctyun_vpc.vpc_test.id
   subnet_id    = ctyun_subnet.subnet_test.id

@@ -460,7 +460,7 @@ func (c *ctyunKafkaUser) getAndMerge(ctx context.Context, plan *CtyunKafkaUserCo
 	} else {
 		plan.Description = types.StringValue(userData.Description)
 	}
-	plan.CreateTime = types.StringValue(userData.Ctime)
+	plan.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout2, userData.Ctime))
 
 	err = c.getAndMergeUserTopicsAcl(ctx, plan)
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -112,7 +113,7 @@ func (c *ctyunKafkaAcls) Schema(_ context.Context, _ datasource.SchemaRequest, r
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 					},
 				},
@@ -173,7 +174,7 @@ func (c *ctyunKafkaAcls) Read(ctx context.Context, request datasource.ReadReques
 			StrategyId:  types.StringValue(data.StrategyId),
 			Name:        types.StringValue(data.Name),
 			UseNewTopic: types.Int32Value(data.UseNewTopic),
-			CreateTime:  types.StringValue(data.CreateTime),
+			CreateTime:  types.StringValue(utils.ConvertToUTCZ(utils.Layout2, data.CreateTime)),
 		}
 
 		config.Acls = append(config.Acls, item)

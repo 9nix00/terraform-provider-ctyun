@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -45,7 +46,7 @@ type CtyunKafkaAclConfig struct {
 	Name        types.String `tfsdk:"name"`
 	InstanceId  types.String `tfsdk:"instance_id"`
 	RegionId    types.String `tfsdk:"region_id"`
-	UseNewTopic types.String `tfsdk:"use_new_topic"`
+	UseNewTopic types.Bool   `tfsdk:"use_new_topic"`
 	Topics      types.Set    `tfsdk:"topics"`
 	Rules       types.Set    `tfsdk:"rules"`
 	rules       []CtyunKafkaAclRule
@@ -103,20 +104,17 @@ func (c *ctyunKafkaAcl) Schema(_ context.Context, _ resource.SchemaRequest, resp
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"use_new_topic": schema.StringAttribute{
+			"use_new_topic": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否应用到新增主题，1：是，2：否，默认值：2 支持更新",
-				Validators: []validator.String{
-					stringvalidator.OneOf("1", "2"),
-				},
+				Default:     booldefault.StaticBool(false),
+				Description: "是否应用到新增主题，默认不应用，支持更新",
 			},
 			"topics": schema.SetAttribute{
 				ElementType: types.StringType,
 				Computed:    true,
 				Description: "匹配的topic列表",
 			},
-
 			"rules": schema.SetNestedAttribute{
 				Description: "ACL规则",
 				Required:    true,
@@ -131,7 +129,7 @@ func (c *ctyunKafkaAcl) Schema(_ context.Context, _ resource.SchemaRequest, resp
 						},
 						"user_name": schema.StringAttribute{
 							Required:    true,
-							Description: "用户名，必须是已经集群中创建了的用户 支持更新",
+							Description: "用户名，必须是已经集群中创建了的用户，支持更新",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
@@ -344,7 +342,7 @@ func (c *ctyunKafkaAcl) create(ctx context.Context, plan CtyunKafkaAclConfig) (e
 		RegionId:    plan.RegionId.ValueString(),
 		ProdInstId:  plan.InstanceId.ValueString(),
 		Name:        plan.Name.ValueString(),
-		UseNewTopic: plan.UseNewTopic.ValueString(),
+		UseNewTopic: map[bool]string{true: "1", false: "2"}[plan.UseNewTopic.ValueBool()],
 	}
 
 	if len(plan.rules) > 0 {
@@ -379,7 +377,7 @@ func (c *ctyunKafkaAcl) updateAutoMatch(ctx context.Context, plan CtyunKafkaAclC
 		RegionId:    plan.RegionId.ValueString(),
 		ProdInstId:  plan.InstanceId.ValueString(),
 		Name:        plan.Name.ValueString(),
-		UseNewTopic: plan.UseNewTopic.ValueString(),
+		UseNewTopic: map[bool]string{true: "1", false: "2"}[plan.UseNewTopic.ValueBool()],
 	}
 
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaAclStrategyTurnAutoMatchApi.Do(ctx, c.meta.SdkCredential, params)

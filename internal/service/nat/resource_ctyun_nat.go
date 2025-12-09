@@ -142,8 +142,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Optional:    true,
 				Computed:    true,
 				Description: "可用区名称",
-				// az时候有必要设定默认值
-				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
+				Default:     defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -177,13 +176,13 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Computed:    true,
 				Description: "当前网关所属的vpc cidr",
 			},
-			"creation_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "NAT网关的创建时间",
+				Description: "创建时间，为UTC格式",
 			},
-			"expired_time": schema.StringAttribute{
+			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "NAT网关实例的过期时间",
+				Description: "过期时间，为UTC格式",
 			},
 		},
 	}
@@ -731,8 +730,8 @@ type CtyunNatConfig struct {
 	NatGatewayID    types.String `tfsdk:"nat_gateway_id"`    //网关 ID
 	VpcName         types.String `tfsdk:"vpc_name"`          //NAT所属的专有网络名字
 	VpcCidr         types.String `tfsdk:"vpc_cidr"`          //当前网关所属的vpc cidr
-	CreationTime    types.String `tfsdk:"creation_time"`     //NAT网关的创建时间
-	ExpiredTime     types.String `tfsdk:"expired_time"`      //NAT网关实例的过期时间
+	CreationTime    types.String `tfsdk:"create_time"`       //NAT网关的创建时间
+	ExpiredTime     types.String `tfsdk:"expire_time"`       //NAT网关实例的过期时间
 }
 type LoopOrderResponse struct {
 	NatGatewayId         types.String

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctgkafka "github.com/ctyun-it/terraform-provider-ctyun/internal/core/kafka"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -33,7 +34,7 @@ type CtyunKafkaConsumerGroupsModel struct {
 	ID            types.Int32  `tfsdk:"id"`
 	Name          types.String `tfsdk:"name"`
 	Description   types.String `tfsdk:"description"`
-	Ctime         types.String `tfsdk:"ctime"`
+	Ctime         types.String `tfsdk:"create_time"`
 	State         types.String `tfsdk:"state"`
 	CoordinatorId types.Int32  `tfsdk:"coordinator_id"`
 }
@@ -42,8 +43,8 @@ type CtyunKafkaConsumerGroupsConfig struct {
 	Name           types.String                    `tfsdk:"name"`
 	RegionID       types.String                    `tfsdk:"region_id"`
 	InstanceId     types.String                    `tfsdk:"instance_id"`
-	PageNum        types.String                    `tfsdk:"page_num"`
-	PageSize       types.String                    `tfsdk:"page_size"`
+	PageNum        types.Int32                     `tfsdk:"page_no"`
+	PageSize       types.Int32                     `tfsdk:"page_size"`
 	Total          types.Int32                     `tfsdk:"total"`
 	ConsumerGroups []CtyunKafkaConsumerGroupsModel `tfsdk:"consumer_groups"`
 }
@@ -71,11 +72,11 @@ func (c *ctyunKafkaConsumerGroups) Schema(_ context.Context, _ datasource.Schema
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"page_num": schema.StringAttribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Description: "分页中的页数，默认1，范围1-40000",
 			},
-			"page_size": schema.StringAttribute{
+			"page_size": schema.Int32Attribute{
 				Optional:    true,
 				Description: "分页中的每页大小，默认10，范围1-40000",
 			},
@@ -99,9 +100,9 @@ func (c *ctyunKafkaConsumerGroups) Schema(_ context.Context, _ datasource.Schema
 							Computed:    true,
 							Description: "消费组描述",
 						},
-						"ctime": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"state": schema.StringAttribute{
 							Computed:    true,
@@ -142,10 +143,13 @@ func (c *ctyunKafkaConsumerGroups) Read(ctx context.Context, request datasource.
 		RegionId:   config.RegionID.ValueString(),
 		ProdInstId: config.InstanceId.ValueString(),
 		GroupName:  config.Name.ValueString(),
-		PageNum:    config.PageNum.ValueString(),
-		PageSize:   config.PageSize.ValueString(),
 	}
-
+	if config.PageNum.ValueInt32() > 0 {
+		params.PageNum = fmt.Sprintf("%d", config.PageNum.ValueInt32())
+	}
+	if config.PageSize.ValueInt32() > 0 {
+		params.PageSize = fmt.Sprintf("%d", config.PageSize.ValueInt32())
+	}
 	resp, err := c.meta.Apis.SdkKafkaApis.CtgkafkaConsumerGroupQueryV3Api.Do(ctx, c.meta.SdkCredential, params)
 	if err != nil {
 		return
@@ -165,7 +169,7 @@ func (c *ctyunKafkaConsumerGroups) Read(ctx context.Context, request datasource.
 			ID:            types.Int32Value(data.Id),
 			Name:          types.StringValue(data.Name),
 			Description:   types.StringValue(data.Description),
-			Ctime:         types.StringValue(data.Ctime),
+			Ctime:         types.StringValue(utils.ConvertToUTCZ(utils.Layout2, data.Ctime)),
 			State:         types.StringValue(data.State),
 			CoordinatorId: types.Int32Value(data.CoordinatorId),
 		}

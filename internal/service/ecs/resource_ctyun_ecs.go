@@ -395,10 +395,21 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"affinity_group_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "云主机组ID 支持更新",
+				Description: "云主机组ID，支持更新",
 				Validators: []validator.String{
 					validator2.UUID(),
 				},
+			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"update_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "更新时间，为UTC格式",
 			},
 		},
 	}
@@ -1417,6 +1428,8 @@ func (c *ctyunEcs) getAndMergeEcs(ctx context.Context, cfg CtyunEcsConfig) (*Cty
 	cfg.Id = types.StringValue(*instance_details_resp.InstanceID)
 	cfg.InstanceName = types.StringValue(*instance_details_resp.InstanceName)
 	cfg.DisplayName = types.StringValue(*instance_details_resp.DisplayName)
+	cfg.CreateTime = types.StringValue(*instance_details_resp.CreatedTime)
+	cfg.UpdateTime = types.StringValue(*instance_details_resp.UpdatedTime)
 	cfg.Name = cfg.DisplayName
 	cfg.EipAddress = utils.SecStringValue(instance_details_resp.FloatingIP)
 	if cfg.FlavorId != types.StringNull() {
@@ -1990,6 +2003,8 @@ type CtyunEcsConfig struct {
 	AffinityGroupId        types.String  `tfsdk:"affinity_group_id"`
 	FlavorName             types.String  `tfsdk:"flavor_name"`
 	EipAddress             types.String  `tfsdk:"eip_address"`
+	CreateTime             types.String  `tfsdk:"create_time"`
+	UpdateTime             types.String  `tfsdk:"update_time"`
 }
 
 type Label struct {

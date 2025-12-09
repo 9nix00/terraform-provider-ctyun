@@ -37,9 +37,8 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, initName, policy),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", initName),
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", policy),
-					resource.TestCheckResourceAttrSet(resourceName, "affinity_group_id"),
+					resource.TestCheckResourceAttr(resourceName, "name", initName),
+					resource.TestCheckResourceAttr(resourceName, "policy", policy),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -47,9 +46,8 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, policy),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_name", updatedName),
-					resource.TestCheckResourceAttr(resourceName, "affinity_group_policy", policy),
-					resource.TestCheckResourceAttrSet(resourceName, "affinity_group_id"),
+					resource.TestCheckResourceAttr(resourceName, "name", updatedName),
+					resource.TestCheckResourceAttr(resourceName, "policy", policy),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -59,8 +57,8 @@ func TestAccCtyunAffinityGroup(t *testing.T) {
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "groups.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "groups.0.affinity_group_name", updatedName),
-					resource.TestCheckResourceAttr(datasourceName, "groups.0.affinity_group_policy", policy),
+					resource.TestCheckResourceAttr(datasourceName, "groups.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "groups.0.policy", policy),
 				),
 			},
 			{

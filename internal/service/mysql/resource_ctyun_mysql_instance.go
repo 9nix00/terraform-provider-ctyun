@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -45,9 +46,30 @@ type CtyunMysqlInstance struct {
 	orderLooper  *business.OrderLooper
 }
 
+// password, masterOrderID, autoRenew, availabilityZoneInfo, backupStorageType 无法获取到
+
 func (c *CtyunMysqlInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
+	var config CtyunMysqlInstanceConfig
+	var ID, regionId, projectId, flavorName string
+	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &flavorName)
+	if err != nil {
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.InstID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+	err = c.getAndMergeMysqlInstance(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMysqlInstance) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
@@ -654,7 +676,7 @@ func (c *CtyunMysqlInstance) acquireAndSetIdIfOrderNotFinished(ctx context.Conte
 
 func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, config *CtyunMysqlInstanceConfig) (err error) {
 	// 若实例id为空，可能是因为实例创建时异常中断，需要根据订单号查询实例id
-	if config.InstID.ValueString() == "" {
+	if config.ID.IsNull() || config.ID.IsUnknown() || config.InstID.ValueString() == "" {
 		var id string
 		id, err = c.acquireAndSetIdIfOrderNotFinished(ctx, *config)
 		if err != nil {
@@ -697,7 +719,13 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 	// 更新disk， 主机配置相关信息
 	config.ProdID = types.StringValue(business.MysqlProdIdRevDict[returnOjb.ProdId])
 	config.StorageSpace = types.Int32Value(returnOjb.DiskSize)
+	config.StorageType = types.StringValue(returnOjb.DiskType)
 	config.BackupStorageSpace = types.Int32Value(returnOjb.BackupDiskSize)
+	config.VpcID = types.StringValue(returnOjb.VpcId)
+	config.SubnetID = types.StringValue(returnOjb.SubnetId)
+	config.SecurityGroupID = types.StringValue(returnOjb.SecurityGroupId)
+	config.CycleType = types.StringValue(business.MysqlBillModeRev[returnOjb.ProdBillType])
+	config.CycleCount = types.Int32Value(returnOjb.ProdBillTime)
 	return
 }
 
@@ -755,7 +783,7 @@ func (c *CtyunMysqlInstance) startedLoop(ctx context.Context, state *CtyunMysqlI
 			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
 				// 有三次是start，才认为状态正常
 				cnt++
-				if cnt > 3 {
+				if cnt > 2 {
 					return false
 				}
 			}

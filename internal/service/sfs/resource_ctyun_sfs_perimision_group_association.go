@@ -86,14 +86,14 @@ func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"permission_group_fuid": schema.StringAttribute{
+			"permission_group_id": schema.StringAttribute{
 				Required:    true,
 				Description: "权限组ID，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"sfs_uid": schema.StringAttribute{
+			"sfs_id": schema.StringAttribute{
 				Required:    true,
 				Description: "弹性文件系统唯一ID",
 				PlanModifiers: []planmodifier.String{
@@ -129,7 +129,7 @@ func (c *ctyunSfsPermissionGroupAssociation) Schema(ctx context.Context, request
 				Computed:    true,
 				Description: "权限组描述",
 			},
-			"permission_group_is_default": schema.BoolAttribute{
+			"is_default": schema.BoolAttribute{
 				Computed:    true,
 				Description: "是否为默认权限组",
 			},
@@ -410,13 +410,13 @@ func (c *ctyunSfsPermissionGroupAssociation) bindLoop(ctx context.Context, confi
 
 type CtyunSfsPermissionGroupAssociationConfig struct {
 	RegionID                   types.String `tfsdk:"region_id"`
-	PermissionGroupFuid        types.String `tfsdk:"permission_group_fuid"`
-	SfsUID                     types.String `tfsdk:"sfs_uid"`
+	PermissionGroupFuid        types.String `tfsdk:"permission_group_id"`
+	SfsUID                     types.String `tfsdk:"sfs_id"`
 	VpcID                      types.String `tfsdk:"vpc_id"`
 	VpcName                    types.String `tfsdk:"vpc_name"`
 	VpcCidr                    types.String `tfsdk:"vpc_cidr"`
 	PermissionGroupName        types.String `tfsdk:"permission_group_name"`
 	PermissionGroupDescription types.String `tfsdk:"permission_group_description"`
-	PermissionGroupIsDefault   types.Bool   `tfsdk:"permission_group_is_default"`
+	PermissionGroupIsDefault   types.Bool   `tfsdk:"is_default"`
 	ID                         types.String `tfsdk:"id"`
 }

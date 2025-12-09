@@ -188,8 +188,8 @@ func (c *CtyunPrefixLists) Read(ctx context.Context, request datasource.ReadRequ
 		prefix.Limit = types.Int32Value(prefixItem.Limit)
 		prefix.AddressType = types.StringValue(business.PrefixAddressTyperRevMap[prefixItem.AddressType])
 		prefix.Description = types.StringValue(*prefixItem.Description)
-		prefix.CreateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(prefixItem.CreatedAt)))
-		prefix.UpdateTime = types.StringValue(utils.ConvertToUTCZ2(utils.SecString(prefixItem.UpdatedAt)))
+		prefix.CreateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout1, utils.SecString(prefixItem.CreatedAt)))
+		prefix.UpdateTime = types.StringValue(utils.ConvertToUTCZ(utils.Layout1, utils.SecString(prefixItem.UpdatedAt)))
 		for _, rule := range prefixItem.PrefixListRules {
 			var ruleModel CtyunPrefixRuleModel
 			ruleModel.PrefixListRuleID = types.StringValue(*rule.PrefixListRuleID)

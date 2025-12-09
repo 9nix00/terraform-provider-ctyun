@@ -59,7 +59,7 @@ type CtyunEcsBackupConfig struct {
 	RepositoryName       types.String `tfsdk:"repository_name"`
 	DiskTotalSize        types.Int64  `tfsdk:"disk_total_size"`
 	UsedSize             types.Int64  `tfsdk:"used_size"`
-	CreatedTime          types.String `tfsdk:"created_time"`
+	CreatedTime          types.String `tfsdk:"create_time"`
 	BackupType           types.String `tfsdk:"backup_type"`
 	FullBackup           types.Bool   `tfsdk:"full_backup"`
 	ProjectID            types.String `tfsdk:"project_id"`
@@ -153,7 +153,7 @@ func (c *ctyunEcsBackup) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Computed:    true,
 				Description: "云硬盘备份已使用大小",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间",
 			},

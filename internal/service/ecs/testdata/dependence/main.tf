@@ -24,8 +24,8 @@ resource "ctyun_security_group" "security_group_test" {
 }
 
 resource "ctyun_ecs_affinity_group" "affinity_group_test" {
-  affinity_group_name   = "tf-affinity-group-for-ecs"
-  affinity_group_policy = "anti-affinity"
+  name   = "tf-affinity-group-for-ecs"
+  policy = "anti-affinity"
 }
 
 resource "ctyun_keypair" "keypair_test" {

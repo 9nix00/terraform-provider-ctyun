@@ -52,7 +52,7 @@ func (c *CtyunOceanfsInstances) Schema(ctx context.Context, request datasource.S
 				Optional:    true,
 				Description: "列表的分页页码，默认为1",
 			},
-			"oceanfs_instances": schema.ListNestedAttribute{
+			"instances": schema.ListNestedAttribute{
 				Computed:            true,
 				MarkdownDescription: "OceanFS实例列表",
 				NestedObject: schema.NestedAttributeObject{
@@ -65,19 +65,19 @@ func (c *CtyunOceanfsInstances) Schema(ctx context.Context, request datasource.S
 							Computed:            true,
 							MarkdownDescription: "文件存储唯一标识",
 						},
-						"sfs_size": schema.Int32Attribute{
+						"size": schema.Int32Attribute{
 							Computed:            true,
 							MarkdownDescription: "文件存储容量大小(GB)",
 						},
-						"sfs_type": schema.StringAttribute{
+						"type": schema.StringAttribute{
 							Computed:            true,
 							MarkdownDescription: "文件存储类型",
 						},
-						"sfs_protocol": schema.StringAttribute{
+						"protocol": schema.StringAttribute{
 							Computed:            true,
 							MarkdownDescription: "文件存储协议",
 						},
-						"sfs_status": schema.StringAttribute{
+						"status": schema.StringAttribute{
 							Computed:            true,
 							MarkdownDescription: "文件存储状态",
 						},
@@ -266,10 +266,10 @@ func (c *CtyunOceanfsInstances) Read(ctx context.Context, request datasource.Rea
 type CtyunOceanfsInfoModel struct {
 	SfsName            types.String         `tfsdk:"name"`
 	SfsUID             types.String         `tfsdk:"id"`
-	SfsSize            types.Int32          `tfsdk:"sfs_size"`
-	SfsType            types.String         `tfsdk:"sfs_type"`
-	SfsProtocol        types.String         `tfsdk:"sfs_protocol"`
-	SfsStatus          types.String         `tfsdk:"sfs_status"`
+	SfsSize            types.Int32          `tfsdk:"size"`
+	SfsType            types.String         `tfsdk:"type"`
+	SfsProtocol        types.String         `tfsdk:"protocol"`
+	SfsStatus          types.String         `tfsdk:"status"`
 	UsedSize           types.Int32          `tfsdk:"used_size"`
 	CreateTime         types.String         `tfsdk:"create_time"`
 	UpdateTime         types.String         `tfsdk:"update_time"`
@@ -292,7 +292,7 @@ type CtyunOceanfsInstancesConfig struct {
 	ProjectID        types.String            `tfsdk:"project_id"`
 	PageSize         types.Int32             `tfsdk:"page_size"`
 	PageNo           types.Int32             `tfsdk:"page_no"`
-	OceanfsInstances []CtyunOceanfsInfoModel `tfsdk:"oceanfs_instances"`
+	OceanfsInstances []CtyunOceanfsInfoModel `tfsdk:"instances"`
 }
 
 type VpceSharePathModel struct {

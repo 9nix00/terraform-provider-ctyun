@@ -129,11 +129,11 @@ func (c *CtyunElbCertificate) Schema(ctx context.Context, request resource.Schem
 				Computed:    true,
 				Description: "状态: ACTIVE / INACTIVE",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
@@ -453,16 +453,16 @@ func (c *CtyunElbCertificate) updateElbCertificate(ctx context.Context, state *C
 }
 
 type CtyunElbCertificateConfig struct {
-	RegionID    types.String `tfsdk:"region_id"`    //资源池ID
-	Name        types.String `tfsdk:"name"`         //	唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
-	Description types.String `tfsdk:"description"`  //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
-	Type        types.String `tfsdk:"type"`         //证书类型。取值范围：Server（服务器证书）、Ca（Ca证书）
-	PrivateKey  types.String `tfsdk:"private_key"`  //服务器证书私钥，服务器证书此字段必填
-	Certificate types.String `tfsdk:"certificate"`  //type为Server该字段表示服务器证书公钥Pem内容;type为Ca该字段表示Ca证书Pem内容
-	ID          types.String `tfsdk:"id"`           //证书ID
-	Status      types.String `tfsdk:"status"`       //状态: ACTIVE / INACTIVE
-	CreatedTime types.String `tfsdk:"created_time"` //创建时间，为UTC格式
-	UpdatedTime types.String `tfsdk:"updated_time"` //更新时间，为UTC格式
-	AzName      types.String `tfsdk:"az_name"`      //可用区名称
-	ProjectID   types.String `tfsdk:"project_id"`   //项目ID
+	RegionID    types.String `tfsdk:"region_id"`   //资源池ID
+	Name        types.String `tfsdk:"name"`        //	唯一。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
+	Description types.String `tfsdk:"description"` //支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
+	Type        types.String `tfsdk:"type"`        //证书类型。取值范围：Server（服务器证书）、Ca（Ca证书）
+	PrivateKey  types.String `tfsdk:"private_key"` //服务器证书私钥，服务器证书此字段必填
+	Certificate types.String `tfsdk:"certificate"` //type为Server该字段表示服务器证书公钥Pem内容;type为Ca该字段表示Ca证书Pem内容
+	ID          types.String `tfsdk:"id"`          //证书ID
+	Status      types.String `tfsdk:"status"`      //状态: ACTIVE / INACTIVE
+	CreatedTime types.String `tfsdk:"create_time"` //创建时间，为UTC格式
+	UpdatedTime types.String `tfsdk:"update_time"` //更新时间，为UTC格式
+	AzName      types.String `tfsdk:"az_name"`     //可用区名称
+	ProjectID   types.String `tfsdk:"project_id"`  //项目ID
 }

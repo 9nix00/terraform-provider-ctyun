@@ -90,7 +90,7 @@ func (c *CtyunOceanfsPermissionGroupAssociation) Schema(ctx context.Context, req
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"sfs_id": schema.StringAttribute{
+			"oceanfs_id": schema.StringAttribute{
 				Required:    true,
 				Description: "文件系统ID",
 				PlanModifiers: []planmodifier.String{
@@ -380,7 +380,7 @@ func (c *CtyunOceanfsPermissionGroupAssociation) bindLoop(ctx context.Context, c
 type CtyunOceanfsPermissionGroupAssociationConfig struct {
 	PermissionGroupFuid types.String `tfsdk:"permission_group_id"`
 	RegionID            types.String `tfsdk:"region_id"`
-	SfsUID              types.String `tfsdk:"sfs_id"`
+	SfsUID              types.String `tfsdk:"oceanfs_id"`
 	VpcID               types.String `tfsdk:"vpc_id"`
 	IsVpce              types.Bool   `tfsdk:"is_vpce"`
 	SubnetID            types.String `tfsdk:"subnet_id"`

@@ -17,5 +17,5 @@ resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
 }
 
 data "ctyun_sfs_permission_rules" "test" {
-  permission_group_fuid = ctyun_sfs_permission_group.sfs_permission_group_test.id
+  permission_group_id = ctyun_sfs_permission_group.sfs_permission_group_test.id
 }

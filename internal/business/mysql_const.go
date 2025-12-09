@@ -214,6 +214,12 @@ var MysqlBillMode = map[string]string{
 	OnDemandCycleType: MysqlBillModeOnDemand,
 }
 
+var MysqlBillModeRev = map[int32]string{
+	0: MonthCycleType,
+	2: YearCycleType,
+	4: OnDemandCycleType,
+}
+
 var MysqlProdIdDict = map[string]int64{
 	"Single57":       ProdIDSI57,   // 单实例 single5.7版本
 	"Single80":       ProdIDSI80,   // 单实例 single8.0版本

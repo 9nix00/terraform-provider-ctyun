@@ -64,12 +64,18 @@ func (c *CtyunVpcPeerConnectionAttach) Schema(ctx context.Context, request resou
 			"peer_connection_id": schema.StringAttribute{
 				Required:    true,
 				Description: "对接连接id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"operation": schema.StringAttribute{
 				Required:    true,
 				Description: "同意或拒绝取消范围：[enable, disable]",
 				Validators: []validator.String{
 					stringvalidator.OneOf("enable", "disable"),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"id": schema.StringAttribute{

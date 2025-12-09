@@ -26,7 +26,8 @@ func TestAccCtyunPgsqlInstanceProjectId(t *testing.T) {
 	caseCensitive := true
 	vpcID := dependence.vpcID
 	subnetID := dependence.subnetID
-	securityGroupID := dependence.securityGroupID
+	securityGroupID := fmt.Sprintf("%s,%s", dependence.securityGroupID, dependence.securityGroupID2)
+	updatedSecurityGroupID := fmt.Sprintf("%s,%s", dependence.securityGroupID, dependence.securityGroupID3)
 	backupStorageType := "OS"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -49,14 +50,14 @@ func TestAccCtyunPgsqlInstanceProjectId(t *testing.T) {
 			// 测试密码修改
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, prodId, flavorName, storageType,
-					storageSpace, name, updatedPassword, caseCensitive, vpcID, subnetID, securityGroupID, backupStorageType),
+					storageSpace, name, updatedPassword, caseCensitive, vpcID, subnetID, updatedSecurityGroupID, backupStorageType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, prodId, flavorName, storageType,
-					storageSpace, name, password, caseCensitive, vpcID, subnetID, securityGroupID, backupStorageType),
+					storageSpace, name, password, caseCensitive, vpcID, subnetID, updatedSecurityGroupID, backupStorageType),
 				Destroy: true,
 			},
 		},

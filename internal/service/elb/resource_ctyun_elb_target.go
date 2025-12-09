@@ -149,11 +149,11 @@ func (c *ctyunElbTarget) Schema(ctx context.Context, request resource.SchemaRequ
 				Computed:    true,
 				Description: "状态: DOWN / ACTIVE",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
@@ -440,6 +440,6 @@ type CtyunElbTargetConfig struct {
 	HealthCheckStatus     types.String `tfsdk:"health_check_status"`
 	HealthCheckStatusIpv6 types.String `tfsdk:"health_check_status_ipv6"`
 	Status                types.String `tfsdk:"status"`
-	CreatedTime           types.String `tfsdk:"created_time"` //创建时间，为UTC格式
-	UpdatedTime           types.String `tfsdk:"updated_time"` //更新时间，为UTC格式
+	CreatedTime           types.String `tfsdk:"create_time"` //创建时间，为UTC格式
+	UpdatedTime           types.String `tfsdk:"update_time"` //更新时间，为UTC格式
 }

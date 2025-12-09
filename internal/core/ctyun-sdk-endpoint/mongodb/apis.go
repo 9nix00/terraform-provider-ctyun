@@ -35,6 +35,7 @@ type Apis struct {
 	MongodbUpdatePasswordApi          *MongodbUpdatePasswordApi          // 重置实例中root账号的密码
 	MongodbQueryInstNodesApi          *MongodbQueryInstNodesApi          // 查询实例节点信息
 	MongodbRestartDbApi               *MongodbRestartDbApi               // 重启实例
+	MongodbGetIDByOrderApi            *MongodbGetIDByOrderApi
 }
 
 func NewApis(client *ctyunsdk.CtyunClient) *Apis {
@@ -79,5 +80,6 @@ func NewApis(client *ctyunsdk.CtyunClient) *Apis {
 		MongodbUpdatePasswordApi:          NewMongodbUpdatePasswordApi(client),          // 初始化重置实例中root账号的密码API
 		MongodbQueryInstNodesApi:          NewMongodbQueryInstNodesApi(client),          // 初始化查询实例节点信息API
 		MongodbRestartDbApi:               NewMongodbRestartDbApi(client),               // 初始化重启实例API
+		MongodbGetIDByOrderApi:            NewMongodbGetIDByOrderApi(client),
 	}
 }
