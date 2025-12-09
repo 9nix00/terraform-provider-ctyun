@@ -238,7 +238,7 @@ func (c *ctyunVpcRouteTable) ImportState(ctx context.Context, request resource.I
 	var cfg CtyunVpcRouteTableConfig
 	var routeTableID, regionID string
 	// 根据分隔符数量判断是否输入了regionID
-	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
 		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
 		routeTableID = request.ID
 	} else {
@@ -254,11 +254,6 @@ func (c *ctyunVpcRouteTable) ImportState(ctx context.Context, request resource.I
 	}
 	if regionID == "" {
 		err = fmt.Errorf("regionID不能为空")
-		return
-	}
-
-	err = terraform_extend.Split(request.ID, &routeTableID, &regionID)
-	if err != nil {
 		return
 	}
 	cfg.RegionID = types.StringValue(regionID)
