@@ -22,7 +22,10 @@ func TestAccCtyunDhcpOptionSet_basic(t *testing.T) {
 	updatedDescription := "Updated DHCP option set for demonstration"
 	updatedDomainName := "updated.example.com"
 	updatedDnsList := `"1.1.1.1", "8.8.8.8", "8.8.4.4"`
+	dnd := utils.GenerateRandomString()
 
+	datasourceName := "data.ctyun_dhcpoptionsets." + dnd
+	datasourceFile := "datasource_ctyun_dhcpoptionsets.tf"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -57,6 +60,15 @@ func TestAccCtyunDhcpOptionSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dns_list.0", "1.1.1.1"),
 					resource.TestCheckResourceAttr(resourceName, "dns_list.1", "8.8.8.8"),
 					resource.TestCheckResourceAttr(resourceName, "dns_list.2", "8.8.4.4"),
+				),
+			},
+
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedDescription, updatedDomainName, updatedDnsList) +
+					utils.LoadTestCase(datasourceFile, dnd),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(datasourceName, "dhcpoptionsets.#"),
+					resource.TestCheckResourceAttrSet(datasourceName, "total_count"),
 				),
 			},
 			{
