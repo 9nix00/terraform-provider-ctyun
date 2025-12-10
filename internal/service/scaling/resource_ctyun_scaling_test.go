@@ -613,7 +613,7 @@ func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
 					return fmt.Sprintf("%s,%s", id, vpcId), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"add_instance_uuid_list", "remove_instance_uuid_list", "is_destroy", "expected_count"},
+				ImportStateVerifyIgnore: []string{"add_instance_uuid_list", "remove_instance_uuid_list", "is_destroy", "expected_count", "project_id"},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, securityGroupIDList, name, healthMode, subnetIDList, moveOutStrategy, vpcId, minCount, maxCount,

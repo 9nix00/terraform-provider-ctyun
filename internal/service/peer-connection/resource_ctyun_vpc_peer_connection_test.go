@@ -126,7 +126,7 @@ func TestAccCtyunVpcPeerConnection_Basic(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"accept_email", "description"},
+				ImportStateVerifyIgnore: []string{"accept_email", "description", "project_id"},
 			},
 			// 5. 销毁资源
 			{

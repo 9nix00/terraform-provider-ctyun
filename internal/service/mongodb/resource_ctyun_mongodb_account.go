@@ -373,6 +373,8 @@ func (c *CtyunMongodbAccount) getAndMerge(ctx context.Context, plan *MongodbAcco
 
 	describeReq := &mongodb.MongodbDescribeAccountsRequest{
 		ProdInstId: instanceID,
+		PageNow:    1,
+		PageSize:   1000,
 	}
 
 	headers := &mongodb.MongodbDescribeAccountsRequestHeaders{
