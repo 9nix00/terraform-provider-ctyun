@@ -16,6 +16,7 @@ resource "ctyun_vpc" "vpc_test" {
   enable_ipv6 = true
 }
 
+
 resource "ctyun_private_zone" "private_zone_example" {
   name          = "test-zone.example.com"
   description   = "terraform dns用例"
@@ -24,14 +25,12 @@ resource "ctyun_private_zone" "private_zone_example" {
   vpc_id_list   = [ctyun_vpc.vpc_test.id]
 }
 
-
-
 resource "ctyun_private_zone_record" "example" {
   zone_id     = ctyun_private_zone.private_zone_example.id
   type        = "A"
-  value_list = ["192.168.1.1"]
-  ttl         =  300
-  name        = "record-example"
-  description = "terraform dns record 用例"
+  value_list  = ["192.168.1.100"]
+  ttl         = 300
+  name        = "example-record"
+  description = "Example private zone record"
+  enabled     = "enable"
 }
-
