@@ -72,7 +72,7 @@ func (c *CtyunSfsPermissionRules) Schema(ctx context.Context, request datasource
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间。UTC时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"user_id": schema.StringAttribute{
 							Computed:    true,

@@ -42,7 +42,7 @@ func (c *ctyunMysqlAccounts) Schema(ctx context.Context, request datasource.Sche
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10133363",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				Validators: []validator.String{
@@ -68,12 +68,12 @@ func (c *ctyunMysqlAccounts) Schema(ctx context.Context, request datasource.Sche
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"mysql_accounts": schema.ListNestedAttribute{
+			"accounts": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "MySQL账户权限列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"account_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "数据库账号名称",
 						},
@@ -181,7 +181,7 @@ func (c *ctyunMysqlAccounts) getMysqlAccountInfo(ctx context.Context, config *Ct
 		return resp.ReturnObj, nil
 	}
 
-	return nil, fmt.Errorf("mysql实例(id=%s)不存在account_name=%s的权限配置", config.InstID.ValueString(), config.Name.ValueString())
+	return nil, fmt.Errorf("mysql实例(id=%s)不存在name=%s的权限配置", config.InstID.ValueString(), config.Name.ValueString())
 }
 
 func (c *ctyunMysqlAccounts) getPrivilege(item mysql.SchemaPrivilegeVO) string {
@@ -203,13 +203,13 @@ type SchemaPrivilegeModel struct {
 }
 
 type CtyunMysqlAccountPrivilegeModel struct {
-	AccountName         types.String           `tfsdk:"account_name"`
+	AccountName         types.String           `tfsdk:"name"`
 	SchemaPrivilegeList []SchemaPrivilegeModel `tfsdk:"schema_privilege_list"`
 }
 type CtyunMysqlAccountsConfig struct {
-	InstID        types.String                      `tfsdk:"inst_id"`
+	InstID        types.String                      `tfsdk:"instance_id"`
 	ProjectID     types.String                      `tfsdk:"project_id"`
 	RegionID      types.String                      `tfsdk:"region_id"`
 	Name          types.String                      `tfsdk:"name"`
-	MysqlAccounts []CtyunMysqlAccountPrivilegeModel `tfsdk:"mysql_accounts"`
+	MysqlAccounts []CtyunMysqlAccountPrivilegeModel `tfsdk:"accounts"`
 }

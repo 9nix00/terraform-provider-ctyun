@@ -136,11 +136,11 @@ func (c *ctyunVpces) Schema(_ context.Context, _ datasource.SchemaRequest, respo
 						},
 						"create_time": schema.StringAttribute{
 							Required:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Required:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 					},
 				},

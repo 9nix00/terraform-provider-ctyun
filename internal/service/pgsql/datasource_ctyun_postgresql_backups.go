@@ -7,13 +7,13 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"regexp"
 )
 
 var (
@@ -56,7 +56,7 @@ func (c *ctyunPgsqlBackups) Schema(ctx context.Context, request datasource.Schem
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "PostgreSQL实例ID",
 				Validators: []validator.String{
@@ -81,36 +81,14 @@ func (c *ctyunPgsqlBackups) Schema(ctx context.Context, request datasource.Schem
 					int32validator.Between(1, 100),
 				},
 			},
-			"backup_type": schema.StringAttribute{
+			"type": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份类型过滤条件（auto：自动备份，manual：手动备份，recovery：恢复备份）",
 				Validators: []validator.String{
 					stringvalidator.OneOf("auto", "manual", "recovery"),
 				},
 			},
-			"start_time": schema.StringAttribute{
-				Optional:    true,
-				Description: "开始时间过滤条件（格式：2006-01-02 15:04:05）",
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthBetween(19, 19),
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`),
-						"必须符合格式：YYYY-MM-DD HH:MM:SS",
-					),
-				},
-			},
-			"end_time": schema.StringAttribute{
-				Optional:    true,
-				Description: "结束时间过滤条件（格式：2006-01-02 15:04:05）",
-				Validators: []validator.String{
-					stringvalidator.UTF8LengthBetween(19, 19),
-					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$`),
-						"必须符合格式：YYYY-MM-DD HH:MM:SS",
-					),
-				},
-			},
-			"postgresql_backups": schema.ListNestedAttribute{
+			"backups": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -118,19 +96,19 @@ func (c *ctyunPgsqlBackups) Schema(ctx context.Context, request datasource.Schem
 							Computed:    true,
 							Description: "备份ID",
 						},
-						"prod_inst_id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例ID",
 						},
-						"backup_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份名称",
 						},
-						"backup_type": schema.StringAttribute{
+						"type": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份类型（auto：自动备份，manual：手动备份，recovery：恢复备份）",
 						},
-						"backup_result": schema.StringAttribute{
+						"result": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份结果（success：成功，failed：失败，ing：运行中）",
 						},
@@ -146,7 +124,7 @@ func (c *ctyunPgsqlBackups) Schema(ctx context.Context, request datasource.Schem
 							Computed:    true,
 							Description: "数据长度（格式化）",
 						},
-						"backup_compress_size": schema.StringAttribute{
+						"compress_size": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份压缩大小（格式化）",
 						},
@@ -189,8 +167,8 @@ func (c *ctyunPgsqlBackups) Read(ctx context.Context, request datasource.ReadReq
 		backup.BackupName = types.StringValue(backupItem.BackupName)
 		backup.BackupType = types.StringValue(business.PgsqlBackupTypeMapConv[backupItem.Type])
 		backup.BackupResult = types.StringValue(business.PgsqlBackupResultMapConv[backupItem.Result])
-		backup.StartTime = types.StringValue(backupItem.StartTime)
-		backup.EndTime = types.StringValue(backupItem.EndTime)
+		backup.StartTime = types.StringValue(utils.FromBJTimeToUTCZ(backupItem.StartTime))
+		backup.EndTime = types.StringValue(utils.FromBJTimeToUTCZ(backupItem.EndTime))
 		backup.DataLen = types.StringValue(backupItem.DataLen)
 		backup.BackupCompressSize = types.StringValue(backupItem.BackupCompressSize)
 		postgresqlBackups = append(postgresqlBackups, backup)
@@ -233,25 +211,23 @@ func (c *ctyunPgsqlBackups) getPgsqlBackupList(ctx context.Context, config Ctyun
 
 type PostgresqlBackupsInfoList struct {
 	ID                 types.Int64  `tfsdk:"id"`
-	ProdInstId         types.String `tfsdk:"prod_inst_id"`
-	BackupName         types.String `tfsdk:"backup_name"`
-	BackupType         types.String `tfsdk:"backup_type"`
-	BackupResult       types.String `tfsdk:"backup_result"`
+	ProdInstId         types.String `tfsdk:"instance_id"`
+	BackupName         types.String `tfsdk:"name"`
+	BackupType         types.String `tfsdk:"type"`
+	BackupResult       types.String `tfsdk:"result"`
 	StartTime          types.String `tfsdk:"start_time"`
 	EndTime            types.String `tfsdk:"end_time"`
 	DataLen            types.String `tfsdk:"data_len"`
-	BackupCompressSize types.String `tfsdk:"backup_compress_size"`
+	BackupCompressSize types.String `tfsdk:"compress_size"`
 }
 
 type CtyunPostgresqlBackupsConfig struct {
 	RegionID          types.String                `tfsdk:"region_id"`
 	ProjectID         types.String                `tfsdk:"project_id"`
-	InstID            types.String                `tfsdk:"inst_id"`
+	InstID            types.String                `tfsdk:"instance_id"`
 	Name              types.String                `tfsdk:"name"`
 	PageNo            types.Int32                 `tfsdk:"page_no"`
 	PageSize          types.Int32                 `tfsdk:"page_size"`
-	BackupType        types.String                `tfsdk:"backup_type"`
-	StartTime         types.String                `tfsdk:"start_time"`
-	EndTime           types.String                `tfsdk:"end_time"`
-	PostgresqlBackups []PostgresqlBackupsInfoList `tfsdk:"postgresql_backups"`
+	BackupType        types.String                `tfsdk:"type"`
+	PostgresqlBackups []PostgresqlBackupsInfoList `tfsdk:"backups"`
 }

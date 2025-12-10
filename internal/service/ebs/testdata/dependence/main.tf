@@ -64,3 +64,8 @@ variable "password" {
   type      = string
   sensitive = true
 }
+
+
+data "ctyun_ebs_snapshot_policies" "aaa" {
+
+}

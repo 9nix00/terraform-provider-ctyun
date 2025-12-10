@@ -95,6 +95,9 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"region_id": schema.StringAttribute{
@@ -141,7 +144,7 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 						},
 					},
 				},
-				// TODO 标签变更需重建（创建接口暂无无动态更新标签能力）
+				// TODO 标签变更需重建（暂无无动态更新标签能力）
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},

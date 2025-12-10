@@ -108,8 +108,7 @@ func (c *ctyunEbsSnapshotPolicy) Schema(_ context.Context, _ resource.SchemaRequ
 				},
 				Default: defaults2.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
-
-			"snapshot_policy_status": schema.StringAttribute{
+			"status": schema.StringAttribute{
 				Computed:    true,
 				Description: "自动快照策略状态，取值范围：activated:启用，nonactivated：停用",
 			},
@@ -117,7 +116,7 @@ func (c *ctyunEbsSnapshotPolicy) Schema(_ context.Context, _ resource.SchemaRequ
 				Computed:    true,
 				Description: "关联云硬盘的数量",
 			},
-			"snapshot_policy_create_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "策略创建时间",
 			},
@@ -527,7 +526,7 @@ type CtyunEbsSnapshotPolicyConfig struct {
 	ProjectId      types.String `tfsdk:"project_id"`
 	RegionId       types.String `tfsdk:"region_id"`
 
-	SnapshotPolicyStatus     types.String `tfsdk:"snapshot_policy_status"`
+	SnapshotPolicyStatus     types.String `tfsdk:"status"`
 	BoundDiskNum             types.Int64  `tfsdk:"bound_disk_num"`
-	SnapshotPolicyCreateTime types.String `tfsdk:"snapshot_policy_create_time"`
+	SnapshotPolicyCreateTime types.String `tfsdk:"create_time"`
 }

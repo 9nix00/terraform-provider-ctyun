@@ -108,6 +108,9 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Optional:    true,
 				Computed:    true,
 				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(512),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -182,7 +185,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "过期时间，为UTC格式",
+				Description: "到期时间，为UTC格式，按需时为空",
 			},
 		},
 	}

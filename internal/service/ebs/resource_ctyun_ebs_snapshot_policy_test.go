@@ -75,8 +75,8 @@ func TestAccCtyunSnapshotPolicy(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, updatedName, true) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "snapshot_policies.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "snapshot_policies.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "policies.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "policies.0.name", updatedName),
 				),
 			},
 			// 6.绑定云硬盘

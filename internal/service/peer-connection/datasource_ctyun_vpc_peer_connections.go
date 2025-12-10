@@ -102,7 +102,7 @@ func (c *CtyunVpcPeerConnections) Schema(ctx context.Context, request datasource
 							Computed:    true,
 						},
 						"create_time": schema.StringAttribute{
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 							Computed:    true,
 						},
 					},

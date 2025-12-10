@@ -61,6 +61,9 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -68,6 +71,9 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.Project(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
@@ -78,6 +84,9 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Optional:    true,
@@ -86,6 +95,9 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"spec": schema.StringAttribute{
 				Optional: true,
@@ -93,7 +105,7 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				Validators: []validator.String{
 					stringvalidator.OneOf("small", "medium", "large", "xlarge"),
 				},
-				Description: "规格(可传值：small, medium, large, xlarge)  支持更新",
+				Description: "规格，(可传值：small, medium, large, xlarge)，支持更新",
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -163,12 +175,17 @@ func (c *ctyunPrivateNat) Schema(_ context.Context, request resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
-				Description: "代金券金额，支持到小数点后两位 支持更新",
+				Description: "代金券金额，支持到小数点后两位，支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
-
 			"nat_gateway_id": schema.StringAttribute{
 				Computed:      true,
 				Description:   "网关id",

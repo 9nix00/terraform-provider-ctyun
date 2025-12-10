@@ -93,11 +93,11 @@ func (c *ctyunRabbitmqInstances) Schema(_ context.Context, _ datasource.SchemaRe
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "过期时间",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"instance_name": schema.StringAttribute{
 							Computed:    true,

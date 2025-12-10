@@ -9,6 +9,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -17,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -54,7 +56,7 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 	response.Schema = schema.Schema{
 		Description: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 			},
@@ -82,24 +84,30 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"src_inst_id": schema.StringAttribute{
+			"src_instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "恢复的源mysql实例id",
 			},
-			"dst_inst_id": schema.StringAttribute{
+			"dst_instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "恢复的目标mysql实例id",
 			},
 			"to_timepoint": schema.StringAttribute{
 				Optional:    true,
-				Description: "恢复到的时间点，格式为：yyyy-MM-dd HH:mm:ss【taskId和toTimepoint不能同时为空，优先取toTimepoint】",
+				Description: "恢复到的时间点，格式为：YYYY-MM-DDTHH:MM:SSZ【taskId和to_timepoint不能同时为空，优先取to_timepoint】",
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`),
+						"必须符合格式：YYYY-MM-DDTHH:MM:SSZ",
+					),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"task_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "用来恢复的备份任务集【taskId和toTimepoint不能同时为空，优先取toTimepoint】",
+				Description: "用来恢复的备份任务集【task_id和to_timepoint不能同时为空，优先取to_timepoint】",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -170,13 +178,15 @@ func (c *CtyunMysqlBackupRecovery) CreateMysqlBackupRecovery(ctx context.Context
 		return err
 	}
 	if config.TaskId.IsNull() && !config.ToTimepoint.IsNull() {
-		params.ToTimepoint = config.ToTimepoint.ValueStringPointer()
+		a := utils.FromRFC3339ToLocal(config.ToTimepoint.ValueString())
+		params.ToTimepoint = &a
 	}
 	if !config.TaskId.IsNull() && config.ToTimepoint.IsNull() {
 		params.TaskId = config.TaskId.ValueStringPointer()
 	}
 	if !config.TaskId.IsNull() && !config.ToTimepoint.IsNull() {
-		params.ToTimepoint = config.ToTimepoint.ValueStringPointer()
+		a := utils.FromRFC3339ToLocal(config.ToTimepoint.ValueString())
+		params.ToTimepoint = &a
 	}
 	header := &mysql.TeledbCreateRecoveryJobRequestHeader{
 		InstID:   config.InstID.ValueString(),
@@ -379,11 +389,11 @@ func (c *CtyunMysqlBackupRecovery) checkBackup(ctx context.Context, config *Ctyu
 }
 
 type CtyunMysqlBackupRecoveryConfig struct {
-	InstID      types.String `tfsdk:"inst_id"`
+	InstID      types.String `tfsdk:"instance_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	RegionID    types.String `tfsdk:"region_id"`
-	SrcInstId   types.String `tfsdk:"src_inst_id"`
-	DstInstId   types.String `tfsdk:"dst_inst_id"`
+	SrcInstId   types.String `tfsdk:"src_instance_id"`
+	DstInstId   types.String `tfsdk:"dst_instance_id"`
 	ToTimepoint types.String `tfsdk:"to_timepoint"`
 	TaskId      types.String `tfsdk:"task_id"`
 	ID          types.Int64  `tfsdk:"id"`

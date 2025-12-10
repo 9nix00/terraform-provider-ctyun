@@ -361,6 +361,17 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 				Computed:    true,
 				Description: "订单id",
 			},
+			"create_time": schema.StringAttribute{
+				Description: "创建时间，为UTC格式",
+				Computed:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"expire_time": schema.StringAttribute{
+				Description: "到期时间，为UTC格式，按需时为空",
+				Computed:    true,
+			},
 		},
 	}
 }
@@ -518,7 +529,6 @@ func (c *CtyunPostgresqlInstance) Delete(ctx context.Context, request resource.D
 			return
 		}
 	}
-	time.Sleep(30 * time.Second)
 	err = c.destroy(ctx, state)
 	if err != nil {
 		return
@@ -690,6 +700,8 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.ProdOrderStatus = types.Int32Value(returnObj.ProdOrderStatus)
 	config.ProdRunningStatus = types.Int32Value(returnObj.ProdRunningStatus)
 	config.ToolType = types.Int32Value(returnObj.ToolType)
+	config.CreateTime = types.StringValue(utils.FromBJTimeToUTCZ(returnObj.CreateTime))
+	config.ExpireTime = types.StringValue(utils.FromBJTimeToUTCZ(returnObj.ExpireTime))
 	//config.BackupStorageType = types.StringValue(returnObj.BackupDiskType)
 	backupDiskSize := c.ParseStorageSize(&returnObj.BackupDiskSize)
 	diskSize, err := strconv.ParseInt(backupDiskSize, 10, 32)
@@ -1130,6 +1142,8 @@ func (c *CtyunPostgresqlInstance) destroy(ctx context.Context, state CtyunPostgr
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
+	masterOrderID := resp.ReturnObj.Data.NewOrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1936,12 +1950,13 @@ type CtyunPostgresqlInstanceConfig struct {
 	ToolType             types.Int32  `tfsdk:"tool_type"`              // 备份工具类型，1：pg_baseback，2：pgbackrest，3：s3
 	RunningControl       types.String `tfsdk:"running_control"`        //
 	MasterOrderID        types.String `tfsdk:"master_order_id"`        // 订单id
-
-	prodPerformanceSpec string
-	instanceSeries      string
-	hostType            string
-	osType              string
-	cpuType             string
+	CreateTime           types.String `tfsdk:"create_time"`
+	ExpireTime           types.String `tfsdk:"expire_time"`
+	prodPerformanceSpec  string
+	instanceSeries       string
+	hostType             string
+	osType               string
+	cpuType              string
 }
 
 type AvailabilityZoneModel struct {

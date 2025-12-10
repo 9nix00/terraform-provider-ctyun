@@ -91,7 +91,7 @@ func (c *CtyunPostgresqlReadOnlyInstance) Schema(ctx context.Context, request re
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10322776",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
@@ -655,7 +655,7 @@ func (c *CtyunPostgresqlReadOnlyInstance) destroy(ctx context.Context, state Cty
 }
 
 type CtyunPostgresqlReadOnlyInstanceConfig struct {
-	InstID               types.String `tfsdk:"inst_id"`
+	InstID               types.String `tfsdk:"instance_id"`
 	CycleType            types.String `tfsdk:"cycle_type"`             // 计费模式： 支持on_demand和month
 	CycleCount           types.Int32  `tfsdk:"cycle_count"`            // 购买时长：单位月（范围：1-12，24，36）
 	AutoRenew            types.Bool   `tfsdk:"auto_renew"`             // 自动续订状态

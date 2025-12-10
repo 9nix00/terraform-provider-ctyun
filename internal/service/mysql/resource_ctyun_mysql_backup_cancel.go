@@ -53,7 +53,7 @@ func (c *CtyunMysqlBackupCancel) Schema(ctx context.Context, request resource.Sc
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 			},
@@ -227,7 +227,7 @@ func (c *CtyunMysqlBackupCancel) getBackupRecordDetail(ctx context.Context, conf
 }
 
 type CtyunBackupCancelConfig struct {
-	InstID         types.String `tfsdk:"inst_id"`
+	InstID         types.String `tfsdk:"instance_id"`
 	ProjectID      types.String `tfsdk:"project_id"`
 	RegionID       types.String `tfsdk:"region_id"`
 	BackupRecordId types.Int64  `tfsdk:"backup_record_id"`

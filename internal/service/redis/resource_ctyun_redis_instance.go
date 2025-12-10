@@ -139,14 +139,14 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
-				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填",
+				Description: "订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填，支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.OrderCycleTypeOnDemand, business.OrderCycleTypeMonth),
 				},
 			},
 			"cycle_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36",
+				Description: "订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36，从按需变为包周期时支持更新",
 				Validators: []validator.Int32{
 					validator2.AlsoRequiresEqualInt32(
 						path.MatchRoot("cycle_type"),
@@ -437,18 +437,21 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 				Attributes: map[string]schema.Attribute{
 					"period": schema.StringAttribute{
 						Required:    true,
-						Description: "备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份",
+						Description: "备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份，支持更新",
+						Validators: []validator.String{
+							stringvalidator.UTF8LengthAtLeast(1),
+						},
 					},
 					"time": schema.Int32Attribute{
 						Required:    true,
-						Description: "每日备份执行时间（0-23）",
+						Description: "每日备份执行时间（0-23），支持更新",
 						Validators: []validator.Int32{
 							int32validator.Between(0, 23),
 						},
 					},
 					"retention_day": schema.Int32Attribute{
 						Required:    true,
-						Description: "备份保留天数（1-7）",
+						Description: "备份保留天数（1-7），支持更新",
 						Validators: []validator.Int32{
 							int32validator.Between(1, 7),
 						},
@@ -488,20 +491,20 @@ func (c *ctyunRedisInstance) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"template_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "参数模板ID，用于应用参数模板",
+				Description: "参数模板ID，用于应用参数模板，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(45, 45),
 				},
 			},
 			"create_time": schema.StringAttribute{
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"expire_time": schema.StringAttribute{
-				Description: "到期时间",
+				Description: "到期时间，为UTC格式，按需时为空",
 				Computed:    true,
 			},
 		},

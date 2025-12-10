@@ -53,7 +53,7 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 					initialConfig["allow_earliest_time"], initialConfig["trigger_days_of_week"],
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "storage_day", "7"),
 					resource.TestCheckResourceAttr(resourceName, "frequency_backup", "false"),
@@ -71,7 +71,7 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 					updatedConfig["allow_earliest_time"], updatedConfig["trigger_days_of_week"],
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "storage_day", "14"),
 					resource.TestCheckResourceAttr(resourceName, "frequency_backup", "true"),

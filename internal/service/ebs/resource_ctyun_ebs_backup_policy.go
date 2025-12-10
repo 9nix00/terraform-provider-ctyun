@@ -220,9 +220,8 @@ func (c *ctyunEbsBackupPolicy) Schema(_ context.Context, _ resource.SchemaReques
 				},
 				Description: "策略已绑定的云硬盘备份库列表",
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"adv_retention": schema.SingleNestedBlock{
+			"adv_retention": schema.SingleNestedAttribute{
+				Optional: true,
 				Attributes: map[string]schema.Attribute{
 					"adv_day": schema.Int64Attribute{
 						Optional:    true,

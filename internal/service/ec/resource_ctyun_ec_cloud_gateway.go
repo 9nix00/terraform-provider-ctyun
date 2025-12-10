@@ -133,7 +133,7 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 			//},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

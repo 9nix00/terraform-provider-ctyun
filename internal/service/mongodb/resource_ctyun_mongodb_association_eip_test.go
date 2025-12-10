@@ -45,7 +45,7 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instId),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instId),
 				),
 			},
 			//datasource验证

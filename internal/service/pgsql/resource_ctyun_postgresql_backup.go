@@ -10,6 +10,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -92,7 +93,7 @@ func (c *CtyunPostgresqlBackup) Schema(ctx context.Context, request resource.Sch
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -334,27 +335,10 @@ func (c *CtyunPostgresqlBackup) getAndMergePostgresqlBackup(ctx context.Context,
 	detail := detailList.ReturnObj.List[0]
 	config.BackupType = types.StringValue(business.PgsqlBackupTypeMapConv[detail.Type])
 	config.BackupResult = types.StringValue(business.PgsqlBackupResultMapConv[detail.Result])
-	config.StartTime = types.StringValue(c.yyyyMMddConvertUTC(detail.StartTime))
-	config.EndTime = types.StringValue(c.yyyyMMddConvertUTC(detail.EndTime))
+	config.StartTime = types.StringValue(utils.FromBJTimeToUTCZ(detail.StartTime))
+	config.EndTime = types.StringValue(utils.FromBJTimeToUTCZ(detail.EndTime))
 	return nil
 
-}
-
-func (c *CtyunPostgresqlBackup) yyyyMMddConvertUTC(timeStr string) string {
-	if timeStr == "" {
-		return ""
-	}
-	layout := "2006-01-02 15:04:05" // Go 的特定格式，必须使用这个参考时间
-	// 2. 解析时间为本地时间（东八区）
-	var localTime, err = time.Parse(layout, timeStr)
-	if err != nil {
-		fmt.Println("解析时间错误:", err)
-		return ""
-	}
-	// 3. 转换为 UTC 时间
-	utcTime := localTime.UTC()
-	utcStr := utcTime.Format("2006-01-02T15:04:05Z") // ISO 8601 格式
-	return utcStr
 }
 
 func (c *CtyunPostgresqlBackup) backupIngLoop(ctx context.Context, config *CtyunPostgresqlBackupConfig, loopCount ...int) error {
@@ -401,7 +385,7 @@ func (c *CtyunPostgresqlBackup) backupIngLoop(ctx context.Context, config *Ctyun
 type CtyunPostgresqlBackupConfig struct {
 	RegionID     types.String `tfsdk:"region_id"`
 	ProjectID    types.String `tfsdk:"project_id"`
-	InstID       types.String `tfsdk:"inst_id"`
+	InstID       types.String `tfsdk:"instance_id"`
 	Name         types.String `tfsdk:"name"`
 	Description  types.String `tfsdk:"description"`
 	ID           types.Int64  `tfsdk:"id"`

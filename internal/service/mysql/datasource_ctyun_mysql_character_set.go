@@ -41,7 +41,7 @@ func (c *ctyunMysqlCharacterSet) Schema(ctx context.Context, request datasource.
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10140487",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				Validators: []validator.String{
@@ -60,7 +60,7 @@ func (c *ctyunMysqlCharacterSet) Schema(ctx context.Context, request datasource.
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"mysql_character_set": schema.ListNestedAttribute{
+			"character_set": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
@@ -155,8 +155,8 @@ type CtyunMysqlDatabaseCharacterModel struct {
 }
 
 type CtyunMysqlCharacterSetConfig struct {
-	InstID            types.String                       `tfsdk:"inst_id"`
+	InstID            types.String                       `tfsdk:"instance_id"`
 	ProjectID         types.String                       `tfsdk:"project_id"`
 	RegionID          types.String                       `tfsdk:"region_id"`
-	MysqlCharacterSet []CtyunMysqlDatabaseCharacterModel `tfsdk:"mysql_character_set"`
+	MysqlCharacterSet []CtyunMysqlDatabaseCharacterModel `tfsdk:"character_set"`
 }

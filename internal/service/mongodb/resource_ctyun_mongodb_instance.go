@@ -341,6 +341,13 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 					int32validator.Between(1, 5),
 				},
 			},
+			"create_time": schema.StringAttribute{
+				Computed:    true,
+				Description: "创建时间，为UTC格式",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -653,6 +660,7 @@ func (c *CtyunMongodbInstance) getAndMergeMongodbInstance(ctx context.Context, c
 	config.EipID = types.StringValue(detailReturnObj.NodeInfoVOS[0].OuterElasticIpId)
 	config.HostIp = types.StringValue(detailReturnObj.Host)
 	config.StorageSpace = types.Int32Value(detailReturnObj.DiskSize)
+	config.CreateTime = types.StringValue(utils.FromUnixToUTC(detailReturnObj.CreateTime))
 	if detailReturnObj.Backup != nil {
 		backupSize := strings.TrimSuffix(detailReturnObj.Backup.Size, "G")
 		backupStorageSpace, err2 := strconv.ParseInt(backupSize, 10, 32)
@@ -2666,6 +2674,7 @@ type CtyunMongodbInstanceConfig struct {
 	BackupStorageType    types.String `tfsdk:"backup_storage_type"`    // 备份节点存储类型
 	UpgradeNodeType      types.String `tfsdk:"upgrade_node_type"`      // 集群版mongodb升配规格时，
 	ReadOnlyCount        types.Int32  `tfsdk:"read_only_count"`
+	CreateTime           types.String `tfsdk:"create_time"`
 	prodPerformanceSpec  string
 	instanceSeries       string
 	hostType             string

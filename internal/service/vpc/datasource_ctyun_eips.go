@@ -180,15 +180,15 @@ func (c *ctyunEips) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "到期时间",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 					},
 				},

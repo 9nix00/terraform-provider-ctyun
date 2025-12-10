@@ -37,7 +37,7 @@ func TestAccCtyunPgsqlWhiteList(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "mode", "cover"),
 					resource.TestCheckResourceAttr(resourceName, "ip_list_result.#", "2"),
 					resource.TestCheckTypeSetElemAttr(resourceName, "ip_list_result.*", "192.168.1.0/24"),

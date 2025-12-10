@@ -68,7 +68,7 @@ func (c *CtyunMysqlAudit) Schema(ctx context.Context, request resource.SchemaReq
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10133568",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "mysql实例Id",
 			},
@@ -216,7 +216,7 @@ func (c *CtyunMysqlAudit) getMysqlAuditStatus(ctx context.Context, config *Ctyun
 }
 
 type CtyunMysqlAuditConfig struct {
-	InstID      types.String `tfsdk:"inst_id"`
+	InstID      types.String `tfsdk:"instance_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	RegionID    types.String `tfsdk:"region_id"`
 	AuditSwitch types.Bool   `tfsdk:"audit_switch"`

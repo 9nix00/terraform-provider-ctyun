@@ -102,7 +102,7 @@ func (c *CtyunScalings) Schema(ctx context.Context, request datasource.SchemaReq
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"group_id": schema.Int64Attribute{
 							Computed:    true,
@@ -110,7 +110,7 @@ func (c *CtyunScalings) Schema(ctx context.Context, request datasource.SchemaReq
 						},
 						"update_date": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"health_mode": schema.StringAttribute{
 							Computed:    true,

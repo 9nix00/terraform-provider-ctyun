@@ -35,24 +35,24 @@ type CtyunMongodbBackupsConfig struct {
 	RegionID   types.String              `tfsdk:"region_id"`
 	ProjectID  types.String              `tfsdk:"project_id"`
 	InstanceID types.String              `tfsdk:"instance_id"`
-	BackupID   types.String              `tfsdk:"backup_id"`
-	BackupType types.String              `tfsdk:"backup_type"`
+	BackupID   types.String              `tfsdk:"id"`
+	BackupType types.String              `tfsdk:"type"`
 	PageNo     types.Int32               `tfsdk:"page_no"`
 	PageSize   types.Int32               `tfsdk:"page_size"`
 	Backups    []CtyunMongodbBackupModel `tfsdk:"backups"`
 }
 
 type CtyunMongodbBackupModel struct {
-	BackupID          types.String `tfsdk:"backup_id"`
-	BackupName        types.String `tfsdk:"backup_name"`
-	BackupMethod      types.String `tfsdk:"backup_method"`
-	BackupType        types.String `tfsdk:"backup_type"`
-	BackupStatus      types.String `tfsdk:"backup_status"`
-	BackupStartTime   types.String `tfsdk:"backup_start_time"`
-	BackupEndTime     types.String `tfsdk:"backup_end_time"`
-	BackupSize        types.Int64  `tfsdk:"backup_size"`
+	BackupID          types.String `tfsdk:"id"`
+	BackupName        types.String `tfsdk:"name"`
+	BackupMethod      types.String `tfsdk:"method"`
+	BackupType        types.String `tfsdk:"type"`
+	BackupStatus      types.String `tfsdk:"status"`
+	BackupStartTime   types.String `tfsdk:"start_time"`
+	BackupEndTime     types.String `tfsdk:"end_time"`
+	BackupSize        types.Int64  `tfsdk:"size"`
 	Description       types.String `tfsdk:"description"`
-	BackupTriggerType types.String `tfsdk:"backup_trigger_type"`
+	BackupTriggerType types.String `tfsdk:"trigger_type"`
 }
 
 func (d *CtyunMongodbBackups) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
@@ -65,10 +65,6 @@ func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaR
 		MarkdownDescription: "天翼云MongoDB备份数据源",
 
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "数据源ID",
-			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
@@ -83,11 +79,11 @@ func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaR
 				Required:    true,
 				Description: "实例ID",
 			},
-			"backup_id": schema.StringAttribute{
+			"id": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份ID",
 			},
-			"backup_type": schema.StringAttribute{
+			"type": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份类型",
 				Validators: []validator.String{
@@ -116,35 +112,35 @@ func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaR
 				Description: "备份列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"backup_id": schema.StringAttribute{
+						"id": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份ID",
 						},
-						"backup_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份名称",
 						},
-						"backup_method": schema.StringAttribute{
+						"method": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份方式",
 						},
-						"backup_type": schema.StringAttribute{
+						"type": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份类型",
 						},
-						"backup_status": schema.StringAttribute{
+						"status": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份状态",
 						},
-						"backup_start_time": schema.StringAttribute{
+						"start_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份开始时间",
 						},
-						"backup_end_time": schema.StringAttribute{
+						"end_time": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份结束时间",
 						},
-						"backup_size": schema.Int64Attribute{
+						"size": schema.Int64Attribute{
 							Computed:    true,
 							Description: "备份大小",
 						},
@@ -152,7 +148,7 @@ func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaR
 							Computed:    true,
 							Description: "备份描述",
 						},
-						"backup_trigger_type": schema.StringAttribute{
+						"trigger_type": schema.StringAttribute{
 							Computed:    true,
 							Description: "备份触发类型",
 						},

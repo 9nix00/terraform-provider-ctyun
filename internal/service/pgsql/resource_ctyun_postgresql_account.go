@@ -92,7 +92,7 @@ func (c *CtyunPostgresqlAccount) Schema(ctx context.Context, request resource.Sc
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -723,7 +723,7 @@ func (c *CtyunPostgresqlAccount) updatePassword(ctx context.Context, state *Ctyu
 type CtyunPostgresqlAccountConfig struct {
 	RegionID            types.String `tfsdk:"region_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
-	InstID              types.String `tfsdk:"inst_id"`
+	InstID              types.String `tfsdk:"instance_id"`
 	Name                types.String `tfsdk:"name"`
 	Password            types.String `tfsdk:"password"`
 	UserType            types.String `tfsdk:"user_type"`

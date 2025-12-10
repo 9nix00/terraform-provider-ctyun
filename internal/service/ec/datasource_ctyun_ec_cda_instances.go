@@ -148,7 +148,7 @@ func (c *CtyunEcCdaInstances) Schema(ctx context.Context, req datasource.SchemaR
 						},
 						"create_date": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"status": schema.StringAttribute{
 							Computed:    true,

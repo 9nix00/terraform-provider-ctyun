@@ -239,7 +239,7 @@ func (c *ctyunEcsInstances) Schema(_ context.Context, _ datasource.SchemaRequest
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "到期时间，为UTC格式",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,

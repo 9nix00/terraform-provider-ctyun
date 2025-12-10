@@ -55,7 +55,7 @@ func (c *CtyunMysqlParameters) Schema(ctx context.Context, request datasource.Sc
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 			},
@@ -210,7 +210,7 @@ type MysqlParametersModel struct {
 type CtyunMysqlParametersConfig struct {
 	ProjectID  types.String           `tfsdk:"project_id"`
 	RegionID   types.String           `tfsdk:"region_id"`
-	InstID     types.String           `tfsdk:"inst_id"`
+	InstID     types.String           `tfsdk:"instance_id"`
 	PageNo     types.Int32            `tfsdk:"page_no"`
 	PageSize   types.Int32            `tfsdk:"page_size"`
 	Parameters []MysqlParametersModel `tfsdk:"parameters"`

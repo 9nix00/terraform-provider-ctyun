@@ -287,7 +287,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 				Computed:    true,
 				Description: "订单id",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Computed:    true,
 				Description: "实例Id",
 			},
@@ -383,7 +383,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 				Computed:      true,
-				Description:   "实例Id，同inst_id",
+				Description:   "实例Id，同instance_id",
 			},
 		},
 	}
@@ -725,7 +725,7 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 	config.SubnetID = types.StringValue(returnOjb.SubnetId)
 	config.SecurityGroupID = types.StringValue(returnOjb.SecurityGroupId)
 	config.CycleType = types.StringValue(business.MysqlBillModeRev[returnOjb.ProdBillType])
-	config.CycleCount = types.Int32Value(returnOjb.ProdBillTime)
+	//config.CycleCount = types.Int32Value(returnOjb.ProdBillTime)
 	return
 }
 
@@ -1456,7 +1456,7 @@ type CtyunMysqlInstanceConfig struct {
 	AutoRenew                   types.Bool   `tfsdk:"auto_renew"`                     // 自动续订状态
 	ProdID                      types.String `tfsdk:"prod_id"`                        // 产品id
 	MasterOrderID               types.String `tfsdk:"master_order_id"`                // 订单id
-	InstID                      types.String `tfsdk:"inst_id"`                        // 实例id
+	InstID                      types.String `tfsdk:"instance_id"`                    // 实例id
 	ProjectID                   types.String `tfsdk:"project_id"`                     // 项目id
 	ProdRunningStatus           types.Int32  `tfsdk:"prod_running_status"`            // 以查询实例列表为主，0.正常 1.重启中 2.备份中 3.恢复中 4.修改参数中 5.应用参数组中 6&7.扩容中 8.修改端口中 9.迁移中 10.重置密码中
 	Vip                         types.String `tfsdk:"vip"`                            // 虚拟IP地址

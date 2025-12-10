@@ -56,7 +56,7 @@ func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.S
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 			},
@@ -353,7 +353,7 @@ func extractHourMinute(timeStr string) string {
 }
 
 type CtyunMysqlBackupSettingConfig struct {
-	InstID                  types.String `tfsdk:"inst_id"`
+	InstID                  types.String `tfsdk:"instance_id"`
 	ProjectID               types.String `tfsdk:"project_id"`
 	RegionID                types.String `tfsdk:"region_id"`
 	StorageDay              types.Int32  `tfsdk:"storage_day"`

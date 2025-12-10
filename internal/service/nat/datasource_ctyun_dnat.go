@@ -53,7 +53,7 @@ func (c *ctyunDNatDatasource) Schema(_ context.Context, _ datasource.SchemaReque
 					Attributes: map[string]schema.Attribute{
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,

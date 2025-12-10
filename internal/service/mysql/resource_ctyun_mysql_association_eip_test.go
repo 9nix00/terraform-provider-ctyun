@@ -10,15 +10,11 @@ import (
 )
 
 func TestAccCtyunMysqlAssociationEip(t *testing.T) {
-
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
 	resourceName := "ctyun_mysql_association_eip." + rnd
 	resourceFile := "resource_ctyun_mysql_association_eip.tf"
-
-	datasourceName := "data.ctyun_mysql_association_eips." + dnd
-	datasourceFile := "datasource_ctyun_mysql_association_eips.tf"
 	eipId := dependence.eipID
 	eipAddress := dependence.eipAddress
 	instId := dependence.mysqlID
@@ -37,23 +33,11 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
-			// 绑定IP验证
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instId),
-				),
-			},
-			//datasource验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId) +
-					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip_id", eipId),
-					//resource.TestCheckResourceAttr(datasourceName, "eips.0.eip", eipAddress),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instId),
 				),
 			},
 			{

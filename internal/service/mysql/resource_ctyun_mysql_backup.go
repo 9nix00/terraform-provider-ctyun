@@ -77,7 +77,7 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 				PlanModifiers: []planmodifier.String{
@@ -514,7 +514,7 @@ func (c *CtyunMysqlBackup) startedLoop(ctx context.Context, config CtyunMysqlBac
 }
 
 type CtyunMysqlBackupConfig struct {
-	InstID      types.String `tfsdk:"inst_id"`
+	InstID      types.String `tfsdk:"instance_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	RegionID    types.String `tfsdk:"region_id"`
 	Name        types.String `tfsdk:"name"` // 备份名称在4位到64位之间，不区分大小写，可以包含中文、字母、数字、中划线或下划线，不能包含其他特殊字符

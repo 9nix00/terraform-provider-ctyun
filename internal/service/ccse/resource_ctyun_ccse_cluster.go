@@ -155,14 +155,14 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "到期时间",
+				Description: "到期时间，为UTC格式，按需时为空",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -336,7 +336,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"pod_subnet_id_list": schema.SetAttribute{
 						ElementType: types.StringType,
 						Optional:    true,
-						Description: "pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC，最多支持10个子网",
+						Description: "pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC，最多支持10个子网，支持更新",
 						Validators: []validator.Set{
 							validator2.AlsoRequiresEqualSet(
 								path.MatchRoot("base_info").AtName("network_plugin"),
@@ -566,7 +566,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"series_type": schema.StringAttribute{
 						Optional:    true,
 						Computed:    true,
-						Description: "托管版集群规格，托管版集群必填。支持managedbase（单实例），managedpro（多实例）。单/多实例指控制面是否高可用，生产环境建议使用多实例",
+						Description: "托管版集群规格，托管版集群必填。支持managedbase（单实例），managedpro（多实例）。单/多实例指控制面是否高可用，生产环境建议使用多实例，支持更新",
 						Validators: []validator.String{
 							stringvalidator.OneOf(business.CcseSeriesTypeManagedbase, business.CcseSeriesTypeManagedpro),
 							validator2.AlsoRequiresEqualString(
@@ -578,7 +578,7 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"node_scale": schema.Int32Attribute{
 						Optional:    true,
 						Computed:    true,
-						Description: "托管版集群节点规模。series_type=managedbase时，选择节点规模，可选10；series_type=managedpro时，选择节点规模，可选为50，200，1000，2000",
+						Description: "托管版集群节点规模。series_type=managedbase时，选择节点规模，可选10；series_type=managedpro时，选择节点规模，可选为50，200，1000，2000，支持更新",
 						Validators: []validator.Int32{
 							validator2.CrossFieldInt32(
 								path.MatchRoot("base_info").AtName("series_type"),

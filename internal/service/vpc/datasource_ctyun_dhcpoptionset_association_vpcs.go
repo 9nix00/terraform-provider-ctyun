@@ -36,7 +36,6 @@ type CtyunDhcpOptionSetAssociationVpcsModel struct {
 	Cidr           types.String `tfsdk:"cidr"`
 	SecondaryCidrs []string     `tfsdk:"secondary_cidrs"`
 	Status         types.String `tfsdk:"status"`
-	CreatedAt      types.String `tfsdk:"created_at"`
 }
 
 type CtyunDhcpOptionSetAssociationVpcsConfig struct {
@@ -113,10 +112,6 @@ func (c *ctyunDhcpOptionSetAssociationVpcs) Schema(_ context.Context, _ datasour
 							Description: "状态列表",
 							ElementType: types.StringType,
 						},
-						"created_at": schema.StringAttribute{
-							Computed:    true,
-							Description: "关联时间",
-						},
 					},
 				},
 			},
@@ -181,7 +176,6 @@ func (c *ctyunDhcpOptionSetAssociationVpcs) Read(ctx context.Context, request da
 			Cidr:           utils.SecStringValue(v.Cidr),
 			SecondaryCidrs: utils.StrPointerArrayToStrArray(v.SecondaryCidrs),
 			Status:         utils.SecStringValue(v.Status),
-			CreatedAt:      utils.SecStringValue(v.CreatedAt),
 		}
 		config.Vpcs = append(config.Vpcs, item)
 	}

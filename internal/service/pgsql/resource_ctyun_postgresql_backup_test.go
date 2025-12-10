@@ -37,7 +37,7 @@ func TestAccCtyunPostgresqlBackup(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "name", backupName),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -59,12 +59,12 @@ func TestAccCtyunPostgresqlBackup(t *testing.T) {
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["project_id"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["backup_type"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result"},
 			},
 			// 3. 清理资源
 			{

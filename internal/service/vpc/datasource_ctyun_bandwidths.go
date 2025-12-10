@@ -119,11 +119,11 @@ func (c *ctyunBandwidths) Schema(_ context.Context, _ datasource.SchemaRequest, 
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "到期时间",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"eips": schema.ListNestedAttribute{
 							Computed: true,

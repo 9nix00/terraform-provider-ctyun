@@ -181,6 +181,12 @@ func (c *ctyunRabbitmqQueue) Schema(_ context.Context, _ resource.SchemaRequest,
 			"x_message_ttl": schema.Int64Attribute{
 				Description: "消息过期时间，发布到队列的消息在被丢弃之前可以存活的时间，单位为ms",
 				Optional:    true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"x_max_length": schema.Int64Attribute{
 				Description: "队列最大消息长度",
@@ -188,12 +194,18 @@ func (c *ctyunRabbitmqQueue) Schema(_ context.Context, _ resource.SchemaRequest,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"x_max_length_bytes": schema.Int64Attribute{
 				Description: "队列消息的总字节数上限",
 				Optional:    true,
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
 				},
 			},
 			"x_overflow": schema.StringAttribute{

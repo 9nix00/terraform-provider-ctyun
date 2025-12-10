@@ -38,17 +38,17 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(charsetDatasourceName, "mysql_character_set.#"),
+					resource.TestCheckResourceAttrSet(charsetDatasourceName, "character_set.#"),
 				),
 			},
 			// 1. 创建数据库测试
 			{
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID) + utils.LoadTestCase(
 					resourceFile, rnd, mysqlInstanceID, projectID,
-					dbName, fmt.Sprintf("%s.mysql_character_set.0.charset", charsetDatasourceName), initialDescription,
+					dbName, fmt.Sprintf("%s.character_set.0.charset", charsetDatasourceName), initialDescription,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "name", dbName),
 					resource.TestCheckResourceAttr(resourceName, "description", initialDescription),
@@ -59,10 +59,10 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID) + utils.LoadTestCase(
 					resourceFile, rnd, mysqlInstanceID, projectID,
-					dbName, fmt.Sprintf("%s.mysql_character_set.0.charset", charsetDatasourceName), updatedDescription,
+					dbName, fmt.Sprintf("%s.character_set.0.charset", charsetDatasourceName), updatedDescription,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "name", dbName),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
@@ -72,9 +72,9 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 			// database datasource验证
 			{
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID) + utils.LoadTestCase(
-					resourceFile, rnd, mysqlInstanceID, projectID, dbName, fmt.Sprintf("%s.mysql_character_set.0.charset", charsetDatasourceName), updatedDescription) + utils.LoadTestCase(datasourceFile, dnd, mysqlInstanceID, projectID),
+					resourceFile, rnd, mysqlInstanceID, projectID, dbName, fmt.Sprintf("%s.character_set.0.charset", charsetDatasourceName), updatedDescription) + utils.LoadTestCase(datasourceFile, dnd, mysqlInstanceID, projectID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(datasourceName, "mysql_databases.#"),
+					resource.TestCheckResourceAttrSet(datasourceName, "databases.#"),
 				),
 			},
 			// 3. 导入测试
@@ -91,7 +91,7 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["charset_name"],
 						rs.Primary.Attributes["description"],
 					), nil
@@ -105,7 +105,7 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID) + utils.LoadTestCase(
 					rnd, resourceFile,
 					mysqlInstanceID, projectID,
-					dbName, fmt.Sprintf("%s.mysql_character_set.0.charset", charsetDatasourceName), updatedDescription,
+					dbName, fmt.Sprintf("%s.character_set.0.charset", charsetDatasourceName), updatedDescription,
 				),
 				Destroy: true,
 			},

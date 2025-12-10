@@ -83,7 +83,7 @@ func (c *CtyunSdwans) Schema(ctx context.Context, req datasource.SchemaRequest, 
 						},
 						"created_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 					},
 				},

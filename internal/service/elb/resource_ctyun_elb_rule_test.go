@@ -75,12 +75,12 @@ func TestAccCtyunElbRule(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, listenerId, updatedConditions, actionType, actionTargetGroups) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.listener_id", listenerId),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.condition_type", "server_name"),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.conditions.0.server_name", "terraform-test-new.com"),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_type", actionType),
-					resource.TestCheckResourceAttr(datasourceName, "elb_rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID4),
+					resource.TestCheckResourceAttr(datasourceName, "rules.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "rules.0.listener_id", listenerId),
+					resource.TestCheckResourceAttr(datasourceName, "rules.0.conditions.0.condition_type", "server_name"),
+					resource.TestCheckResourceAttr(datasourceName, "rules.0.conditions.0.server_name", "terraform-test-new.com"),
+					resource.TestCheckResourceAttr(datasourceName, "rules.0.action_type", actionType),
+					resource.TestCheckResourceAttr(datasourceName, "rules.0.action_target_groups.0.target_group_id", dependence.targetGroupID4),
 				),
 			},
 			//1.4 destroy

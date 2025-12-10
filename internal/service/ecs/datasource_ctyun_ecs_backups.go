@@ -169,7 +169,7 @@ func (c *ctyunEcsBackups) Schema(_ context.Context, _ datasource.SchemaRequest, 
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"finish_time": schema.StringAttribute{
 							Computed:    true,

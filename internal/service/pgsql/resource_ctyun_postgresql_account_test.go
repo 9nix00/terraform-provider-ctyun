@@ -50,7 +50,7 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "user_type", "normal"),
 					resource.TestCheckResourceAttr(resourceName, "description", initialDescription),
@@ -123,7 +123,7 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["user_type"],
 						rs.Primary.Attributes["description"],
 					), nil
@@ -188,7 +188,7 @@ func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "user_type", "advanced"),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
@@ -207,7 +207,7 @@ func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 				Config: utils.LoadTestCase(
 					datasourceFile, dnd, instanceID, accountName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "postgresql_accounts.0.account_name", accountName),
+					resource.TestCheckResourceAttr(datasourceName, "accounts.0.name", accountName),
 				),
 			},
 			// 2. 验证高权限账户的数据库授权能力

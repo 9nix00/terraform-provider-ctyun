@@ -253,7 +253,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				Default: stringdefault.StaticString(business.ZosAzPolicySingle),
 			},
 			"create_time": schema.StringAttribute{
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),

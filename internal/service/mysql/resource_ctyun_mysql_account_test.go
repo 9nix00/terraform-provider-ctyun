@@ -71,7 +71,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 					initialPrivilegesStr, "Initial description",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "description", "Initial description"),
@@ -88,7 +88,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 					updatedPrivilegesStr, "Updated description",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "name", accountName),
 					resource.TestCheckResourceAttr(resourceName, "description", "Updated description"),
@@ -114,7 +114,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
@@ -128,9 +128,9 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 					updatedPrivilegesStr, "Updated description",
 				) + utils.LoadTestCase(datasourceFile, dnd, mysqlInstanceID, accountName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.#", "1"),
-					resource.TestCheckResourceAttr(dataSourceName, "mysql_accounts.0.account_name", accountName),
-					resource.TestCheckResourceAttrSet(dataSourceName, "mysql_accounts.0.schema_privilege_list.#"),
+					resource.TestCheckResourceAttr(dataSourceName, "accounts.#", "1"),
+					resource.TestCheckResourceAttr(dataSourceName, "accounts.0.name", accountName),
+					resource.TestCheckResourceAttrSet(dataSourceName, "accounts.0.schema_privilege_list.#"),
 				),
 			},
 			{

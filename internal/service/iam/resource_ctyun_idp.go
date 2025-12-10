@@ -44,14 +44,14 @@ func (c *ctyunIdp) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"file": schema.StringAttribute{
 				Required:    true,
-				Description: "联邦登录文件",
+				Description: "联邦登录文件，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"file_name": schema.StringAttribute{
 				Required:    true,
-				Description: "文件名称（需携带后缀）",
+				Description: "文件名称（需携带后缀），支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^.+\..+$`), "文件名需要携带后缀"),
@@ -62,6 +62,9 @@ func (c *ctyunIdp) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				Description: "身份提供商名称",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"type": schema.StringAttribute{
@@ -90,7 +93,7 @@ func (c *ctyunIdp) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "描述",
+				Description: "描述，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},

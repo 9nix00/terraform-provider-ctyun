@@ -100,10 +100,16 @@ func (c *ctyunPrivateSnatResource) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"source_subnet_id": schema.StringAttribute{
 				Required:    true,
-				Description: "子网ID，需要和NAT网关同属一个VPC 支持更新",
+				Description: "子网ID，需要和NAT网关同属一个VPC，支持更新",
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"addresses": schema.SetAttribute{
 				Required:    true,

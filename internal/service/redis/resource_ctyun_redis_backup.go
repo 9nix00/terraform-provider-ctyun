@@ -97,7 +97,7 @@ func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"create_time": schema.StringAttribute{
 				Computed:      true,
-				Description:   "创建时间",
+				Description:   "创建时间，为UTC格式",
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 			"status": schema.StringAttribute{

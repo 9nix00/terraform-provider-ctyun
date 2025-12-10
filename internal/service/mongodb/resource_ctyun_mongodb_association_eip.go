@@ -63,7 +63,7 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 					validator2.EipValidate(),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
 				Validators: []validator.String{
@@ -353,7 +353,7 @@ func (c *CtyunMongodbAssociationEip) getAndMergeBindEip(ctx context.Context, con
 
 type MongodbAssociationEipConfig struct {
 	EipID      types.String `tfsdk:"eip_id"`      // 弹性ip id
-	InstID     types.String `tfsdk:"inst_id"`     // 实例id
+	InstID     types.String `tfsdk:"instance_id"` // 实例id
 	HostIP     types.String `tfsdk:"host_ip"`     // 主机ip
 	ProjectID  types.String `tfsdk:"project_id"`  // 项目id
 	RegionID   types.String `tfsdk:"region_id"`   // 资源池id

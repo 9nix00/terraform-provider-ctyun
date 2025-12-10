@@ -49,6 +49,23 @@ func (u EcsService) GetFlavorByName(ctx context.Context, flavorName, regionId st
 	return
 }
 
+func (u EcsService) GetFlavorIDByName(ctx context.Context, flavorName, regionId, azName string) (flavorID string, err error) {
+	resp, err := u.meta.Apis.CtEcsApis.EcsFlavorListApi.Do(ctx, u.meta.Credential, &ctecs.EcsFlavorListRequest{
+		RegionId:   regionId,
+		FlavorName: flavorName,
+		AzName:     azName,
+	})
+	if err != nil {
+		return
+	}
+	if len(resp.FlavorList) == 0 {
+		err = fmt.Errorf("云主机规格 %s 不存在", flavorName)
+		return
+	}
+	flavorID = resp.FlavorList[0].FlavorId
+	return
+}
+
 func (u EcsService) MustExist(ctx context.Context, id, regionId string) error {
 	_, err := u.meta.Apis.CtEcsApis.EcsInstanceDetailsApi.Do(ctx, u.meta.Credential, &ctecs.EcsInstanceDetailsRequest{
 		RegionId:   regionId,

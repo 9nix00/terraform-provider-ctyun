@@ -49,9 +49,9 @@ func (c *ctyunPrivateDnatDatasource) Schema(_ context.Context, _ datasource.Sche
 				Description: "私网dnats列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"created_at": schema.StringAttribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,
@@ -214,6 +214,6 @@ type CtyunPrivateDnatModel struct {
 	DeviceID     types.String `tfsdk:"device_id"`     /*  网卡对应的设备ID  */
 	Protocol     types.String `tfsdk:"protocol"`      /*  协议: tcp/udp  */
 	State        types.String `tfsdk:"state"`         /*  DNAT状态: running代表运行中, freeze代表已冻结, expired代表已到期  */
-	CreatedAt    types.String `tfsdk:"created_at"`    /*  创建时间  */
+	CreatedAt    types.String `tfsdk:"create_time"`   /*  创建时间  */
 	Description  types.String `tfsdk:"description"`   /*  描述  */
 }

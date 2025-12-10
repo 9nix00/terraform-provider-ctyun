@@ -42,7 +42,7 @@ func (c *ctyunMysqlDatabases) Schema(ctx context.Context, request datasource.Sch
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10140487",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				Validators: []validator.String{
@@ -61,11 +61,11 @@ func (c *ctyunMysqlDatabases) Schema(ctx context.Context, request datasource.Sch
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"mysql_databases": schema.ListNestedAttribute{
+			"databases": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"db_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "数据库名称",
 						},
@@ -180,13 +180,13 @@ type CtyunMysqlUserDatabasePrivilegeModel struct {
 }
 
 type CtyunMysqlDatabaseModel struct {
-	DBName     types.String                           `tfsdk:"db_name"`
+	DBName     types.String                           `tfsdk:"name"`
 	UserVOList []CtyunMysqlUserDatabasePrivilegeModel `tfsdk:"user_vo_list"`
 }
 
 type CtyunMysqlDatabasesConfig struct {
-	InstID         types.String              `tfsdk:"inst_id"`
+	InstID         types.String              `tfsdk:"instance_id"`
 	ProjectID      types.String              `tfsdk:"project_id"`
 	RegionID       types.String              `tfsdk:"region_id"`
-	MysqlDatabases []CtyunMysqlDatabaseModel `tfsdk:"mysql_databases"`
+	MysqlDatabases []CtyunMysqlDatabaseModel `tfsdk:"databases"`
 }

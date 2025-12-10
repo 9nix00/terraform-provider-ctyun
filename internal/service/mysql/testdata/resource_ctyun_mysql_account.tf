@@ -1,5 +1,5 @@
 resource "ctyun_mysql_account" "%[1]s" {
-  inst_id          = "%[2]s"
+  instance_id          = "%[2]s"
   project_id       = "%[3]s"
   name     = "%[4]s"
   password = "%[5]s"

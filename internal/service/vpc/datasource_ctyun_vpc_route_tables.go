@@ -121,11 +121,11 @@ func (c *ctyunVpcRouteTables) Schema(_ context.Context, _ datasource.SchemaReque
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"type": schema.Int64Attribute{
 							Computed:    true,

@@ -54,7 +54,7 @@ func (c *ctyunPgsqlAccounts) Schema(ctx context.Context, request datasource.Sche
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "PostgreSQL实例ID",
 				Validators: []validator.String{
@@ -79,11 +79,11 @@ func (c *ctyunPgsqlAccounts) Schema(ctx context.Context, request datasource.Sche
 				Optional:    true,
 				Description: "PostgreSQL实例的账户名称过滤条件",
 			},
-			"postgresql_accounts": schema.ListNestedAttribute{
+			"accounts": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"account_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "账户名称",
 						},
@@ -192,7 +192,7 @@ func (c *ctyunPgsqlAccounts) getPgsqlAccountList(ctx context.Context, config Cty
 	if err != nil {
 		return nil, err
 	} else if resp == nil {
-		err = fmt.Errorf("查询postgresql实例(id=%s)的账户信息(account_name=%s)失败，接口返回nil。请联系研发确认问题原因！", config.InstID.ValueString(), config.Name.ValueString())
+		err = fmt.Errorf("查询postgresql实例(id=%s)的账户信息(name=%s)失败，接口返回nil。请联系研发确认问题原因！", config.InstID.ValueString(), config.Name.ValueString())
 		return nil, err
 	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf(" API return error. Message: %s Error: %s", resp.Message, *resp.Error)
@@ -206,7 +206,7 @@ func (c *ctyunPgsqlAccounts) getPgsqlAccountList(ctx context.Context, config Cty
 }
 
 type PgsqlAccountInfoModel struct {
-	AccountName   types.String `tfsdk:"account_name"`
+	AccountName   types.String `tfsdk:"name"`
 	RolSuper      types.Bool   `tfsdk:"rol_super"`
 	RolInherit    types.Bool   `tfsdk:"rol_inherit"`
 	RolCreateRole types.Bool   `tfsdk:"rol_create_role"`
@@ -219,9 +219,9 @@ type PgsqlAccountInfoModel struct {
 type CtyunPgsqlAccounts struct {
 	RegionID           types.String            `tfsdk:"region_id"`
 	ProjectID          types.String            `tfsdk:"project_id"`
-	InstID             types.String            `tfsdk:"inst_id"`
+	InstID             types.String            `tfsdk:"instance_id"`
 	PageNo             types.Int32             `tfsdk:"page_no"`
 	PageSize           types.Int32             `tfsdk:"page_size"`
 	Name               types.String            `tfsdk:"name"`
-	PostgresqlAccounts []PgsqlAccountInfoModel `tfsdk:"postgresql_accounts"`
+	PostgresqlAccounts []PgsqlAccountInfoModel `tfsdk:"accounts"`
 }

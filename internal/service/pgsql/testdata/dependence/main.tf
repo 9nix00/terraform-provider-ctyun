@@ -138,15 +138,16 @@ data "ctyun_postgresql_param_templates" "param_templates" {
 }
 
 data "ctyun_postgresql_character_set" "charsets" {
+
 }
-#
+
 data "ctyun_postgresql_collation_time_zone" "collations" {
-  inst_id    = ctyun_postgresql_instance.test.id
+  instance_id    = ctyun_postgresql_instance.test.id
 }
 
 resource "ctyun_postgresql_account" "account_test" {
   project_id = "0"
-  inst_id = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
   name = "kqjwyk"
   password = var.password
   user_type = "normal"
@@ -155,12 +156,12 @@ resource "ctyun_postgresql_account" "account_test" {
 
 data "ctyun_postgresql_accounts" "accounts" {
   depends_on = [ctyun_postgresql_account.account_test]
-  inst_id = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
 }
 
 resource "ctyun_postgresql_database" "test" {
   project_id   = "0"
-  inst_id      = ctyun_postgresql_instance.test.id
+  instance_id      = ctyun_postgresql_instance.test.id
   name         = "test"
   charset_name = "UTF8"
   owner        = ctyun_postgresql_account.account_test.name
@@ -168,7 +169,7 @@ resource "ctyun_postgresql_database" "test" {
 
 resource "ctyun_postgresql_database" "test1" {
   project_id   = "0"
-  inst_id      = ctyun_postgresql_instance.test.id
+  instance_id      = ctyun_postgresql_instance.test.id
   name         = "test1"
   charset_name = "UTF8"
   owner        = ctyun_postgresql_account.account_test.name

@@ -63,7 +63,7 @@ func (c *CtyunPgsqlWhiteList) Schema(ctx context.Context, request resource.Schem
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -246,7 +246,7 @@ func (c *CtyunPgsqlWhiteList) getWhiteIpList(ctx context.Context, config *CtyunP
 }
 
 type CtyunPostgresqlWhiteListConfig struct {
-	InstID       types.String `tfsdk:"inst_id"`
+	InstID       types.String `tfsdk:"instance_id"`
 	RegionID     types.String `tfsdk:"region_id"`
 	ProjectID    types.String `tfsdk:"project_id"`
 	Mode         types.String `tfsdk:"mode"`

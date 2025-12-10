@@ -59,6 +59,9 @@ func (c *ctyunEcsPortAssociation) Schema(_ context.Context, _ resource.SchemaReq
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
 			"instance_id": schema.StringAttribute{
@@ -92,6 +95,9 @@ func (c *ctyunEcsPortAssociation) Schema(_ context.Context, _ resource.SchemaReq
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 			},
 			"project_id": schema.StringAttribute{
@@ -100,6 +106,9 @@ func (c *ctyunEcsPortAssociation) Schema(_ context.Context, _ resource.SchemaReq
 				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},

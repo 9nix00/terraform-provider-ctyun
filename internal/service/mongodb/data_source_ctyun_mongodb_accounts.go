@@ -56,7 +56,7 @@ func (c *CtyunMongodbAccounts) Schema(ctx context.Context, req datasource.Schema
 				Computed:    true,
 				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
 			},
-			"page_now": schema.Int32Attribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Description: "当前页",
 				Validators: []validator.Int32{
@@ -201,7 +201,7 @@ type MongodbAccountsDataSourceModel struct {
 	InstanceID types.String          `tfsdk:"instance_id"`
 	RegionID   types.String          `tfsdk:"region_id"`
 	ProjectID  types.String          `tfsdk:"project_id"`
-	PageNow    types.Int32           `tfsdk:"page_now"`
+	PageNow    types.Int32           `tfsdk:"page_no"`
 	PageSize   types.Int32           `tfsdk:"page_size"`
 	Accounts   []MongodbAccountModel `tfsdk:"accounts"`
 }

@@ -101,11 +101,11 @@ func (c *CtyunPrivateZones) Schema(ctx context.Context, request datasource.Schem
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 						"vpc_associations": schema.ListNestedAttribute{
 							Computed: true,

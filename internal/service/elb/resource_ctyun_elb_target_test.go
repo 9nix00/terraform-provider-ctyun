@@ -70,11 +70,11 @@ func TestAccCtyunElbTarget(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, targetGroupID, instanceType, instanceId, updatedProtocolPort, updatedTfWeight) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`ids=%s.id`, resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "elb_targets.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "elb_targets.0.instance_type", instanceType),
-					resource.TestCheckResourceAttr(datasourceName, "elb_targets.0.target_group_id", targetGroupID),
-					resource.TestCheckResourceAttr(datasourceName, "elb_targets.0.protocol_port", strconv.Itoa(updatedProtocolPort)),
-					resource.TestCheckResourceAttr(datasourceName, "elb_targets.0.weight", strconv.Itoa(updatedWeight)),
+					resource.TestCheckResourceAttr(datasourceName, "targets.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "targets.0.instance_type", instanceType),
+					resource.TestCheckResourceAttr(datasourceName, "targets.0.target_group_id", targetGroupID),
+					resource.TestCheckResourceAttr(datasourceName, "targets.0.protocol_port", strconv.Itoa(updatedProtocolPort)),
+					resource.TestCheckResourceAttr(datasourceName, "targets.0.weight", strconv.Itoa(updatedWeight)),
 				),
 			},
 

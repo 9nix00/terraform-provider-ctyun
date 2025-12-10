@@ -46,7 +46,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceName, "task_type", "full"),
@@ -65,8 +65,8 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
 					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(backupsDatasourceName, "backup_list.#"),
-					resource.TestCheckResourceAttr(backupsDatasourceName, "backup_list.0.inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttrSet(backupsDatasourceName, "backups.#"),
+					resource.TestCheckResourceAttr(backupsDatasourceName, "backups.0.instance_id", mysqlInstanceID),
 				),
 			},
 			//// datasource获取backup_record_id
@@ -75,9 +75,9 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 			//
 			//	Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
 			//		utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)) +
-			//		utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backup_list.0.records.0.backup_record_id", backupsDatasourceName)),
+			//		utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backups.0.records.0.backup_record_id", backupsDatasourceName)),
 			//	Check: resource.ComposeAggregateTestCheckFunc(
-			//		resource.TestCheckResourceAttr(cancelResourceName, "inst_id", mysqlInstanceID),
+			//		resource.TestCheckResourceAttr(cancelResourceName, "instance_id", mysqlInstanceID),
 			//	),
 			//},
 			{
@@ -131,7 +131,7 @@ func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceName, "task_type", "full"),
@@ -143,9 +143,9 @@ func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
 					utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)) +
-					utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backup_list.0.records.0.backup_record_id", backupsDatasourceName)),
+					utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backups.0.records.0.backup_record_id", backupsDatasourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(cancelResourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(cancelResourceName, "instance_id", mysqlInstanceID),
 				),
 			},
 			{
@@ -208,7 +208,7 @@ func TestAccCtyunMysqlBackupRecovery(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(backupResourceName, "id"),
-					resource.TestCheckResourceAttr(backupResourceName, "inst_id", srcInstanceID),
+					resource.TestCheckResourceAttr(backupResourceName, "instance_id", srcInstanceID),
 					resource.TestCheckResourceAttr(backupResourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(backupResourceName, "description", description),
 					resource.TestCheckResourceAttr(backupResourceName, "task_type", "full"),
@@ -234,10 +234,10 @@ func TestAccCtyunMysqlBackupRecovery(t *testing.T) {
 					timeStamp,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", srcInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", srcInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "src_inst_id", srcInstanceID),
-					resource.TestCheckResourceAttr(resourceName, "dst_inst_id", dstInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "src_instance_id", srcInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "dst_instance_id", dstInstanceID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -294,7 +294,7 @@ func TestAccCtyunMysqlBackupRecoveryByTaskID(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(backupsDatasourceFile, dnd, srcInstanceID, pageNo, pageSize),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(backupsDatasourceName, "backup_list.#"),
+					resource.TestCheckResourceAttrSet(backupsDatasourceName, "backups.#"),
 				),
 			},
 			// 1. 创建备份恢复任务
@@ -302,10 +302,10 @@ func TestAccCtyunMysqlBackupRecoveryByTaskID(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd, srcInstanceID, projectID, srcInstanceID, dstInstanceID, taskID),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", srcInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", srcInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "src_inst_id", srcInstanceID),
-					resource.TestCheckResourceAttr(resourceName, "dst_inst_id", dstInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "src_instance_id", srcInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "dst_instance_id", dstInstanceID),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},

@@ -55,7 +55,7 @@ func (c *ctyunElbRules) Schema(ctx context.Context, request datasource.SchemaReq
 				Optional:    true,
 				Description: "负载均衡实例ID",
 			},
-			"elb_rules": schema.ListNestedAttribute{
+			"rules": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "elb转发规则",
 				NestedObject: schema.NestedAttributeObject{
@@ -260,7 +260,7 @@ type CtyunElbRulesConfig struct {
 	RegionID       types.String   `tfsdk:"region_id"`        //区域ID
 	IDs            types.String   `tfsdk:"ids"`              //转发规则ID列表，以,分隔
 	LoadBalancerID types.String   `tfsdk:"load_balancer_id"` //负载均衡实例ID
-	ElbRules       []ElbRuelModel `tfsdk:"elb_rules"`
+	ElbRules       []ElbRuelModel `tfsdk:"rules"`
 }
 
 type ElbRuelModel struct {

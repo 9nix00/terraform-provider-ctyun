@@ -120,7 +120,7 @@ func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resour
 			},
 			"update_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "更新时间。UTC时间",
+				Description: "更新时间，为UTC格式",
 			},
 		},
 	}

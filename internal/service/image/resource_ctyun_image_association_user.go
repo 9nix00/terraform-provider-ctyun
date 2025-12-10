@@ -40,6 +40,9 @@ func (c *ctyunImageAssociationUser) Schema(_ context.Context, _ resource.SchemaR
 				Validators: []validator.String{
 					validator2.UUID(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"type": schema.StringAttribute{
 				Required:    true,

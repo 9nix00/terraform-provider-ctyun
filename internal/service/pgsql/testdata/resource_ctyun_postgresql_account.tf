@@ -1,6 +1,6 @@
 resource "ctyun_postgresql_account" "%[1]s" {
   project_id = "%[2]s"
-  inst_id = "%[3]s"
+  instance_id = "%[3]s"
   name = "%[4]s"
   password = "%[5]s"
   user_type = "%[6]s"

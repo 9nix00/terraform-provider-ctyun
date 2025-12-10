@@ -41,7 +41,7 @@ func (c *CtyunPostgresqlWhiteLists) Schema(ctx context.Context, request datasour
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10034019/10161484",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "PostgreSQL实例ID",
 				Validators: []validator.String{
@@ -130,7 +130,7 @@ func (c *CtyunPostgresqlWhiteLists) Read(ctx context.Context, request datasource
 }
 
 type CtyunPostgresqlWhiteListsConfig struct {
-	InstID    types.String `tfsdk:"inst_id"`
+	InstID    types.String `tfsdk:"instance_id"`
 	RegionID  types.String `tfsdk:"region_id"`
 	ProjectID types.String `tfsdk:"project_id"`
 	Ip        types.String `tfsdk:"ip"`

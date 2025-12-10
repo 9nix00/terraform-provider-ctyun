@@ -52,7 +52,7 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
 				Validators: []validator.String{
@@ -88,7 +88,7 @@ func (c *CtyunMysqlAssociationEip) Schema(ctx context.Context, request resource.
 			},
 			"eip_status": schema.Int32Attribute{
 				Computed:    true,
-				Description: " 弹性ip状态 0->unbind，1->bind,2->binding",
+				Description: "弹性ip状态 0->unbind，1->bind,2->binding",
 			},
 			"status": schema.StringAttribute{
 				Computed:    true,
@@ -425,12 +425,12 @@ func (c *CtyunMysqlAssociationEip) preCheckEipUnbound(ctx context.Context, state
 }
 
 type CtyunAssociationEipConfig struct {
-	EipID     types.String `tfsdk:"eip_id"`     //弹性id
-	InstID    types.String `tfsdk:"inst_id"`    //实例id
-	ProjectID types.String `tfsdk:"project_id"` //项目id
-	RegionID  types.String `tfsdk:"region_id"`  //区域Id
-	EipStatus types.Int32  `tfsdk:"eip_status"` //弹性ip状态 0->unbind，1->bind,2->binding
-	Status    types.String `tfsdk:"status"`     //弹性ip可读状态
+	EipID     types.String `tfsdk:"eip_id"`      //弹性id
+	InstID    types.String `tfsdk:"instance_id"` //实例id
+	ProjectID types.String `tfsdk:"project_id"`  //项目id
+	RegionID  types.String `tfsdk:"region_id"`   //区域Id
+	EipStatus types.Int32  `tfsdk:"eip_status"`  //弹性ip状态 0->unbind，1->bind,2->binding
+	Status    types.String `tfsdk:"status"`      //弹性ip可读状态
 
 	eipAddress string
 }

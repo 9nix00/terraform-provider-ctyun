@@ -47,7 +47,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "资源唯一标识，格式为 {instance_id},{account_name}",
+				Description: "资源唯一标识，格式为 {inst_id},{account_name}",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -101,7 +101,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
+				Description: "实例密码，长度为8~26个字符，支持更新，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
 				Validators: []validator.String{
 					validator2.DBPassword(
 						8,
@@ -118,7 +118,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "数据库名称，默认为admin",
 				Default:     stringdefault.StaticString("admin"),
 			},
-			"page_now": schema.Int32Attribute{
+			"page_no": schema.Int32Attribute{
 				Optional:    true,
 				Description: "当前页",
 				Validators: []validator.Int32{
@@ -134,7 +134,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"roles": schema.ListNestedAttribute{
 				Required:    true,
-				Description: "角色列表  ,支持更新",
+				Description: "角色列表，支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"db": schema.StringAttribute{
@@ -356,7 +356,7 @@ func (c *CtyunMongodbAccount) create(ctx context.Context, plan MongodbAccountCon
 
 // getAndMerge 查询账号信息并更新到配置中
 func (c *CtyunMongodbAccount) getAndMerge(ctx context.Context, plan *MongodbAccountConfig) (err error) {
-	// 解析ID获取instance_id和account_name
+	// 解析ID获取inst_id和account_name
 	instanceID := plan.InstanceID.ValueString()
 
 	describeReq := &mongodb.MongodbDescribeAccountsRequest{
@@ -535,7 +535,7 @@ type MongodbAccountConfig struct {
 	Name       types.String         `tfsdk:"name"`
 	Password   types.String         `tfsdk:"password"`
 	Database   types.String         `tfsdk:"database"`
-	PageNow    types.Int32          `tfsdk:"page_now"`
+	PageNow    types.Int32          `tfsdk:"page_no"`
 	PageSize   types.Int32          `tfsdk:"page_size"`
 	Roles      []MongodbAccountRole `tfsdk:"roles"`
 }

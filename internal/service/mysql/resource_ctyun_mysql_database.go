@@ -79,7 +79,7 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10140487",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 				PlanModifiers: []planmodifier.String{
@@ -478,7 +478,7 @@ func (c *CtyunMysqlDatabase) deleteMysqlDatabase(ctx context.Context, config Cty
 }
 
 type CtyunMysqlDatabaseConfig struct {
-	InstID             types.String `tfsdk:"inst_id"`
+	InstID             types.String `tfsdk:"instance_id"`
 	ProjectID          types.String `tfsdk:"project_id"`
 	RegionID           types.String `tfsdk:"region_id"`
 	Name               types.String `tfsdk:"name"`

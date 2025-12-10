@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"time"
 )
 
 var (
@@ -95,7 +95,7 @@ func (c *CtyunMysqlParamTemplates) Schema(ctx context.Context, request datasourc
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"restart": schema.BoolAttribute{
 							Computed:    true,
@@ -232,8 +232,7 @@ func (c *CtyunMysqlParamTemplates) getParamTemplates(ctx context.Context, config
 		parameterTemplate.IsDefault = types.Int32Value(item.IsDefault)
 		parameterTemplate.UserId = types.Int64Value(item.UserId)
 		parameterTemplate.Restart = types.BoolValue(item.Restart)
-		createTime := c.getUnixTime(item.CreateTime)
-		parameterTemplate.CreateTime = types.StringValue(createTime)
+		parameterTemplate.CreateTime = types.StringValue(utils.FromUnixToUTC(item.CreateTime))
 
 		detail, err2 := c.getParameterTemplateDetail(ctx, config, item.ID)
 		if err2 != nil {
@@ -259,11 +258,6 @@ func (c *CtyunMysqlParamTemplates) getParamTemplates(ctx context.Context, config
 	}
 	config.ParamTemplates = parameterTemplates
 	return nil
-}
-
-func (c *CtyunMysqlParamTemplates) getUnixTime(timestamp int64) string {
-	isoTime := time.Unix(timestamp, 0).UTC().Format("2006-01-02T15:04:05Z")
-	return isoTime
 }
 
 func (c *CtyunMysqlParamTemplates) getParameterTemplateDetail(ctx context.Context, config *CtyunMysqlParamTemplatesConfig, templateID int64) ([]mysql.TeledbGetParameterTemplateDetailResponseReturnObjDeatil, error) {

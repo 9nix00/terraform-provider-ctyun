@@ -230,18 +230,18 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 				Computed:    true,
 			},
 			"create_time": schema.StringAttribute{
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"update_time": schema.StringAttribute{
-				Description: "更新时间",
+				Description: "更新时间，为UTC格式",
 				Computed:    true,
 			},
 			"expire_time": schema.StringAttribute{
-				Description: "过期时间",
+				Description: "到期时间，为UTC格式，按需时为空",
 				Computed:    true,
 			},
 		},

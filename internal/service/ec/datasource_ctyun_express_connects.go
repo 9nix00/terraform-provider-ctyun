@@ -64,7 +64,7 @@ func (c *ctyunExpressConnects) Schema(_ context.Context, _ datasource.SchemaRequ
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"vrf": schema.Int64Attribute{
 							Computed:    true,

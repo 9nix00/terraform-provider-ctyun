@@ -111,11 +111,11 @@ func (c *ctyunNats) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "过期时间",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
 						"project_id": schema.StringAttribute{
 							Computed:    true,

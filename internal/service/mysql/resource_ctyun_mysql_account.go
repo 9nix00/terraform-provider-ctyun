@@ -92,7 +92,7 @@ func (c *CtyunMysqlAccount) Schema(ctx context.Context, request resource.SchemaR
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "MySQL实例ID",
 				PlanModifiers: []planmodifier.String{
@@ -668,7 +668,7 @@ func (c *CtyunMysqlAccount) updateRemark(ctx context.Context, config *CtyunMysql
 }
 
 type CtyunMysqlAccountConfig struct {
-	InstID              types.String `tfsdk:"inst_id"`
+	InstID              types.String `tfsdk:"instance_id"`
 	ProjectID           types.String `tfsdk:"project_id"`
 	RegionID            types.String `tfsdk:"region_id"`
 	Name                types.String `tfsdk:"name"`

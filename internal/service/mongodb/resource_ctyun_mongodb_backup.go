@@ -41,7 +41,7 @@ type CtyunMongodbBackupConfig struct {
 	RegionID    types.String `tfsdk:"region_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	InstanceID  types.String `tfsdk:"instance_id"`
-	BackupName  types.String `tfsdk:"backup_name"`
+	BackupName  types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
 
@@ -57,7 +57,7 @@ func (r *CtyunMongodbBackupResource) Schema(ctx context.Context, req resource.Sc
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "资源ID，格式为region_id:instance_id:backup_name",
+				Description: "资源ID，格式为region_id:inst_id:backup_name",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -93,7 +93,7 @@ func (r *CtyunMongodbBackupResource) Schema(ctx context.Context, req resource.Sc
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"backup_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "备份名称",
 				PlanModifiers: []planmodifier.String{

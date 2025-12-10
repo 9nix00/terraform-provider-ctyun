@@ -39,7 +39,7 @@ func (c *ctyunEnterpriseProject) Schema(_ context.Context, _ resource.SchemaRequ
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "企业项目名称，长度为1-32",
+				Description: "企业项目名称，长度为1-32，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 32),
 				},
@@ -56,7 +56,7 @@ func (c *ctyunEnterpriseProject) Schema(_ context.Context, _ resource.SchemaRequ
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "企业项目描述，长度最大为64",
+				Description: "企业项目描述，长度最大为64，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtMost(64),
 				},

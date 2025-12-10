@@ -199,10 +199,10 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, updatedFlavorName, updatedProdID, storageType, updatedStorageSpace, updatedName, password, caseCensitive,
 					vpcID, subnetID, securityGroupID, updatedAzInfo, "", ``, "", backupStorageType, "") +
-					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("prod_inst_id=%s.id", resourceName)),
+					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("instance_id=%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "pgsql_instances.0.name", updatedName),
+					resource.TestCheckResourceAttr(datasourceName, "instances.#", "1"),
+					resource.TestCheckResourceAttr(datasourceName, "instances.0.name", updatedName),
 					resource.ComposeAggregateTestCheckFunc(
 						func(s *terraform.State) error {
 							time.Sleep(30 * time.Second)

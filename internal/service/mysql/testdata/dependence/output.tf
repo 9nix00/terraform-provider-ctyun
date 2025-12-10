@@ -27,9 +27,9 @@ output "template_id" {
 }
 
 output "task_id" {
-  value = data.ctyun_mysql_backups.backup_test.backup_list.0.records.0.task_id
+  value = data.ctyun_mysql_backups.backup_test.backups.0.records.0.task_id
 }
 
 output "backup_timestamp" {
-  value = data.ctyun_mysql_recoverable_time_points.time_point_test.backup_time_points.0.end_timestamp
+  value = data.ctyun_mysql_recoverable_time_points.time_point_test.backup_time_points.0.end_time
 }

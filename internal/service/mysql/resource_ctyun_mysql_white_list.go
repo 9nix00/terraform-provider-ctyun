@@ -9,6 +9,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -60,7 +61,7 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
-			"prod_inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
 				PlanModifiers: []planmodifier.String{
@@ -93,13 +94,13 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 				Computed:    true,
 				Description: "白名单分组组内数量",
 			},
-			"created_time": schema.StringAttribute{
+			"create_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 			},
-			"updated_time": schema.StringAttribute{
+			"update_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "更新时间",
+				Description: "更新时间，为UTC格式",
 			},
 			"access_machine_type": schema.StringAttribute{
 				Computed:    true,
@@ -331,8 +332,8 @@ func (c *CtyunMysqlWhiteList) getAndMergeMysqlAccessWhiteList(ctx context.Contex
 			config.GroupWhiteListCount = types.Int32Value(whileListInfo.GroupWhiteListCount)
 			config.AccessMachineType = types.StringValue(whileListInfo.AccessMachineType)
 			config.GroupName = types.StringValue(whileListInfo.GroupName)
-			config.CreatedTime = types.StringValue(fmt.Sprintf("%d", whileListInfo.CreateTime))
-			config.UpdatedTime = types.StringValue(fmt.Sprintf("%d", whileListInfo.UpdateTime))
+			config.CreatedTime = types.StringValue(utils.FromUnixToUTC(whileListInfo.CreateTime))
+			config.UpdatedTime = types.StringValue(utils.FromUnixToUTC(whileListInfo.UpdateTime))
 			groupWhiteList, diags := types.SetValueFrom(ctx, types.StringType, whileListInfo.WhiteList)
 			if diags.HasError() {
 				return
@@ -379,12 +380,12 @@ func (c *CtyunMysqlWhiteList) updateMysqlWhiteList(ctx context.Context, state *C
 type CtyunMysqlWhiteListConfig struct {
 	ProjectID           types.String `tfsdk:"project_id"`
 	RegionID            types.String `tfsdk:"region_id"`
-	ProdInstID          types.String `tfsdk:"prod_inst_id"`
+	ProdInstID          types.String `tfsdk:"instance_id"`
 	GroupName           types.String `tfsdk:"group_name"`
 	GroupWhiteList      types.Set    `tfsdk:"group_white_list"`
 	GroupWhiteListCount types.Int32  `tfsdk:"group_white_list_count"`
-	CreatedTime         types.String `tfsdk:"created_time"`
-	UpdatedTime         types.String `tfsdk:"updated_time"`
+	CreatedTime         types.String `tfsdk:"create_time"`
+	UpdatedTime         types.String `tfsdk:"update_time"`
 	AccessMachineType   types.String `tfsdk:"access_machine_type"` // 访问类型
 }
 

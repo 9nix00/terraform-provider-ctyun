@@ -63,7 +63,7 @@ func (c *ctyunEnterpriseProjectAssociationUserGroup) Schema(_ context.Context, _
 			"policy_ids": schema.SetAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "策略id列表",
+				Description: "策略id列表，支持更新",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),

@@ -57,7 +57,7 @@ func TestAccCtyunMysqlRdsParameterTemplate(t *testing.T) {
 					templateID,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "template_id", fmt.Sprintf("%d", templateID)),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),

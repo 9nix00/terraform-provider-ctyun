@@ -20,7 +20,7 @@
 
 ### Read-Only
 
-- `mysql_accounts` (Attributes List) MySQL账户权限列表 (see [below for nested schema](#nestedatt--mysql_accounts))
+- `accounts` (Attributes List) MySQL账户权限列表 (see [below for nested schema](#nestedatt--mysql_accounts))
 
 <a id="nestedatt--mysql_accounts"></a>
 ### Nested Schema for `mysql_accounts`

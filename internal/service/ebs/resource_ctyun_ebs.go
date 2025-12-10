@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -128,10 +129,7 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "到期时间，为UTC格式",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
+				Description: "到期时间，为UTC格式，按需时为空",
 			},
 			"multi_attach": schema.BoolAttribute{
 				Optional:    true,
@@ -198,9 +196,12 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"image_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "镜像ID，如果用镜像创建，只支持数据盘的私有镜像和共享镜像，所创建的数据盘的所在地域要与镜像源一致，容量不可小于镜像对应的磁盘容量。不支持批量创建操作，从镜像创建的数据盘不支持加密、ISCSI和FCSAN高级配置。",
+				Description: "镜像ID，如果用镜像创建，只支持数据盘的私有镜像和共享镜像，所创建的数据盘的所在地域要与镜像源一致，容量不可小于镜像对应的磁盘容量。从镜像创建的数据盘不支持加密、ISCSI和FCSAN高级配置。",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
 				},
 			},
 			"backup_id": schema.StringAttribute{
@@ -216,6 +217,9 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"labels": schema.ListNestedAttribute{
 				Optional:    true,
 				Description: "设置云硬盘标签，实际绑定标签的结果请查询云硬盘详情的labels返回值是否如预期。",
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
@@ -224,12 +228,18 @@ func (c *ctyunEbs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(1, 32),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
 							Description: "标签的value值，长度不能超过32个字符。",
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(1, 32),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 					},

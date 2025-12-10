@@ -70,7 +70,7 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "name", dbName),
 					resource.TestCheckResourceAttr(resourceName, "charset_name", charset),
 					resource.TestCheckResourceAttr(resourceName, "description", initialDescription),
@@ -104,7 +104,7 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["charset_name"],
 						rs.Primary.Attributes["description"],
 					), nil
@@ -171,7 +171,7 @@ func TestAccCtyunPostgresqlDatabaseWithOtherCharset(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instanceID),
 					resource.TestCheckResourceAttr(resourceName, "name", dbName),
 					resource.TestCheckResourceAttr(resourceName, "charset_name", charset),
 					resource.TestCheckResourceAttr(resourceName, "charset_collate", collate),

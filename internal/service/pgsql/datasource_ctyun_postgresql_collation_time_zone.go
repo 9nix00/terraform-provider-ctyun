@@ -53,7 +53,7 @@ func (c *ctyunPostgresqlCollationTimeZone) Schema(ctx context.Context, request d
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "PostgreSQL实例ID",
 				Validators: []validator.String{
@@ -172,7 +172,7 @@ type CollationModel struct {
 type CtyunPostgresqlCollationTimeZoneConfig struct {
 	RegionID           types.String     `tfsdk:"region_id"`
 	ProjectID          types.String     `tfsdk:"project_id"`
-	InstID             types.String     `tfsdk:"inst_id"`
+	InstID             types.String     `tfsdk:"instance_id"`
 	StandardTimeOffset types.String     `tfsdk:"standard_time_offset"`
 	TimeZone           types.String     `tfsdk:"time_zone"`
 	Collations         []CollationModel `tfsdk:"collations"`

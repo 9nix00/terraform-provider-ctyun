@@ -197,7 +197,7 @@ func (c *ctyunEbms) Schema(_ context.Context, _ datasource.SchemaRequest, respon
 						},
 						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "到期时间，为UTC格式",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 					},
 				},

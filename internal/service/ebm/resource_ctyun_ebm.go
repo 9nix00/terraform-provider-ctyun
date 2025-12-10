@@ -11,6 +11,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -419,7 +420,10 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"metadata": schema.MapAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "物理机元数据信息，键值对形式 支持更新",
+				Description: "物理机元数据信息，键值对形式，支持更新",
+				Validators: []validator.Map{
+					mapvalidator.SizeAtMost(65535),
+				},
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
@@ -434,7 +438,7 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "到期时间，为UTC格式",
+				Description: "到期时间，为UTC格式，按需时为空",
 			},
 		},
 	}

@@ -57,7 +57,7 @@ func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request res
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10035295",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
@@ -345,7 +345,7 @@ func (c *CtyunMysqlRdsParameterTemplate) applyLoop(ctx context.Context, config *
 }
 
 type CtyunMysqlRdsParameterTemplateConfig struct {
-	InstID     types.String `tfsdk:"inst_id"`
+	InstID     types.String `tfsdk:"instance_id"`
 	ProjectID  types.String `tfsdk:"project_id"`
 	RegionID   types.String `tfsdk:"region_id"`
 	TemplateID types.Int64  `tfsdk:"template_id"`

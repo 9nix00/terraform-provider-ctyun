@@ -132,7 +132,7 @@ func (c *CtyunExpressConnectionRegionPeer) Schema(ctx context.Context, request d
 						},
 						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间",
+							Description: "更新时间，为UTC格式",
 						},
 					},
 				},

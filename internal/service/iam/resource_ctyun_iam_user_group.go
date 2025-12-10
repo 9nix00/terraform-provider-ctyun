@@ -37,14 +37,14 @@ func (c *ctyunIamUserGroup) Schema(_ context.Context, _ resource.SchemaRequest, 
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "用户组名称，长度1-32位",
+				Description: "用户组名称，长度1-32位，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 32),
 				},
 			},
 			"description": schema.StringAttribute{
 				Required:    true,
-				Description: "用户组描述，长度最大为64",
+				Description: "用户组描述，长度最大为64，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtMost(64),
 				},

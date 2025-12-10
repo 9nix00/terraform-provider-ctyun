@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/float64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -92,17 +93,18 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"flavor_id": schema.StringAttribute{
 				Optional:    true,
-				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机 支持更新",
+				Description: "规格id，请用ctyun_ecs_flavors查询具体id，变更前需要先关机，支持更新",
 				Validators: []validator.String{
 					validator2.UUID(),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
+					stringvalidator.ConflictsWith(path.MatchRoot("flavor_name")),
 				},
 			},
 			"flavor_name": schema.StringAttribute{
 				Optional:    true,
-				Description: "云主机规格名称，当创建云主机随机分配可用区时，规格名称为必填项，规格ID无效。当采用确定可用区时，规格ID和规格名称两者均可使用，必填其中一个，当两个都填写以规格ID为准。",
+				Description: "云主机规格名称，规格ID和规格名称两者均可使用，必填其中一个，支持更新",
+				Validators: []validator.String{
+					stringvalidator.ConflictsWith(path.MatchRoot("flavor_id")),
+				},
 			},
 			"image_id": schema.StringAttribute{
 				Required:    true,
@@ -254,7 +256,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			},
 			"expire_time": schema.StringAttribute{
 				Computed:    true,
-				Description: "到期时间",
+				Description: "到期时间，为UTC格式，按需时为空",
 			},
 			"system_disk_id": schema.StringAttribute{
 				Computed:    true,
@@ -349,12 +351,15 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"metadata": schema.MapAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
-				Description: "云主机元数据信息，键值对形式 支持更新",
+				Description: "云主机元数据信息，键值对形式，支持更新",
+				Validators: []validator.Map{
+					mapvalidator.SizeAtMost(65535),
+				},
 			},
 			"deletion_protection": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启实例删除保护，默认为false 包年包月实例不支持更新实例删除保护参数 支持更新",
+				Description: "是否开启实例删除保护，默认为false，包年包月实例不支持更新实例删除保护参数，支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 			"labels": schema.ListNestedAttribute{
@@ -1169,27 +1174,6 @@ func (c *ctyunEcs) getAndRemoveSecurityGroups(ctx context.Context, plan CtyunEcs
 	return defaultSecurityGroupId
 }
 
-//// joinSecurityGroups 加入安全组
-//func (c *ctyunEcs) joinSecurityGroups(ctx context.Context, plan CtyunEcsConfig) error {
-//	var securityGroupIds []types.String
-//	plan.SecurityGroupIds.ElementsAs(ctx, &securityGroupIds, true)
-//	if len(securityGroupIds) == 0 {
-//		return nil
-//	}
-//	for _, id := range securityGroupIds {
-//		_, err := c.meta.Apis.CtEcsApis.EcsJoinSecurityGroupApi.Do(ctx, c.meta.Credential, &ctecs.EcsJoinSecurityGroupRequest{
-//			RegionId:        plan.RegionId.ValueString(),
-//			SecurityGroupId: id.ValueString(),
-//			InstanceId:      plan.Id.ValueString(),
-//			Action:          "joinSecurityGroup",
-//		})
-//		if err != nil {
-//			return errors.New("加入安全组：" + id.ValueString() + "失败：" + err.Error())
-//		}
-//	}
-//	return nil
-//}
-
 // leaveSecurityGroups 离开安全组
 func (c *ctyunEcs) leaveSecurityGroups(ctx context.Context, state CtyunEcsConfig) error {
 	var securityGroupIds []types.String
@@ -1224,7 +1208,7 @@ func (c *ctyunEcs) waitInstanceStatusFor(ctx context.Context, id, regionId, stat
 
 // updateFlavor 更新云主机实例规格
 func (c *ctyunEcs) updateFlavor(ctx context.Context, state CtyunEcsConfig, plan CtyunEcsConfig) error {
-	if state.FlavorId.Equal(plan.FlavorId) {
+	if state.FlavorId.Equal(plan.FlavorId) && state.FlavorName.Equal(plan.FlavorName) {
 		return nil
 	}
 
@@ -1232,11 +1216,19 @@ func (c *ctyunEcs) updateFlavor(ctx context.Context, state CtyunEcsConfig, plan 
 	if !c.checkInstanceStatus(ctx, state.Id.ValueString(), state.RegionId.ValueString(), business.EcsStatusStopped) {
 		return errors.New("变更云主机配置规格，请先将云主机关机")
 	}
-
-	// 校验规格必须存在
-	err := c.ecsService.FlavorMustExist(ctx, plan.FlavorId.ValueString(), state.RegionId.ValueString(), state.AzName.ValueString())
-	if err != nil {
-		return err
+	flavorID, flavorName := plan.FlavorId.ValueString(), plan.FlavorName.ValueString()
+	if flavorName != "" {
+		fid, err := c.ecsService.GetFlavorIDByName(ctx, flavorName, plan.RegionId.ValueString(), plan.AzName.ValueString())
+		if err != nil {
+			return err
+		}
+		flavorID = fid
+	}
+	if flavorID != "" {
+		err := c.ecsService.FlavorMustExist(ctx, flavorID, state.RegionId.ValueString(), state.AzName.ValueString())
+		if err != nil {
+			return err
+		}
 	}
 
 	// 更新云主机规格
@@ -1244,7 +1236,7 @@ func (c *ctyunEcs) updateFlavor(ctx context.Context, state CtyunEcsConfig, plan 
 		RegionId:    state.RegionId.ValueString(),
 		ClientToken: uuid.NewString(),
 		InstanceId:  state.Id.ValueString(),
-		FlavorId:    plan.FlavorId.ValueString(),
+		FlavorId:    flavorID,
 	})
 	if err != nil {
 		return err

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -50,7 +51,7 @@ func (c *ctyunMysqlBackups) Schema(ctx context.Context, request datasource.Schem
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "MySQL实例ID",
 			},
@@ -58,7 +59,7 @@ func (c *ctyunMysqlBackups) Schema(ctx context.Context, request datasource.Schem
 				Optional:    true,
 				Description: "项目ID",
 			},
-			"inst_name": schema.StringAttribute{
+			"instance_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "MySQL实例名称",
 			},
@@ -66,17 +67,9 @@ func (c *ctyunMysqlBackups) Schema(ctx context.Context, request datasource.Schem
 				Optional:    true,
 				Description: "备份名称",
 			},
-			"backup_id": schema.Int64Attribute{
+			"id": schema.Int64Attribute{
 				Optional:    true,
 				Description: "备份集ID",
-			},
-			"start_time": schema.StringAttribute{
-				Optional:    true,
-				Description: "查询开始时间（格式：2006-01-02 15:04:05）",
-			},
-			"end_time": schema.StringAttribute{
-				Optional:    true,
-				Description: "查询结束时间（格式：2006-01-02 15:04:05）",
 			},
 			"page_size": schema.Int32Attribute{
 				Optional:    true,
@@ -92,19 +85,19 @@ func (c *ctyunMysqlBackups) Schema(ctx context.Context, request datasource.Schem
 					int32validator.AtLeast(1),
 				},
 			},
-			"backup_list": schema.ListNestedAttribute{
+			"backups": schema.ListNestedAttribute{
 				Computed: true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"inst_id": schema.StringAttribute{
+						"instance_id": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例ID",
 						},
-						"backup_id": schema.Int64Attribute{
+						"id": schema.Int64Attribute{
 							Computed:    true,
 							Description: "备份ID",
 						},
-						"inst_name": schema.StringAttribute{
+						"instance_name": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例名称",
 						},
@@ -227,12 +220,6 @@ func (c *ctyunMysqlBackups) Read(ctx context.Context, request datasource.ReadReq
 	if !config.BackupID.IsNull() {
 		params.BlockId = config.BackupID.ValueInt64Pointer()
 	}
-	if !config.StartTime.IsNull() {
-		params.StartTime = config.StartTime.ValueStringPointer()
-	}
-	if !config.EndTime.IsNull() {
-		params.EndTime = config.EndTime.ValueStringPointer()
-	}
 	if !config.PageNo.IsNull() {
 		params.PageNow = config.PageNo.ValueInt32()
 	}
@@ -274,8 +261,8 @@ func (c *ctyunMysqlBackups) Read(ctx context.Context, request datasource.ReadReq
 			recordInfo.TaskStatus = types.Int32Value(recordItem.TaskStatus)
 			recordInfo.BackedUpDataSize = types.Int64Value(recordItem.BackedUpDataSize)
 			recordInfo.BackedUpDataSizeHuman = types.StringValue(recordItem.BackedUpDataSizeHuman)
-			recordInfo.BackupStartTime = types.StringValue(recordItem.BackupStartTime)
-			recordInfo.BackupEndTime = types.StringValue(recordItem.BackupEndTime)
+			recordInfo.BackupStartTime = types.StringValue(utils.FromBJTimeToUTCZ(recordItem.BackupStartTime))
+			recordInfo.BackupEndTime = types.StringValue(utils.FromBJTimeToUTCZ(recordItem.BackupEndTime))
 			recordInfo.Disabled = types.BoolValue(recordItem.Disabled)
 			records = append(records, recordInfo)
 		}
@@ -310,22 +297,20 @@ type BackupRecordModel struct {
 	Disabled              types.Bool   `tfsdk:"disabled"`                  // 禁用备份
 }
 type BackupModel struct {
-	InstId   types.String        `tfsdk:"inst_id"`
-	BackupID types.Int64         `tfsdk:"backup_id"`
-	InstName types.String        `tfsdk:"inst_name"` // 实例名称
-	Records  []BackupRecordModel `tfsdk:"records"`   // 备份记录集合 (元素类型为 BackupRecordModel)
+	InstId   types.String        `tfsdk:"instance_id"`
+	BackupID types.Int64         `tfsdk:"id"`
+	InstName types.String        `tfsdk:"instance_name"` // 实例名称
+	Records  []BackupRecordModel `tfsdk:"records"`       // 备份记录集合 (元素类型为 BackupRecordModel)
 }
 
 type CtyunMysqlBackupsConfig struct {
 	RegionID   types.String  `tfsdk:"region_id"`
-	InstID     types.String  `tfsdk:"inst_id"`
-	InstName   types.String  `tfsdk:"inst_name"`
+	InstID     types.String  `tfsdk:"instance_id"`
+	InstName   types.String  `tfsdk:"instance_name"`
 	ProjectID  types.String  `tfsdk:"project_id"`
 	Name       types.String  `tfsdk:"name"`
-	BackupID   types.Int64   `tfsdk:"backup_id"`
-	StartTime  types.String  `tfsdk:"start_time"`
-	EndTime    types.String  `tfsdk:"end_time"`
+	BackupID   types.Int64   `tfsdk:"id"`
 	PageSize   types.Int32   `tfsdk:"page_size"`
 	PageNo     types.Int32   `tfsdk:"page_no"`
-	BackupList []BackupModel `tfsdk:"backup_list"`
+	BackupList []BackupModel `tfsdk:"backups"`
 }

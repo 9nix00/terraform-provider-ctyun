@@ -58,7 +58,7 @@ func (c *CtyunPgsqlAssociationEip) Schema(ctx context.Context, request resource.
 				Computed:    true,
 				Description: "弹性ip地址",
 			},
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
 				PlanModifiers: []planmodifier.String{
@@ -318,10 +318,10 @@ func (c *CtyunPgsqlAssociationEip) getAndMergeBindEip(ctx context.Context, confi
 }
 
 type CtyunPgsqlAssociationEipConfig struct {
-	EipID     types.String `tfsdk:"eip_id"`     //弹性id
-	Eip       types.String `tfsdk:"eip"`        //弹性ip
-	InstID    types.String `tfsdk:"inst_id"`    //实例id
-	ProjectID types.String `tfsdk:"project_id"` //项目id
-	RegionID  types.String `tfsdk:"region_id"`  //区域Id
-	EipStatus types.Int32  `tfsdk:"eip_status"` //弹性ip状态 0->unbind，1->bind
+	EipID     types.String `tfsdk:"eip_id"`      //弹性id
+	Eip       types.String `tfsdk:"eip"`         //弹性ip
+	InstID    types.String `tfsdk:"instance_id"` //实例id
+	ProjectID types.String `tfsdk:"project_id"`  //项目id
+	RegionID  types.String `tfsdk:"region_id"`   //区域Id
+	EipStatus types.Int32  `tfsdk:"eip_status"`  //弹性ip状态 0->unbind，1->bind
 }

@@ -60,6 +60,9 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"nat_gateway_id": schema.StringAttribute{
 				Required:    true,
@@ -67,10 +70,16 @@ func (c *ctyunPrivateDnatResource) Schema(_ context.Context, _ resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"external_ip": schema.StringAttribute{
 				Required:    true,
 				Description: "中转IP 支持更新",
+				Validators: []validator.String{
+					validator2.Ip(),
+				},
 			},
 			"external_port": schema.Int32Attribute{
 				Required:    true,

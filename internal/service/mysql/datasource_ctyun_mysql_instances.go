@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -99,12 +100,12 @@ func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.Sch
 				Optional:    true,
 				Description: "连接ip",
 			},
-			"mysql_instances": schema.ListNestedAttribute{
+			"instances": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "mysql实例列表",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"prod_inst_name": schema.StringAttribute{
+						"name": schema.StringAttribute{
 							Computed:    true,
 							Description: "实例名称",
 						},
@@ -163,13 +164,13 @@ func (c *ctyunMysqlInstances) Schema(ctx context.Context, request datasource.Sch
 							Computed:    true,
 							Description: "读端口",
 						},
-						"create_time": schema.Int64Attribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间",
+							Description: "创建时间，为UTC格式",
 						},
-						"expire_time": schema.Int64Attribute{
+						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "到期时间",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"machine_spec": schema.StringAttribute{
 							Computed:    true,
@@ -408,8 +409,8 @@ func (c *ctyunMysqlInstances) Read(ctx context.Context, request datasource.ReadR
 		mysqlInstance.Vip6 = types.StringValue(instance.Vip6)
 		mysqlInstance.WritePort = types.StringValue(instance.WritePort)
 		mysqlInstance.ReadPort = types.StringValue(instance.ReadPort)
-		mysqlInstance.CreateTime = types.Int64Value(instance.CreateTime)
-		mysqlInstance.ExpireTime = types.Int64Value(instance.ExpireTime)
+		mysqlInstance.CreateTime = types.StringValue(utils.FromUnixToUTC(instance.CreateTime))
+		mysqlInstance.ExpireTime = types.StringValue(utils.FromUnixToUTC(instance.ExpireTime))
 		mysqlInstance.MachineSpec = types.StringValue(instance.MachineSpec)
 		mysqlInstance.ProdDbEngine = types.StringValue(instance.ProdDbEngine)
 		mysqlInstance.DiskSize = types.Int32Value(instance.DiskSize)
@@ -461,7 +462,7 @@ type CtyunMysqlInstancesConfig struct {
 	ResDbEngine    types.String         `tfsdk:"res_db_engine"` // 数据库引擎，选填
 	Name           types.String         `tfsdk:"name"`          // 实例名称，选填
 	Vip            types.String         `tfsdk:"vip"`           // 连接ip，选填
-	MysqlInstances []MysqlInstanceModel `tfsdk:"mysql_instances"`
+	MysqlInstances []MysqlInstanceModel `tfsdk:"instances"`
 }
 
 type TageVoModel struct {
@@ -471,7 +472,7 @@ type TageVoModel struct {
 }
 
 type MysqlInstanceModel struct {
-	ProdInstName                types.String `tfsdk:"prod_inst_name"`                 // 实例名称
+	ProdInstName                types.String `tfsdk:"name"`                           // 实例名称
 	OuterProdInstId             types.String `tfsdk:"outer_prod_inst_id"`             // 实例ID
 	ProdBillType                types.Int32  `tfsdk:"prod_bill_type"`                 // 计费模式 0:按月计费,1:按天计费,2:按年计费,3:按流量计费 4按需计费
 	ProdType                    types.Int32  `tfsdk:"prod_type"`                      // 0:单机,1:一主一从,2:一主两从,4:只读实例
@@ -482,8 +483,8 @@ type MysqlInstanceModel struct {
 	Vip6                        types.String `tfsdk:"vip6"`                           // 虚拟IPv6地址
 	WritePort                   types.String `tfsdk:"write_port"`                     // 写数据端口
 	ReadPort                    types.String `tfsdk:"read_port"`                      // 读端口
-	CreateTime                  types.Int64  `tfsdk:"create_time"`                    // 创建时间
-	ExpireTime                  types.Int64  `tfsdk:"expire_time"`                    // 到期时间
+	CreateTime                  types.String `tfsdk:"create_time"`                    // 创建时间
+	ExpireTime                  types.String `tfsdk:"expire_time"`                    // 到期时间
 	MachineSpec                 types.String `tfsdk:"machine_spec"`                   // 实例规格
 	ProdDbEngine                types.String `tfsdk:"prod_db_engine"`                 // 数据库引擎
 	DiskSize                    types.Int32  `tfsdk:"disk_size"`                      // 存储空间大小 单位G

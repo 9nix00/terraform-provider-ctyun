@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -39,7 +40,7 @@ func (c *ctyunMysqlRecoverableTimePoints) Schema(ctx context.Context, request da
 	response.Schema = schema.Schema{
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10098797",
 		Attributes: map[string]schema.Attribute{
-			"inst_id": schema.StringAttribute{
+			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql 实例id",
 			},
@@ -58,13 +59,13 @@ func (c *ctyunMysqlRecoverableTimePoints) Schema(ctx context.Context, request da
 				Description: "可恢复时间点",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"start_timestamp": schema.StringAttribute{
+						"start_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "开始的时间戳",
+							Description: "开始时间",
 						},
-						"end_timestamp": schema.StringAttribute{
+						"end_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "结束的时间戳",
+							Description: "结束时间",
 						},
 					},
 				},
@@ -119,8 +120,8 @@ func (c *ctyunMysqlRecoverableTimePoints) Read(ctx context.Context, request data
 	timeRanges := resp.ReturnObj
 	for _, timeRange := range timeRanges.Data {
 		var backupTimePoint BackupTimePointModel
-		backupTimePoint.StartTimestamp = types.StringValue(timeRange.StartTimestamp)
-		backupTimePoint.EndTimestamp = types.StringValue(timeRange.EndTimestamp)
+		backupTimePoint.StartTimestamp = types.StringValue(utils.FromBJTimeToUTCZ(timeRange.StartTimestamp))
+		backupTimePoint.EndTimestamp = types.StringValue(utils.FromBJTimeToUTCZ(timeRange.EndTimestamp))
 		backupTimePoints = append(backupTimePoints, backupTimePoint)
 	}
 	config.BackupTimePoints = backupTimePoints
@@ -131,12 +132,12 @@ func (c *ctyunMysqlRecoverableTimePoints) Read(ctx context.Context, request data
 }
 
 type BackupTimePointModel struct {
-	StartTimestamp types.String `tfsdk:"start_timestamp"`
-	EndTimestamp   types.String `tfsdk:"end_timestamp"`
+	StartTimestamp types.String `tfsdk:"start_time"`
+	EndTimestamp   types.String `tfsdk:"end_time"`
 }
 
 type CtyunMysqlRecoverableTimePointsConfig struct {
-	InstID           types.String           `tfsdk:"inst_id"`
+	InstID           types.String           `tfsdk:"instance_id"`
 	ProjectID        types.String           `tfsdk:"project_id"`
 	RegionID         types.String           `tfsdk:"region_id"`
 	BackupTimePoints []BackupTimePointModel `tfsdk:"backup_time_points"`

@@ -55,7 +55,7 @@ func (c *ctyunElbTargets) Schema(ctx context.Context, request datasource.SchemaR
 				Optional:    true,
 				Description: "后端服务ID列表，以,分隔",
 			},
-			"elb_targets": schema.ListNestedAttribute{
+			"targets": schema.ListNestedAttribute{
 				Computed:    true,
 				Description: "后端主机列表",
 				NestedObject: schema.NestedAttributeObject{
@@ -209,7 +209,7 @@ type CtyunElbTargetsConfig struct {
 	RegionID      types.String     `tfsdk:"region_id"`       //区域ID
 	TargetGroupID types.String     `tfsdk:"target_group_id"` //	后端服务组ID
 	IDs           types.String     `tfsdk:"ids"`             //后端服务ID列表，以,分隔
-	ElbTargets    []ElbTargetModel `tfsdk:"elb_targets"`
+	ElbTargets    []ElbTargetModel `tfsdk:"targets"`
 }
 
 type ElbTargetModel struct {

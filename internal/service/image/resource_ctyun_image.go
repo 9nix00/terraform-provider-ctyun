@@ -58,7 +58,7 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "镜像名称，长度为2-32个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾",
+				Description: "镜像名称，长度为2-32个字符，只能由数字、字母、-组成，不能以数字、-开头，且不能以-结尾，支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9-]*[a-zA-Z0-9]$"), "不满足镜像名称要求"),
@@ -98,7 +98,7 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 			"boot_mode": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "启动方式，bios：BIOS启动方式、uefi：UEFI启动方式，注意：若镜像系统架构为aarch64，则对启动方式的指定不生效。此参数无默认值，不指定则表示使用镜像系统架构的默认启动方式（x86_64架构的默认启动方式为BIOS）",
+				Description: "启动方式，bios：BIOS启动方式、uefi：UEFI启动方式，注意：若镜像系统架构为aarch64，则对启动方式的指定不生效。此参数无默认值，不指定则表示使用镜像系统架构的默认启动方式（x86_64架构的默认启动方式为BIOS），支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.ImageBootModes...),
 				},
@@ -106,7 +106,7 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "镜像描述信息。注意：长度为1~128个字符。",
+				Description: "镜像描述信息。注意：长度为1~128个字符。支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 128),
 				},

@@ -101,14 +101,14 @@ func (c *ctyunVpceServiceTransitIP) Schema(_ context.Context, _ resource.SchemaR
 				},
 			},
 			"create_time": schema.StringAttribute{
-				Description: "创建时间",
+				Description: "创建时间，为UTC格式",
 				Computed:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"update_time": schema.StringAttribute{
-				Description: "更新时间",
+				Description: "更新时间，为UTC格式",
 				Computed:    true,
 			},
 		},

@@ -92,17 +92,17 @@ func (c *CtyunSfsInstances) Schema(ctx context.Context, request datasource.Schem
 							Computed:    true,
 							Description: "已使用大小（MB）",
 						},
-						"create_time": schema.Int64Attribute{
+						"create_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "创建时间，Unix时间戳（毫秒）",
+							Description: "创建时间，为UTC格式",
 						},
-						"update_time": schema.Int64Attribute{
+						"update_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "更新时间，Unix时间戳（毫秒）",
+							Description: "更新时间，为UTC格式",
 						},
-						"expire_time": schema.Int64Attribute{
+						"expire_time": schema.StringAttribute{
 							Computed:    true,
-							Description: "过期时间，Unix时间戳（毫秒）",
+							Description: "到期时间，为UTC格式，按需时为空",
 						},
 						"project_id": schema.StringAttribute{
 							Computed:    true,
@@ -257,9 +257,9 @@ func (c *CtyunSfsInstances) Read(ctx context.Context, request datasource.ReadReq
 		sfsInfo.SfsProtocol = types.StringValue(sfsItem.SfsProtocol)
 		sfsInfo.SfsStatus = types.StringValue(sfsItem.SfsStatus)
 		sfsInfo.UsedSize = types.Int32Value(sfsItem.UsedSize)
-		sfsInfo.CreateTime = types.Int64Value(sfsItem.CreateTime)
-		sfsInfo.UpdateTime = types.Int64Value(sfsItem.UpdateTime)
-		sfsInfo.ExpireTime = types.Int64Value(sfsItem.ExpireTime)
+		sfsInfo.CreateTime = types.StringValue(utils.FromUnixToUTC(sfsItem.CreateTime))
+		sfsInfo.UpdateTime = types.StringValue(utils.FromUnixToUTC(sfsItem.UpdateTime))
+		sfsInfo.ExpireTime = types.StringValue(utils.FromUnixToUTC(sfsItem.ExpireTime))
 		sfsInfo.ProjectID = types.StringValue(sfsItem.ProjectID)
 		sfsInfo.IsEncrypt = types.BoolValue(sfsItem.IsEncrypt)
 		sfsInfo.KmsUUID = types.StringValue(sfsItem.KmsUUID)
@@ -308,9 +308,9 @@ type CtyunSfsInfoModel struct {
 	SfsProtocol        types.String `tfsdk:"protocol"`
 	SfsStatus          types.String `tfsdk:"status"`
 	UsedSize           types.Int32  `tfsdk:"used_size"`
-	CreateTime         types.Int64  `tfsdk:"create_time"`
-	UpdateTime         types.Int64  `tfsdk:"update_time"`
-	ExpireTime         types.Int64  `tfsdk:"expire_time"`
+	CreateTime         types.String `tfsdk:"create_time"`
+	UpdateTime         types.String `tfsdk:"update_time"`
+	ExpireTime         types.String `tfsdk:"expire_time"`
 	ProjectID          types.String `tfsdk:"project_id"`
 	IsEncrypt          types.Bool   `tfsdk:"is_encrypt"`
 	KmsUUID            types.String `tfsdk:"kms_uuid"`

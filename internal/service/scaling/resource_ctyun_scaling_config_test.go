@@ -70,9 +70,9 @@ func TestAccCtyunScalingConfig(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, name, imageID, flavorName, useFloating, bandwidth, loginMode, password, monitorService, tags, volumes) +
 					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf("%s.id", resourceName)),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "scaling_config_list.0.name", name),
-					resource.TestCheckResourceAttr(datasourceName, "scaling_config_list.0.flavor_name", flavorName),
-					resource.TestCheckResourceAttr(datasourceName, "scaling_config_list.0.bandwidth", fmt.Sprintf("%d", bandwidth)),
+					resource.TestCheckResourceAttr(datasourceName, "configs.0.name", name),
+					resource.TestCheckResourceAttr(datasourceName, "configs.0.flavor_name", flavorName),
+					resource.TestCheckResourceAttr(datasourceName, "configs.0.bandwidth", fmt.Sprintf("%d", bandwidth)),
 				),
 			},
 			// 更新
