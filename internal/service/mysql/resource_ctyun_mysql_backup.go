@@ -52,20 +52,44 @@ func (c *CtyunMysqlBackup) ImportState(ctx context.Context, request resource.Imp
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[instID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunMysqlBackupConfig
 	var name, regionId, projectId, instId string
-	err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
-	if err != nil {
+
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if name == "" {
+		err = fmt.Errorf("name 不能为空")
 		return
 	}
-
+	if instId == "" {
+		err = fmt.Errorf("instID 不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID 不能为空")
+		return
+	}
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
 	cfg.Name = types.StringValue(name)
 	cfg.InstID = types.StringValue(instId)
+	cfg.ID = types.StringValue(fmt.Sprintf("%s,%s", name, instId))
 	err = c.getAndMergeMysqlBackup(ctx, &cfg)
 	if err != nil {
 		return
@@ -161,6 +185,7 @@ func (c *CtyunMysqlBackup) Create(ctx context.Context, request resource.CreateRe
 	if err != nil {
 		return
 	}
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.Name.ValueString(), plan.InstID.ValueString()))
 	// 创建后，获取mysql详情
 	err = c.getAndMergeMysqlBackup(ctx, &plan)
 	if err != nil {
@@ -274,7 +299,6 @@ func (c *CtyunMysqlBackup) getAndMergeMysqlBackup(ctx context.Context, config *C
 		err = fmt.Errorf("通过backupName=%s,mysql实例id=%s查询到多条备份集", config.Name.ValueString(), config.InstID.ValueString())
 		return err
 	}
-	config.ID = types.StringValue(fmt.Sprintf("%s,%s,%s,%s", config.Name.ValueString(), config.InstID.ValueString(), config.ProjectID.ValueString(), config.RegionID.ValueString()))
 	return nil
 }
 

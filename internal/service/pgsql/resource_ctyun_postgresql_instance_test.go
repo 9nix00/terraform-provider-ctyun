@@ -10,6 +10,82 @@ import (
 	"time"
 )
 
+func TestAccCtyunPgsqlInstanceImportState(t *testing.T) {
+
+	rnd := utils.GenerateRandomString()
+	resourceFile := "resource_ctyun_postgresql_instance_test.tf"
+	resourceName := "ctyun_postgresql_instance." + rnd
+	cycleType := "on_demand"
+	prodId := "Single1222"
+	flavorName := "c7.xlarge.2"
+	storageType := "SSD"
+	storageSpace := 100
+	name := "pgsql-" + utils.GenerateRandomString()
+	password := "Kyk123=" + utils.GenerateRandomString()
+	caseCensitive := true
+	vpcID := dependence.vpcID
+	subnetID := dependence.subnetID
+	securityGroupID := fmt.Sprintf("%s,%s", dependence.securityGroupID, dependence.securityGroupID2)
+	updatedSecurityGroupID := fmt.Sprintf("%s,%s", dependence.securityGroupID, dependence.securityGroupID3)
+	backupStorageType := "OS"
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 创建pgsql
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, prodId, flavorName, storageType,
+					storageSpace, name, password, caseCensitive, vpcID, subnetID, securityGroupID, backupStorageType),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+				),
+			},
+			// import state验证1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					projectId := ds.Attributes["project_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s,%s", id, projectId, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_count", "master_order_id", "case_sensitive", "is_mgr"},
+			},
+			// import state验证2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_count", "master_order_id", "case_sensitive", "is_mgr"},
+			},
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, prodId, flavorName, storageType,
+					storageSpace, name, password, caseCensitive, vpcID, subnetID, updatedSecurityGroupID, backupStorageType),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func TestAccCtyunPgsqlInstanceProjectId(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()

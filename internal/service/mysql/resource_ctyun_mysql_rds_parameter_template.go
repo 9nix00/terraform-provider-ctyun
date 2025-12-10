@@ -23,9 +23,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlRdsParameterTemplate{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlRdsParameterTemplate{}
-	_ resource.ResourceWithImportState = &CtyunMysqlRdsParameterTemplate{}
+	_ resource.Resource              = &CtyunMysqlRdsParameterTemplate{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlRdsParameterTemplate{}
 )
 
 type CtyunMysqlRdsParameterTemplate struct {
@@ -47,10 +46,6 @@ func (c *CtyunMysqlRdsParameterTemplate) Configure(ctx context.Context, request 
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.mysqlService = business.NewMysqlService(meta)
-}
-
-func (c *CtyunMysqlRdsParameterTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	return
 }
 
 func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

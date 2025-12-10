@@ -57,7 +57,7 @@ func TestAccCtyunOceanfsPermissionGroup(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "update_time"),
 				),
 			},
-			// 3. 导入测试
+			// 3. 导入测试1
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
@@ -69,6 +69,22 @@ func TestAccCtyunOceanfsPermissionGroup(t *testing.T) {
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"create_time", "update_time"},
+			},
+			// 3. 导入测试1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
 					), nil
 				},
 				ImportStateVerify:       true,

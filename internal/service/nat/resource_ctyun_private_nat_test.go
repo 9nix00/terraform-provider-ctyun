@@ -167,6 +167,46 @@ func TestAccNewCtyunPrivateNatResource3(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
 				),
 			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					projectId := ds.Attributes["project_id"]
+					return fmt.Sprintf("%s,%s,%s", id, projectId, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"az_name",
+					"cycle_type",
+					"master_order_id",
+					"project_id",
+					"subnet_id",
+					"cycle_count",
+					"auto_renew",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"az_name",
+					"cycle_type",
+					"master_order_id",
+					"project_id",
+					"subnet_id",
+					"cycle_count",
+					"auto_renew",
+				},
+			},
 			// 销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, vpcId, spec, initName, initDescription, yearCycleType, cycleCount, dependence.subnetID1),

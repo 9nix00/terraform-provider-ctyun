@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -49,7 +50,42 @@ func (c *CtyunMysqlBackupSetting) Configure(ctx context.Context, request resourc
 }
 
 func (c *CtyunMysqlBackupSetting) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	return
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var cfg CtyunMysqlBackupSettingConfig
+	var regionId, projectId, instId string
+
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		instId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &instId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if instId == "" {
+		err = fmt.Errorf("instID 不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID 不能为空")
+	}
+
+	cfg.RegionID = types.StringValue(regionId)
+	cfg.ProjectID = types.StringValue(projectId)
+	cfg.InstID = types.StringValue(instId)
+	err = c.getAndMergeMysqlBackupSetting(ctx, &cfg)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

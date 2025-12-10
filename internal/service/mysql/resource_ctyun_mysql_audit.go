@@ -2,10 +2,11 @@ package mysql
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
-	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -16,16 +17,17 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"time"
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlAudit{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlAudit{}
-	_ resource.ResourceWithImportState = &CtyunMysqlAudit{}
+	_ resource.Resource              = &CtyunMysqlAudit{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlAudit{}
 )
 
 type CtyunMysqlAudit struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlAudit) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -41,27 +43,7 @@ func (c *CtyunMysqlAudit) Configure(ctx context.Context, request resource.Config
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-}
-
-func (c *CtyunMysqlAudit) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var err error
-	defer func() {
-		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
-		}
-	}()
-	var cfg CtyunMysqlAuditConfig
-	var ID, regionId, projectId, instId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &instId)
-	if err != nil {
-		return
-	}
-
-	err = c.getAndMerge(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	c.mysqlService = business.NewMysqlService(c.meta)
 }
 
 func (c *CtyunMysqlAudit) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -69,7 +51,7 @@ func (c *CtyunMysqlAudit) Schema(ctx context.Context, request resource.SchemaReq
 		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10033813/10133568",
 		Attributes: map[string]schema.Attribute{
 			"inst_id": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "mysql实例Id",
 			},
 			"project_id": schema.StringAttribute{
@@ -121,12 +103,10 @@ func (c *CtyunMysqlAudit) Create(ctx context.Context, request resource.CreateReq
 	}
 
 	// 开启/关闭sql审计
-
 	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
-
 	// 创建后，获取mysql详情
 	err = c.getAndMerge(ctx, &plan)
 	if err != nil {
@@ -199,6 +179,12 @@ func (c *CtyunMysqlAudit) getMysqlAuditStatus(ctx context.Context, config *Ctyun
 	if !config.ProjectID.IsNull() && !config.ProjectID.IsUnknown() {
 		header.ProjectID = config.ProjectID.ValueStringPointer()
 	}
+	// 先确保mysql实例状态running
+
+	err := c.startedLoop(ctx, config)
+	if err != nil {
+		return nil, err
+	}
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbGetAuditStatusApi.Do(ctx, c.meta.Credential, params, header)
 	if err != nil {
 		return nil, err
@@ -213,6 +199,55 @@ func (c *CtyunMysqlAudit) getMysqlAuditStatus(ctx context.Context, config *Ctyun
 		return nil, err
 	}
 	return &resp.ReturnObj.AuditLogSwitch, nil
+}
+
+// startedLoop 等待实例处于启动状态
+func (c *CtyunMysqlAudit) startedLoop(ctx context.Context, state *CtyunMysqlAuditConfig) (err error) {
+	retryer, err := business.NewRetryer(time.Second*30, 60)
+	if err != nil {
+		return
+	}
+	var cnt int
+	result := retryer.Start(
+		func(currentTime int) bool {
+			var instance *mysql.DetailRespReturnObj
+			instance, err = c.mysqlService.GetDetailByID(
+				ctx,
+				state.InstID.ValueString(),
+				state.ProjectID.ValueString(),
+				state.RegionID.ValueString(),
+			)
+			runningStatus := instance.ProdRunningStatus
+			orderStatus := instance.ProdOrderStatus
+			// 若变配前，发现数据库已冻结，将其恢复
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = fmt.Errorf("数据库id=%s处于冻结状态，请恢复后在再请求！", state.InstID.ValueString())
+				if err != nil {
+					return false
+				}
+			}
+			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
+				// 有三次是start，才认为状态正常
+				cnt++
+				if cnt > 1 {
+					return false
+				}
+			}
+			if orderStatus == business.MysqlOrderStatusPause {
+				err = errors.New("订单处于暂停状态，不可进行变更操作")
+				return false
+			}
+			if runningStatus == business.MysqlRunningStatusStopping || runningStatus == business.MysqlRunningStatusStopped {
+				err = errors.New("主机处于关机状态，不可进行变更操作")
+				return false
+			}
+			return true
+		},
+	)
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return errors.New("轮询已达最大次数，资源仍未到达启动状态！")
+	}
+	return
 }
 
 type CtyunMysqlAuditConfig struct {

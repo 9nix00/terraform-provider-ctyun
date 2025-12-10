@@ -20,9 +20,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlBackupCancel{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlBackupCancel{}
-	_ resource.ResourceWithImportState = &CtyunMysqlBackupCancel{}
+	_ resource.Resource              = &CtyunMysqlBackupCancel{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlBackupCancel{}
 )
 
 type CtyunMysqlBackupCancel struct {
@@ -42,11 +41,6 @@ func (c *CtyunMysqlBackupCancel) Configure(ctx context.Context, request resource
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-}
-
-func (c *CtyunMysqlBackupCancel) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (c *CtyunMysqlBackupCancel) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

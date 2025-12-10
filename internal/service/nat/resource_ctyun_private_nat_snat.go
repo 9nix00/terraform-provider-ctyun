@@ -37,26 +37,44 @@ func NewCtyunPrivateSnatResource() resource.Resource {
 }
 
 func (c *ctyunPrivateSnatResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//从输入获取资源ID
-	//使用ID调用API查询远端数据
-	//用查询到的数据赋值State
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[natGateWayID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-
 	var config CtyunPrivateSnatConfig
-	var id, natGatewayId string
-	err = terraform_extend.Split(request.ID, &id, &natGatewayId)
-	if err != nil {
+	var ID, projectID, regionID, natGateWayID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
 		return
 	}
-	regionId := c.meta.GetExtraIfEmpty(config.RegionID.ValueString(), common.ExtraRegionId)
-	config.SNatID = types.StringValue(id)
-	config.RegionID = types.StringValue(regionId)
-	config.NatGatewayID = types.StringValue(natGatewayId)
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if natGateWayID == "" {
+		err = fmt.Errorf("natGateWayID不能为空")
+	}
+	config.ID = types.StringValue(ID)
+	config.SNatID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.NatGatewayID = types.StringValue(natGateWayID)
 	err = c.getAndMergeSnat(ctx, &config)
 	if err != nil {
 		return

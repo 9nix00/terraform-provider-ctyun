@@ -46,18 +46,40 @@ func (c *CtyunOceanfsPermissionRule) ImportState(ctx context.Context, request re
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[permissionGroupID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunOceanfsPermissionRuleConfig
-	var ID, regionId, permissionRuleId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &permissionRuleId)
-	if err != nil {
+	var ID, regionID, permissionGroupID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &permissionGroupID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &permissionGroupID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if permissionGroupID == "" {
+		err = fmt.Errorf("permissionGroupID不能为空")
 		return
 	}
 	config.ID = types.StringValue(ID)
-	config.RegionID = types.StringValue(regionId)
-	config.PermissionGroupFuid = types.StringValue(permissionRuleId)
+	config.RegionID = types.StringValue(regionID)
+	config.PermissionGroupFuid = types.StringValue(permissionGroupID)
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return

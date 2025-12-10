@@ -20,6 +20,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -271,23 +272,49 @@ func (c *CtyunMongodbAccount) ImportState(ctx context.Context, request resource.
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[instID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg MongodbAccountConfig
-	var instanceID, name string
-	err = terraform_extend.Split(request.ID, &instanceID, &name)
+	var config MongodbAccountConfig
+	var regionID, projectID, instID, name string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if instID == "" {
+		err = fmt.Errorf("instdID不能为空")
+		return
+	}
+	if name == "" {
+		err = fmt.Errorf("name不能为空")
+		return
+	}
+	config.ID = types.StringValue(fmt.Sprintf("%s,%s", instID, name))
+	config.InstanceID = types.StringValue(instID)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	config.Name = types.StringValue(name)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	cfg.InstanceID = types.StringValue(instanceID)
-	cfg.Name = types.StringValue(name)
-	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
+
 }
 func (c *CtyunMongodbAccount) create(ctx context.Context, plan MongodbAccountConfig) (err error) {
 	// 创建账号权限列表

@@ -42,31 +42,40 @@ func (c *CtyunMysqlReadOnlyInstance) ImportState(ctx context.Context, request re
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunMysqlReadOnlyInstanceConfig
-	var IDStr, regionId, projectId, description, engine, name string
-	err = terraform_extend.Split(request.ID, &IDStr, &regionId, &projectId, &description, &engine, &name)
+	var config CtyunMysqlReadOnlyInstanceConfig
+	var ID, regionId, projectId string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.InstID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	//ID, err := strconv.ParseInt(IDStr, 10, 64)
-	//if err != nil {
-	//	fmt.Println("id转换失败，输入有误:", err)
-	//	return
-	//}
-	//cfg.ID = types.Int64Value(ID)
-	//cfg.RegionID = types.StringValue(regionId)
-	//cfg.ProjectID = types.StringValue(projectId)
-	//cfg.Description = types.StringValue(description)
-	//cfg.Engine = types.StringValue(engine)
-	//cfg.Name = types.StringValue(name)
-	//err = c.getAndMergeMysqlParameterTemplate(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMysqlReadOnlyInstance) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -384,6 +393,7 @@ func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceDetail(ctx context.Context,
 		return err
 	}
 	returnObj := resp.ReturnObj
+	config.Name = types.StringValue(returnObj.ProdInstName)
 	config.prodVersion = returnObj.ProdDbEngine
 	config.vpcID = returnObj.VpcId
 	config.subnetID = returnObj.SubnetId

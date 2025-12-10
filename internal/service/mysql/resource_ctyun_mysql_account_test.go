@@ -109,16 +109,33 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					// 构造导入ID: "id,region_id"
-					return fmt.Sprintf("%s,%s,%s,%s,%s",
-						rs.Primary.ID,
-						rs.Primary.Attributes["region_id"],
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["inst_id"],
 						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password", "description", "project_id"},
+			},
+			// 3. 资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					// 构造导入ID: "id,region_id"
+					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["inst_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"password", "description"},
+				ImportStateVerifyIgnore: []string{"password", "description", "project_id"},
 			},
 			{
 

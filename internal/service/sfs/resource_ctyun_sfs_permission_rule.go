@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 type ctyunSfsPermissionGroupRule struct {
@@ -44,24 +45,48 @@ func NewCtyunSfsPermissionGroupRule() resource.Resource {
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId]
 func (c *ctyunSfsPermissionGroupRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	var cfg CtyunSfsPermissionGroupRuleConfig
-	var ID, regionId, permissionGroupFuid string
-	err := terraform_extend.Split(request.ID, &ID, &regionId, &permissionGroupFuid)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[permissionGroupID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunSfsPermissionGroupRuleConfig
+	var ID, regionID, permissionGroupID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &permissionGroupID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &permissionGroupID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
 		return
 	}
-
-	cfg.ID = types.StringValue(ID)
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.PermissionGroupFuid = types.StringValue(permissionGroupFuid)
-
-	err = c.getAndMergeSfsPermissionGroupRule(ctx, &cfg)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	if permissionGroupID == "" {
+		err = fmt.Errorf("permissionGroupID不能为空")
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.PermissionGroupFuid = types.StringValue(permissionGroupID)
+	err = c.getAndMergeSfsPermissionGroupRule(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *ctyunSfsPermissionGroupRule) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

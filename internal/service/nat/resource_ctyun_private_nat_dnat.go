@@ -333,24 +333,46 @@ func (c *ctyunPrivateDnatResource) ImportState(ctx context.Context, request reso
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[natGateWayID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-
-	var cfg CtyunPrivateDnatConfig
-	var id, natGatewayId, regionId string
-	err = terraform_extend.Split(request.ID, &id, &natGatewayId, &regionId)
+	var config CtyunPrivateDnatConfig
+	var ID, projectID, regionID, natGateWayID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if natGateWayID == "" {
+		err = fmt.Errorf("natGateWayID不能为空")
+	}
+	config.ID = types.StringValue(ID)
+	config.DnatID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.NatGatewayID = types.StringValue(natGateWayID)
+	err = c.getAndMergePrivateDnat(ctx, &config)
 	if err != nil {
 		return
 	}
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.NatGatewayID = types.StringValue(natGatewayId)
-	cfg.DnatID = types.StringValue(id)
-	err = c.getAndMergePrivateDnat(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *ctyunPrivateDnatResource) getAndMergePrivateDnat(ctx context.Context, plan *CtyunPrivateDnatConfig) (err error) {

@@ -132,7 +132,7 @@ func TestAccCtyunSfsPermissionGroupNoneDesc(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "is_default"),
 				),
 			},
-			// 3. 资源导入测试
+			// 3. 资源导入测试 1
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
@@ -145,6 +145,23 @@ func TestAccCtyunSfsPermissionGroupNoneDesc(t *testing.T) {
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.ID,
 						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"description"}, // 不需要忽略任何字段
+			},
+			// 3. 资源导入测试 2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					// 构造导入ID: "id,region_id"
+					return fmt.Sprintf("%s",
+						rs.Primary.ID,
 					), nil
 				},
 				ImportStateVerify:       true,

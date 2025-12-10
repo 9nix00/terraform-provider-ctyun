@@ -643,25 +643,38 @@ func (c *ctyunSfs) ImportState(ctx context.Context, request resource.ImportState
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[vpcID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunSfsConfig
-	var ID, regionId, projectId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId)
+	var config CtyunSfsConfig
+	var ID, regionID, projectID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergeSfs(ctx, &config)
 	if err != nil {
 		return
 	}
-
-	cfg.ID = types.StringValue(ID)
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.ProjectID = types.StringValue(projectId)
-
-	err = c.getAndMergeSfs(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 type CtyunSfsConfig struct {
