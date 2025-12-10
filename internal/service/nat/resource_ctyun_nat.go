@@ -109,7 +109,7 @@ func (c *ctyunNat) Schema(_ context.Context, request resource.SchemaRequest, res
 				Computed:    true,
 				Description: "nat描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:,'{},.,/;'[]·~！@#￥%……&*（） ——-+={}，支持更新",
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(512),
+					stringvalidator.UTF8LengthAtMost(512),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
