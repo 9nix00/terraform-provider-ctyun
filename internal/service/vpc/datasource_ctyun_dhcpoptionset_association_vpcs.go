@@ -107,10 +107,9 @@ func (c *ctyunDhcpOptionSetAssociationVpcs) Schema(_ context.Context, _ datasour
 							Description: "扩展网段列表",
 							ElementType: types.StringType,
 						},
-						"status": schema.ListAttribute{
+						"status": schema.StringAttribute{
 							Computed:    true,
-							Description: "状态列表",
-							ElementType: types.StringType,
+							Description: "状态",
 						},
 					},
 				},

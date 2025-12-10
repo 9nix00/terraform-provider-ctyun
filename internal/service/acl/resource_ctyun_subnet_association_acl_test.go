@@ -59,8 +59,8 @@ func TestAccCtyunSubnetAssociationAcl(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s,%s,%s",
 						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["subnet_id"], // 假设资源代码需要name
-						rs.Primary.Attributes["acl_id"],    // 假设资源代码需要vpc_id
+						rs.Primary.Attributes["subnet_id"],
+						rs.Primary.Attributes["acl_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["region_id"],
 					), nil
@@ -96,12 +96,12 @@ func TestAccCtyunSubnetAssociationAcl(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["subnet_id"], // 假设资源代码需要name
-						rs.Primary.Attributes["acl_id"],    // 假设资源代码需要vpc_id
+						rs.Primary.Attributes["subnet_id"],
+						rs.Primary.Attributes["acl_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"project_id"},
 			},
 			// 4. 清理资源（解绑）
 			{

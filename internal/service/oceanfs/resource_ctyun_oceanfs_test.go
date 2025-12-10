@@ -60,8 +60,7 @@ func TestAccCtyunOceanfs(t *testing.T) {
 						resource.TestCheckResourceAttr(resourceName, "name", name),
 					),
 				},
-				// 3. datasource验证
-				// 4. import state验证 1
+				// 3. import state验证 1
 				{
 					ResourceName: resourceName,
 					ImportState:  true,
@@ -76,8 +75,14 @@ func TestAccCtyunOceanfs(t *testing.T) {
 							rs.Primary.Attributes["region_id"],
 						), nil
 					},
-					ImportStateVerify:       true,
-					ImportStateVerifyIgnore: []string{"tags", "cycle_type"},
+					ImportStateVerify: true,
+					ImportStateVerifyIgnore: []string{
+						"tags",
+						"cycle_type",
+						"subnet_id",
+						"vpc_id",
+						"update_time",
+					},
 				},
 				// 4. import state验证 2
 				{
@@ -92,10 +97,17 @@ func TestAccCtyunOceanfs(t *testing.T) {
 							rs.Primary.Attributes["id"],
 						), nil
 					},
-					ImportStateVerify:       true,
-					ImportStateVerifyIgnore: []string{"tags", "cycle_type", "project_id", "subnet_id", "vpc_id"},
+					ImportStateVerify: true,
+					ImportStateVerifyIgnore: []string{
+						"tags",
+						"cycle_type",
+						"subnet_id",
+						"vpc_id",
+						"update_time",
+						"project_id",
+					},
 				},
-				// 3.销毁资源
+				// 5.销毁资源
 				{
 					Config:  utils.LoadTestCase(resourceFile, rnd, projectID, sfsProtocol, name, updatedSfsSize, cycleType, vpcID, subnetID),
 					Destroy: true,

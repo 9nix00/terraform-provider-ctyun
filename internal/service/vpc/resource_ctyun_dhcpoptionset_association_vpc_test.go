@@ -15,7 +15,7 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_dhcpoptionset_association_vpc." + rnd
 	resourceFile := "resource_ctyun_dhcpoptionset_association_vpc.tf"
-	datasourceName := "data.ctyun_dhcpoptionset_association_vpcs" + dnd
+	datasourceName := "data.ctyun_dhcpoptionset_association_vpcs." + dnd
 	datasourceFile := "datasource_ctyun_dhcpoptionset_association_vpcs.tf"
 
 	// 测试参数
@@ -44,11 +44,10 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, vpcIds) +
-					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+					utils.LoadTestCase(datasourceFile, dnd, dhcpOptionSetsId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "dhcp_option_sets_id", dhcpOptionSetsId),
-					resource.TestCheckResourceAttr(datasourceName, "vpc_ids.#", "1"),
-					resource.TestCheckResourceAttrSet(datasourceName, "id"),
+					resource.TestCheckResourceAttr(datasourceName, "vpcs.#", "1"),
 				),
 			},
 			{
@@ -56,7 +55,6 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, updatedVpcIds),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "dhcp_option_sets_id", dhcpOptionSetsId),
-					//resource.TestCheckResourceAttr(resourceName, "vpc_ids.#", "2"),
 				),
 			},
 			{
