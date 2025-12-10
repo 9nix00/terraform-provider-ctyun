@@ -124,12 +124,19 @@ type LoopOrderResponse struct {
 func (o *OrderLooper) WaitOrderFinish(ctx context.Context, credential ctyunsdk.Credential, masterOrderId string) error {
 	var respError error
 	retryer, _ := NewRetryer(time.Second*10, 360)
+	var faledCnt int
 	result := retryer.Start(
 		func(currentTime int) bool {
 			detail, err := o.api.Do(ctx, credential, &ctecs.EcsOrderQueryUuidRequest{
 				MasterOrderId: masterOrderId,
 			})
 			if err != nil {
+				// 允许失败一次
+				if faledCnt == 0 {
+					faledCnt++
+					respError = nil
+					return true
+				}
 				respError = err
 				return false
 			}
