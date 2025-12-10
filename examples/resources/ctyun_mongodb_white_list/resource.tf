@@ -6,9 +6,8 @@ terraform {
   }
 }
 
-# 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
-
+  env = "prod"
 }
 resource "ctyun_vpc" "vpc_test" {
   name        = "tf-vpc-for-mon"
@@ -55,12 +54,10 @@ variable "password" {
   type      = string
   sensitive = true
 }
-resource "ctyun_eip" "eip_test" {
-  name        = "tf-eip-for-mon"
-  description = "terraform测试使用"
-}
-resource "ctyun_mongodb_association_eip" "test" {
-  eip_id = ctyun_eip.eip_test.id
-  inst_id = ctyun_mongodb_instance.test.id
-  host_ip = "192.168.1.2"
+resource "ctyun_mongodb_white_list" "example" {
+  instance_id     = ctyun_mongodb_instance.test.id
+  group_name      = "example-whitelist-group"
+  ip_type         = "ipv4"
+  white_list_type = "2"
+  ip_list         = ["192.168.1.1", "192.168.1.2"]
 }
