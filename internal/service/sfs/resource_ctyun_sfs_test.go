@@ -154,19 +154,31 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					resource.TestCheckResourceAttrSet(datasourceName, "instances.#"),
 				),
 			},
-			// 4. 资源导入测试
+			// 4. 资源导入测试 1
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
 					id := ds.ID
-					regionId := ds.Attributes["region_id"]
 					projectId := ds.Attributes["project_id"]
+					regionId := ds.Attributes["region_id"]
 					if id == "" || regionId == "" {
 						return "", fmt.Errorf("id or region_id is required")
 					}
-					return fmt.Sprintf("%s,%s,%s", id, regionId, projectId), nil
+					return fmt.Sprintf("%s,%s,%s", id, projectId, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"cycle_count", "kms_uuid", "cycle_type", "is_encrypt", "vpc_id", "subnet_id", "az_name", "used_size"},
+			},
+			// 4. 资源导入测试 1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

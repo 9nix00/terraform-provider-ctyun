@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var (
@@ -215,25 +216,50 @@ func (c *ctyunPrivateNatTransitIpResource) Configure(_ context.Context, request 
 }
 
 func (c *ctyunPrivateNatTransitIpResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// 导入格式为 regionID:natGatewayID:address
-	importId := request.ID
-	var regionId, natGatewayId, address string
-	err := terraform_extend.Split(request.ID, &regionId, &natGatewayId, &address)
-	if err != nil {
-		return
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [address][natGateWayID][regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunPrivateNatTransitIpConfig
+	var ID, regionID, natGateWayID, address string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &address, &natGateWayID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &address, &natGateWayID, &regionID)
+		if err != nil {
+			return
+		}
 	}
-	var cfg CtyunPrivateNatTransitIpConfig
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.NatGatewayID = types.StringValue(natGatewayId)
-	cfg.Address = types.StringValue(address)
-	cfg.ID = types.StringValue(importId)
+	ID = fmt.Sprintf("%s,%s,%s", regionID, natGateWayID, address)
 
-	err = c.getAndMergePrivateNatTransitIp(ctx, &cfg)
-	if err != nil {
-		response.Diagnostics.AddError("导入失败", err.Error())
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	if natGateWayID == "" {
+		err = fmt.Errorf("natGateWayID不能为空")
+	}
+	if address == "" {
+		err = fmt.Errorf("address 不能为空")
+	}
+	config.RegionID = types.StringValue(regionID)
+	config.NatGatewayID = types.StringValue(natGateWayID)
+	config.ID = types.StringValue(ID)
+	config.Address = types.StringValue(address)
+	err = c.getAndMergePrivateNatTransitIp(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
+
 }
 
 func (c *ctyunPrivateNatTransitIpResource) getAndMergePrivateNatTransitIp(ctx context.Context, cfg *CtyunPrivateNatTransitIpConfig) (err error) {

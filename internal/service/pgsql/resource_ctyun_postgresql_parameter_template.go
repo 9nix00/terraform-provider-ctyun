@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -46,39 +47,52 @@ func (c *CtyunPgsqlParamTemplate) Configure(ctx context.Context, request resourc
 }
 
 func (c *CtyunPgsqlParamTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunPgsqlParameterTemplateConfig
-	var ID, regionId, projectId, name, sourceTemplateId, description string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &name, &sourceTemplateId, &description)
-	if err != nil {
+	var config CtyunPgsqlParameterTemplateConfig
+	var id, regionID, projectID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		id = request.ID
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &id, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if id == "" {
+		err = fmt.Errorf("id不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 
-	id, err := strconv.Atoi(ID)
+	num, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("转换失败: %v\n", err)
+		return
+	}
+	config.ID = types.Int64Value(num)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergePostgresqlParameterTemplate(ctx, &config)
 	if err != nil {
 		return
 	}
-	sourceTemplateIdInt, err := strconv.Atoi(sourceTemplateId)
-	if err != nil {
-		return
-	}
-	cfg.ID = types.Int64Value(int64(id))
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.ProjectID = types.StringValue(projectId)
-	cfg.Name = types.StringValue(name)
-	cfg.SourceTemplateId = types.Int64Value(int64(sourceTemplateIdInt))
-
-	cfg.Description = types.StringValue(description)
-	err = c.getAndMergePostgresqlParameterTemplate(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunPgsqlParamTemplate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

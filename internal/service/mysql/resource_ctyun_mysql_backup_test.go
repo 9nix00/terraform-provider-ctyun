@@ -92,6 +92,87 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 	})
 }
 
+func TestAccCtyunMysqlBackupImportState(t *testing.T) {
+
+	rnd := utils.GenerateRandomString()
+	resourceName := "ctyun_mysql_backup." + rnd
+	resourceFile := "resource_ctyun_mysql_backup.tf"
+
+	projectID := "0"
+	mysqlInstanceID := dependence.mysqlID
+	// 备份描述信息
+	description := "Test backup created by Terraform"
+
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 1. 创建备份测试
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					mysqlInstanceID, projectID,
+					description, "full",
+				),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
+					resource.TestCheckResourceAttr(resourceName, "description", description),
+					resource.TestCheckResourceAttr(resourceName, "task_type", "full"),
+					resource.TestCheckResourceAttrSet(resourceName, "name"),
+				),
+			},
+
+			// 3. 资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, _ := s.RootModule().Resources[resourceName]
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"task_type", "description"},
+			},
+			// 3. 资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, _ := s.RootModule().Resources[resourceName]
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["inst_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"task_type", "description"},
+			},
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd,
+					mysqlInstanceID, projectID,
+					description, "full",
+				),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func TestAccCtyunMysqlBackupCanceled(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()

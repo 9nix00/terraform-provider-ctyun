@@ -1,12 +1,12 @@
 resource "ctyun_vpc" "vpc_test" {
-  name        = "tf-vpc-for-sfs"
+  name        = "tf-vpc-for-oceanfs"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true
 }
 
 resource "ctyun_vpc" "vpc_test1" {
-  name        = "tf-vpc-for-sfs1"
+  name        = "tf-vpc-for-oceanfs1"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
   enable_ipv6 = true

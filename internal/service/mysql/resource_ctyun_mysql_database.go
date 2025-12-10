@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var (
@@ -51,28 +52,48 @@ func (c *CtyunMysqlDatabase) ImportState(ctx context.Context, request resource.I
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[instID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunMysqlDatabaseConfig
-	var ID, regionId, projectId, dbName, instId, charsetName, description string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &dbName, &instId, &charsetName, &description)
+	var config CtyunMysqlDatabaseConfig
+	var name, regionID, projectID, instID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if name == "" {
+		err = fmt.Errorf("name不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if instID == "" {
+		err = fmt.Errorf("instID不能为空")
+		return
+	}
+	config.ID = types.StringValue(fmt.Sprintf("%s", instID+"-"+name))
+	config.Name = types.StringValue(name)
+	config.InstID = types.StringValue(instID)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergeMysqlDatabase(ctx, &config)
 	if err != nil {
 		return
 	}
-
-	cfg.ID = types.StringValue(ID)
-	cfg.RegionID = types.StringValue(regionId)
-	cfg.ProjectID = types.StringValue(projectId)
-	cfg.Name = types.StringValue(dbName)
-	cfg.InstID = types.StringValue(instId)
-	cfg.CharSetName = types.StringValue(charsetName)
-	cfg.Description = types.StringValue(description)
-	err = c.getAndMergeMysqlDatabase(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

@@ -52,16 +52,39 @@ func (c *CtyunMysqlBackup) ImportState(ctx context.Context, request resource.Imp
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunMysqlBackupConfig
 	var name, regionId, projectId, instId string
-	err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
-	if err != nil {
+
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if name == "" {
+		err = fmt.Errorf("name 不能为空")
 		return
 	}
-
+	if instId == "" {
+		err = fmt.Errorf("instID 不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID 不能为空")
+		return
+	}
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
 	cfg.Name = types.StringValue(name)

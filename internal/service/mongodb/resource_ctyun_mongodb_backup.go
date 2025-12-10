@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
@@ -41,7 +42,7 @@ type CtyunMongodbBackupConfig struct {
 	RegionID    types.String `tfsdk:"region_id"`
 	ProjectID   types.String `tfsdk:"project_id"`
 	InstanceID  types.String `tfsdk:"instance_id"`
-	BackupName  types.String `tfsdk:"backup_name"`
+	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
 }
 
@@ -218,28 +219,53 @@ func (r *CtyunMongodbBackupResource) delete(ctx context.Context, plan CtyunMongo
 	return
 }
 
-func (r *CtyunMongodbBackupResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (c *CtyunMongodbBackupResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunMongodbBackupConfig
-	var instanceID, backupName, regionID string
-	err = terraform_extend.Split(req.ID, &instanceID, &backupName, &regionID)
+	var name, regionId, projectId, instId string
+
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if name == "" {
+		err = fmt.Errorf("name 不能为空")
+		return
+	}
+	if instId == "" {
+		err = fmt.Errorf("instID 不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID 不能为空")
+		return
+	}
+	cfg.RegionID = types.StringValue(regionId)
+	cfg.ProjectID = types.StringValue(projectId)
+	cfg.Name = types.StringValue(name)
+	cfg.InstanceID = types.StringValue(instId)
+	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {
 		return
 	}
-	cfg.InstanceID = types.StringValue(instanceID)
-	cfg.BackupName = types.StringValue(backupName)
-	cfg.RegionID = types.StringValue(regionID)
-	// 查询远端
-	err = r.getAndMerge(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+
 }
 
 func (r *CtyunMongodbBackupResource) checkBeforeCreate(ctx context.Context, c *CtyunMongodbBackupConfig) (err error) {
@@ -252,7 +278,7 @@ func (r *CtyunMongodbBackupResource) create(ctx context.Context, plan *CtyunMong
 		ProdInstId: plan.InstanceID.ValueString(),
 	}
 
-	createReq.BackupName = plan.BackupName.ValueStringPointer()
+	createReq.BackupName = plan.Name.ValueStringPointer()
 
 	if !plan.Description.IsNull() {
 		createReq.Description = plan.Description.ValueStringPointer()
@@ -285,7 +311,7 @@ func (r *CtyunMongodbBackupResource) getAndMerge(ctx context.Context, plan *Ctyu
 	// 获取备份信息
 	describeReq := &mongodb.MongodbDescribeBackupsRequest{
 		ProdInstId: plan.InstanceID.ValueString(),
-		BackupName: plan.BackupName.ValueStringPointer(),
+		BackupName: plan.Name.ValueStringPointer(),
 		PageNow:    1,
 		PageSize:   1000,
 	}
@@ -311,7 +337,7 @@ func (r *CtyunMongodbBackupResource) getAndMerge(ctx context.Context, plan *Ctyu
 	// 查找备份信息
 	var backupInfo *mongodb.MongodbBackupInfo
 	for _, item := range resp.ReturnObj.List {
-		if item.BackupName == plan.BackupName.ValueString() {
+		if item.BackupName == plan.Name.ValueString() {
 			backupInfo = &item
 			break
 		}
@@ -321,7 +347,7 @@ func (r *CtyunMongodbBackupResource) getAndMerge(ctx context.Context, plan *Ctyu
 	}
 	plan.ID = types.StringValue(fmt.Sprintf("%d", backupInfo.BackupId))
 	if backupInfo.BackupName != "" {
-		plan.BackupName = types.StringValue(backupInfo.BackupName)
+		plan.Name = types.StringValue(backupInfo.BackupName)
 	}
 	// 添加 Description 字段的空指针检查
 	if backupInfo.Description != nil {

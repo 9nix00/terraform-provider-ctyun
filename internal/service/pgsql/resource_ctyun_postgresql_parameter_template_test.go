@@ -104,17 +104,30 @@ func TestAccCtyunPostgresqlParamTemplate(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s,%s,%s,%s",
+					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
-						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["source_template_id"],
-						rs.Primary.Attributes["description"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"template_parameters"}, // 参数可能变化，忽略验证
+				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description"}, // 参数可能变化，忽略验证
+
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description"}, // 参数可能变化，忽略验证
 
 			},
 			// 6. 清理资源

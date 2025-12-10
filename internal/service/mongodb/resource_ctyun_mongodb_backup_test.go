@@ -38,7 +38,7 @@ func TestAccMongodbBackup_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, backupName, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "backup_name", backupName),
+					resource.TestCheckResourceAttr(resourceName, "name", backupName),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 				),
 			},
@@ -46,7 +46,7 @@ func TestAccMongodbBackup_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, backupName, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "backup_name", backupName),
+					resource.TestCheckResourceAttr(resourceName, "name", backupName),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 				),
 			},
@@ -55,7 +55,7 @@ func TestAccMongodbBackup_basic(t *testing.T) {
 				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, backupName, description),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "backup_name", backupName),
+					resource.TestCheckResourceAttr(resourceName, "name", backupName),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 				),
 			},
@@ -69,10 +69,28 @@ func TestAccMongodbBackup_basic(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s",
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["backup_name"],
+						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"description", "project_id"}, // 子网列表可能变化
+
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,

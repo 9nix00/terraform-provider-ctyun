@@ -56,20 +56,35 @@ func (c *CtyunOceanfs) ImportState(ctx context.Context, request resource.ImportS
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID][vpcID][subnetID][projectID][regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunOceanfsConfig
-	var ID, regionId, projectId, vpcId, subnetId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &vpcId, &subnetId)
-	if err != nil {
+	var ID, regionID, projectID, vpcID, subnetID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &vpcID, &subnetID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 	config.ID = types.StringValue(ID)
-	config.RegionID = types.StringValue(regionId)
-	config.ProjectID = types.StringValue(projectId)
-	config.VpcID = types.StringValue(vpcId)
-	config.SubnetID = types.StringValue(subnetId)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	config.VpcID = types.StringValue(vpcID)
+	config.SubnetID = types.StringValue(subnetID)
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return

@@ -23,9 +23,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlWhiteList{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlWhiteList{}
-	_ resource.ResourceWithImportState = &CtyunMysqlWhiteList{}
+	_ resource.Resource              = &CtyunMysqlWhiteList{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlWhiteList{}
 )
 
 type CtyunMysqlWhiteList struct {
@@ -258,10 +257,6 @@ func NewCtyunMysqlWhiteList() resource.Resource {
 	return &CtyunMysqlWhiteList{}
 }
 
-func (c *CtyunMysqlWhiteList) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// todo
-}
-
 func (c *CtyunMysqlWhiteList) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
@@ -297,9 +292,7 @@ func (c *CtyunMysqlWhiteList) CreateMysqlAccessWhiteList(ctx context.Context, co
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
 		return
 	}
-
 	return
-
 }
 
 func (c *CtyunMysqlWhiteList) getAndMergeMysqlAccessWhiteList(ctx context.Context, config *CtyunMysqlWhiteListConfig) (err error) {
