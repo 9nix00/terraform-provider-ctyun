@@ -490,8 +490,6 @@ func (c *CtyunProvider) DataSources(ctx context.Context) []func() datasource.Dat
 		ec2.NewCtyunExpressConnectionRegionPeers(),
 		ec2.NewCtyunExpressConnectionVpcInstances(),
 		ec2.NewCtyunEcSdwanInstances(),
-		ec2.NewCtyunEcCdaInstances(),
-
 		// 添加SD-WAN数据源
 		sdwan2.NewCtyunSdwans(),
 		sdwan2.NewCtyunSdwanAcls(),
@@ -615,7 +613,6 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		mongodb.NewCtyunMongodbAccount(),
 		mongodb.NewCtyunMongodbWhiteList(),
 		mongodb.NewCtyunMongodbBackupResource(),
-		mongodb.NewCtyunMongodbParamTemplateResource(),
 		mongodb.NewCtyunMongodbRestartDb(),
 		rabbitmq.NewCtyunRabbitmqVhost(),
 		rabbitmq.NewCtyunRabbitmqExchange(),
@@ -657,7 +654,6 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		ec2.NewCtyunExpressConnectRegionPeer(),
 		ec2.NewCtyunExpressConnectVpcInstance(),
 		ec2.NewCtyunEcSdwanInstance(),
-		ec2.NewCtyunEcCdaInstance(),
 		ec2.NewCtyunEcCloudGatewaySdwanAssociation(),
 		// 添加SD-WAN资源
 		sdwan2.NewCtyunSdwan(),

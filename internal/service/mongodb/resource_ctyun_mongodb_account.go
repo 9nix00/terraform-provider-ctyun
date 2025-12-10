@@ -10,7 +10,6 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
-	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -117,20 +116,6 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 				Computed:    true,
 				Description: "数据库名称，默认为admin",
 				Default:     stringdefault.StaticString("admin"),
-			},
-			"page_now": schema.Int32Attribute{
-				Optional:    true,
-				Description: "当前页",
-				Validators: []validator.Int32{
-					int32validator.AtLeast(1),
-				},
-			},
-			"page_size": schema.Int32Attribute{
-				Optional:    true,
-				Description: "单页记录条数",
-				Validators: []validator.Int32{
-					int32validator.Between(1, 100),
-				},
 			},
 			"roles": schema.ListNestedAttribute{
 				Required:    true,
@@ -361,8 +346,8 @@ func (c *CtyunMongodbAccount) getAndMerge(ctx context.Context, plan *MongodbAcco
 
 	describeReq := &mongodb.MongodbDescribeAccountsRequest{
 		ProdInstId: instanceID,
-		PageNow:    plan.PageNow.ValueInt32(),
-		PageSize:   plan.PageSize.ValueInt32(),
+		PageNow:    1,
+		PageSize:   1000,
 	}
 
 	headers := &mongodb.MongodbDescribeAccountsRequestHeaders{
@@ -535,7 +520,5 @@ type MongodbAccountConfig struct {
 	Name       types.String         `tfsdk:"name"`
 	Password   types.String         `tfsdk:"password"`
 	Database   types.String         `tfsdk:"database"`
-	PageNow    types.Int32          `tfsdk:"page_now"`
-	PageSize   types.Int32          `tfsdk:"page_size"`
 	Roles      []MongodbAccountRole `tfsdk:"roles"`
 }

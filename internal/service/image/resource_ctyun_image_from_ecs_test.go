@@ -71,14 +71,7 @@ func TestAccCtyunImageFromEcs_basic(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("not found: %s", resourceName)
 					}
-
-					projectId := rs.Primary.Attributes["project_id"]
-					regionId := rs.Primary.Attributes["region_id"]
-					if regionId == "" {
-						return "", fmt.Errorf("region_id is not set")
-					}
-
-					return fmt.Sprintf("%s,%s,%s", rs.Primary.ID, projectId, regionId), nil
+					return fmt.Sprintf("%s", rs.Primary.ID), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

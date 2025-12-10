@@ -172,7 +172,7 @@ func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, state *Ct
 		func(currentTime int) bool {
 
 			detailParams := &mongodb.MongodbQueryDetailRequest{
-				ProdInstId: state.ID.ValueString(),
+				ProdInstId: state.InstanceID.ValueString(),
 			}
 			detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
 				RegionID: state.RegionID.ValueString(),
