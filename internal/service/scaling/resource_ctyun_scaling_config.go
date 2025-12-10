@@ -27,6 +27,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunScalingConfig{}
+	_ resource.ResourceWithConfigure   = &ctyunScalingConfig{}
+	_ resource.ResourceWithImportState = &ctyunScalingConfig{}
+)
+
 type ctyunScalingConfig struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService
@@ -51,35 +57,50 @@ func NewCtyunScalingConfig() resource.Resource {
 	return &ctyunScalingConfig{}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId],[projectId]
 func (c *ctyunScalingConfig) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-
-	var cfg CtyunScalingConfigModel
+	var config CtyunScalingConfigModel
 	var ID, regionId string
-	err = terraform_extend.Split(request.ID, &ID, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
 	}
+
 	id, err := strconv.ParseInt(ID, 10, 64)
 	if err != nil {
+		err = fmt.Errorf("ID必须是有效数字")
 		return
 	}
-	cfg.ID = types.Int64Value(id)
-	cfg.RegionID = types.StringValue(regionId)
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
 
-	err = c.getAndMergeScalingConfig(ctx, &cfg)
+	config.ID = types.Int64Value(id)
+	config.RegionID = types.StringValue(regionId)
+
+	err = c.getAndMergeScalingConfig(ctx, &config)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *ctyunScalingConfig) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

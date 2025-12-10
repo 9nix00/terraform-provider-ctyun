@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	ctelb "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctelb"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
@@ -38,8 +39,42 @@ func (c *CtyunElbAcl) Configure(ctx context.Context, request resource.ConfigureR
 }
 
 func (c *CtyunElbAcl) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunElbAclConfig
+	var ID, projectID, regionID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergeAcl(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunElbAcl) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {

@@ -237,6 +237,22 @@ func TestAccCtyunPrivateZone_MultipleVPCs(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{}, // 可选忽略
 			},
+			// 3.1 只导入ID测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region_id"}, // 可选忽略
+			},
 			// 4. 清理资源
 			{
 				Config: utils.LoadTestCase(

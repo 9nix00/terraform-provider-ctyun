@@ -85,7 +85,7 @@ func TestAccCtyunExpressConnectVpcInstance(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s,%s,%s",
-						rs.Primary.Attributes["id"],
+						rs.Primary.ID,
 						rs.Primary.Attributes["ec_id"],
 						rs.Primary.Attributes["cgw_id"],
 					), nil

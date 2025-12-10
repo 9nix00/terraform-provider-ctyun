@@ -99,7 +99,21 @@ func TestAccCtyunRedisMigrationTask(t *testing.T) {
 					}
 					regionId := rs.Primary.Attributes["region_id"]
 					taskId := rs.Primary.Attributes["id"]
-					return fmt.Sprintf("%s,%s", regionId, taskId), nil
+					return fmt.Sprintf("%s,%s", taskId, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"operate_type", "source_db_info.password", "target_db_info.password"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs := s.RootModule().Resources[resourceName]
+					if rs == nil {
+						return "", fmt.Errorf("resource not found")
+					}
+					taskId := rs.Primary.Attributes["id"]
+					return fmt.Sprintf("%s", taskId), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"operate_type", "source_db_info.password", "target_db_info.password"},

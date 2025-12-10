@@ -22,6 +22,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &CtyunEcsDataVolume{}
+	_ resource.ResourceWithConfigure   = &CtyunEcsDataVolume{}
+	_ resource.ResourceWithImportState = &CtyunEcsDataVolume{}
+)
+
 func NewCtyunEcsDataVolume() resource.Resource {
 	return &CtyunEcsDataVolume{}
 }
@@ -172,13 +178,30 @@ func (c *CtyunEcsDataVolume) ImportState(ctx context.Context, request resource.I
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ecsId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunEcsDataVolumeConfig
 	var ecsId, regionId string
-	err = terraform_extend.Split(request.ID, &ecsId, &regionId)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ecsId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ecsId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ecsId == "" {
+		err = fmt.Errorf("ecsId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
 		return
 	}
 

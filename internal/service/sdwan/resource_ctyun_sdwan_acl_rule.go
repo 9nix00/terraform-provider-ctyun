@@ -6,7 +6,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
-	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -89,7 +88,6 @@ func (c *CtyunSdwanAclRule) Schema(ctx context.Context, req resource.SchemaReque
 				Validators: []validator.String{
 					stringvalidator.OneOf("IPv4", "IPv6"),
 				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, true),
 			},
 			"dst_cidr": schema.StringAttribute{
 				Required:    true,
@@ -220,24 +218,36 @@ func (c *CtyunSdwanAclRule) ImportState(ctx context.Context, req resource.Import
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [aclID],[ID]"
+			resp.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunSdwanAclRuleConfig
-	cfg.ID = types.StringValue(req.ID)
+	var config CtyunSdwanAclRuleConfig
 	var aclID, aclRuleID string
 	err = terraform_extend.Split(req.ID, &aclID, &aclRuleID)
 	if err != nil {
 		return
 	}
-	cfg.AclID = types.StringValue(aclID)
-	cfg.ID = types.StringValue(aclRuleID)
+
+	if aclRuleID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if aclID == "" {
+		err = fmt.Errorf("aclID不能为空")
+		return
+	}
+
+	config.AclID = types.StringValue(aclID)
+	config.ID = types.StringValue(aclRuleID)
+
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, config)...)
 }
 
 func (c *CtyunSdwanAclRule) create(ctx context.Context, plan *CtyunSdwanAclRuleConfig) (err error) {

@@ -73,11 +73,30 @@ func TestAccCtyunNetworkInterface_basic(t *testing.T) {
 					}
 
 					regionId := rs.Primary.Attributes["region_id"]
+					portId := rs.Primary.Attributes["port_id"]
 					if regionId == "" {
 						return "", fmt.Errorf("region_id is not set")
 					}
 
-					return fmt.Sprintf("%s,%s", rs.Primary.ID, regionId), nil
+					return fmt.Sprintf("%s,%s", portId, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"subnet_id",
+					"security_group_ids",
+					"secondary_private_ip_count",
+				},
+			},
+			{
+				// 测试导入
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s", rs.Primary.Attributes["port_id"]), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

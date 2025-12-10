@@ -99,18 +99,34 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s",
-						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["region_id"],
-						rs.Primary.Attributes["project_id"],
+					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["charset_name"],
-						rs.Primary.Attributes["description"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"charset_collate", "charset_type", "owner"}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"charset_collate", "charset_type", "owner", "charset_name", "description"}, // 可选忽略
+				PreConfig: func() {
+					wait20Seconds()
+				},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["inst_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"charset_collate", "charset_type", "owner", "charset_name", "description"}, // 可选忽略
 				PreConfig: func() {
 					wait20Seconds()
 				},

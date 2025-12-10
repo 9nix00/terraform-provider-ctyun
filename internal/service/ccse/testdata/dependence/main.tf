@@ -143,6 +143,9 @@ data "ctyun_ccse_plugin_market" "autoscaler" {
   chart_name = local.chart_name2
   chart_version = "1.1.0"
   values_type = "YAML"
+  depends_on = [
+    ctyun_ccse_cluster.test
+  ]
 }
 
 resource "ctyun_ccse_plugin" "example1" {

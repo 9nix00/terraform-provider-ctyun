@@ -1,9 +1,11 @@
 package mysql_test
 
 import (
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"testing"
 )
 
@@ -84,22 +86,35 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 				),
 			},
 			// 3. 导入测试
-			//{
-			//	ResourceName: resourceName,
-			//	ImportState:  true,
-			//	ImportStateIdFunc: func(s *terraform.State) (string, error) {
-			//		rs, ok := s.RootModule().Resources[resourceName]
-			//		if !ok {
-			//			return "", fmt.Errorf("resource not found: %s", resourceName)
-			//		}
-			//		return rs.Primary.ID, nil
-			//	},
-			//	ImportStateVerify:       true,
-			//	ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
-			//	PreConfig: func() {
-			//		wait10Seconds()
-			//	},
-			//},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return rs.Primary.ID, nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+			},
+			// 4. 导入测试2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					id := rs.Primary.ID
+					regionId := rs.Primary.Attributes["region_id"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,0,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+			},
 			{
 				Config: utils.LoadTestCase(frequencyResourceFile, rnd, mysqlInstanceID, projectID,
 					updatedConfig["storage_day"], updatedConfig["frequency_backup"], updatedConfig["frequency_backup_unit_time"],

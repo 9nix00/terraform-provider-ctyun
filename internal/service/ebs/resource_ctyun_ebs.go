@@ -8,6 +8,7 @@ import (
 	ctebs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctebs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-core"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctebs"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -24,6 +25,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
+)
+
+var (
+	_ resource.Resource                = &ctyunEbs{}
+	_ resource.ResourceWithConfigure   = &ctyunEbs{}
+	_ resource.ResourceWithImportState = &ctyunEbs{}
 )
 
 type ctyunEbs struct {
@@ -505,6 +513,68 @@ func (c *ctyunEbs) Configure(_ context.Context, request resource.ConfigureReques
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.ebsService = business.NewEbsService(meta)
+}
+
+func (c *ctyunEbs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[project_id],[azName],[regionId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunEbsConfig
+
+	var ID, projectId, azName, regionId string
+	// 根据分隔符数量判断是否输入了regionId,projectId,azName
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		azName = c.meta.GetExtraIfEmpty(azName, common.ExtraAzName)
+		ID = request.ID
+	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &ID, &azName)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &projectId, &azName)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectId, &azName, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
+		return
+	}
+	config.Id = types.StringValue(ID)
+	config.RegionId = types.StringValue(regionId)
+	config.ProjectId = types.StringValue(projectId)
+	config.AzName = types.StringValue(azName)
+
+	instance, err := c.getAndMergeEbs(ctx, config)
+	if err != nil {
+		return
+	}
+	if instance == nil {
+		response.State.RemoveResource(ctx)
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
 }
 
 // getAndMergeEbs 查询ebs

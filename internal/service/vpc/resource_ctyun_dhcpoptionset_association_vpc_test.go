@@ -12,10 +12,11 @@ import (
 
 func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 	rnd := utils.GenerateRandomString()
+	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_dhcpoptionset_association_vpc." + rnd
 	resourceFile := "resource_ctyun_dhcpoptionset_association_vpc.tf"
-	dataSourceName := "data.ctyun_dhcpoptionset_association_vpcs.test"
-	dataSourceFile := "datasource_ctyun_dhcpoptionset_association_vpcs.tf"
+	datasourceName := "data.ctyun_dhcpoptionset_association_vpcs" + dnd
+	datasourceFile := "datasource_ctyun_dhcpoptionset_association_vpcs.tf"
 
 	// 测试参数
 	dhcpOptionSetsId := dependence.dhcpID
@@ -42,6 +43,15 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 				),
 			},
 			{
+				Config: utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, vpcIds) +
+					utils.LoadTestCase(datasourceFile, dnd, resourceName+".id"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(datasourceName, "dhcp_option_sets_id", dhcpOptionSetsId),
+					resource.TestCheckResourceAttr(datasourceName, "vpc_ids.#", "1"),
+					resource.TestCheckResourceAttrSet(datasourceName, "id"),
+				),
+			},
+			{
 				// 测试更新DHCP选项集与VPC绑定关系
 				Config: utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, updatedVpcIds),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -49,32 +59,9 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 					//resource.TestCheckResourceAttr(resourceName, "vpc_ids.#", "2"),
 				),
 			},
-			//{
-			//	ResourceName: resourceName,
-			//	ImportState:  true,
-			//	ImportStateIdFunc: func(s *terraform.State) (string, error) {
-			//		ds := s.RootModule().Resources[resourceName].Primary
-			//		id := ds.ID
-			//		if id == "" {
-			//			return "", fmt.Errorf("id is required")
-			//		}
-			//		return id, nil
-			//	},
-			//	ImportStateVerify: true,
-			//	ImportStateVerifyIgnore: []string{
-			//		"region_id",
-			//	},
-			//},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, vpcIds),
 				Destroy: true,
-			},
-			{
-				// 测试数据源
-				Config: utils.LoadTestCase(dataSourceFile, dhcpOptionSetsId),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttrSet(dataSourceName, "vpcs.#"),
-				),
 			},
 		},
 	})

@@ -129,12 +129,37 @@ func TestAccCtyunRabbitmqInstanceCluster(t *testing.T) {
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					ds := s.RootModule().Resources[resourceName].Primary
-					id := ds.ID
+					id := ds.Attributes["id"]
 					regionId := ds.Attributes["region_id"]
 					if id == "" || regionId == "" {
 						return "", fmt.Errorf("id or region_id is required")
 					}
 					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"cycle_count",
+					"cycle_type",
+					"disk_size",
+					"disk_type",
+					"master_order_id",
+					"node_num",
+					"project_id",
+					"security_group_id",
+					"subnet_id",
+					"vpc_id",
+					"zone_list",
+					"expire_time",
+				},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.Attributes["id"]
+
+					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{

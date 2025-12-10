@@ -45,19 +45,42 @@ func (c *CtyunExpressConnectRegionPeer) ImportState(ctx context.Context, request
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[ecId],[packetId],[srcCgwId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunExpressConnectRegionPeerConfig
+
 	var id, ecId, packetId, srcCgwId string
+
 	err = terraform_extend.Split(request.ID, &id, &ecId, &packetId, &srcCgwId)
 	if err != nil {
 		return
 	}
+
+	if id == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if ecId == "" {
+		err = fmt.Errorf("ecId不能为空")
+		return
+	}
+	if packetId == "" {
+		err = fmt.Errorf("packetId不能为空")
+		return
+	}
+	if srcCgwId == "" {
+		err = fmt.Errorf("srcCgwId不能为空")
+		return
+	}
+
 	config.ID = types.StringValue(id)
 	config.EcID = types.StringValue(ecId)
 	config.PacketID = types.StringValue(packetId)
 	config.SrcCgwID = types.StringValue(srcCgwId)
+
 	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return

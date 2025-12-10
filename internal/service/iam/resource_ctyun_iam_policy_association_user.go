@@ -17,6 +17,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunPolicyAssociationUser{}
+	_ resource.ResourceWithConfigure   = &ctyunPolicyAssociationUser{}
+	_ resource.ResourceWithImportState = &ctyunPolicyAssociationUser{}
+)
+
 func NewCtyunPolicyAssociationUser() resource.Resource {
 	return &ctyunPolicyAssociationUser{}
 }
@@ -159,11 +165,18 @@ func (c *ctyunPolicyAssociationUser) Delete(ctx context.Context, request resourc
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [privilegeId]
 func (c *ctyunPolicyAssociationUser) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [privilegeId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunPolicyAssociationUserConfig
 	var privilegeId string
-	err := terraform_extend.Split(request.ID, &privilegeId)
+	err = terraform_extend.Split(request.ID, &privilegeId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -171,7 +184,6 @@ func (c *ctyunPolicyAssociationUser) ImportState(ctx context.Context, request re
 
 	instance, err := c.getAndMergeIamPolicyAssociationUser(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

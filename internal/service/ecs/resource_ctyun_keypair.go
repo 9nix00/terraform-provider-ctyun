@@ -17,6 +17,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
+)
+
+var (
+	_ resource.Resource                = &ctyunKeypair{}
+	_ resource.ResourceWithConfigure   = &ctyunKeypair{}
+	_ resource.ResourceWithImportState = &ctyunKeypair{}
 )
 
 func NewCtyunKeypair() resource.Resource {
@@ -175,19 +182,40 @@ func (c *ctyunKeypair) Delete(ctx context.Context, request resource.DeleteReques
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [keyPairName],[regionId]
 func (c *ctyunKeypair) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [keyPairName],[regionId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunKeypairConfig
 	var keyPairName, regionId string
-	err := terraform_extend.Split(request.ID, &keyPairName, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		keyPairName = request.ID
+	} else {
+
+		err = terraform_extend.Split(request.ID, &keyPairName, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if keyPairName == "" {
+		err = fmt.Errorf("keyPairName不能为空")
 		return
 	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
+		return
+	}
+
 	cfg.Name = types.StringValue(keyPairName)
 	cfg.RegionId = types.StringValue(regionId)
 
 	err = c.getAndMergeKeypair(ctx, &cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)

@@ -20,6 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 )
 
+var (
+	_ resource.Resource                = &ctyunPolicy{}
+	_ resource.ResourceWithConfigure   = &ctyunPolicy{}
+	_ resource.ResourceWithImportState = &ctyunPolicy{}
+)
+
 func NewCtyunPolicy() resource.Resource {
 	return &ctyunPolicy{}
 }
@@ -283,11 +289,18 @@ func (c *ctyunPolicy) Delete(ctx context.Context, request resource.DeleteRequest
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [policyId]
 func (c *ctyunPolicy) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [policyId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunPolicyConfig
 	var policyId string
-	err := terraform_extend.Split(request.ID, &policyId)
+	err = terraform_extend.Split(request.ID, &policyId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -295,7 +308,6 @@ func (c *ctyunPolicy) ImportState(ctx context.Context, request resource.ImportSt
 
 	instance, err := c.getAndMergeIamPolicy(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

@@ -279,26 +279,55 @@ func (c *ctyunEbmInterface) ImportState(ctx context.Context, request resource.Im
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[projectId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var plan CtyunEbmInterfaceConfig
-	var instanceID, interfaceID, regionID, azName string
-	err = terraform_extend.Split(request.ID, &instanceID, &interfaceID, &regionID, &azName)
-	if err != nil {
-		return
-	}
-	plan.InterfaceID = types.StringValue(interfaceID)
-	plan.InstanceID = types.StringValue(instanceID)
-	plan.RegionID = types.StringValue(regionID)
-	plan.AzName = types.StringValue(azName)
+	var config CtyunEbmInterfaceConfig
 
-	// 查询远端
-	err = c.getAndMerge(ctx, &plan)
+	var instanceID, interfaceID, regionID, azName string
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		azName = c.meta.GetExtraIfEmpty(azName, common.ExtraAzName)
+		err = terraform_extend.Split(request.ID, &instanceID, &interfaceID)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &instanceID, &interfaceID, &azName)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &instanceID, &interfaceID, &azName, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if instanceID == "" {
+		err = fmt.Errorf("instanceID不能为空")
+		return
+	}
+	if interfaceID == "" {
+		err = fmt.Errorf("interfaceID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.InstanceID = types.StringValue(instanceID)
+	config.InterfaceID = types.StringValue(interfaceID)
+	config.AzName = types.StringValue(azName)
+	config.RegionID = types.StringValue(regionID)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 // checkBeforeCreate 创建前检查

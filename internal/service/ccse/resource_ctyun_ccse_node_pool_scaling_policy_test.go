@@ -150,6 +150,28 @@ spec:
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					node_pool_name := ds.Attributes["node_pool_name"]
+					cluster_id := ds.Attributes["cluster_id"]
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s", node_pool_name, cluster_id, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"values_yaml",
+				},
+			},
+
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					node_pool_name := ds.Attributes["node_pool_name"]
+					cluster_id := ds.Attributes["cluster_id"]
+					return fmt.Sprintf("%s,%s", node_pool_name, cluster_id), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"values_yaml",
 				},

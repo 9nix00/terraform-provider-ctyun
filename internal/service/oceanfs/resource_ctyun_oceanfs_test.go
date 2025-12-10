@@ -61,7 +61,7 @@ func TestAccCtyunOceanfs(t *testing.T) {
 					),
 				},
 				// 3. datasource验证
-				// 4. import state验证
+				// 4. import state验证 1
 				{
 					ResourceName: resourceName,
 					ImportState:  true,
@@ -70,16 +70,30 @@ func TestAccCtyunOceanfs(t *testing.T) {
 						if !ok {
 							return "", fmt.Errorf("resource not found: %s", resourceName)
 						}
-						return fmt.Sprintf("%s,%s,%s,%s,%s",
+						return fmt.Sprintf("%s,%s,%s",
 							rs.Primary.Attributes["id"],
-							rs.Primary.Attributes["region_id"],
 							rs.Primary.Attributes["project_id"],
-							rs.Primary.Attributes["vpc_id"],
-							rs.Primary.Attributes["subnet_id"],
+							rs.Primary.Attributes["region_id"],
 						), nil
 					},
 					ImportStateVerify:       true,
 					ImportStateVerifyIgnore: []string{"tags", "cycle_type"},
+				},
+				// 4. import state验证 2
+				{
+					ResourceName: resourceName,
+					ImportState:  true,
+					ImportStateIdFunc: func(s *terraform.State) (string, error) {
+						rs, ok := s.RootModule().Resources[resourceName]
+						if !ok {
+							return "", fmt.Errorf("resource not found: %s", resourceName)
+						}
+						return fmt.Sprintf("%s",
+							rs.Primary.Attributes["id"],
+						), nil
+					},
+					ImportStateVerify:       true,
+					ImportStateVerifyIgnore: []string{"tags", "cycle_type", "project_id", "subnet_id", "vpc_id"},
 				},
 				// 3.销毁资源
 				{

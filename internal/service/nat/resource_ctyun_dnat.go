@@ -341,27 +341,50 @@ func (c *ctyunDnatResource) Configure(_ context.Context, request resource.Config
 }
 
 func (c *ctyunDnatResource) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[natGateWayID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
+	var config CtyunDnatConfig
+	var ID, regionID, natGateWayID string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &natGateWayID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if natGateWayID == "" {
+		err = fmt.Errorf("natGateWayID不能为空")
+	}
+	config.ID = types.StringValue(ID)
+	config.DNatID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.NatGatewayID = types.StringValue(natGateWayID)
+	err = c.getAndMergeDnat(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 
-	var cfg CtyunDnatConfig
-	var id, ngID, regionID string
-	err = terraform_extend.Split(request.ID, &id, &ngID, &regionID)
-	if err != nil {
-		return
-	}
-	cfg.RegionID = types.StringValue(regionID)
-	cfg.NatGatewayID = types.StringValue(ngID)
-	cfg.DNatID = types.StringValue(id)
-	err = c.getAndMergeDnat(ctx, &cfg)
-	if err != nil {
-		return
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }
 
 func (c *ctyunDnatResource) getAndMergeDnat(ctx context.Context, cfg *CtyunDnatConfig) (err error) {

@@ -20,6 +20,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &CtyunIamUserAk{}
+	_ resource.ResourceWithConfigure   = &CtyunIamUserAk{}
+	_ resource.ResourceWithImportState = &CtyunIamUserAk{}
+)
+
 func NewCtyunIamUserAk() resource.Resource {
 	return &CtyunIamUserAk{}
 }
@@ -193,14 +199,15 @@ func (c *CtyunIamUserAk) ImportState(ctx context.Context, request resource.Impor
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ak],[userID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunIamUserAkConfig
 	var ak, userID string
 	err = terraform_extend.Split(request.ID, &ak, &userID)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 

@@ -1,9 +1,11 @@
 package pgsql_test
 
 import (
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"testing"
 )
 
@@ -40,33 +42,42 @@ func TestAccCtyunPostgresqlReadOnlyInstance(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
-			//// 2. 创建包月计费只读实例测试
-			//{
-			//	Config: utils.LoadTestCase(
-			//		resourceFile, rnd,
-			//		instanceID, "month",
-			//		1, true, flavorName, // 添加 cycle_count 和 auto_renew
-			//		projectID, storageType, storageSpace, instanceName,
-			//	),
-			//	Check: resource.ComposeAggregateTestCheckFunc(
-			//		resource.TestCheckResourceAttr(resourceName, "cycle_type", "month"),
-			//		resource.TestCheckResourceAttr(resourceName, "cycle_count", "1"),
-			//		resource.TestCheckResourceAttr(resourceName, "auto_renew", "true"),
-			//	),
-			//},
-			//// 3. 更新存储空间测试
-			//{
-			//	Config: utils.LoadTestCase(
-			//		resourceFile, rnd,
-			//		instanceID, "month",
-			//		1, true, flavorName,
-			//		projectID, storageType, storageSpace+50, // 增加存储空间
-			//		instanceName,
-			//	),
-			//	Check: resource.ComposeAggregateTestCheckFunc(
-			//		resource.TestCheckResourceAttr(resourceName, "storage_space", fmt.Sprintf("%d", storageSpace+50)),
-			//	),
-			//},
+			// 2. 导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.ID,
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"cycle_type", "cycle_count", "auto_renew", "flavor_name",
+					"availability_zone_name"}, // 不需要忽略任何字段
+			},
+			// 3. 导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.ID,
+					), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"cycle_type", "cycle_count", "auto_renew", "flavor_name",
+					"availability_zone_name"}, // 不需要忽略任何字段
+			},
 			// 4. 清理资源
 			{
 				Config: utils.LoadTestCase(

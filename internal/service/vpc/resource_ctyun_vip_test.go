@@ -64,6 +64,22 @@ func TestAccCtyunVip_basic(t *testing.T) {
 				},
 			},
 			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"ip_address",
+					"ipv6_address",
+					"vip_type",
+					"project_id",
+				},
+			},
+			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, subnetId, vpcId, ipAddress, vipType),
 				Destroy: true,
 			},

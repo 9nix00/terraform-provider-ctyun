@@ -22,7 +22,10 @@ func TestAccCtyunDhcpOptionSet_basic(t *testing.T) {
 	updatedDescription := "Updated DHCP option set for demonstration"
 	updatedDomainName := "updated.example.com"
 	updatedDnsList := `"1.1.1.1", "8.8.8.8", "8.8.4.4"`
+	dnd := utils.GenerateRandomString()
 
+	datasourceName := "data.ctyun_dhcpoptionsets." + dnd
+	datasourceFile := "datasource_ctyun_dhcpoptionsets.tf"
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -59,23 +62,32 @@ func TestAccCtyunDhcpOptionSet_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dns_list.2", "8.8.4.4"),
 				),
 			},
-			//{
-			//	ResourceName: resourceName,
-			//	ImportState:  true,
-			//	ImportStateIdFunc: func(s *terraform.State) (string, error) {
-			//		ds := s.RootModule().Resources[resourceName].Primary
-			//		id := ds.ID
-			//		regionId := ds.Attributes["region_id"]
-			//		if id == "" || regionId == "" {
-			//			return "", fmt.Errorf("id or region_id is required")
-			//		}
-			//		return fmt.Sprintf("%s,%s", id, regionId), nil
-			//	},
-			//	ImportStateVerify: true,
-			//	ImportStateVerifyIgnore: []string{
-			//		"region_id",
-			//	},
-			//},
+
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, updatedDescription, updatedDomainName, updatedDnsList) +
+					utils.LoadTestCase(datasourceFile, dnd),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(datasourceName, "dhcpoptionsets.#"),
+					resource.TestCheckResourceAttrSet(datasourceName, "total_count"),
+				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"region_id",
+				},
+			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, updatedDescription, updatedDomainName, updatedDnsList),
 				Destroy: true,

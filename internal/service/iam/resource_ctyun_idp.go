@@ -18,6 +18,12 @@ import (
 	"strconv"
 )
 
+var (
+	_ resource.Resource                = &ctyunIdp{}
+	_ resource.ResourceWithConfigure   = &ctyunIdp{}
+	_ resource.ResourceWithImportState = &ctyunIdp{}
+)
+
 func NewCtyunIdp() resource.Resource {
 	return &ctyunIdp{}
 }
@@ -210,24 +216,29 @@ func (c *ctyunIdp) Delete(ctx context.Context, request resource.DeleteRequest, r
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [idpId]
 func (c *ctyunIdp) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [idpId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunIdpConfig
 	var idpId string
-	err := terraform_extend.Split(request.ID, &idpId)
+	err = terraform_extend.Split(request.ID, &idpId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
 	value, err := strconv.ParseInt(idpId, 10, 64)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
 	cfg.Id = types.Int64Value(value)
 	instance, err := c.getAndMergeIdp(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

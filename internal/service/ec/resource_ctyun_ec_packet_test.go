@@ -57,7 +57,6 @@ func TestAccEcPacket_basic(t *testing.T) {
 					if EcId == "" {
 						return "", fmt.Errorf("ec_id is not set")
 					}
-
 					return fmt.Sprintf("%s,%s", EcId, ResourceId), nil
 				},
 				ImportStateVerify: true,
@@ -71,7 +70,6 @@ func TestAccEcPacket_basic(t *testing.T) {
 					"master_resource_id",
 					"master_resource_status",
 					"on_demand",
-					"project_id",
 					"region_id",
 				},
 			},

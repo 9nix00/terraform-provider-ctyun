@@ -63,6 +63,82 @@ func TestAccCtyunEbmInterface(t *testing.T) {
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},
+			// 多种导入方式测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					instanceID := rs.Primary.Attributes["instance_id"]
+					regionID := rs.Primary.Attributes["region_id"]
+					azName := rs.Primary.Attributes["az_name"]
+					return fmt.Sprintf("%s,%s,,%s,%s",
+						instanceID,
+						rs.Primary.Attributes["interface_id"],
+						regionID,
+						azName,
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"project_id"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					instanceID := rs.Primary.Attributes["instance_id"]
+					regionID := rs.Primary.Attributes["region_id"]
+					projectID := rs.Primary.Attributes["project_id"]
+					azName := rs.Primary.Attributes["az_name"]
+					return fmt.Sprintf("%s,%s,%s,%s,%s",
+						instanceID,
+						rs.Primary.Attributes["interface_id"],
+						projectID,
+						regionID,
+						azName,
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["interface_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s",
+						rs.Primary.Attributes["interface_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"region_id"},
+			},
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,

@@ -51,7 +51,6 @@ func TestAccCtyunPrivateNatTransitIp(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "status"),
 				),
 			},
-
 			{
 				ResourceName:      resourceName,
 				ImportState:       true,
@@ -61,11 +60,21 @@ func TestAccCtyunPrivateNatTransitIp(t *testing.T) {
 					region_id := ds.Attributes["region_id"]
 					nat_gateway_id := ds.Attributes["nat_gateway_id"]
 					address1 := ds.Attributes["address"]
-					return fmt.Sprintf("%s,%s,%s", region_id, nat_gateway_id, address1), nil
+					return fmt.Sprintf("%s,%s,%s", address1, nat_gateway_id, region_id), nil
 				},
-				ImportStateVerifyIgnore: []string{
-					"nat_gateway_id",
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					nat_gateway_id := ds.Attributes["nat_gateway_id"]
+					address1 := ds.Attributes["address"]
+					return fmt.Sprintf("%s,%s", address1, nat_gateway_id), nil
 				},
+				ImportStateVerifyIgnore: []string{},
 			},
 			{
 				// 3. datasource 验证

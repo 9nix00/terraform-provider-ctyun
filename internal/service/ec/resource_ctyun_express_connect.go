@@ -6,7 +6,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
-	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -40,7 +39,6 @@ type CtyunExpressConnectConfig struct {
 	Description types.String `tfsdk:"description"`
 	Status      types.Int64  `tfsdk:"status"`
 	CreateTime  types.String `tfsdk:"create_time"`
-	ProjectID   types.String `tfsdk:"project_id"`
 	ResourceID  types.String `tfsdk:"resource_id"`
 	RegionId    types.String `tfsdk:"region_id"`
 }
@@ -103,18 +101,6 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 					stringplanmodifier.RequiresReplace(),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
-			},
-			"project_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
-				Validators: []validator.String{
-					validator2.Project(),
-				},
 			},
 		},
 	}
@@ -223,21 +209,24 @@ func (c *CtyunExpressConnect) Delete(ctx context.Context, req resource.DeleteReq
 	}
 }
 
-func (c *CtyunExpressConnect) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (c *CtyunExpressConnect) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunExpressConnectConfig
-	cfg.ID = types.StringValue(req.ID)
+	var config CtyunExpressConnectConfig
+	config.ID = types.StringValue(request.ID)
+
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunExpressConnect) checkBeforeCreate(ctx context.Context, c2 *CtyunExpressConnectConfig) (err error) {

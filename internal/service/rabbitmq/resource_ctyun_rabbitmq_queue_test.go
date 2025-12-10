@@ -136,8 +136,40 @@ func TestAccCtyunRabbitmqQueueAll(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					vhost := ds.Attributes["vhost"]
+					instanceId := ds.Attributes["instance_id"]
+					regionId := ds.Attributes["region_id"]
+					if name == "" || vhost == "" || instanceId == "" || regionId == "" {
+						return "", fmt.Errorf("name, vhost, instance_id and region_id are required")
+					}
+					return fmt.Sprintf("%s,%s,%s,%s", name, vhost, instanceId, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"x_dead_letter_routing_key",
+					"x_dead_letter_exchange",
+					"x_expires",
+					"x_max_length",
+					"x_message_ttl",
+					"x_max_priority",
+					"x_overflow",
+					"x_queue_mode",
+				},
+			}, {
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					vhost := ds.Attributes["vhost"]
+					instanceId := ds.Attributes["instance_id"]
+					return fmt.Sprintf("%s,%s,%s", name, vhost, instanceId), nil
+				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"x_dead_letter_routing_key",

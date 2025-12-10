@@ -172,6 +172,32 @@ func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
 				},
 			},
 			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"auto_renew_cycle_count",
+					"auto_renew",
+					"cycle_count",
+					"cycle_type",
+					"project_id",
+					"security_group_id",
+					"master_order_id",
+					"zone_list",
+					"plain_port",
+					"http_port",
+					"ssl_port",
+					"sasl_port",
+					"restart",
+				},
+			},
+			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName,

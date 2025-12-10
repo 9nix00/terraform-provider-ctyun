@@ -24,9 +24,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlBackupRecovery{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlBackupRecovery{}
-	_ resource.ResourceWithImportState = &CtyunMysqlBackupRecovery{}
+	_ resource.Resource              = &CtyunMysqlBackupRecovery{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlBackupRecovery{}
 )
 
 type CtyunMysqlBackupRecovery struct {
@@ -46,10 +45,6 @@ func (c *CtyunMysqlBackupRecovery) Configure(ctx context.Context, request resour
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
-}
-
-func (c *CtyunMysqlBackupRecovery) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	return
 }
 
 func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

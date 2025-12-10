@@ -25,7 +25,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
 	"time"
+)
+
+var (
+	_ resource.Resource                = &ctyunBandwidth{}
+	_ resource.ResourceWithConfigure   = &ctyunBandwidth{}
+	_ resource.ResourceWithImportState = &ctyunBandwidth{}
 )
 
 type ctyunBandwidth struct {
@@ -283,14 +290,33 @@ func (c *ctyunBandwidth) Configure(_ context.Context, request resource.Configure
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [bandwidthId],[regionId],[projectId]
 func (c *ctyunBandwidth) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [bandwidthId],[projectId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunBandwidthConfig
 	var bandwidthId, regionId, projectId string
-	err := terraform_extend.Split(request.ID, &bandwidthId, &regionId, &projectId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		bandwidthId = request.ID
+	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &bandwidthId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &bandwidthId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
 	}
-
 	cfg.Id = types.StringValue(bandwidthId)
 	cfg.RegionId = types.StringValue(regionId)
 	cfg.ProjectId = types.StringValue(projectId)

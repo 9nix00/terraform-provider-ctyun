@@ -18,6 +18,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunEbsAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunEbsAssociation{}
+	_ resource.ResourceWithImportState = &ctyunEbsAssociation{}
+)
+
 func NewCtyunEbsAssociation() resource.Resource {
 	return &ctyunEbsAssociation{}
 }

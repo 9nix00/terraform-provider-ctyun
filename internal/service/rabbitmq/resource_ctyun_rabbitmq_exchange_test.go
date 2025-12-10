@@ -55,6 +55,14 @@ func TestAccCtyunRabbitmqExchange(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name1 := ds.Attributes["name"]
+					vhost := ds.Attributes["vhost"]
+					instanceID := ds.Attributes["instance_id"]
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s,%s", name1, vhost, instanceID, regionId), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"internal",
 				},
@@ -105,8 +113,19 @@ func TestAccCtyunRabbitmqExchangeAll(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					vhost := ds.Attributes["vhost"]
+					instanceId := ds.Attributes["instance_id"]
+					regionId := ds.Attributes["region_id"]
+					if name == "" || vhost == "" || instanceId == "" || regionId == "" {
+						return "", fmt.Errorf("name, vhost, instance_id and region_id are required")
+					}
+					return fmt.Sprintf("%s,%s,%s,%s", name, vhost, instanceId, regionId), nil
+				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"alternate_exchange",

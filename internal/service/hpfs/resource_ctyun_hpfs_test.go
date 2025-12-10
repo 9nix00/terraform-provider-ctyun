@@ -113,7 +113,33 @@ func TestAccCtyunHpfs1(t *testing.T) {
 				),
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, sfsProtocol, sfsName, sfsSize, cluster, baseline),
+				Config:       utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, cluster, baseline),
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id"},
+			},
+			// importState 2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					projectID := ds.Attributes["project_id"]
+					regionID := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s", id, projectID, regionID), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id"},
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, cluster, baseline),
 				Destroy: true,
 			},
 		},

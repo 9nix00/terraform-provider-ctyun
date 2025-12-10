@@ -69,6 +69,82 @@ func TestAccMongodbAccount_basic(t *testing.T) {
 	})
 }
 
+func TestAccMongodbAccount_basicImportState(t *testing.T) {
+	rnd := utils.GenerateRandomString()
+
+	resourceName := "ctyun_mongodb_account." + rnd
+	resourceFile := "resource_ctyun_mongodb_account.tf"
+
+	instance_id := dependence.mongodbID
+	password := "@1QWs" + utils.GenerateRandomString()
+	name := utils.GenerateRandomString()
+
+	database := "admin"
+	privileges := "readWrite"
+	resource.Test(t, resource.TestCase{
+		CheckDestroy: func(s *terraform.State) error {
+			_, exists := s.RootModule().Resources[resourceName]
+			if exists {
+				return fmt.Errorf("resource destroy failed")
+			}
+			return nil
+		},
+		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
+		Steps: []resource.TestStep{
+			// 基本功能验证
+			{
+				Config: utils.LoadTestCase(resourceFile, rnd, instance_id, name, database, privileges, password),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(resourceName, "id"),
+					resource.TestCheckResourceAttr(resourceName, "name", name),
+					resource.TestCheckResourceAttr(resourceName, "database", database),
+				),
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					// 构造导入ID: "id,region_id"
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password", "description", "project_id", "database", "roles"},
+			},
+			// 3. 资源导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					// 构造导入ID: "id,region_id"
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["instance_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"password", "description", "project_id", "roles"},
+			},
+			{
+				Config:  utils.LoadTestCase(resourceFile, rnd, instance_id, name, database, privileges, password),
+				Destroy: true,
+			},
+		},
+	})
+}
+
 func TestMongodbAccountValidation(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 

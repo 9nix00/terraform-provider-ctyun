@@ -67,6 +67,41 @@ func TestAccCtyunMongodbInstanceClusterOsUpdateMongosSpecReadOnly(t *testing.T) 
 					resource.TestCheckResourceAttr(resourceName, "security_group_id", securityGroupID),
 				),
 			},
+			// import state验证1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					projectId := ds.Attributes["project_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s,%s", id, projectId, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_type", "subnet_id",
+					"cycle_count", "master_order_id", "prod_id", "is_upgrade_back_up", "storage_type", "shard_num",
+					"mongos_num", "backup_storage_space", "upgrade_node_type", "read_only_count"},
+			},
+			// import state验证2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_type", "subnet_id",
+					"cycle_count", "master_order_id", "prod_id", "is_upgrade_back_up", "storage_type", "shard_num",
+					"mongos_num", "backup_storage_space", "upgrade_node_type", "read_only_count"},
+			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, flavorName, subnetID, securityGroupID, name, password, prodId, readPort, storageType, storageSpace,
 					backupStorageType, readOnlyCount),

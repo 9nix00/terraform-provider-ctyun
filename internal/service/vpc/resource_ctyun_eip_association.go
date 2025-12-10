@@ -18,7 +18,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"time"
+)
+
+var (
+	_ resource.Resource                = &ctyunEipAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunEipAssociation{}
+	_ resource.ResourceWithImportState = &ctyunEipAssociation{}
 )
 
 func NewCtyunEipAssociation() resource.Resource {
@@ -207,12 +214,25 @@ func (c *ctyunEipAssociation) Delete(ctx context.Context, request resource.Delet
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [eipId],[regionId]
 func (c *ctyunEipAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [eipId],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunEipAssociationConfig
 	var eipId, regionId string
-	err := terraform_extend.Split(request.ID, &eipId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
+	// 根据分隔符数量判断是否输入了regionID,
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		eipId = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &eipId, &regionId)
+		if err != nil {
+			return
+		}
 	}
 
 	cfg.EipId = types.StringValue(eipId)

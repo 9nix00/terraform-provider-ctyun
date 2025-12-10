@@ -15,6 +15,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource              = &ctyunDhcpOptionSetAssociationVpc{}
+	_ resource.ResourceWithConfigure = &ctyunDhcpOptionSetAssociationVpc{}
+)
+
 func NewCtyunDhcpOptionSetAssociationVpc() resource.Resource {
 	return &ctyunDhcpOptionSetAssociationVpc{}
 }

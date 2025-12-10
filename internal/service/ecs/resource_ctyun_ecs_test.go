@@ -46,7 +46,7 @@ func TestAccCtyunEcs(t *testing.T) {
   security_group_ids     = ["%s"]
   is_destroy_instance  = true`, dependence.securityGroupID)
 
-	affinityGroupAssociationResourceName := "ctyun_ecs_affinity_group_association." + and
+	//affinityGroupAssociationResourceName := "ctyun_ecs_affinity_group_association." + and
 
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
@@ -203,10 +203,56 @@ func TestAccCtyunEcs(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            affinityGroupAssociationResourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"auto_renew",
+					"az_name",
+					"bandwidth",
+					"cycle_count",
+					"cycle_type",
+					"default_security_group_id",
+					"flavor_id",
+					"image_id",
+					"is_destroy_instance",
+					"master_order_id",
+					"pay_voucher_price",
+					"project_id",
+					"security_group_ids",
+					"user_data",
+				},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"auto_renew",
+					"az_name",
+					"bandwidth",
+					"cycle_count",
+					"cycle_type",
+					"default_security_group_id",
+					"flavor_id",
+					"image_id",
+					"is_destroy_instance",
+					"master_order_id",
+					"pay_voucher_price",
+					"project_id",
+					"security_group_ids",
+					"user_data",
+				},
 			},
 			// 7.解绑主机组
 			{

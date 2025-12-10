@@ -96,6 +96,27 @@ status:
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					namespace := ds.Attributes["namespace"]
+					cluster_id := ds.Attributes["cluster_id"]
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s", namespace, cluster_id, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"values_yaml",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					namespace := ds.Attributes["namespace"]
+					cluster_id := ds.Attributes["cluster_id"]
+					return fmt.Sprintf("%s,%s", namespace, cluster_id), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"values_yaml",
 				},

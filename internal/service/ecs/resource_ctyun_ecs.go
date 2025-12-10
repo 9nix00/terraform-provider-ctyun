@@ -9,7 +9,9 @@ import (
 	ctecs2 "github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctecs"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
@@ -40,6 +42,12 @@ import (
 	"time"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcs{}
+	_ resource.ResourceWithConfigure   = &ctyunEcs{}
+	_ resource.ResourceWithImportState = &ctyunEcs{}
+)
+
 func NewCtyunEcs() resource.Resource {
 	return &ctyunEcs{}
 }
@@ -53,6 +61,12 @@ type ctyunEcs struct {
 	imageService         *business.ImageService
 	vpcService           *business.VpcService
 }
+
+var (
+	_ resource.Resource                = &ctyunEcs{}
+	_ resource.ResourceWithConfigure   = &ctyunEcs{}
+	_ resource.ResourceWithImportState = &ctyunEcs{}
+)
 
 func (c *ctyunEcs) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_ecs"
@@ -1988,4 +2002,45 @@ type CtyunEcsConfig struct {
 type Label struct {
 	Key   types.String `tfsdk:"key"`
 	Value types.String `tfsdk:"value"`
+}
+
+func (c *ctyunEcs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectId],[azName],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunEcsConfig
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID,
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.Id = types.StringValue(ID)
+	config.RegionId = types.StringValue(regionId)
+
+	cfg, err := c.getAndMergeEcs(ctx, config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
 }

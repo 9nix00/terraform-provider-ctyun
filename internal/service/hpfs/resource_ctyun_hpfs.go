@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/hpfs"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -26,16 +27,61 @@ import (
 	"time"
 )
 
-type ctyunHpfs struct {
+var (
+	_ resource.Resource                = &CtyunHpfs{}
+	_ resource.ResourceWithConfigure   = &CtyunHpfs{}
+	_ resource.ResourceWithImportState = &CtyunHpfs{}
+)
+
+type CtyunHpfs struct {
 	meta        *common.CtyunMetadata
 	orderLooper *business.OrderLooper
 }
 
-func (c *ctyunHpfs) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
+func (c *CtyunHpfs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunHpfsConfig
+	var ID, projectID, regionID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.ID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergeHpfs(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
+}
+
+func (c *CtyunHpfs) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
 	response.TypeName = request.ProviderTypeName + "_hpfs"
 }
 
-func (c *ctyunHpfs) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
+func (c *CtyunHpfs) Configure(_ context.Context, request resource.ConfigureRequest, _ *resource.ConfigureResponse) {
 	if request.ProviderData == nil {
 		return
 	}
@@ -45,10 +91,10 @@ func (c *ctyunHpfs) Configure(_ context.Context, request resource.ConfigureReque
 }
 
 func NewCtyunHpfsInstance() resource.Resource {
-	return &ctyunHpfs{}
+	return &CtyunHpfs{}
 }
 
-func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
+func (c *CtyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
 		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10088932/10090437`,
 		Attributes: map[string]schema.Attribute{
@@ -240,7 +286,7 @@ func (c *ctyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 	}
 }
 
-func (c *ctyunHpfs) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+func (c *CtyunHpfs) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -278,7 +324,7 @@ func (c *ctyunHpfs) Create(ctx context.Context, request resource.CreateRequest, 
 	}
 }
 
-func (c *ctyunHpfs) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
+func (c *CtyunHpfs) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -304,7 +350,7 @@ func (c *ctyunHpfs) Read(ctx context.Context, request resource.ReadRequest, resp
 	response.Diagnostics.Append(response.State.Set(ctx, &state)...)
 }
 
-func (c *ctyunHpfs) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+func (c *CtyunHpfs) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -342,7 +388,7 @@ func (c *ctyunHpfs) Update(ctx context.Context, request resource.UpdateRequest, 
 	}
 }
 
-func (c *ctyunHpfs) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
+func (c *CtyunHpfs) Delete(ctx context.Context, request resource.DeleteRequest, response *resource.DeleteResponse) {
 	var err error
 	defer func() {
 		if err != nil {
@@ -378,13 +424,12 @@ func (c *ctyunHpfs) Delete(ctx context.Context, request resource.DeleteRequest, 
 	}
 }
 
-func (c *ctyunHpfs) checkBeforeHpfs(ctx context.Context, plan CtyunHpfsConfig) (inValid bool, err error) {
+func (c *CtyunHpfs) checkBeforeHpfs(ctx context.Context, plan CtyunHpfsConfig) (inValid bool, err error) {
 	// 判断sfs_type，protocol是否合理，/v4/hpfs/list-cluster
-
 	return true, nil
 }
 
-func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*hpfs.HpfsNewSfsRequest, error) {
+func (c *CtyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*hpfs.HpfsNewSfsRequest, error) {
 	params := &hpfs.HpfsNewSfsRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    config.RegionID.ValueString(),
@@ -434,7 +479,7 @@ func (c *ctyunHpfs) createHpfs(ctx context.Context, config *CtyunHpfsConfig) (*h
 	return params, nil
 }
 
-func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig) error {
+func (c *CtyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig) error {
 	// 获取hpfs详情
 	hpfsResp, err := c.getHpfsDetail(ctx, config)
 	if err != nil {
@@ -449,6 +494,7 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 	config.Baseline = types.StringValue(hpfsDetail.Baseline)
 	config.SharePath = types.StringValue(hpfsDetail.HpfsSharePath)
 	config.SecretKey = types.StringValue(hpfsDetail.SecretKey)
+	config.SfsProtocol = types.StringValue(hpfsDetail.SfsProtocol)
 	config.CreateTime = types.StringValue(utils.FromUnixToUTC(hpfsDetail.CreateTime))
 	config.UpdateTime = types.StringValue(utils.FromUnixToUTC(hpfsDetail.UpdateTime))
 	dataFlowList, diags := types.SetValueFrom(ctx, types.StringType, hpfsDetail.DataflowList)
@@ -460,7 +506,7 @@ func (c *ctyunHpfs) getAndMergeHpfs(ctx context.Context, config *CtyunHpfsConfig
 	return nil
 }
 
-func (c *ctyunHpfs) getHpfsDetail(ctx context.Context, config *CtyunHpfsConfig) (*hpfs.HpfsInfoSfsResponse, error) {
+func (c *CtyunHpfs) getHpfsDetail(ctx context.Context, config *CtyunHpfsConfig) (*hpfs.HpfsInfoSfsResponse, error) {
 	params := &hpfs.HpfsInfoSfsRequest{
 		SfsUID:   config.ID.ValueString(),
 		RegionID: config.RegionID.ValueString(),
@@ -481,7 +527,7 @@ func (c *ctyunHpfs) getHpfsDetail(ctx context.Context, config *CtyunHpfsConfig) 
 	return resp, nil
 }
 
-func (c *ctyunHpfs) updateHfps(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
+func (c *CtyunHpfs) updateHfps(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
 	// 并行文件重命名
 	err := c.hfpsRename(ctx, state, plan)
 	if err != nil {
@@ -495,7 +541,7 @@ func (c *ctyunHpfs) updateHfps(ctx context.Context, state *CtyunHpfsConfig, plan
 	return nil
 }
 
-func (c *ctyunHpfs) hfpsRename(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
+func (c *CtyunHpfs) hfpsRename(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
 	if plan.Name.IsNull() || state.Name == plan.Name {
 		return nil
 	}
@@ -521,7 +567,7 @@ func (c *ctyunHpfs) hfpsRename(ctx context.Context, state *CtyunHpfsConfig, plan
 	return nil
 }
 
-func (c *ctyunHpfs) updateHpfsSize(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
+func (c *CtyunHpfs) updateHpfsSize(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig) error {
 	// 判断是否需要进行修改
 	if plan.SfsSize.IsNull() || state.SfsSize == plan.SfsSize {
 		return nil
@@ -562,7 +608,7 @@ func (c *ctyunHpfs) updateHpfsSize(ctx context.Context, state *CtyunHpfsConfig, 
 	return err
 }
 
-func (c *ctyunHpfs) updateHpfsSizeLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
+func (c *CtyunHpfs) updateHpfsSizeLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
 	var err error
 	count := 60
 	if len(loopCount) > 0 {
@@ -590,7 +636,7 @@ func (c *ctyunHpfs) updateHpfsSizeLoop(ctx context.Context, state *CtyunHpfsConf
 	return err
 }
 
-func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loopCount ...int) (err error) {
+func (c *CtyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loopCount ...int) (err error) {
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
@@ -622,7 +668,7 @@ func (c *ctyunHpfs) deleteLoop(ctx context.Context, config *CtyunHpfsConfig, loo
 	return
 }
 
-func (c *ctyunHpfs) createLoop(ctx context.Context, plan *CtyunHpfsConfig, params *hpfs.HpfsNewSfsRequest, loopCount ...int) error {
+func (c *CtyunHpfs) createLoop(ctx context.Context, plan *CtyunHpfsConfig, params *hpfs.HpfsNewSfsRequest, loopCount ...int) error {
 	var err error
 	count := 60
 	if len(loopCount) > 0 {
@@ -668,7 +714,7 @@ func (c *ctyunHpfs) createLoop(ctx context.Context, plan *CtyunHpfsConfig, param
 
 }
 
-func (c *ctyunHpfs) renameLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
+func (c *CtyunHpfs) renameLoop(ctx context.Context, state *CtyunHpfsConfig, plan *CtyunHpfsConfig, loopCount ...int) error {
 	var err error
 	count := 60
 	if len(loopCount) > 0 {

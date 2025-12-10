@@ -60,6 +60,33 @@ func TestAccCtyunCcseNodeAssociationEcs(t *testing.T) {
 				ResourceName:      resourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					cluster_id := ds.Attributes["cluster_id"]
+					regionId := ds.Attributes["region_id"]
+					return fmt.Sprintf("%s,%s,%s", name, cluster_id, regionId), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"password",
+					"az_name",
+					"instance_id",
+					"instance_type",
+					"mirror_id",
+					"visibility_host_script",
+					"visibility_post_host_script",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					cluster_id := ds.Attributes["cluster_id"]
+					return fmt.Sprintf("%s,%s", name, cluster_id), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"password",
 					"az_name",

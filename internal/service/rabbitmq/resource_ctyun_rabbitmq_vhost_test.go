@@ -48,8 +48,30 @@ func TestAccCtyunRabbitmqVhost(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					instanceId := ds.Attributes["instance_id"]
+					regionId := ds.Attributes["region_id"]
+					if name == "" || instanceId == "" || regionId == "" {
+						return "", fmt.Errorf("name, instance_id and region_id are required")
+					}
+					return fmt.Sprintf("%s,%s,%s", name, instanceId, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					name := ds.Attributes["name"]
+					instanceId := ds.Attributes["instance_id"]
+					return fmt.Sprintf("%s,%s", name, instanceId), nil
+				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{},
 			},

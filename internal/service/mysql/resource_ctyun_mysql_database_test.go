@@ -86,20 +86,33 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s,%s,%s,%s,%s",
-						rs.Primary.ID,
-						rs.Primary.Attributes["region_id"],
-						rs.Primary.Attributes["project_id"],
+					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["name"],
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["charset_name"],
-						rs.Primary.Attributes["description"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"charset_name", "description"}, // 不需要忽略任何字段
 			},
-
+			// 4. 导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["inst_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"charset_name", "description"}, // 不需要忽略任何字段
+			},
 			// 5. 清理资源
 			{
 				Config: utils.LoadTestCase(charsetDatasourceFile, dnd, mysqlInstanceID, projectID) + utils.LoadTestCase(

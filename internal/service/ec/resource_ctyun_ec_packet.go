@@ -50,7 +50,6 @@ type CtyunEcPacketConfig struct {
 	AreaB                types.String `tfsdk:"area_b"`
 	ClientToken          types.String `tfsdk:"client_token"`
 	PayVoucherPrice      types.String `tfsdk:"pay_voucher_price"`
-	ProjectID            types.String `tfsdk:"project_id"`
 	MasterOrderID        types.String `tfsdk:"master_order_id"`
 	MasterOrderNO        types.String `tfsdk:"master_order_no"`
 	MasterResourceID     types.String `tfsdk:"master_resource_id"`
@@ -177,18 +176,6 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Description: "代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"project_id": schema.StringAttribute{
-				Optional:    true,
-				Computed:    true,
-				Description: "企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
-				Validators: []validator.String{
-					validator2.Project(),
 				},
 			},
 			"master_order_id": schema.StringAttribute{
@@ -336,33 +323,46 @@ func (c *CtyunEcPacket) Delete(ctx context.Context, req resource.DeleteRequest, 
 	}
 }
 
-func (c *CtyunEcPacket) ImportState(ctx context.Context, request resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (c *CtyunEcPacket) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			resp.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ecId],[resourceId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
-	var cfg CtyunEcPacketConfig
+	var config CtyunEcPacketConfig
+
 	var ecId, resourceId string
+
 	err = terraform_extend.Split(request.ID, &ecId, &resourceId)
 	if err != nil {
-		resp.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
-	cfg.EcID = types.StringValue(ecId)
-	cfg.ResourceID = types.StringValue(resourceId)
+	if ecId == "" {
+		err = fmt.Errorf("ecId不能为空")
+		return
+	}
+	if resourceId == "" {
+		err = fmt.Errorf("resourceId不能为空")
+		return
+	}
+
+	config.EcID = types.StringValue(ecId)
+	config.ResourceID = types.StringValue(resourceId)
+
 	// 查询远端
-	err = c.getAndMerge(ctx, &cfg)
+	err = c.getAndMerge(ctx, &config)
 	if err != nil {
 		return
 	}
 
 	// 设置ID字段，确保导入时有正确的ID（修复：保持与Create中一致的格式）
-	cfg.ID = types.StringValue(fmt.Sprintf("%s,%s", ecId, resourceId))
+	config.ID = types.StringValue(fmt.Sprintf("%s,%s", ecId, resourceId))
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunEcPacket) getAndMerge(ctx context.Context, state *CtyunEcPacketConfig) (err error) {

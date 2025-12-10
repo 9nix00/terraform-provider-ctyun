@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"time"
 )
 
@@ -212,21 +213,44 @@ func (c *ctyunRedisInstanceWhitelist) Configure(_ context.Context, request resou
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [分组名称],[实例ID],[regionID]
 func (c *ctyunRedisInstanceWhitelist) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [分组名称],[实例ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 
 	var cfg CtyunRedisInstanceWhitelistConfig
-	var instanceId, regionId, name string
-	err = terraform_extend.Split(request.ID, &name, &instanceId, &regionId)
-	if err != nil {
-		return
+
+	var name, instanceId, regionId string
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &name, &instanceId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instanceId, &regionId)
+		if err != nil {
+			return
+		}
 	}
 
+	if name == "" {
+		err = fmt.Errorf("分组名称不能为空")
+		return
+	}
+	if instanceId == "" {
+		err = fmt.Errorf("实例ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
 	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.RegionId = types.StringValue(regionId)
 	cfg.Name = types.StringValue(name)

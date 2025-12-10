@@ -48,12 +48,24 @@ func TestAccExpressConnect_update(t *testing.T) {
 
 			{
 				// 测试导入
-				ResourceName:      resourceName,
-				ImportState:       true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("not found: %s", resourceName)
+					}
+
+					ID := rs.Primary.ID
+					if ID == "" {
+						return "", fmt.Errorf("id is not set")
+					}
+
+					return fmt.Sprintf("%s", ID), nil
+				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{
 					"resource_id",
-					"project_id",
 					"region_id",
 				},
 			},

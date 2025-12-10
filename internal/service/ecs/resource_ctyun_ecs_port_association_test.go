@@ -1,8 +1,10 @@
 package ecs_test
 
 import (
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-testing/terraform"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -37,10 +39,21 @@ func TestAccCtyunEcsPortAssociation_all(t *testing.T) {
 				),
 			},
 			{
-				// 测试导入功能
+				// 测试导入功能 (始终使用完整的三参数格式)
 				ResourceName:      name,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[name]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", name)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["port_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"az_name",
 					"project_id",

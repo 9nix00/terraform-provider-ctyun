@@ -17,6 +17,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+var (
+	_ resource.Resource                = &ctyunIamUser{}
+	_ resource.ResourceWithConfigure   = &ctyunIamUser{}
+	_ resource.ResourceWithImportState = &ctyunIamUser{}
+)
+
 func NewCtyunIamUser() resource.Resource {
 	return &ctyunIamUser{}
 }
@@ -230,11 +236,18 @@ func (c *ctyunIamUser) Delete(ctx context.Context, request resource.DeleteReques
 
 // 导入命令：terraform import [配置标识].[导入配置名称] [iamUserId]
 func (c *ctyunIamUser) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [iamUserId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunIamUserConfig
 	var iamUserId string
-	err := terraform_extend.Split(request.ID, &iamUserId)
+	err = terraform_extend.Split(request.ID, &iamUserId)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 
@@ -242,7 +255,6 @@ func (c *ctyunIamUser) ImportState(ctx context.Context, request resource.ImportS
 
 	instance, err := c.getAndMergeIamUser(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

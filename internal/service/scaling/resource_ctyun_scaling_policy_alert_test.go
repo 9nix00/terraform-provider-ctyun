@@ -131,7 +131,19 @@ func TestAccCtyunScalingPolicyAlert(t *testing.T) {
 					if id == "" || regionId == "" {
 						return "", fmt.Errorf("id or region_id is required")
 					}
-					return fmt.Sprintf("%s,%s,%s,%s", id, regionId, groupId, policyType), nil
+					return fmt.Sprintf("%s,%s,%s,%s", id, groupId, policyType, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"is_execute", "target_disable_scale_in"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					groupId := ds.Attributes["group_id"]
+					return fmt.Sprintf("%s,%s,%s", id, groupId, policyType), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{"is_execute", "target_disable_scale_in"},

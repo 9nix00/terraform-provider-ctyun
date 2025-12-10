@@ -57,7 +57,8 @@ func TestAccCtyunSdwanAcl_basic(t *testing.T) {
 			},
 			// datasource 测试
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, nameUpdate, "out", "tcp", "IPv4", "192.168.0.0/24", "80-443", 50, "deny", "10.0.0.0/24", "80-443") + "\n" + utils.LoadTestCase(datasourceFile, dnd, nameUpdate),
+				Config: utils.LoadTestCase(resourceFile, rnd, nameUpdate, "out", "tcp", "IPv4", "192.168.0.0/24", "80-443", 50, "deny", "10.0.0.0/24", "80-443") + "\n" +
+					utils.LoadTestCase(datasourceFile, dnd, nameUpdate),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(datasourceName, "id"),
 					resource.TestCheckResourceAttrSet(datasourceName, "acls.#"),

@@ -3,6 +3,7 @@ package image
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/ctimage"
@@ -21,7 +22,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
 	"time"
+)
+
+var (
+	_ resource.Resource                = &ctyunImage{}
+	_ resource.ResourceWithConfigure   = &ctyunImage{}
+	_ resource.ResourceWithImportState = &ctyunImage{}
 )
 
 func NewCtyunImage() resource.Resource {
@@ -319,13 +327,38 @@ func (c *ctyunImage) Delete(ctx context.Context, request resource.DeleteRequest,
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]
+// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[projectId],[regionId]
 func (c *ctyunImage) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunImageConfig
 	var imageId, regionId string
-	err := terraform_extend.Split(request.ID, &imageId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	// 根据分隔符数量判断是否输入了regionId,projectId
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &imageId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &imageId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if imageId == "" {
+		err = fmt.Errorf("imageId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
 		return
 	}
 
@@ -334,7 +367,6 @@ func (c *ctyunImage) ImportState(ctx context.Context, request resource.ImportSta
 
 	instance, err := c.getAndMergeImage(ctx, cfg)
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)

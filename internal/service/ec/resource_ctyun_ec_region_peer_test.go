@@ -167,7 +167,7 @@ func TestAccCtyunExpressConnectRegionPeerDifferentRates(t *testing.T) {
 								rs.Primary.Attributes["id"],
 								rs.Primary.Attributes["ec_id"],
 								rs.Primary.Attributes["packet_id"],
-								rs.Primary.Attributes["cgw_id"],
+								rs.Primary.Attributes["src_cgw_id"],
 							), nil
 						},
 						ImportStateVerify: true,

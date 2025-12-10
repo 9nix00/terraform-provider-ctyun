@@ -20,6 +20,12 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource                = &ctyunEcsPortAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunEcsPortAssociation{}
+	_ resource.ResourceWithImportState = &ctyunEcsPortAssociation{}
+)
+
 type ctyunEcsPortAssociation struct {
 	meta *common.CtyunMetadata
 }
@@ -141,7 +147,7 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 	if err != nil {
 		return
 	}
-	err = c.create(ctx, plan)
+	err = c.create(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -156,7 +162,7 @@ func (c *ctyunEcsPortAssociation) Create(ctx context.Context, req resource.Creat
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
 }
 
-func (c *ctyunEcsPortAssociation) create(ctx context.Context, plan CtyunEcsPortAssociationConfig) (err error) {
+func (c *ctyunEcsPortAssociation) create(ctx context.Context, plan *CtyunEcsPortAssociationConfig) (err error) {
 	// 绑定弹性网卡到云主机
 	attachRequest := &ctecs.CtecsPortsAttachInstanceV41Request{
 		ClientToken:        uuid.NewString(),
@@ -278,15 +284,39 @@ func (c *ctyunEcsPortAssociation) ImportState(ctx context.Context, req resource.
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[networkInterfaceId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunEcsPortAssociationConfig
 	var regionId, instanceId, networkInterfaceId string
-	err = terraform_extend.Split(req.ID, &regionId, &instanceId, &networkInterfaceId)
-	if err != nil {
+
+	if strings.Count(req.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(req.ID, &instanceId, &networkInterfaceId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(req.ID, &instanceId, &networkInterfaceId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
 		return
 	}
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
+		return
+	}
+	if networkInterfaceId == "" {
+		err = fmt.Errorf("networkInterfaceId不能为空")
+		return
+	}
+
 	cfg.ID = types.StringValue(req.ID)
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.InstanceID = types.StringValue(instanceId)
@@ -307,5 +337,5 @@ func (c *ctyunEcsPortAssociation) checkBeforeCreate(ctx context.Context, c2 *Cty
 }
 
 func generateEcsPortAssociationId(regionId, instanceId, networkInterfaceId string) string {
-	return fmt.Sprintf("%s,%s,%s", regionId, instanceId, networkInterfaceId)
+	return fmt.Sprintf("%s,%s,%s", instanceId, networkInterfaceId, regionId)
 }

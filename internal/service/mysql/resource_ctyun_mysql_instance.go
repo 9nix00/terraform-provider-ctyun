@@ -14,6 +14,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -52,13 +53,29 @@ func (c *CtyunMysqlInstance) ImportState(ctx context.Context, request resource.I
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunMysqlInstanceConfig
-	var ID, regionId, projectId, flavorName string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &projectId, &flavorName)
-	if err != nil {
+	var ID, regionId, projectId string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
 		return
 	}
 	config.ID = types.StringValue(ID)
@@ -725,7 +742,15 @@ func (c *CtyunMysqlInstance) getAndMergeMysqlInstance(ctx context.Context, confi
 	config.SubnetID = types.StringValue(returnOjb.SubnetId)
 	config.SecurityGroupID = types.StringValue(returnOjb.SecurityGroupId)
 	config.CycleType = types.StringValue(business.MysqlBillModeRev[returnOjb.ProdBillType])
-	//config.CycleCount = types.Int32Value(returnOjb.ProdBillTime)
+	if config.AvailabilityZoneInfo.IsNull() || config.AvailabilityZoneInfo.IsUnknown() {
+		config.AvailabilityZoneInfo = types.ListNull(types.ObjectType{
+			AttrTypes: map[string]attr.Type{
+				"availability_zone_name":  types.StringType,
+				"node_type":               types.StringType,
+				"availability_zone_count": types.Int32Type,
+			},
+		})
+	}
 	return
 }
 

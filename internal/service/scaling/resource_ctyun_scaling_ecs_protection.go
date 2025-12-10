@@ -19,6 +19,11 @@ import (
 	"strings"
 )
 
+var (
+	_ resource.Resource              = &ctyunScalingEcsProtection{}
+	_ resource.ResourceWithConfigure = &ctyunScalingEcsProtection{}
+)
+
 type ctyunScalingEcsProtection struct {
 	meta          *common.CtyunMetadata
 	regionService *business.RegionService

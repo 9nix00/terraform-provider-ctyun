@@ -41,11 +41,42 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
+			// 更新密码
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, name, updatePassword, flavorName, prodID, storageType, storageSpace),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
+			},
+			// import state验证1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,,%s", id, regionId), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_count", "master_order_id"},
+			},
+			// import state验证2
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
+					"backup_storage_type", "availability_zone_info", "running_control", "master_order_id"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, name, password, flavorName, prodID, storageType, storageSpace),

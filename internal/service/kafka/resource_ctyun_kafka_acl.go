@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"regexp"
+	"strings"
 )
 
 var (
@@ -275,19 +276,44 @@ func (c *ctyunKafkaAcl) ImportState(ctx context.Context, request resource.Import
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[name],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunKafkaAclConfig
 	var instanceId, regionID, name string
-	err = terraform_extend.Split(request.ID, &instanceId, &regionID, &name)
-	if err != nil {
+
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &instanceId, &name)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &instanceId, &name, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if instanceId == "" {
+		err = fmt.Errorf("instanceId不能为空")
 		return
 	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if name == "" {
+		err = fmt.Errorf("name不能为空")
+		return
+	}
+
 	cfg.RegionId = types.StringValue(regionID)
 	cfg.InstanceId = types.StringValue(instanceId)
 	cfg.Name = types.StringValue(name)
-	//cfg.UseNewTopic = types.StringValue(useNewTopic)
 	// 查询远端
 	err = c.getAndMerge(ctx, &cfg)
 	if err != nil {

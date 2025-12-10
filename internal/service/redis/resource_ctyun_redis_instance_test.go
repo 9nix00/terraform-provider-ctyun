@@ -209,6 +209,29 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 				},
 			},
 			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.ID
+
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"auto_renew_cycle_count",
+					"cycle_count",
+					"cycle_type",
+					"edition",
+					"host_type",
+					"password",
+					"project_id",
+					"version",
+					"auto_renew",
+					"master_order_id",
+				},
+			},
+			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					initName,

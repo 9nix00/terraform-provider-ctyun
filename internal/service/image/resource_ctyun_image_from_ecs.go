@@ -25,7 +25,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"log"
 	"regexp"
+	"strings"
 	"time"
+)
+
+var (
+	_ resource.Resource                = &ctyunImageFromEcs{}
+	_ resource.ResourceWithConfigure   = &ctyunImageFromEcs{}
+	_ resource.ResourceWithImportState = &ctyunImageFromEcs{}
 )
 
 func NewCtyunImageFromEcs() resource.Resource {
@@ -356,13 +363,38 @@ func (c *ctyunImageFromEcs) Delete(ctx context.Context, request resource.DeleteR
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]
+// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[projectId],[regionId]
 func (c *ctyunImageFromEcs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[projectId],[regionId]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
 	var cfg CtyunImageFromEcsConfig
 	var imageId, regionId string
-	err := terraform_extend.Split(request.ID, &imageId, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	// 根据分隔符数量判断是否输入了regionId
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &imageId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &imageId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if imageId == "" {
+		err = fmt.Errorf("imageId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionId不能为空")
 		return
 	}
 

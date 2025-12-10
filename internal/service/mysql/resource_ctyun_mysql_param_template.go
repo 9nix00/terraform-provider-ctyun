@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -16,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strconv"
 	"strings"
 )
 
@@ -45,7 +47,51 @@ func (c *CtyunMysqlParamTemplate) Configure(ctx context.Context, request resourc
 }
 
 func (c *CtyunMysqlParamTemplate) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunMysqlParamTemplateConfig
+	var id, regionID, projectID string
+	if strings.Count(request.ID, common.ImportSeparator) < 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		id = request.ID
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &id, &projectID, &regionID)
+		if err != nil {
+			return
+		}
+	}
+	if id == "" {
+		err = fmt.Errorf("id不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
 
+	num, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		err = fmt.Errorf("转换失败: %v\n", err)
+		return
+	}
+	config.ID = types.Int64Value(num)
+	config.RegionID = types.StringValue(regionID)
+	config.ProjectID = types.StringValue(projectID)
+	err = c.getAndMergeMysqlParameterTemplate(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMysqlParamTemplate) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {

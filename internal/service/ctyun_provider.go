@@ -669,6 +669,7 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		oceanfs2.NewCtyunOceanfsPermissionRule(),
 		peer_connection2.NewCtyunVpcPeerConnection(),
 		peer_connection2.NewCtyunVpcPeerConnectionAttach(),
+		mysql2.NewCtyunMysqlAudit(),
 	)
 }
 

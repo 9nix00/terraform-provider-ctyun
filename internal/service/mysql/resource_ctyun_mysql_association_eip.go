@@ -21,9 +21,8 @@ import (
 )
 
 var (
-	_ resource.Resource                = &CtyunMysqlAssociationEip{}
-	_ resource.ResourceWithConfigure   = &CtyunMysqlAssociationEip{}
-	_ resource.ResourceWithImportState = &CtyunMysqlAssociationEip{}
+	_ resource.Resource              = &CtyunMysqlAssociationEip{}
+	_ resource.ResourceWithConfigure = &CtyunMysqlAssociationEip{}
 )
 
 type CtyunMysqlAssociationEip struct {
@@ -208,10 +207,6 @@ func (c *CtyunMysqlAssociationEip) Delete(ctx context.Context, request resource.
 		return
 	}
 	return
-}
-
-func (c *CtyunMysqlAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	// todo
 }
 
 func (c *CtyunMysqlAssociationEip) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {
