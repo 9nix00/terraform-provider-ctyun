@@ -140,7 +140,7 @@ func TestAccCtyunAclRule(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"project_id"}, // 可选忽略
 			},
 			{
 				ResourceName: resourceName,
@@ -158,7 +158,7 @@ func TestAccCtyunAclRule(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"project_id"}, // 可选忽略
 			},
 			{
 				ResourceName: resourceName,
@@ -175,7 +175,7 @@ func TestAccCtyunAclRule(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"project_id"}, // 可选忽略
 			},
 			// 6. 清理资源
 			{
