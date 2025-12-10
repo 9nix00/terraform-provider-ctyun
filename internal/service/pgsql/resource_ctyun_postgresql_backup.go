@@ -17,7 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"strconv"
+	"strings"
 	"time"
 )
 
@@ -50,30 +50,49 @@ func (c *CtyunPostgresqlBackup) ImportState(ctx context.Context, request resourc
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[instID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunPostgresqlBackupConfig
-	var ID, regionId, name, projectId, instId, backupType string
-	err = terraform_extend.Split(request.ID, &ID, &regionId, &name, &projectId, &instId, &backupType)
-	if err != nil {
+	var name, regionId, projectId, instId string
+
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if name == "" {
+		err = fmt.Errorf("name 不能为空")
 		return
 	}
-	id, err := strconv.ParseInt(ID, 10, 64)
-	if err != nil {
+	if instId == "" {
+		err = fmt.Errorf("instID 不能为空")
 		return
 	}
-	cfg.ID = types.Int64Value(id)
+	if regionId == "" {
+		err = fmt.Errorf("regionID 不能为空")
+		return
+	}
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
 	cfg.Name = types.StringValue(name)
 	cfg.InstID = types.StringValue(instId)
-	cfg.BackupType = types.StringValue(backupType)
 	err = c.getAndMergePostgresqlBackup(ctx, &cfg)
 	if err != nil {
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, cfg)...)
+
 }
 
 func (c *CtyunPostgresqlBackup) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -332,6 +351,7 @@ func (c *CtyunPostgresqlBackup) getAndMergePostgresqlBackup(ctx context.Context,
 		return err
 	}
 	detail := detailList.ReturnObj.List[0]
+	config.ID = types.Int64Value(detail.Id)
 	config.BackupType = types.StringValue(business.PgsqlBackupTypeMapConv[detail.Type])
 	config.BackupResult = types.StringValue(business.PgsqlBackupResultMapConv[detail.Result])
 	config.StartTime = types.StringValue(c.yyyyMMddConvertUTC(detail.StartTime))

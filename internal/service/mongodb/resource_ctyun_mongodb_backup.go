@@ -94,7 +94,7 @@ func (r *CtyunMongodbBackupResource) Schema(ctx context.Context, req resource.Sc
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"backup_name": schema.StringAttribute{
+			"name": schema.StringAttribute{
 				Required:    true,
 				Description: "备份名称",
 				PlanModifiers: []planmodifier.String{
@@ -224,7 +224,7 @@ func (c *CtyunMongodbBackupResource) ImportState(ctx context.Context, request re
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instID][projectID][regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[instID],[projectID],[regionID]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

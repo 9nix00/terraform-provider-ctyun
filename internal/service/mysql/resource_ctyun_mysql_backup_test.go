@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-// 创建备份集 + 取消备份任务
+// 创建备份集
 func TestAccCtyunMysqlBackup(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
@@ -69,17 +69,6 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 					resource.TestCheckResourceAttr(backupsDatasourceName, "backup_list.0.inst_id", mysqlInstanceID),
 				),
 			},
-			//// datasource获取backup_record_id
-			//// 验证取消备份
-			//{
-			//
-			//	Config: utils.LoadTestCase(resourceFile, rnd, mysqlInstanceID, projectID, description, "full") +
-			//		utils.LoadTestCase(backupsDatasourceFile, dnd, mysqlInstanceID, fmt.Sprintf("%s.name", resourceName)) +
-			//		utils.LoadTestCase(cancelResourceFile, rnd, mysqlInstanceID, projectID, fmt.Sprintf("%s.backup_list.0.records.0.backup_record_id", backupsDatasourceName)),
-			//	Check: resource.ComposeAggregateTestCheckFunc(
-			//		resource.TestCheckResourceAttr(cancelResourceName, "inst_id", mysqlInstanceID),
-			//	),
-			//},
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
@@ -92,6 +81,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 	})
 }
 
+// import state
 func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 
 	rnd := utils.GenerateRandomString()
@@ -130,7 +120,6 @@ func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "name"),
 				),
 			},
-
 			// 3. 资源导入测试
 			{
 				ResourceName: resourceName,
