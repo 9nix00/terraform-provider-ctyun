@@ -69,7 +69,6 @@ func (c *CtyunPostgresqlReadOnlyInstance) ImportState(ctx context.Context, reque
 		return
 	}
 	config.ID = types.StringValue(ID)
-	config.InstID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 	config.ProjectID = types.StringValue(projectId)
 	err = c.getAndMerge(ctx, &config)
@@ -521,10 +520,11 @@ func (c *CtyunPostgresqlReadOnlyInstance) getAndMerge(ctx context.Context, confi
 		config.ID = types.StringValue(instanceReadNodeInfo.ProdInstId)
 	}
 	// 根据id查询详情
-	_, err := c.getPostgresqlInstanceDetail(ctx, config, config.ID.ValueString())
+	resp, err := c.getPostgresqlInstanceDetail(ctx, config, config.ID.ValueString())
 	if err != nil {
 		return err
 	}
+	config.Name = types.StringValue(resp.ReturnObj.ProdInstName)
 	return nil
 }
 

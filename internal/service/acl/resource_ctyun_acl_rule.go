@@ -10,6 +10,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -151,6 +152,9 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.AclID(),
+				},
 			},
 			"direction": schema.StringAttribute{
 				Required:    true,
@@ -164,6 +168,9 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 				Computed:    true,
 				Description: "优先级 1 - 32766，不填默认100",
 				Default:     int32default.StaticInt32(100),
+				Validators: []validator.Int32{
+					int32validator.Between(1, 32766),
+				},
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
@@ -248,6 +255,9 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 				Optional:    true,
 				Computed:    true,
 				Description: "acl规则描述",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,

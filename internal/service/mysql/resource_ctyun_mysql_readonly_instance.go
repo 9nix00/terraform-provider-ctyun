@@ -68,7 +68,6 @@ func (c *CtyunMysqlReadOnlyInstance) ImportState(ctx context.Context, request re
 		return
 	}
 	config.ID = types.StringValue(ID)
-	config.InstID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 	config.ProjectID = types.StringValue(projectId)
 	err = c.getAndMerge(ctx, &config)
@@ -210,8 +209,9 @@ func (c *CtyunMysqlReadOnlyInstance) Schema(ctx context.Context, request resourc
 				Description: "可用区id，如果不填写，默认为第一个可用区",
 			},
 			"id": schema.StringAttribute{
-				Computed:    true,
-				Description: "可读实例id",
+				Computed:      true,
+				Description:   "可读实例id",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -231,7 +231,7 @@ func (c *CtyunMysqlReadOnlyInstance) Create(ctx context.Context, request resourc
 	}
 
 	// 创建前，根据instance_id获取基本信息
-	err = c.getMysqlInstanceDetail(ctx, &plan, plan.InstID.ValueString())
+	_, err = c.getMysqlInstanceDetail(ctx, &plan, plan.InstID.ValueString())
 	if err != nil {
 		return
 	}
@@ -371,7 +371,7 @@ func (c *CtyunMysqlReadOnlyInstance) checkSpec(ctx context.Context, plan *CtyunM
 	return nil
 }
 
-func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceDetail(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig, id string) error {
+func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceDetail(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig, id string) (*mysql.TeledbQueryDetailResponse, error) {
 	detailParams := &mysql.TeledbQueryDetailRequest{
 		OuterProdInstId: id,
 	}
@@ -384,21 +384,20 @@ func (c *CtyunMysqlReadOnlyInstance) getMysqlInstanceDetail(ctx context.Context,
 	}
 	resp, err := c.meta.Apis.SdkCtMysqlApis.TeledbQueryDetailApi.Do(ctx, c.meta.Credential, detailParams, detailHeaders)
 	if err != nil {
-		return err
+		return nil, err
 	} else if resp.StatusCode != 0 {
 		err = fmt.Errorf("API return error. Message: %s", resp.Message)
-		return err
+		return nil, err
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
-		return err
+		return nil, err
 	}
 	returnObj := resp.ReturnObj
-	config.Name = types.StringValue(returnObj.ProdInstName)
 	config.prodVersion = returnObj.ProdDbEngine
 	config.vpcID = returnObj.VpcId
 	config.subnetID = returnObj.SubnetId
 	config.securityGroupID = returnObj.SecurityGroupId
-	return nil
+	return resp, nil
 }
 
 func (c *CtyunMysqlReadOnlyInstance) createMysqlReadOnlyInstance(ctx context.Context, config *CtyunMysqlReadOnlyInstanceConfig) error {
@@ -522,10 +521,11 @@ func (c *CtyunMysqlReadOnlyInstance) getAndMerge(ctx context.Context, config *Ct
 		config.ID = types.StringValue(instanceReadNodeInfo[0].OuterProdInstId)
 	}
 	// 根据id查询详情
-	err := c.getMysqlInstanceDetail(ctx, config, config.ID.ValueString())
+	resp, err := c.getMysqlInstanceDetail(ctx, config, config.ID.ValueString())
 	if err != nil {
 		return err
 	}
+	config.Name = types.StringValue(resp.ReturnObj.ProdInstName)
 	return nil
 }
 
@@ -634,7 +634,7 @@ func (c *CtyunMysqlReadOnlyInstance) refundLoop(ctx context.Context, state Ctyun
 	}
 	result := retryer.Start(
 		func(currentTime int) bool {
-			err = c.getMysqlInstanceDetail(ctx, &state, state.ID.ValueString())
+			_, err = c.getMysqlInstanceDetail(ctx, &state, state.ID.ValueString())
 			if err != nil {
 				if strings.Contains(err.Error(), "not exist") {
 					err = nil

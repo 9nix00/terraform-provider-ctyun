@@ -45,5 +45,5 @@ output "collate_type" {
 }
 
 output "account_name" {
-  value = data.ctyun_postgresql_accounts.accounts.accounts[0].account_name
+  value = data.ctyun_postgresql_accounts.accounts.accounts[0].name
 }

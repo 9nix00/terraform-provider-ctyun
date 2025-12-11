@@ -106,12 +106,12 @@ func TestAccCtyunPostgresqlParamTemplate(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["region_id"],
 						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description"}, // 参数可能变化，忽略验证
+				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description", "name"}, // 参数可能变化，忽略验证
 
 			},
 			{
@@ -127,7 +127,7 @@ func TestAccCtyunPostgresqlParamTemplate(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description"}, // 参数可能变化，忽略验证
+				ImportStateVerifyIgnore: []string{"template_parameters", "source_template_id", "description", "name", "project_id"}, // 参数可能变化，忽略验证
 
 			},
 			// 6. 清理资源

@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -102,6 +103,7 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 				Description: "前缀列表名称，支持更新。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 32),
+					validator2.AclName(),
 				},
 			},
 			"description": schema.StringAttribute{
@@ -109,6 +111,7 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 				Description: "前缀列表描述，支持更新。支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:\"{},./;'[\\]·！@#￥%……&*（） —— -+={}\\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -151,12 +154,16 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 						"cidr": schema.StringAttribute{
 							Required:    true,
 							Description: "CIDR格式的IP地址段，例如：192.168.0.0/16",
+							Validators: []validator.String{
+								validator2.Cidr(),
+							},
 						},
 						"description": schema.StringAttribute{
 							Optional:    true,
 							Description: "前缀规则描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:\"{},./;'[\\]·！@#￥%……&*（） —— -+={}\\《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(0, 128),
+								validator2.Desc(),
 							},
 						},
 					},

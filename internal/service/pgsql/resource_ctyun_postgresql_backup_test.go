@@ -54,17 +54,31 @@ func TestAccCtyunPostgresqlBackup(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s,%s,%s,%s,%s",
-						rs.Primary.Attributes["id"],
-						rs.Primary.Attributes["region_id"],
+					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["backup_type"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result"},
+				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result", "backup_type"},
+			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["name"],
+						rs.Primary.Attributes["instance_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"description", "start_time", "end_time", "backup_result", "backup_type", "project_id"},
 			},
 			// 3. 清理资源
 			{

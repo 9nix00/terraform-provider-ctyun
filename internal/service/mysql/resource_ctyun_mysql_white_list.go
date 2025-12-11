@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
@@ -24,12 +25,56 @@ import (
 )
 
 var (
-	_ resource.Resource              = &CtyunMysqlWhiteList{}
-	_ resource.ResourceWithConfigure = &CtyunMysqlWhiteList{}
+	_ resource.Resource                = &CtyunMysqlWhiteList{}
+	_ resource.ResourceWithConfigure   = &CtyunMysqlWhiteList{}
+	_ resource.ResourceWithImportState = &CtyunMysqlWhiteList{}
 )
 
 type CtyunMysqlWhiteList struct {
 	meta *common.CtyunMetadata
+}
+
+func (c *CtyunMysqlWhiteList) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instanceID],[projectID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunMysqlWhiteListConfig
+	var name, instanceID, regionId, projectId string
+	if strings.Count(request.ID, common.ImportSeparator) < 2 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &name, &instanceID)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &name, &instanceID, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+	if instanceID == "" {
+		err = fmt.Errorf("instanceID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	config.GroupName = types.StringValue(name)
+	config.ProdInstID = types.StringValue(instanceID)
+	config.RegionID = types.StringValue(regionId)
+	config.ProjectID = types.StringValue(projectId)
+	err = c.getAndMergeMysqlAccessWhiteList(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -104,6 +149,11 @@ func (c *CtyunMysqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			"access_machine_type": schema.StringAttribute{
 				Computed:    true,
 				Description: "访问类型",
+			},
+			"id": schema.StringAttribute{
+				Computed:      true,
+				Description:   "id 唯一标识",
+				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
 			},
 		},
 	}
@@ -327,12 +377,25 @@ func (c *CtyunMysqlWhiteList) getAndMergeMysqlAccessWhiteList(ctx context.Contex
 			config.GroupName = types.StringValue(whileListInfo.GroupName)
 			config.CreatedTime = types.StringValue(utils.FromUnixToUTC(whileListInfo.CreateTime))
 			config.UpdatedTime = types.StringValue(utils.FromUnixToUTC(whileListInfo.UpdateTime))
+			if whileListInfo.WhiteList == nil {
+				whileListInfo.WhiteList = make([]string, 0)
+			}
 			groupWhiteList, diags := types.SetValueFrom(ctx, types.StringType, whileListInfo.WhiteList)
 			if diags.HasError() {
 				return
 			}
 			config.GroupWhiteList = groupWhiteList
 		}
+	}
+	config.ID = types.StringValue(fmt.Sprintf("%s,%s", config.ProdInstID.ValueString(), config.GroupName.ValueString()))
+	if config.GroupWhiteList.IsNull() || config.GroupWhiteList.IsUnknown() {
+		initGroupWhiteList := make([]string, 0)
+		groupWhiteList, diags := types.SetValueFrom(ctx, types.StringType, initGroupWhiteList)
+		if diags.HasError() {
+			err = fmt.Errorf(diags[0].Detail())
+			return
+		}
+		config.GroupWhiteList = groupWhiteList
 	}
 	return
 }
@@ -380,6 +443,7 @@ type CtyunMysqlWhiteListConfig struct {
 	CreatedTime         types.String `tfsdk:"create_time"`
 	UpdatedTime         types.String `tfsdk:"update_time"`
 	AccessMachineType   types.String `tfsdk:"access_machine_type"` // 访问类型
+	ID                  types.String `tfsdk:"id"`
 }
 
 // checkStatus 数据库状态为running

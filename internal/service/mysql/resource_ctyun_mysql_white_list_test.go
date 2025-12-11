@@ -61,6 +61,41 @@ func TestAccCtyunMysqlWhiteListTest(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "white_lists.0.group_white_list_count", "4"),
 				),
 			},
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["group_name"],
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+			},
+			// 3. 导入测试
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["group_name"],
+						rs.Primary.Attributes["instance_id"],
+					), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+			},
 			// 销毁
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, prodInstId, groupName, updatedGroupWhiteList),

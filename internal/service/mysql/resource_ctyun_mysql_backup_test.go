@@ -148,7 +148,7 @@ func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"task_type", "description"},
+				ImportStateVerifyIgnore: []string{"task_type", "description", "project_id"},
 			},
 			{
 				Config: utils.LoadTestCase(

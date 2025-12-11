@@ -46,25 +46,17 @@ variable "password" {
 
 resource "ctyun_postgresql_instance" "test" {
   cycle_type            = "on_demand"
-  host_type             = "S7"
   prod_id               = "Single1222"
-  storage_type          = "SATA"
-  storage_space         = 100
-  name                  = "pgsql-test"
+  flavor_name           = "c7.xlarge.4"
+  storage_type          = "SSD"
+  storage_space         = 120
+  name                  = "pgsql-test-tf1"
   password              = var.password
   case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C4G"
   vpc_id                = ctyun_vpc.vpc_test.id
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_pgsql_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 100
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
+  backup_storage_type  = "OS"
 }
 
 resource "ctyun_eip" "eip_test" {

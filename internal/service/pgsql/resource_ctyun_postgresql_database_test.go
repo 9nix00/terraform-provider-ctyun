@@ -122,11 +122,11 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"charset_collate", "charset_type", "owner", "charset_name", "description"}, // 可选忽略
+				ImportStateVerifyIgnore: []string{"charset_collate", "charset_type", "owner", "charset_name", "description", "project_id"}, // 可选忽略
 				PreConfig: func() {
 					wait20Seconds()
 				},

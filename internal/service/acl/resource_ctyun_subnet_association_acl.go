@@ -145,12 +145,18 @@ func (c *CtyunSubnetAssociationAcl) Schema(ctx context.Context, request resource
 			"acl_id": schema.StringAttribute{
 				Required:    true,
 				Description: "acl_id，acl列表可以通过data.ctyun_acls查询",
+				Validators: []validator.String{
+					validator2.AclID(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
 				Description: "subnet_id，subnet列表可能通过data.ctyun_subnets查询，不支持更新",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"id": schema.StringAttribute{

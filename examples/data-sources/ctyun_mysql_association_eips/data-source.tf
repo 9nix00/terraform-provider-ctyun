@@ -10,6 +10,7 @@ terraform {
 provider "ctyun" {
   env = "prod"
 }
+
 data "ctyun_mysql_association_eips" "test" {
 
 }

@@ -76,7 +76,7 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
-					"backup_storage_type", "availability_zone_info", "running_control", "master_order_id"},
+					"backup_storage_type", "availability_zone_info", "running_control", "master_order_id", "project_id"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, cycleType, vpcID, subnetID, securityGroupID, name, password, flavorName, prodID, storageType, storageSpace),

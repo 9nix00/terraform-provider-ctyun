@@ -99,7 +99,7 @@ func TestAccCtyunMysqlReadOnlyInstanceImportState(t *testing.T) {
 	cycleType := "on_demand"
 	//cycleCount := 1
 	// 测试数据
-	instanceName := "test-ro-" + rnd
+	instanceName := "test-ros-" + rnd
 	flavorName := "c7.large.2" // 示例规格，根据实际情况调整
 	storageType := "SATA"      // 存储类型
 	storageSpace := 100        // 存储空间(GB)

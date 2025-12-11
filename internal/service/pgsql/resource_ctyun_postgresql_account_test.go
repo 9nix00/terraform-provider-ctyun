@@ -142,11 +142,11 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"password", "is_lock", "user_type", "description"}, // 密码敏感，导入时不验证
+				ImportStateVerifyIgnore: []string{"password", "is_lock", "user_type", "description", "project_id"}, // 密码敏感，导入时不验证
 				PreConfig: func() {
 					wait10Seconds()
 				},

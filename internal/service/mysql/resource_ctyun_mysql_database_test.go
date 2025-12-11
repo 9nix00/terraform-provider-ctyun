@@ -107,11 +107,11 @@ func TestAccCtyunMysqlDatabase(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"charset_name", "description"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"charset_name", "description", "project_id"}, // 不需要忽略任何字段
 			},
 			// 5. 清理资源
 			{

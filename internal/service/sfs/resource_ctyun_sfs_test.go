@@ -169,7 +169,7 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					return fmt.Sprintf("%s,%s,%s", id, projectId, regionId), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"cycle_count", "kms_uuid", "cycle_type", "is_encrypt", "vpc_id", "subnet_id", "az_name", "used_size"},
+				ImportStateVerifyIgnore: []string{"cycle_count", "kms_uuid", "cycle_type", "is_encrypt", "vpc_id", "subnet_id", "az_name", "used_size", "project_id"},
 			},
 			// 4. 资源导入测试 1
 			{
@@ -191,6 +191,7 @@ func TestAccCtyunSfsCycle(t *testing.T) {
 					"az_name",
 					"used_size",
 					"update_time",
+					"project_id",
 				},
 			},
 			// 4. 清理资源

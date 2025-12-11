@@ -3,13 +3,13 @@ data "ctyun_vpcs" "vpc_test" {
 }
 
 locals {
-  vpcs        = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-paas"]
+  vpcs        = [for vpc in data.ctyun_vpcs.vpc_test.vpcs : vpc if vpc.name == "tf-vpc-for-pgsql"]
   data_vpc_id = length(local.vpcs) > 0 ? local.vpcs[0].vpc_id : ""
 }
 
 resource "ctyun_vpc" "vpc_test" {
   count       = local.data_vpc_id == "" ? 1 : 0
-  name        = "tf-vpc-for-paas"
+  name        = "tf-vpc-for-pgsql"
   cidr        = "192.168.0.0/16"
   description = "terraform-paas测试使用"
   enable_ipv6 = true
@@ -26,7 +26,7 @@ data "ctyun_subnets" "subnet_test" {
 
 locals {
   subnets = [
-    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-paas"
+    for subnet in data.ctyun_subnets.subnet_test.subnets : subnet if subnet.name == "tf-subnet-for-pgsql"
   ]
   data_subnet_id = length(local.subnets) > 0 ? local.subnets[0].subnet_id : ""
 }
@@ -34,7 +34,7 @@ locals {
 resource "ctyun_subnet" "subnet_test" {
   count       = local.data_vpc_id=="" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-subnet-for-paas"
+  name        = "tf-subnet-for-pgsql"
   cidr        = "192.168.1.0/24"
   description = "terraform测试使用"
   dns = [
@@ -53,17 +53,17 @@ data "ctyun_security_groups" "security_group_test" {
 
 locals {
   security_groups = [
-    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas"
+    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-pgsql"
   ]
   data_security_group_id = length(local.security_groups) > 0 ? local.security_groups[0].security_group_id : ""
 
   security_groups2 = [
-    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas2"
+    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-pgsql2"
   ]
   data_security_group_id2 = length(local.security_groups2) > 0 ? local.security_groups2[0].security_group_id : ""
 
   security_groups3 = [
-    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-paas3"
+    for security_group in data.ctyun_security_groups.security_group_test.security_groups :security_group if security_group.name == "tf-sg-for-pgsql3"
   ]
   data_security_group_id3 = length(local.security_groups3) > 0 ? local.security_groups3[0].security_group_id : ""
 }
@@ -71,7 +71,7 @@ locals {
 resource "ctyun_security_group" "security_group_test1" {
   count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-sg-for-paas"
+  name        = "tf-sg-for-pgsql"
   description = "terraform测试使用"
   lifecycle {
     prevent_destroy = false
@@ -80,7 +80,7 @@ resource "ctyun_security_group" "security_group_test1" {
 resource "ctyun_security_group" "security_group_test2" {
   count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-sg-for-paas2"
+  name        = "tf-sg-for-pgsql2"
   description = "terraform测试使用2"
   lifecycle {
     prevent_destroy = false
@@ -89,7 +89,7 @@ resource "ctyun_security_group" "security_group_test2" {
 resource "ctyun_security_group" "security_group_test3" {
   count = local.data_vpc_id == "" ? 1 : 0
   vpc_id      = local.real_vpc_id
-  name        = "tf-sg-for-paas3"
+  name        = "tf-sg-for-pgsql3"
   description = "terraform测试使用3"
   lifecycle {
     prevent_destroy = false
