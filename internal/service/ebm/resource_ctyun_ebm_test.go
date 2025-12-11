@@ -131,6 +131,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"cycle_type",
 					"image_uuid",
 					"cycle_count",
+					"bandwidth",
 				},
 			},
 			// 多种导入方式测试
@@ -156,6 +157,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"cycle_type",
 					"image_uuid",
 					"cycle_count",
+					"bandwidth",
 				},
 			},
 			{
