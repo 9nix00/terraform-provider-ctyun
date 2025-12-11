@@ -60,9 +60,36 @@ func TestAccCtyunSfsPermissionGroupAssociation(t *testing.T) {
 			},
 			// 3. 资源导入测试
 			{
-				ResourceName:            resourceName,
-				ImportState:             true,
-				ImportStateVerify:       true,
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["vpc_id"],
+						rs.Primary.Attributes["sfs_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["vpc_id"],
+						rs.Primary.Attributes["sfs_id"],
+					), nil
+				},
 				ImportStateVerifyIgnore: []string{},
 			},
 			// 4. 清理资源

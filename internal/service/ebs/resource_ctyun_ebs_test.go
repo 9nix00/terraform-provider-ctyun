@@ -195,11 +195,39 @@ func TestAccCtyunEbs(t *testing.T) {
 				ResourceName:      associationResourceName,
 				ImportState:       true,
 				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["ebs_id"],
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
 				ImportStateVerifyIgnore: []string{
 					"master_order_id",
 				},
 			},
-
+			{
+				ResourceName:      associationResourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["ebs_id"],
+						rs.Primary.Attributes["instance_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"master_order_id",
+				},
+			},
 			// 添加多种导入方式测试
 			{
 				ResourceName: resourceName,

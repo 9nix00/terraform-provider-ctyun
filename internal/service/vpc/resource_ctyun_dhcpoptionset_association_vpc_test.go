@@ -57,6 +57,36 @@ func TestAccCtyunDhcpOptionSetAssociationVpc_basic(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "dhcp_option_sets_id", dhcpOptionSetsId),
 				),
 			},
+
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.Attributes["dhcp_option_sets_id"]
+					regionId := ds.Attributes["region_id"]
+					if id == "" || regionId == "" {
+						return "", fmt.Errorf("id or region_id is required")
+					}
+					return fmt.Sprintf("%s,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{},
+			},
+
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					ds := s.RootModule().Resources[resourceName].Primary
+					id := ds.Attributes["dhcp_option_sets_id"]
+					return fmt.Sprintf("%s", id), nil
+				},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"region_id",
+				},
+			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, dhcpOptionSetsId, vpcIds),
 				Destroy: true,

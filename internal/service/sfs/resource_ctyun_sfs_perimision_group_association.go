@@ -16,7 +16,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"time"
+)
+
+var (
+	_ resource.Resource                = &ctyunSfsPermissionGroupAssociation{}
+	_ resource.ResourceWithConfigure   = &ctyunSfsPermissionGroupAssociation{}
+	_ resource.ResourceWithImportState = &ctyunSfsPermissionGroupAssociation{}
 )
 
 type ctyunSfsPermissionGroupAssociation struct {
@@ -49,16 +56,40 @@ func (c *ctyunSfsPermissionGroupAssociation) ImportState(ctx context.Context, re
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [vpcID],[sfsUid],[regionId]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunSfsPermissionGroupAssociationConfig
 	var vpcID, regionId, sfsUid string
-	err = terraform_extend.Split(request.ID, &vpcID, &sfsUid, &regionId)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &vpcID, &sfsUid)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &vpcID, &sfsUid, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if vpcID == "" {
+		err = fmt.Errorf("vpcID不能为空")
 		return
 	}
+	if sfsUid == "" {
+		err = fmt.Errorf("sfsUid不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.VpcID = types.StringValue(vpcID)
 	cfg.SfsUID = types.StringValue(sfsUid)
