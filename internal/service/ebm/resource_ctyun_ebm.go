@@ -72,7 +72,7 @@ type CtyunEbmConfig struct {
 	SystemVolumeRaidUUID types.String `tfsdk:"system_volume_raid_uuid"`
 	DataVolumeRaidUUID   types.String `tfsdk:"data_volume_raid_uuid"`
 	VpcID                types.String `tfsdk:"vpc_id"`
-	EipID                types.String `tfsdk:"eip_id"`
+	BandWidth            types.Int32  `tfsdk:"bandwidth"`
 	EipAddress           types.String `tfsdk:"eip_address"`
 	SecurityGroupIDs     types.Set    `tfsdk:"security_group_ids"`
 	UserData             types.String `tfsdk:"user_data"`
@@ -243,16 +243,14 @@ func (c *ctyunEbm) Schema(_ context.Context, _ resource.SchemaRequest, response 
 					validator2.VpcValidate(),
 				},
 			},
-			"eip_id": schema.StringAttribute{
+			"bandwidth": schema.Int32Attribute{
 				Optional:    true,
-				Computed:    true,
-				Description: "弹性公网IP的ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-					stringplanmodifier.RequiresReplace(),
+				Description: "带宽大小，传递时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 2000),
 				},
-				Validators: []validator.String{
-					validator2.EipValidate(),
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
 				},
 			},
 			"eip_address": schema.StringAttribute{
@@ -718,9 +716,9 @@ func (c *ctyunEbm) createInstance(ctx context.Context, plan CtyunEbmConfig) (ret
 		NetworkCardList: []*ctebm.EbmCreateInstanceV4plusNetworkCardListRequest{{Master: true, SubnetID: plan.SubnetID.ValueString()}},
 	}
 
-	if plan.EipID.ValueString() != "" {
-		params.PublicIP = plan.EipID.ValueStringPointer()
-		params.ExtIP = business.EbmExtIpUseExist
+	if plan.BandWidth.ValueInt32() > 0 {
+		params.ExtIP = business.EbmAuto
+		params.BandWidth = plan.BandWidth.ValueInt32()
 	} else {
 		params.ExtIP = business.EbmExtIpNotUse
 	}
@@ -810,14 +808,6 @@ func (c *ctyunEbm) checkBeforeCreateInstance(ctx context.Context, plan CtyunEbmC
 	// 安全组必须存在
 	for _, g := range secGroup {
 		err = business.NewSecurityGroupService(c.meta).MustExist(ctx, g, plan.RegionID.ValueString())
-		if err != nil {
-			return err
-		}
-	}
-
-	// 校验eip
-	if plan.EipID.ValueString() != "" {
-		err = business.NewEipService(c.meta).MustExist(ctx, plan.EipID.ValueString(), plan.RegionID.ValueString())
 		if err != nil {
 			return err
 		}
@@ -1063,15 +1053,6 @@ func (c *ctyunEbm) getAndMerge(ctx context.Context, cfg *CtyunEbmConfig) (err er
 	cfg.ExpireTime = types.StringPointerValue(instance.ExpiredTime)
 	eipAddress := utils.SecString(instance.PublicIP)
 	cfg.EipAddress = types.StringValue(eipAddress)
-	if eipAddress != "" {
-		eip, err := business.NewEipService(c.meta).GetEipByAddress(ctx, eipAddress, cfg.RegionID.ValueString())
-		if err != nil {
-			return err
-		}
-		cfg.EipID = utils.SecStringValue(eip.ID)
-	} else {
-		cfg.EipID = types.StringValue("")
-	}
 
 	for _, card := range instance.Interfaces {
 		master := utils.SecBoolValue(card.Master)

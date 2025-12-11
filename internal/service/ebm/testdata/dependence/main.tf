@@ -81,19 +81,12 @@ resource "ctyun_ebs" "ebs_test" {
   cycle_type = "on_demand"
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-ebm"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
-
 resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
+  bandwidth = 2
   cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
