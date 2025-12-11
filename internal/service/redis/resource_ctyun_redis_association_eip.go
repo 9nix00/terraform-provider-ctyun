@@ -192,7 +192,6 @@ func (c *ctyunRedisAssociationEip) Configure(_ context.Context, request resource
 	c.eipService = business.NewEipService(meta)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[eip_address],[regionID]
 func (c *ctyunRedisAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

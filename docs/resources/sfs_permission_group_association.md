@@ -64,7 +64,7 @@ resource "ctyun_sfs" "sfs_test" {
 
 resource "ctyun_sfs_permission_group_association" "sfs_permission_group_association_test" {
   permission_group_id = ctyun_sfs_permission_group.sfs_permission_group_test.id
-  sfs_uid               = ctyun_sfs.sfs_test.id
+  sfs_id               = ctyun_sfs.sfs_test.id
   vpc_id                = ctyun_vpc.vpc_test1.id
 }
 ```
@@ -75,7 +75,7 @@ resource "ctyun_sfs_permission_group_association" "sfs_permission_group_associat
 ### Required
 
 - `permission_group_id` (String) 权限组ID，支持更新
-- `sfs_uid` (String) 弹性文件系统唯一ID
+- `sfs_id` (String) 弹性文件系统唯一ID
 - `vpc_id` (String) vpcID
 
 ### Optional
@@ -85,8 +85,8 @@ resource "ctyun_sfs_permission_group_association" "sfs_permission_group_associat
 ### Read-Only
 
 - `id` (String) ID
-- `permission_group_description` (String) 权限组描述
 - `is_default` (Boolean) 是否为默认权限组
+- `permission_group_description` (String) 权限组描述
 - `permission_group_name` (String) 权限组名称
 - `vpc_cidr` (String) vpc cidr
 - `vpc_name` (String) vpc名称

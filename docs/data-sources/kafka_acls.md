@@ -50,7 +50,7 @@ data "ctyun_kafka_acls" "tbidgqvfbs" {
 
 Read-Only:
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (Number) 策略ID
 - `name` (String) 策略名称
 - `strategy_id` (String) 策略唯一ID

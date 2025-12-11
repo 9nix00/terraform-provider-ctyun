@@ -27,4 +27,4 @@
 - `id` (String) 跨域连接ID
 - `peer_type` (Number) 互通类型，1：境内，2: 跨境（中国大陆-亚太），3: 境外（亚太），4: 定制
 - `src_region_id` (String) 本端资源池ID
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式

@@ -61,7 +61,7 @@ func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaR
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
-				Description: "资源唯一标识，格式为 instance_id:ip_whitelist_name",
+				Description: "资源唯一标识，格式为 instance_id,ip_whitelist_name",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -149,12 +149,11 @@ func (c *CtyunMongodbWhiteList) Create(ctx context.Context, req resource.CreateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	if resp.Diagnostics.HasError() {
+	// 创建前检查
+	err = c.checkBefore(ctx, plan)
+	if err != nil {
 		return
 	}
-	// 创建前检查
-
 	err = c.create(ctx, &plan)
 	if err != nil {
 		return
@@ -178,10 +177,6 @@ func (c *CtyunMongodbWhiteList) Read(ctx context.Context, req resource.ReadReque
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err = c.checkBeforeUpdate(ctx, &state)
-	if err != nil {
-		return
-	}
 	err = c.getAndMerge(ctx, &state)
 	if err != nil {
 		return
@@ -201,7 +196,7 @@ func (c *CtyunMongodbWhiteList) Update(ctx context.Context, req resource.UpdateR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err = c.checkBeforeUpdate(ctx, &plan)
+	err = c.checkBefore(ctx, plan)
 	if err != nil {
 		return
 	}
@@ -224,7 +219,7 @@ func (c *CtyunMongodbWhiteList) Delete(ctx context.Context, req resource.DeleteR
 	if resp.Diagnostics.HasError() {
 		return
 	}
-	err = c.checkBeforeUpdate(ctx, &state)
+	err = c.checkBefore(ctx, state)
 	if err != nil {
 		return
 	}
@@ -258,14 +253,13 @@ func (c *CtyunMongodbWhiteList) ImportState(ctx context.Context, req resource.Im
 	resp.Diagnostics.Append(resp.State.Set(ctx, cfg)...)
 }
 
-func (c *CtyunMongodbWhiteList) checkBeforeUpdate(ctx context.Context, state *CtyunMongodbWhiteListConfig, loopCount ...int) (err error) {
+func (c *CtyunMongodbWhiteList) checkBefore(ctx context.Context, state CtyunMongodbWhiteListConfig, loopCount ...int) (err error) {
 
 	count := 60
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
-	syncCount := 3
-	retryer, err := business.NewRetryer(time.Second*30, count)
+	retryer, err := business.NewRetryer(time.Second*10, count)
 	if err != nil {
 		return
 	}
@@ -281,7 +275,7 @@ func (c *CtyunMongodbWhiteList) checkBeforeUpdate(ctx context.Context, state *Ct
 		func(currentTime int) bool {
 
 			detailParams := &mongodb.MongodbQueryDetailRequest{
-				ProdInstId: state.ID.ValueString(),
+				ProdInstId: state.InstanceID.ValueString(),
 			}
 			detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
 				RegionID: state.RegionID.ValueString(),
@@ -302,10 +296,6 @@ func (c *CtyunMongodbWhiteList) checkBeforeUpdate(ctx context.Context, state *Ct
 			}
 
 			if detailResp.ReturnObj.ProdRunningStatus == business.MongodbRunningStatusStarted {
-				if syncCount > 0 {
-					syncCount--
-					return true
-				}
 				return false
 			}
 			return true
@@ -355,7 +345,7 @@ func (c *CtyunMongodbWhiteList) create(ctx context.Context, plan *CtyunMongodbWh
 	} else if resp.StatusCode != common.NormalStatusCode {
 		return fmt.Errorf("API return error. Message: %s", *resp.Message)
 	}
-	plan.ID = types.StringValue(fmt.Sprintf("%s:%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.InstanceID.ValueString(), plan.GroupName.ValueString()))
 
 	return
 }

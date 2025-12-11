@@ -74,13 +74,13 @@ resource "ctyun_elb_loadbalancer" "elb_test" {
 ### Read-Only
 
 - `admin_status` (String) 管理状态: DOWN / ACTIVE
-- `created_time` (String) 创建时间，为UTC格式
+- `create_time` (String) 创建时间，为UTC格式
 - `eip_info` (Attributes List) 弹性公网IP信息 (see [below for nested schema](#nestedatt--eip_info))
 - `id` (String) 负载均衡Id
 - `ipv6_address` (String) 负载均衡实例的IPv6地址
 - `port_id` (String) 负载均衡实例默认创建port ID
 - `status` (String) 负载均衡状态: DOWN / ACTIVE
-- `updated_time` (String) 更新时间，为UTC格式
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--eip_info"></a>
 ### Nested Schema for `eip_info`

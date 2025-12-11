@@ -239,13 +239,12 @@ func (c *ctyunVpceServiceReverseRule) Configure(_ context.Context, request resou
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[endpointServiceID],[regionID]
 func (c *ctyunVpceServiceReverseRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[endpointServiceID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[endpointServiceID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

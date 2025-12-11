@@ -184,9 +184,9 @@ resource "ctyun_postgresql_instance" "test" {
 - `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_postgresql_specs查询支持的规格，支持更新。
 - `name` (String) 实例名称（长度在 4 到 64个字符，必须以字母开头，不区分大小写，可以包含字母、数字、中划线或下划线，不能包含其他特殊字符）。支持更新，但不支持更新为重名实例名称
 - `prod_id` (String) 产品ID，支持更新。取值范围包括：Single1222-（单实例12.22版本）, MasterSlave1222（一主一备12.22版本）, Single1417（单实例14.17版本）, MasterSlave1417（一主一备14.17版本）, Single1320（单实例13.20版本）, MasterSlave1320（一主一备13.20版本）, ReadOnly1222（只读实例12.22版本）, ReadOnly1320（只读实例13.20版本）, ReadOnly1417（只读实例14.17版本）, Single1512（单实例15.12版本）, MasterSlave1512（一主一备15.12版本）, ReadOnly1512（只读实例15.12版本）, Master2Slave1222（一主两备12.22版本）, Master2Slave1417（一主两备14.17版本）, Master2Slave1320（一主两备13.20版本）, Master2Slave1512（一主两备15.12版本）, Single168（单实例16.8版本）, MasterSlave168（一主一备16.8版本）, Master2Slave168（一主两备16.8版本）, ReadOnly168（只读实例16.8版本）。注：扩容过程中，不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(prod_id)扩容同时进行
-- `security_group_id` (String) 安全组Id
+- `security_group_id` (String) 安全组Id，支持多个安全组，用英文逗号分割(,)。支持更新，最少得有一个安全组
 - `storage_space` (Number) 主存储空间(单位:G，范围100-32768)。支持更新，扩容过程中不支持磁盘(storage_space, backup_storage_space)、规格(flavor_name)和实例(pord_id)扩容同时进行
-- `storage_type` (String) 主存储类型: SSD=超高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD
+- `storage_type` (String) 主存储类型: SSD=超高IO, SSD-genric=通用型SSD, FAST-SSD=极速型SSD（极速型SSD云硬盘仅支持挂载至vCPU数量至少为16且为6代以上的计算增强型和内存优化型云主机）
 - `subnet_id` (String) 子网Id
 - `vpc_id` (String) 虚拟私有云Id
 
@@ -208,7 +208,9 @@ resource "ctyun_postgresql_instance" "test" {
 ### Read-Only
 
 - `alive` (Number) 实例是否存活,0:存活，-1:异常
+- `create_time` (String) 创建时间，为UTC格式
 - `disk_rated` (Number) 磁盘使用率
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) postgresql实例id
 - `master_order_id` (String) 订单id
 - `outer_prod_inst_id` (String) 对外的实例ID，对应PaaS平台

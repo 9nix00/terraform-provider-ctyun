@@ -309,13 +309,12 @@ func (c *ctyunKafkaConsumerGroup) Configure(_ context.Context, request resource.
 	c.sgService = business.NewSecurityGroupService(meta)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称][实例ID] [regionID] [消费组名称]
 func (c *ctyunKafkaConsumerGroup) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[groupName],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[groupName],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

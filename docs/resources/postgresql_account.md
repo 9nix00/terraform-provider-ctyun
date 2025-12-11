@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 - `name` (String) 数据库账号名称，,格式限制: 1.名称唯一；2. 以字母开头，以字母或数字结尾；3.由小写字母、数字或下划线组成；4. 长度：2~63个字符
 - `password` (String, Sensitive) 数据库账号密码，.由大写字母、小写字母、特殊字符、数字中三种或者三种以上组成(特殊字符：@!#$%^&*()_-=)
 

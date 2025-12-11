@@ -100,14 +100,12 @@ variable "password" {
 ### Read-Only
 
 - `backup_storage_space` (Number) backup节点磁盘空间，当前不支持指定。默认与存储空间相同
+- `create_time` (String) 创建时间，为UTC格式
 - `eip_id` (String) eip Id
 - `host_ip` (String) 主机ip
 - `id` (String) mongodb实例id
-- `innodb_buffer_pool_size` (String) 缓存池大小
-- `innodb_thread_concurrency` (Number) 线程数
 - `master_order_id` (String) 订单id
 - `prod_running_status` (Number) 实例运行状态: 0->运行正常, 1->重启中, 2-备份操作中, 3->恢复操作中,4->转换ssl,5->异常,6->修改参数组中,7->已冻结,8->已注销,9->施工中,10->施工失败,11->扩容中,12->主备切换中
-- `prod_running_status_desc` (String) 实例运行状态解释字段
 
 <a id="nestedatt--availability_zone_info"></a>
 ### Nested Schema for `availability_zone_info`

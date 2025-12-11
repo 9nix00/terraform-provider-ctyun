@@ -56,7 +56,6 @@ resource "ctyun_ec_packet" "example" {
 - `area_b` (String) 区域B类型，取值如下：china: 中国大陆, APAC:亚太，默认china
 - `client_token` (String) 客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一
 - `pay_voucher_price` (String) 代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）
-- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `resource_id` (String) 云间高速带宽包资源ID，用于升配、续订、退订等操作
 

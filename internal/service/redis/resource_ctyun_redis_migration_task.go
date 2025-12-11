@@ -363,7 +363,6 @@ func (c *ctyunRedisMigrationTask) Configure(_ context.Context, request resource.
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [regionID]/[taskID]
 func (c *ctyunRedisMigrationTask) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

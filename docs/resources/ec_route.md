@@ -25,5 +25,5 @@
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 路由规则id

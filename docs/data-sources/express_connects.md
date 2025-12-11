@@ -48,7 +48,7 @@ Read-Only:
 
 - `cda_count` (Number) 专线数量
 - `cgw_count` (Number) 云网关数量
-- `create_date` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 描述信息
 - `eds_count` (Number) 云桌面网络实例数量
 - `email` (String) email

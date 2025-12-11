@@ -45,7 +45,7 @@ resource "ctyun_ecs_backup" "test" {
 ### Read-Only
 
 - `backup_type` (String) 备份类型
-- `created_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `disk_total_size` (Number) 云盘总容量大小，单位为GB
 - `id` (String) 云主机备份ID
 - `instance_backup_status` (String) 备份状态，取值范围：CREATING: 备份创建中, ACTIVE: 可用， RESTORING: 备份恢复中，DELETING: 删除中，EXPIRED：到期，ERROR：错误

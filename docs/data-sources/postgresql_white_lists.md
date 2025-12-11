@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) PostgreSQL实例ID
+- `instance_id` (String) PostgreSQL实例ID
 
 ### Optional
 

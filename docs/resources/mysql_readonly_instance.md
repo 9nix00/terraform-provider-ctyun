@@ -12,7 +12,7 @@
 
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
 - `flavor_name` (String) 规格名称，形如c7.2xlarge.4，可从data.ctyun_mysql_specs查询支持的规格，支持更新。注：只读规格远小于主实例规格时，可能导致创建只读实例失败、复制延迟等风险。
-- `inst_id` (String) mysql数据库实例ID，为该实例管理只读实例
+- `instance_id` (String) mysql数据库实例ID，为该实例管理只读实例
 - `name` (String) 实例名称（实例名称 (长度4到100，必须以字母或中文开头，只能包含字母(不区分大小写)、中文、数字、-或_)）
 - `storage_space` (Number) 存储空间(单位:G，范围100,32768)，支持更新
 - `storage_type` (String) 存储类型: SSD=超高IO、SATA=普通IO、SAS=高IO、SSD-genric=通用型SSD、FAST-SSD=极速型SSD

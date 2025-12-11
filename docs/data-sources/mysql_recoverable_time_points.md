@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) mysql 实例id
+- `instance_id` (String) mysql 实例id
 
 ### Optional
 
@@ -26,5 +26,5 @@
 
 Read-Only:
 
-- `end_timestamp` (String) 结束的时间戳
-- `start_timestamp` (String) 开始的时间戳
+- `end_time` (String) 结束时间
+- `start_time` (String) 开始时间

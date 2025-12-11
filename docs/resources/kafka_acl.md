@@ -22,7 +22,7 @@ provider "ctyun" {
 resource "ctyun_kafka_acl" "tbidgqvfbs" {
   name = "test_kafka_acl"
   prod_inst_id = "4bd607df61d348b1949db223614315c1"
-  use_new_topic = "2"
+  use_new_topic = false
   rules = [{
            permission:"ALLOW",
            user_name:"test_user"
@@ -46,7 +46,7 @@ resource "ctyun_kafka_acl" "tbidgqvfbs" {
 ### Optional
 
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
-- `use_new_topic` (String) 是否应用到新增主题，1：是，2：否，默认值：2 支持更新
+- `use_new_topic` (Boolean) 是否应用到新增主题，默认不应用，支持更新
 
 ### Read-Only
 
@@ -60,7 +60,7 @@ Required:
 
 - `operation` (String) 操作，READ:消费，WRITE:生产 支持更新
 - `permission` (String) 权限，ALLOW:允许，DENY:拒绝，默认：ALLOW 支持更新
-- `user_name` (String) 用户名，必须是已经集群中创建了的用户 支持更新
+- `user_name` (String) 用户名，必须是已经集群中创建了的用户，支持更新
 
 Optional:
 

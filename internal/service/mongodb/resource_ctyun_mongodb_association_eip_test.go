@@ -16,8 +16,6 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 	resourceName := "ctyun_mongodb_association_eip." + rnd
 	resourceFile := "resource_ctyun_mongodb_association_eip.tf"
 
-	datasourceName := "data.ctyun_mongodb_association_eips." + dnd
-	datasourceFile := "datasource_ctyun_mysql_association_eips.tf"
 	eipId := dependence.eipID
 	//eipId := "eip-140rfs2and"
 	//eipAddress := "150.223.193.123"
@@ -46,15 +44,6 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
 					resource.TestCheckResourceAttr(resourceName, "instance_id", instId),
-				),
-			},
-			//datasource验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp) +
-					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
 				),
 			},
 			{

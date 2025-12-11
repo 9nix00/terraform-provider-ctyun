@@ -219,13 +219,12 @@ func (c *ctyunRedisBackup) Configure(_ context.Context, request resource.Configu
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [实例ID],[regionID],[名称]
 func (c *ctyunRedisBackup) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[restoreName],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceId],[restoreName],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

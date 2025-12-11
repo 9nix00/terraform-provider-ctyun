@@ -47,7 +47,7 @@ output "ctyun_private_nats_value" {
 Read-Only:
 
 - `az_id` (String) 可用区ID
-- `create_date` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 私有nat网关描述
 - `id` (String) 私有nat 网关 id
 - `name` (String) 私有nat 网关名字

@@ -185,7 +185,6 @@ func (c *ctyunEnterpriseProject) Delete(ctx context.Context, request resource.De
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [enterpriseProjectId]
 func (c *ctyunEnterpriseProject) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

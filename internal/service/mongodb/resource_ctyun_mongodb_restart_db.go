@@ -155,7 +155,6 @@ func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, state *Ct
 	if len(loopCount) > 0 {
 		count = loopCount[0]
 	}
-	syncCount := 3
 	retryer, err := business.NewRetryer(time.Second*30, count)
 	if err != nil {
 		return
@@ -193,10 +192,6 @@ func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, state *Ct
 			}
 
 			if detailResp.ReturnObj.ProdRunningStatus == business.MongodbRunningStatusStarted {
-				if syncCount > 0 {
-					syncCount--
-					return true
-				}
 				return false
 			}
 			return true

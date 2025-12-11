@@ -46,7 +46,7 @@ resource "ctyun_sfs_permission_rule" "sfs_permission_rule_test" {
 ### Required
 
 - `auth_addr` (String) 授权地址。支持IPv4和IPv6两种网络类型，可填写单个IP或者单个网段。同一权限组内，授权地址不能重复格式。ipv4格式为： 192.168.1.0/24，ipv6格式为：0000:0000:0000:0000:0000:0000:0000:0000/0。支持更新
-- `permission_group_id` (String) 权限组FUID标识
+- `permission_group_id` (String) 权限组ID
 - `priority` (Number) 规则优先级(数值越小优先级越高),有效范围为1-400。当同一个权限组内单个 IP 与网段中包含的 IP 的权限有冲突时，会生效优先级高的规则。注：优先级不可重复，支持更新
 - `rw_permission` (String) 读写权限，可选值: 'rw' (读写), 'ro' (只读)，支持更新
 
@@ -57,4 +57,4 @@ resource "ctyun_sfs_permission_rule" "sfs_permission_rule_test" {
 ### Read-Only
 
 - `id` (String) 权限组规则唯一标识
-- `update_time` (String) 更新时间。UTC时间
+- `update_time` (String) 更新时间，为UTC格式

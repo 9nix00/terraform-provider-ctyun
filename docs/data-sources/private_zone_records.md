@@ -64,13 +64,13 @@ data "ctyun_private_zone_records" "records_example" {
 
 Read-Only:
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) record描述
 - `id` (String) record ID
 - `name` (String) DNS record名称
 - `ttl` (Number) TTL缓存时间
 - `type` (String) record 类型（A、AAAA、CNAME、MX、TXT等）
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 - `value` (List of String) record 值列表
 - `zone_id` (String) 内网DNS ID
 - `zone_name` (String) 内网DNS名称

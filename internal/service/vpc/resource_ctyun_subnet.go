@@ -301,13 +301,12 @@ func (c *ctyunSubnet) Delete(ctx context.Context, request resource.DeleteRequest
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [subnetId],[vpcId],[regionId]
 func (c *ctyunSubnet) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [subnetId],[vpcId],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [subnetId],[vpcId],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

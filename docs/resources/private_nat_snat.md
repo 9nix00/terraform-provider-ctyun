@@ -80,7 +80,7 @@ resource "ctyun_private_nat_snat" "private_nat_snat"{
 
 - `addresses` (Set of String) 中转IP地址，必须在中转网段指定的网络范围内 支持更新
 - `nat_gateway_id` (String) NAT网关Id
-- `source_subnet_id` (String) 子网ID，需要和NAT网关同属一个VPC 支持更新
+- `source_subnet_id` (String) 子网ID，需要和NAT网关同属一个VPC，支持更新
 
 ### Optional
 

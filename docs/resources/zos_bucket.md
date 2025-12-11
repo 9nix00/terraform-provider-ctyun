@@ -53,5 +53,6 @@ resource "ctyun_zos_bucket" "foo" {
 ### Read-Only
 
 - `cmk_uuid` (String) 密钥管理服务中创建的密钥ID，当is_encrypted为true时，会自动创建密钥
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) ID
 - `name` (String) 名称
