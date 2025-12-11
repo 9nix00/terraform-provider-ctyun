@@ -122,7 +122,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id"},
+				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id", "update_time"},
 			},
 			// importState 2
 			{
@@ -136,7 +136,7 @@ func TestAccCtyunHpfs1(t *testing.T) {
 					return fmt.Sprintf("%s,%s,%s", id, projectID, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id"},
+				ImportStateVerifyIgnore: []string{"az_name", "cycle_type", "master_order_id", "update_time"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, sfsProtocol, updatedSfsName, updatedSfsSize, cluster, baseline),
