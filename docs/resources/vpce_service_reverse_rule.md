@@ -49,4 +49,6 @@ resource "ctyun_vpce_service_reverse_rule" "test" {
 
 ### Read-Only
 
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 规则ID
+- `update_time` (String) 更新时间，为UTC格式

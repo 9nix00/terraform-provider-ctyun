@@ -10,34 +10,32 @@
 
 ### Required
 
-- `inst_id` (String) PostgreSQL实例ID
+- `instance_id` (String) PostgreSQL实例ID
 
 ### Optional
 
-- `backup_type` (String) 备份类型过滤条件（auto：自动备份，manual：手动备份，recovery：恢复备份）
-- `end_time` (String) 结束时间过滤条件（格式：2006-01-02 15:04:05）
 - `name` (String) 备份名称过滤条件
 - `page_no` (Number) 分页页码，默认为1
 - `page_size` (Number) 每页记录数，默认为10
 - `project_id` (String) 项目ID
 - `region_id` (String) 资源池ID，默认使用provider配置
-- `start_time` (String) 开始时间过滤条件（格式：2006-01-02 15:04:05）
+- `type` (String) 备份类型过滤条件（auto：自动备份，manual：手动备份，recovery：恢复备份）
 
 ### Read-Only
 
-- `postgresql_backups` (Attributes List) PostgreSQL备份列表 (see [below for nested schema](#nestedatt--postgresql_backups))
+- `backups` (Attributes List) PostgreSQL备份列表 (see [below for nested schema](#nestedatt--backups))
 
-<a id="nestedatt--postgresql_backups"></a>
-### Nested Schema for `postgresql_backups`
+<a id="nestedatt--backups"></a>
+### Nested Schema for `backups`
 
 Read-Only:
 
-- `backup_compress_size` (String) 备份压缩大小（格式化）
-- `backup_name` (String) 备份名称
-- `backup_result` (String) 备份结果（success：成功，failed：失败，ing：运行中）
-- `backup_type` (String) 备份类型（auto：自动备份，manual：手动备份，recovery：恢复备份）
+- `compress_size` (String) 备份压缩大小（格式化）
 - `data_len` (String) 数据长度（格式化）
 - `end_time` (String) 备份结束时间
 - `id` (Number) 备份ID
-- `prod_inst_id` (String) 实例ID
+- `instance_id` (String) 实例ID
+- `name` (String) 备份名称
+- `result` (String) 备份结果（success：成功，failed：失败，ing：运行中）
 - `start_time` (String) 备份开始时间
+- `type` (String) 备份类型（auto：自动备份，manual：手动备份，recovery：恢复备份）

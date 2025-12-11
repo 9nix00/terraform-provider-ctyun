@@ -100,9 +100,9 @@ resource "ctyun_elb_listener" "elb_listener_test" {
 
 ### Read-Only
 
-- `created_time` (String) 创建时间，为UTC格式
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 监听器ID
-- `updated_time` (String) 更新时间，为UTC格式
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--target_groups"></a>
 ### Nested Schema for `target_groups`

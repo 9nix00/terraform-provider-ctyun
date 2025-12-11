@@ -226,13 +226,12 @@ func (c *ctyunVpc) Delete(ctx context.Context, request resource.DeleteRequest, r
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [vpcId],[regionId],[projectId]
 func (c *ctyunVpc) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID],[projectID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[region_id],[projectID]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

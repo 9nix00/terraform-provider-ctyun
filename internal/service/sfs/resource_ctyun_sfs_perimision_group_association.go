@@ -51,7 +51,6 @@ func NewCtyunSfsPermissionGroupAssociation() resource.Resource {
 	return &ctyunSfsPermissionGroupAssociation{}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId]
 func (c *ctyunSfsPermissionGroupAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

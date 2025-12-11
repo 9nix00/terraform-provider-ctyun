@@ -274,13 +274,12 @@ func (c *ctyunEbmInterface) Configure(_ context.Context, request resource.Config
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instance_id],[interface_id],[regionID],[azName]
 func (c *ctyunEbmInterface) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[projectId],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[interface_id],[az_name],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
@@ -317,6 +316,10 @@ func (c *ctyunEbmInterface) ImportState(ctx context.Context, request resource.Im
 	}
 	if regionID == "" {
 		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if azName == "" {
+		err = fmt.Errorf("azName不能为空")
 		return
 	}
 	config.InstanceID = types.StringValue(instanceID)

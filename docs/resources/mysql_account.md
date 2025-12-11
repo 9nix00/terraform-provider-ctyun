@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 - `name` (String) 数据库账号名称
 - `password` (String, Sensitive) 数据库账号密码
 

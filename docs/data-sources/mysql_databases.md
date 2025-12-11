@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 
 ### Optional
 
@@ -19,18 +19,18 @@
 
 ### Read-Only
 
-- `mysql_databases` (Attributes List) MySQL数据库列表 (see [below for nested schema](#nestedatt--mysql_databases))
+- `databases` (Attributes List) MySQL数据库列表 (see [below for nested schema](#nestedatt--databases))
 
-<a id="nestedatt--mysql_databases"></a>
-### Nested Schema for `mysql_databases`
+<a id="nestedatt--databases"></a>
+### Nested Schema for `databases`
 
 Read-Only:
 
-- `db_name` (String) 数据库名称
-- `user_vo_list` (Attributes List) 数据库用户权限列表 (see [below for nested schema](#nestedatt--mysql_databases--user_vo_list))
+- `name` (String) 数据库名称
+- `user_vo_list` (Attributes List) 数据库用户权限列表 (see [below for nested schema](#nestedatt--databases--user_vo_list))
 
-<a id="nestedatt--mysql_databases--user_vo_list"></a>
-### Nested Schema for `mysql_databases.user_vo_list`
+<a id="nestedatt--databases--user_vo_list"></a>
+### Nested Schema for `databases.user_vo_list`
 
 Read-Only:
 

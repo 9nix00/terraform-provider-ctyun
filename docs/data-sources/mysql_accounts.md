@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 
 ### Optional
 
@@ -20,18 +20,18 @@
 
 ### Read-Only
 
-- `accounts` (Attributes List) MySQL账户权限列表 (see [below for nested schema](#nestedatt--mysql_accounts))
+- `accounts` (Attributes List) MySQL账户权限列表 (see [below for nested schema](#nestedatt--accounts))
 
-<a id="nestedatt--mysql_accounts"></a>
-### Nested Schema for `mysql_accounts`
+<a id="nestedatt--accounts"></a>
+### Nested Schema for `accounts`
 
 Read-Only:
 
-- `account_name` (String) 数据库账号名称
-- `schema_privilege_list` (Attributes List) 数据库权限列表 (see [below for nested schema](#nestedatt--mysql_accounts--schema_privilege_list))
+- `name` (String) 数据库账号名称
+- `schema_privilege_list` (Attributes List) 数据库权限列表 (see [below for nested schema](#nestedatt--accounts--schema_privilege_list))
 
-<a id="nestedatt--mysql_accounts--schema_privilege_list"></a>
-### Nested Schema for `mysql_accounts.schema_privilege_list`
+<a id="nestedatt--accounts--schema_privilege_list"></a>
+### Nested Schema for `accounts.schema_privilege_list`
 
 Read-Only:
 

@@ -52,7 +52,7 @@ Read-Only:
 
 - `cgw_id` (String) 云网关ID
 - `cgw_name` (String) 云网关名称
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `ec_id` (String) 云间高速实例ID
 - `exclusive_id` (String) 专属云资源池ID
 - `id` (String) VPC实例ID

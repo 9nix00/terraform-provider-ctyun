@@ -11,7 +11,7 @@
 ### Required
 
 - `charset_name` (String) 字符集
-- `inst_id` (String) mysql实例id
+- `instance_id` (String) mysql实例id
 - `name` (String) 数据库名称,mysql库名限制建议:以小写字母开头，且以小写字母或数字结尾，可包含数字或下划线，不含其他特殊字符
 
 ### Optional

@@ -106,9 +106,9 @@ resource "ctyun_elb_target" "elb_target_test" {
 
 ### Read-Only
 
-- `created_time` (String) 创建时间，为UTC格式
+- `create_time` (String) 创建时间，为UTC格式
 - `health_check_status` (String) IPv4的健康检查状态: offline / online / unknown
 - `health_check_status_ipv6` (String) IPv6的健康检查状态: offline / online / unknown
 - `id` (String) 后端主机服务(elb_target)ID
 - `status` (String) 状态: DOWN / ACTIVE
-- `updated_time` (String) 更新时间，为UTC格式
+- `update_time` (String) 更新时间，为UTC格式

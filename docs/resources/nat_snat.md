@@ -65,7 +65,7 @@ resource "ctyun_nat_snat" "snat_test"{
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `eips` (Attributes List) 绑定的 eip 信息 (see [below for nested schema](#nestedatt--eips))
 - `id` (String) ID，同snat_id
 - `snat_id` (String) Snat规则的id

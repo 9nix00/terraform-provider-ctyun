@@ -35,7 +35,6 @@ type CtyunMongodbBackupsConfig struct {
 	RegionID   types.String              `tfsdk:"region_id"`
 	ProjectID  types.String              `tfsdk:"project_id"`
 	InstanceID types.String              `tfsdk:"instance_id"`
-	BackupID   types.String              `tfsdk:"id"`
 	BackupType types.String              `tfsdk:"type"`
 	PageNo     types.Int32               `tfsdk:"page_no"`
 	PageSize   types.Int32               `tfsdk:"page_size"`

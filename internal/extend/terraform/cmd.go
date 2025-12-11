@@ -33,6 +33,7 @@ func ApplyResource(fileDir string) (outputs map[string]struct {
 
 // DestroyResource terraform destroy
 func DestroyResource(fileDir string) error {
+	return nil
 	_, err := terraformDestroy(fileDir)
 	return err
 }

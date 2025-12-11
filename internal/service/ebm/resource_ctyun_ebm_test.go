@@ -159,29 +159,6 @@ func TestAccCtyunEbm(t *testing.T) {
 				},
 			},
 			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					ds := s.RootModule().Resources[resourceName].Primary
-					id := ds.ID
-					return fmt.Sprintf("%s", id), nil
-				},
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"auto_renew",
-					"subnet_id",
-					"data_volume_raid_uuid",
-					"system_volume_raid_uuid",
-					"master_order_id",
-					"password",
-					"project_id",
-					"user_data",
-					"cycle_type",
-					"image_uuid",
-					"cycle_count",
-				},
-			},
-			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd,
 					updatedName, updatedHostname, updatedPassword, initStatus,

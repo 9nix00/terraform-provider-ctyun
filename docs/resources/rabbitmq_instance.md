@@ -89,7 +89,7 @@ resource "ctyun_rabbitmq_instance" "test" {
 
 ### Optional
 
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36，从按需变为包周期时支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
@@ -98,7 +98,7 @@ resource "ctyun_rabbitmq_instance" "test" {
 - `actual_cycle_type` (String) 服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。
 - `create_time` (String) 创建时间，UTC格式
 - `endpoint` (String) 接入点
-- `expire_time` (String) 过期时间，UTC格式，按需时为空
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `name` (String) 名称

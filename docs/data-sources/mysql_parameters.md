@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) mysql实例id
+- `instance_id` (String) mysql实例id
 
 ### Optional
 

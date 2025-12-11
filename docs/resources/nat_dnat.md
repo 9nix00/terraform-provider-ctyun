@@ -82,7 +82,7 @@ resource "ctyun_nat_dnat" "dnat_test"{
 
 ### Read-Only
 
-- `created_at` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `dnat_id` (String) Dnat规则的id
 - `external_ip` (String) 弹性公网IP地址
 - `id` (String) ID，同dnat_id

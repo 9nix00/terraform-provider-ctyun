@@ -55,7 +55,7 @@ resource "ctyun_kafka_user" "tbidgqvfbs" {
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (Number) 资源唯一标识符
 
 <a id="nestedatt--permission_info"></a>

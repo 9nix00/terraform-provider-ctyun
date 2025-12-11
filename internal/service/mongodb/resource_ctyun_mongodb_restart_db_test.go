@@ -33,7 +33,6 @@ func TestAccMongodbRestartDb_basic(t *testing.T) {
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
-
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, inst_id),
 				Destroy: true,

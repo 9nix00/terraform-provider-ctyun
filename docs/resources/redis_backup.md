@@ -40,7 +40,7 @@ resource "ctyun_redis_backup" "test" {
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `download_urls` (Map of String) 备份文件下载链接，key为Redis节点名，value为备份文件下载URL
 - `id` (String) 资源唯一标识符
 - `name` (String) 备份名，格式为YYYYMMDDHHMMSS

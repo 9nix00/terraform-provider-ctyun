@@ -26,7 +26,7 @@
 
 Read-Only:
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 参数模板描述
 - `engine` (String) mysql实例版本
 - `id` (Number) 参数模板id

@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) PostgreSQL实例ID
+- `instance_id` (String) PostgreSQL实例ID
 
 ### Optional
 
@@ -22,14 +22,14 @@
 
 ### Read-Only
 
-- `postgresql_accounts` (Attributes List) PostgreSQL账户列表 (see [below for nested schema](#nestedatt--postgresql_accounts))
+- `accounts` (Attributes List) PostgreSQL账户列表 (see [below for nested schema](#nestedatt--accounts))
 
-<a id="nestedatt--postgresql_accounts"></a>
-### Nested Schema for `postgresql_accounts`
+<a id="nestedatt--accounts"></a>
+### Nested Schema for `accounts`
 
 Read-Only:
 
-- `account_name` (String) 账户名称
+- `name` (String) 账户名称
 - `rol_by_pass_rls` (Boolean) 用户是否绕过每个行级安全策略
 - `rol_can_login` (Boolean) 用户是否可以登录数据库
 - `rol_conn_limit` (Number) 用户连接数限制（-1表示无限制）

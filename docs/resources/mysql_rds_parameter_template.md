@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) mysql数据库实例ID，为该实例管理只读实例
+- `instance_id` (String) mysql数据库实例ID，为该实例管理只读实例
 
 ### Optional
 

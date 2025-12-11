@@ -93,7 +93,7 @@ resource "ctyun_postgresql_association_eip" "pgsql_association_eip_test" {
 ### Required
 
 - `eip_id` (String) 弹性id
-- `inst_id` (String) 实例id
+- `instance_id` (String) 实例id
 
 ### Optional
 

@@ -11,7 +11,7 @@
 ### Required
 
 - `allow_earliest_time` (String) 允许最早开始备份时间 默认：00:00
-- `inst_id` (String) mysql实例id
+- `instance_id` (String) mysql实例id
 - `storage_day` (Number) 备份数据保留天数，最少保留1天。支持更新。
 - `trigger_days_of_week` (Set of Number) 全备触发星期，单个元素取值范围为1~7，1代表星期一，7代表星期日，以此类推。支持更新
 

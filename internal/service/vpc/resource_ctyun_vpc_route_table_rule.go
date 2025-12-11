@@ -250,13 +250,12 @@ func (c *ctyunVpcRouteTableRule) Configure(_ context.Context, request resource.C
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [ruleID],[routeTableID],[regionID]
 func (c *ctyunVpcRouteTableRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ruleID],[routeTableID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ruleID],[routeTableID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

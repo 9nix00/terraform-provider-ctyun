@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) PostgreSQL实例ID
+- `instance_id` (String) PostgreSQL实例ID
 
 ### Optional
 
@@ -20,17 +20,17 @@
 
 ### Read-Only
 
-- `postgresql_databases` (Attributes List) PostgreSQL数据库列表 (see [below for nested schema](#nestedatt--postgresql_databases))
+- `databases` (Attributes List) PostgreSQL数据库列表 (see [below for nested schema](#nestedatt--databases))
 
-<a id="nestedatt--postgresql_databases"></a>
-### Nested Schema for `postgresql_databases`
+<a id="nestedatt--databases"></a>
+### Nested Schema for `databases`
 
 Read-Only:
 
 - `charset_collate` (String) 排序规则
 - `charset_name` (String) 字符集名称
 - `charset_type` (String) 字符集类型
-- `db_name` (String) 数据库名称
 - `description` (String) 数据库描述
-- `inst_id` (String) 实例ID
+- `instance_id` (String) 实例ID
+- `name` (String) 数据库名称
 - `owner` (String) 数据库所有者

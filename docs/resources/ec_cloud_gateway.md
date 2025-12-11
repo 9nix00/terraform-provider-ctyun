@@ -45,13 +45,12 @@ resource "ctyun_ec_cloud_gateway" "example" {
 ### Optional
 
 - `description` (String) 云网关描述
-- `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region` (Number) 地域信息，取值如下: 1：中国大陆（默认） 2:亚太
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `region_name` (String) 资源池名称
 
 ### Read-Only
 
-- `create_date` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 云网关实例ID
 - `rtb_id` (String) 云网关实例ID

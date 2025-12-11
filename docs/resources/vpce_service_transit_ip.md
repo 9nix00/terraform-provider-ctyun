@@ -67,4 +67,6 @@ resource "ctyun_vpce_service_transit_ip" "test" {
 
 ### Read-Only
 
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) ID，使用中转IP地址，和transit_ip相等
+- `update_time` (String) 更新时间，为UTC格式

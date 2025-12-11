@@ -528,13 +528,12 @@ func (c *ctyunKafkaInstance) Configure(_ context.Context, request resource.Confi
 	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
 func (c *ctyunKafkaInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

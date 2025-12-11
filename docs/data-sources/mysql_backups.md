@@ -10,33 +10,31 @@
 
 ### Optional
 
-- `backup_id` (Number) 备份集ID
-- `end_time` (String) 查询结束时间（格式：2006-01-02 15:04:05）
-- `inst_id` (String) MySQL实例ID
-- `inst_name` (String) MySQL实例名称
+- `id` (Number) 备份集ID
+- `instance_id` (String) MySQL实例ID
+- `instance_name` (String) MySQL实例名称
 - `name` (String) 备份名称
 - `page_no` (Number) 页码，默认1
 - `page_size` (Number) 每页记录数，默认10
 - `project_id` (String) 项目ID
 - `region_id` (String) 资源池ID，默认使用provider配置
-- `start_time` (String) 查询开始时间（格式：2006-01-02 15:04:05）
 
 ### Read-Only
 
-- `backup_list` (Attributes List) 备份列表 (see [below for nested schema](#nestedatt--backup_list))
+- `backups` (Attributes List) 备份列表 (see [below for nested schema](#nestedatt--backups))
 
-<a id="nestedatt--backup_list"></a>
-### Nested Schema for `backup_list`
+<a id="nestedatt--backups"></a>
+### Nested Schema for `backups`
 
 Read-Only:
 
-- `backup_id` (Number) 备份ID
-- `inst_id` (String) 实例ID
-- `inst_name` (String) 实例名称
-- `records` (Attributes List) 备份记录列表 (see [below for nested schema](#nestedatt--backup_list--records))
+- `id` (Number) 备份ID
+- `instance_id` (String) 实例ID
+- `instance_name` (String) 实例名称
+- `records` (Attributes List) 备份记录列表 (see [below for nested schema](#nestedatt--backups--records))
 
-<a id="nestedatt--backup_list--records"></a>
-### Nested Schema for `backup_list.records`
+<a id="nestedatt--backups--records"></a>
+### Nested Schema for `backups.records`
 
 Read-Only:
 

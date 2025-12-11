@@ -11,7 +11,7 @@
 ### Required
 
 - `charset_name` (String) 字符集
-- `inst_id` (String) pgsql实例id
+- `instance_id` (String) pgsql实例id
 - `name` (String) 数据库名称,mysql库名限制建议:长度为2~63个字符，以字母开头，以字母或数字结尾，由小写字母、数字、下划线或中划线组成，数据库名称在实例内必须是唯一的，禁用关键字
 
 ### Optional

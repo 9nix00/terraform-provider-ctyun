@@ -83,6 +83,8 @@ resource "ctyun_vpce" "test" {
 
 ### Read-Only
 
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `status` (Number) endpoint状态, 1 表示已链接，2 表示未链接
+- `update_time` (String) 更新时间，为UTC格式

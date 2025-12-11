@@ -53,7 +53,7 @@ Read-Only:
 
 - `cgw_id` (String) 云网关ID
 - `cidr` (String) 子网信息（CIDR格式）
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 路由描述信息
 - `ec_id` (String) 云间高速实例ID
 - `id` (String) 路由ID

@@ -186,7 +186,6 @@ func (c *ctyunEbsAssociation) Delete(ctx context.Context, request resource.Delet
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [diskId],[ecsId],[regionId]
 func (c *ctyunEbsAssociation) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

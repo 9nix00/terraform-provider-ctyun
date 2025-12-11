@@ -411,7 +411,6 @@ func (c *ctyunRabbitmqInstance) Configure(_ context.Context, request resource.Co
 	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionID]
 func (c *ctyunRabbitmqInstance) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {

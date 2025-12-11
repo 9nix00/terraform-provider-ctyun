@@ -82,7 +82,7 @@ resource "ctyun_mysql_association_eip" "association_eip" {
 ### Required
 
 - `eip_id` (String) 弹性IP的id
-- `inst_id` (String) 实例id
+- `instance_id` (String) 实例id
 
 ### Optional
 

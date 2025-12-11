@@ -64,8 +64,8 @@ resource "ctyun_nat" "nat_cycle_test" {
 
 ### Read-Only
 
-- `creation_time` (String) NAT网关的创建时间
-- `expired_time` (String) NAT网关实例的过期时间
+- `create_time` (String) 创建时间，为UTC格式
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) ID，值与nat_gateway_id相同
 - `master_order_id` (String) 订单id
 - `nat_gateway_id` (String) 网关id

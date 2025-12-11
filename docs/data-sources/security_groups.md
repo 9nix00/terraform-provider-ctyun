@@ -71,7 +71,7 @@ output "ctyun_test" {
 
 Read-Only:
 
-- `creation_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 安全组描述信息。
 - `name` (String) 安全组名称
 - `origin` (String) 表示是否是默认安全组
@@ -87,7 +87,7 @@ Read-Only:
 Read-Only:
 
 - `action` (String) 拒绝策略:允许-accept拒绝-drop
-- `create_time` (String) 创建时间，UTC时间。
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 安全组规则描述信息。
 - `dest_cidr_ip` (String) 远端地址:0.0.0.0/0
 - `direction` (String) 出方向-egress、入方向-ingress

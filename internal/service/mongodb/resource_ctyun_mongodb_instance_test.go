@@ -219,7 +219,7 @@ func TestAccCtyunMongodbInstanceSingleOnDemand(t *testing.T) {
 					storageType, updatedStorageSpace, backupStorageType, updatedAzInfo) +
 					utils.LoadTestCase(datasourceFile, dnd, ""),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrSet(datasourceName, "mongodb_instances.#"),
+					resource.TestCheckResourceAttrSet(datasourceName, "instances.#"),
 				),
 			},
 			{
