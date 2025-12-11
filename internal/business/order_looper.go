@@ -28,6 +28,7 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 		c = loopCount[0]
 	}
 	var cnt int
+	var failed int
 	retryer, _ := NewRetryer(time.Second*10, c)
 	result := retryer.Start(
 		func(currentTime int) bool {
@@ -35,6 +36,12 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 				MasterOrderId: masterOrderId,
 			})
 			if err != nil {
+				// 允许失败一次
+				if failed == 0 {
+					failed++
+					respError = nil
+					return true
+				}
 				respError = err
 				return false
 			}
@@ -78,12 +85,19 @@ func (o *OrderLooper) OrderLoop(ctx context.Context, credential ctyunsdk.Credent
 func (o *OrderLooper) RefundLoop(ctx context.Context, credential ctyunsdk.Credential, masterOrderId string) error {
 	var respError error
 	retryer, _ := NewRetryer(time.Second*5, 60)
+	var failed int
 	result := retryer.Start(
 		func(currentTime int) bool {
 			detail, err := o.api.Do(ctx, credential, &ctecs.EcsOrderQueryUuidRequest{
 				MasterOrderId: masterOrderId,
 			})
 			if err != nil {
+				// 允许失败一次
+				if failed == 0 {
+					failed++
+					respError = nil
+					return true
+				}
 				respError = err
 				return false
 			}
@@ -124,7 +138,7 @@ type LoopOrderResponse struct {
 func (o *OrderLooper) WaitOrderFinish(ctx context.Context, credential ctyunsdk.Credential, masterOrderId string) error {
 	var respError error
 	retryer, _ := NewRetryer(time.Second*10, 360)
-	var faledCnt int
+	var failed int
 	result := retryer.Start(
 		func(currentTime int) bool {
 			detail, err := o.api.Do(ctx, credential, &ctecs.EcsOrderQueryUuidRequest{
@@ -132,8 +146,8 @@ func (o *OrderLooper) WaitOrderFinish(ctx context.Context, credential ctyunsdk.C
 			})
 			if err != nil {
 				// 允许失败一次
-				if faledCnt == 0 {
-					faledCnt++
+				if failed == 0 {
+					failed++
 					respError = nil
 					return true
 				}

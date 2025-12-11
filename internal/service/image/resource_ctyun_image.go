@@ -327,13 +327,12 @@ func (c *ctyunImage) Delete(ctx context.Context, request resource.DeleteRequest,
 	}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [imageId],[projectId],[regionId]
 func (c *ctyunImage) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[regionId]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [imageId],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

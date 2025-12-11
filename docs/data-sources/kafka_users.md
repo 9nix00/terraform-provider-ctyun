@@ -21,7 +21,7 @@ provider "ctyun" {
 
 data "ctyun_kafka_users" "tbidgqvfbs" {
     name = "init-kafka-user"
-    prod_inst_id = "4bd607df61d348b1949db223614315c1"
+    instance_id = "4bd607df61d348b1949db223614315c1"
 }
 ```
 
@@ -49,7 +49,7 @@ data "ctyun_kafka_users" "tbidgqvfbs" {
 
 Read-Only:
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 用户描述
 - `id` (Number) 用户ID
 - `name` (String) 用户名称

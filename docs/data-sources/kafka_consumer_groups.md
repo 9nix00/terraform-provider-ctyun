@@ -35,8 +35,8 @@ data "ctyun_kafka_consumer_groups" "tbidgqvfbs" {
 
 ### Optional
 
-- `page_num` (String) 分页中的页数，默认1，范围1-40000
-- `page_size` (String) 分页中的每页大小，默认10，范围1-40000
+- `page_no` (Number) 分页中的页数，默认1，范围1-40000
+- `page_size` (Number) 分页中的每页大小，默认10，范围1-40000
 - `region_id` (String) 资源池ID
 
 ### Read-Only
@@ -50,7 +50,7 @@ data "ctyun_kafka_consumer_groups" "tbidgqvfbs" {
 Read-Only:
 
 - `coordinator_id` (Number) 协调器编号
-- `ctime` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 消费组描述
 - `id` (Number) 消费组ID
 - `name` (String) 消费组名称

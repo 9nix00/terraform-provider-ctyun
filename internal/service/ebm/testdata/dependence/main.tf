@@ -35,8 +35,8 @@ data "ctyun_zones" "test" {
 }
 
 locals {
-  device_type1 = "physical.s5se.xlarge1"      // az2、有本地盘、弹性、不支持云硬盘
-  device_type2 = "physical.s5.2xlarge1"      // az2、无本地盘、弹性、支持云硬盘
+  device_type1 = "physical.s5.2xlarge4"       // az2、有本地盘、弹性、不支持云硬盘
+  device_type2 = "physical.s5.2xlarge1"       // az2、无本地盘、弹性、支持云硬盘
   az2 = data.ctyun_zones.test.zones[2]
 }
 
@@ -81,19 +81,12 @@ resource "ctyun_ebs" "ebs_test" {
   cycle_type = "on_demand"
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-ebm"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
-
 resource "ctyun_ebm" "ebm_test" {
   az_name   = local.az2
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
+  bandwidth = 2
   cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid

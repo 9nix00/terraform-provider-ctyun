@@ -71,10 +71,10 @@ resource "ctyun_private_nat" "private_nat"{
 - `az_name` (String) 可用区名称
 - `cycle_count` (Number) 订购时长, 当 cycleType = month, 支持订购 1 - 11 个月; 当 cycleType = year, 支持订购 1 - 3 年
 - `description` (String) nat描述 支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:{},./;'[]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新
-- `pay_voucher_price` (String) 代金券金额，支持到小数点后两位 支持更新
+- `pay_voucher_price` (String) 代金券金额，支持到小数点后两位，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id，默认使用provider ctyun总region_id 或者环境变量
-- `spec` (String) 规格(可传值：small, medium, large, xlarge)  支持更新
+- `spec` (String) 规格，(可传值：small, medium, large, xlarge)，支持更新
 - `subnet_id` (String) 需要创建私网NAT网关的Subnet的ID
 - `vpc_id` (String) 需要创建 NAT 网关的 VPC 的 ID
 

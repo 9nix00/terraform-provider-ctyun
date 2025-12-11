@@ -84,11 +84,11 @@ resource "ctyun_elb_rule" "rule_test" {
 
 ### Read-Only
 
-- `created_time` (String) 创建时间，为UTC格式
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 转发规则 ID
 - `load_balancer_id` (String) 负载均衡Id
 - `status` (String) 状态: ACTIVE / DOWN
-- `updated_time` (String) 更新时间，为UTC格式
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--conditions"></a>
 ### Nested Schema for `conditions`

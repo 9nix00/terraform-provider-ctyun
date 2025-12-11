@@ -159,9 +159,9 @@ resource "ctyun_mysql_instance" "mysql_test" {
 - `audit_log_status` (Number) 日志审计开关
 - `eip` (String) 弹性ip
 - `eip_status` (Number) 弹性ip状态 0->unbind，1->bind,2->binding
-- `id` (String) 实例Id，同inst_id
-- `inst_id` (String) 实例Id
+- `id` (String) 实例Id，同instance_id
 - `inst_release_protection_status` (Number) 实例释放保护开关 1:on,0:off
+- `instance_id` (String) 实例Id
 - `master_order_id` (String) 订单id
 - `mysql_port` (String) 数据库端口
 - `new_mysql_version` (String) mysql版本

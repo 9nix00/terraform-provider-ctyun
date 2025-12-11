@@ -76,7 +76,9 @@ resource "ctyun_vpce_service" "test" {
 
 ### Read-Only
 
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) ID
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--rules"></a>
 ### Nested Schema for `rules`

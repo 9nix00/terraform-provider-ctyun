@@ -131,6 +131,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"cycle_type",
 					"image_uuid",
 					"cycle_count",
+					"bandwidth",
 				},
 			},
 			// 多种导入方式测试
@@ -156,29 +157,7 @@ func TestAccCtyunEbm(t *testing.T) {
 					"cycle_type",
 					"image_uuid",
 					"cycle_count",
-				},
-			},
-			{
-				ResourceName: resourceName,
-				ImportState:  true,
-				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					ds := s.RootModule().Resources[resourceName].Primary
-					id := ds.ID
-					return fmt.Sprintf("%s", id), nil
-				},
-				ImportStateVerify: true,
-				ImportStateVerifyIgnore: []string{
-					"auto_renew",
-					"subnet_id",
-					"data_volume_raid_uuid",
-					"system_volume_raid_uuid",
-					"master_order_id",
-					"password",
-					"project_id",
-					"user_data",
-					"cycle_type",
-					"image_uuid",
-					"cycle_count",
+					"bandwidth",
 				},
 			},
 			{

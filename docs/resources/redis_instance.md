@@ -90,7 +90,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 
 ### Required
 
-- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填
+- `cycle_type` (String) 订购周期类型，取值范围：month：按月，on_demand：按需。当此值为month时，cycle_count为必填，支持更新
 - `edition` (String) 实例类型，SeriesInfo中的seriesCode值，可参考<a href="https://www.ctyun.cn/document/10029420/11030280">产品规格说明</a>
 - `engine_version` (String) Redis引擎版本，SeriesInfo中的engineTypeItems(引擎版本可选值)，当version取值为BASIC时，版本号取值：5.0，6.0，7.0，当version取值为PLUS，版本号取值：6.0，7.0，支持更新
 - `instance_name` (String) 实例名称，大小写字母开头。只能包含大小写字母、数字及分隔符(-)。大小写字母或数字结尾。长度4~40个字符。实例名称不可重复。
@@ -107,7 +107,7 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `az_name` (String) 主可用区，如果不填则默认使用provider ctyun中的az_name或环境变量中的CTYUN_AZ_NAME
 - `backup_policy` (Attributes) 实例的备份策略配置 (see [below for nested schema](#nestedatt--backup_policy))
 - `copies_count` (Number) 副本数量，当edition取值为OriginalMultipleReadLvs/StandardDual/DirectCluster/ClusterOriginalProxy时必填（取值范围2-6），当edition取其他值时不填。
-- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36
+- `cycle_count` (Number) 订购时长，该参数在cycle_type为month时才生效，当cycle_type=month，支持传递1、2、3、4、5、6、12、24、36，从按需变为包周期时支持更新
 - `data_disk_type` (String) 磁盘类型，支持SAS和SSD，默认SAS
 - `host_type` (String) 主机类型，默认S，X86取值：S：通用型、C：计算增强型、M：内存型、HS：海光通用型、HC：海光计算增强型，ARM取值：KS：鲲鹏通用型、KC：鲲鹏计算增强型
 - `maintenance_time` (String) 实例维护时间窗口，总时长必须为2小时，默认：00:00-02:00，支持更新
@@ -117,13 +117,15 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 - `secondary_az_name` (String) 备可用区
 - `shard_count` (Number) 分片数量，当edition取值为DirectClusterSingle时: 3~256。当edition取值为DirectCluster时: 3~256。当edition取值为ClusterOriginalProxy时: 3~64。当edition取其他值时不填。
 - `ssl_enabled` (Boolean) ssl加密设置，设置该值会触发重启，只有version为BASIC且engine_version为6.0、7.0且edition为StandardSingle、StandardDual、DirectClusterSingle或DirectCluster时才能设置，支持更新
-- `template_id` (String) 参数模板ID，用于应用参数模板
+- `template_id` (String) 参数模板ID，用于应用参数模板，支持更新
 - `version` (String) 版本类型，SeriesInfo中的version值，支持BASIC和PLUS，默认BASIC
 
 ### Read-Only
 
 - `actual_cycle_type` (String) 服务端当前实际计费类型（可能与 cycle_type 不一致，如包周期未到期时）。
 - `connection_address` (String) 连接地址
+- `create_time` (String) 创建时间，为UTC格式
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) ID
 - `master_order_id` (String) 主订单号
 - `name` (String) 名称
@@ -136,6 +138,6 @@ resource "ctyun_redis_instance" "tbidgqvfbs" {
 
 Required:
 
-- `period` (String) 备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份
-- `retention_day` (Number) 备份保留天数（1-7）
-- `time` (Number) 每日备份执行时间（0-23）
+- `period` (String) 备份周期，用英文逗号分隔，1-7表示周一到周日，例如：2,5表示周二周五进行备份，支持更新
+- `retention_day` (Number) 备份保留天数（1-7），支持更新
+- `time` (Number) 每日备份执行时间（0-23），支持更新

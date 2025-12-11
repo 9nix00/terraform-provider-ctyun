@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 - `name` (String) 备份集名称，不可重复
 
 ### Optional

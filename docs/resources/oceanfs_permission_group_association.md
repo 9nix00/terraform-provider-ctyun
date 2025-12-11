@@ -10,8 +10,8 @@
 
 ### Required
 
+- `oceanfs_id` (String) 文件系统ID
 - `permission_group_id` (String) oceanfs 权限组ID
-- `sfs_id` (String) 文件系统ID
 - `subnet_id` (String) 子网ID
 - `vpc_id` (String) 虚拟私有云ID
 

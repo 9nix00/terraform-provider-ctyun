@@ -63,12 +63,12 @@ output "ctyun_test" {
 
 Read-Only:
 
-- `created_at` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `freezing` (Boolean) 是否冻结
 - `name` (String) 路由表名字
 - `origin` (String) 路由表来源：default-系统默认;user-用户创建
 - `route_rules_count` (Number) 路由表中的路由数
 - `route_table_id` (String) 路由id
 - `type` (Number) 路由表类型:0-子网路由表，2-网关路由表
-- `updated_at` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 - `vpc_id` (String) 虚拟私有云id

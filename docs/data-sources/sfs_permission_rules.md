@@ -34,29 +34,27 @@ data "ctyun_sfs_permission_rules" "test" {
 
 ### Optional
 
+- `id` (String) 权限组规则id，permission_group_id和id至少存在一个
 - `page_no` (Number) 页码，取值范围：正整数（≥1），注：默认值为1
 - `page_size` (Number) 每页记录数目，取值范围：[1, 50]，注：默认值为10
-- `permission_group_id` (String) 权限组Fuid，permission_group_id和permission_rule_fuid至少存在一个
-- `permission_rule_fuid` (String) 权限组规则Fuid，permissionGroupFuid和permissionRuleFuid至少存在一个
+- `permission_group_id` (String) 权限组id，permission_group_id和id至少存在一个
 - `region_id` (String)
 
 ### Read-Only
 
-- `permission_rules` (Attributes List) 权限组规则列表 (see [below for nested schema](#nestedatt--permission_rules))
+- `rules` (Attributes List) 权限组规则列表 (see [below for nested schema](#nestedatt--rules))
 
-<a id="nestedatt--permission_rules"></a>
-### Nested Schema for `permission_rules`
+<a id="nestedatt--rules"></a>
+### Nested Schema for `rules`
 
 Read-Only:
 
 - `auth_addr` (String) 授权地址，可用于区分子网及具体虚机等
-- `permission_group_id` (String) 权限组Fuid
-- `permission_group_id` (String) 权限组底层ID
-- `permission_rule_fuid` (String) 权限组规则ID
-- `permission_rule_id` (String) 权限组规则底层ID
-- `permission_rule_is_default` (Boolean) 是否为默认规则
+- `id` (String) 权限组规则ID
+- `is_default` (Boolean) 是否为默认规则
+- `permission_group_id` (String) 权限组ID
 - `priority` (Number) 优先级
 - `rw_permission` (String) 读写权限控制
-- `update_time` (String) 更新时间。UTC时间
+- `update_time` (String) 更新时间，为UTC格式
 - `user_id` (String) 租户ID
 - `user_permission` (String) 用户权限

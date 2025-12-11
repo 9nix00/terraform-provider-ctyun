@@ -271,13 +271,12 @@ func (c *ctyunRabbitmqExchange) Configure(_ context.Context, request resource.Co
 	c.rabbitmqService = business.NewRabbitmqService(meta)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [name],[vhost],[instanceID],[regionID]
 func (c *ctyunRabbitmqExchange) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[vhost],[instanceID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name],[vhost],[instanceID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

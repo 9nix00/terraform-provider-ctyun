@@ -43,13 +43,12 @@ func NewCtyunSfsPermissionGroupRule() resource.Resource {
 	return &ctyunSfsPermissionGroupRule{}
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [id],[regionId]
 func (c *ctyunSfsPermissionGroupRule) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[permissionGroupID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[permissionGroupID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

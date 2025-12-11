@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -39,8 +40,44 @@ type CtyunMongodbAssociationEip struct {
 }
 
 func (c *CtyunMongodbAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config MongodbAssociationEipConfig
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
+	config.InstID = types.StringValue(ID)
+	config.RegionID = types.StringValue(regionId)
+
+	err = c.getAndMergeBindEip(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, config)...)
 }
 
 func (c *CtyunMongodbAssociationEip) Configure(ctx context.Context, request resource.ConfigureRequest, response *resource.ConfigureResponse) {

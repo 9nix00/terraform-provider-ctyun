@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 
 ### Optional
 
@@ -19,10 +19,10 @@
 
 ### Read-Only
 
-- `mysql_character_set` (Attributes List) MySQL支持的字符集列表 (see [below for nested schema](#nestedatt--mysql_character_set))
+- `character_set` (Attributes List) MySQL支持的字符集列表 (see [below for nested schema](#nestedatt--character_set))
 
-<a id="nestedatt--mysql_character_set"></a>
-### Nested Schema for `mysql_character_set`
+<a id="nestedatt--character_set"></a>
+### Nested Schema for `character_set`
 
 Read-Only:
 

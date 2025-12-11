@@ -61,4 +61,4 @@ Read-Only:
 - `src_region_id` (String) 本端资源池ID
 - `src_region_name` (String) 本端资源池名称
 - `status` (String) 状态（creating：加载中，running：已连接， removing：卸载中，expired：过期）
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式

@@ -40,4 +40,7 @@ output "packet_id" {
 output "region_peer_id" {
   value = ctyun_ec_region_peer.region_peer_test.id
 }
+output "sdwan_id" {
+  value = ctyun_sdwan.ctyun_sdwan_test.id
+}
 

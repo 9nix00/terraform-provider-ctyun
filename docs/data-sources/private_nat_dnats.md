@@ -47,7 +47,7 @@ output "ctyun_private_nat_snats_value" {
 
 Read-Only:
 
-- `created_at` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 描述信息
 - `device_id` (String) 网卡对应的设备ID
 - `dnat_id` (String) dnatID 值

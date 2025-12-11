@@ -10,16 +10,16 @@
 
 ### Required
 
-- `dst_inst_id` (String) 恢复的目标mysql实例id
-- `inst_id` (String) mysql实例id
-- `src_inst_id` (String) 恢复的源mysql实例id
+- `dst_instance_id` (String) 恢复的目标mysql实例id
+- `instance_id` (String) mysql实例id
+- `src_instance_id` (String) 恢复的源mysql实例id
 
 ### Optional
 
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `task_id` (String) 用来恢复的备份任务集【taskId和toTimepoint不能同时为空，优先取toTimepoint】
-- `to_timepoint` (String) 恢复到的时间点，格式为：yyyy-MM-dd HH:mm:ss【taskId和toTimepoint不能同时为空，优先取toTimepoint】
+- `task_id` (String) 用来恢复的备份任务集【task_id和to_timepoint不能同时为空，优先取to_timepoint】
+- `to_timepoint` (String) 恢复到的时间点，格式为：YYYY-MM-DDTHH:MM:SSZ【taskId和to_timepoint不能同时为空，优先取to_timepoint】
 
 ### Read-Only
 

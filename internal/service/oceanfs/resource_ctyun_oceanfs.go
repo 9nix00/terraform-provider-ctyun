@@ -57,7 +57,7 @@ func (c *CtyunOceanfs) ImportState(ctx context.Context, request resource.ImportS
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[projectID],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
@@ -256,6 +256,20 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 			"expire_time": schema.StringAttribute{
 				Description: "到期时间，为UTC格式，按需时为空",
 				Computed:    true,
+			},
+			"share_path": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载路径",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
+			"share_path_windows": schema.StringAttribute{
+				Computed:    true,
+				Description: "挂载路径（windows）",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 		},
 	}
@@ -510,7 +524,8 @@ func (c *CtyunOceanfs) getAndMerge(ctx context.Context, config *CtyunOceanfsConf
 	config.CreateTime = types.StringValue(utils.FromUnixToUTC(returnObj.CreateTime))
 	config.UpdateTime = types.StringValue(utils.FromUnixToUTC(returnObj.UpdateTime))
 	config.ExpireTime = types.StringValue(utils.FromUnixToUTC(returnObj.ExpireTime))
-
+	config.SharePath = types.StringValue(returnObj.SharePath)
+	config.SharePathWin = types.StringValue(returnObj.WindowsSharePath)
 	if config.Tags.IsNull() || config.Tags.IsUnknown() {
 		config.Tags = types.SetNull(types.ObjectType{
 			AttrTypes: map[string]attr.Type{
@@ -628,22 +643,24 @@ type CtyunOceanfsConfig struct {
 	RegionID  types.String `tfsdk:"region_id"`
 	ProjectID types.String `tfsdk:"project_id"`
 	//SfsType     types.String `tfsdk:"type"`
-	SfsProtocol types.String `tfsdk:"protocol"`
-	Name        types.String `tfsdk:"name"`
-	SfsSize     types.Int32  `tfsdk:"size"`
-	CycleType   types.String `tfsdk:"cycle_type"`
-	CycleCount  types.Int64  `tfsdk:"cycle_count"`
-	AzName      types.String `tfsdk:"az_name"`
-	VpcID       types.String `tfsdk:"vpc_id"`
-	SubnetID    types.String `tfsdk:"subnet_id"`
-	IsVpce      types.Bool   `tfsdk:"is_vpce"`
-	Tags        types.Set    `tfsdk:"tags"`
-	ID          types.String `tfsdk:"id"`
-	Status      types.String `tfsdk:"status"`
-	UsedSize    types.Int32  `tfsdk:"used_size"`
-	CreateTime  types.String `tfsdk:"create_time"`
-	UpdateTime  types.String `tfsdk:"update_time"`
-	ExpireTime  types.String `tfsdk:"expire_time"`
+	SfsProtocol  types.String `tfsdk:"protocol"`
+	Name         types.String `tfsdk:"name"`
+	SfsSize      types.Int32  `tfsdk:"size"`
+	CycleType    types.String `tfsdk:"cycle_type"`
+	CycleCount   types.Int64  `tfsdk:"cycle_count"`
+	AzName       types.String `tfsdk:"az_name"`
+	VpcID        types.String `tfsdk:"vpc_id"`
+	SubnetID     types.String `tfsdk:"subnet_id"`
+	IsVpce       types.Bool   `tfsdk:"is_vpce"`
+	Tags         types.Set    `tfsdk:"tags"`
+	ID           types.String `tfsdk:"id"`
+	Status       types.String `tfsdk:"status"`
+	UsedSize     types.Int32  `tfsdk:"used_size"`
+	CreateTime   types.String `tfsdk:"create_time"`
+	UpdateTime   types.String `tfsdk:"update_time"`
+	ExpireTime   types.String `tfsdk:"expire_time"`
+	SharePath    types.String `tfsdk:"share_path"`
+	SharePathWin types.String `tfsdk:"share_path_windows"`
 }
 
 type CtyunOceanfsTagModel struct {

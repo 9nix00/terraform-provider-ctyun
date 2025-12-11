@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mysql"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/pgsql"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -213,6 +214,53 @@ func (c *CtyunPgsqlAssociationEip) Configure(ctx context.Context, request resour
 	c.eipService = business.NewEipService(c.meta)
 }
 func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID],[projectID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunPgsqlAssociationEipConfig
+	var eipId, regionId, projectId string
+	// 根据分隔符数量判断是否输入了regionID,projectId
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
+		eipId = request.ID
+	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &eipId, &projectId)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &eipId, &projectId, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if eipId == "" {
+		err = fmt.Errorf("eipId不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
+	config.EipID = types.StringValue(eipId)
+	config.RegionID = types.StringValue(regionId)
+	if projectId != "" {
+		config.ProjectID = types.StringValue(projectId)
+	}
+	err = c.getAndMergeBindEip(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, &config)...)
 }
 
 func (c *CtyunPgsqlAssociationEip) PgsqlBindEip(ctx context.Context, config *CtyunPgsqlAssociationEipConfig) (err error) {

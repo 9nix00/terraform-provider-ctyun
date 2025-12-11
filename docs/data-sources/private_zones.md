@@ -43,13 +43,13 @@ data "ctyun_private_zones" "zones_example" {
 
 Read-Only:
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `description` (String) 内网DNS描述
 - `id` (String) 内网DNS ID
 - `name` (String) 内网DNS名称
 - `proxy_pattern` (String) 代理模式，zone：当前可用区不进行递归解析。 record：不完全劫持，进行递归解析代理
 - `ttl` (Number) TTL值（秒）
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 - `vpc_associations` (Attributes List) 关联的VPC列表 (see [below for nested schema](#nestedatt--zones--vpc_associations))
 
 <a id="nestedatt--zones--vpc_associations"></a>

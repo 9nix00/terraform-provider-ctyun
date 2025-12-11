@@ -11,7 +11,7 @@
 ### Required
 
 - `backup_record_id` (Number) mysql备份记录id，可以通过data.ctyun_mysql_backups获取
-- `inst_id` (String) mysql实例id
+- `instance_id` (String) mysql实例id
 
 ### Optional
 

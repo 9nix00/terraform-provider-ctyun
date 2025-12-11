@@ -21,6 +21,7 @@ type Dependence struct {
 	cgwID1           string
 	cgwID2           string
 	packetID         string
+	sdwanId          string
 }
 
 var dependence Dependence
@@ -51,6 +52,7 @@ func TestMain(m *testing.M) {
 		cgwID1:   outputs["cgw_id1"].Value,
 		cgwID2:   outputs["cgw_id2"].Value,
 		packetID: outputs["packet_id"].Value,
+		sdwanId:  outputs["sdwan_id"].Value,
 	}
 
 	fmt.Println("依赖资源初始化完毕")

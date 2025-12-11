@@ -59,8 +59,8 @@ resource "ctyun_oceanfs" "example" {
 
 - `cycle_type` (String) 计费类型，year/month/on_demand。不支持更新
 - `name` (String) 文件系统名称；单账户单资源池下，命名需唯一，只能由数字、“-”、字母组成，不能以数字和“-”开头、且不能以“-”结尾，2~255字符
-- `sfs_protocol` (String) 协议类型，nfs/cifs。nfs 适用于 Linux；cifs 适用于 Windows
-- `sfs_size` (Number) 文件系统大小（GB）,取值范围默认为[100,1048576]，实际取值受限于用户剩余容量配额大小。为避免资源浪费，单用户单资源池默认分配500TB容量配额，可提交工单提升配额。
+- `protocol` (String) 协议类型，nfs/cifs。nfs 适用于 Linux；cifs 适用于 Windows
+- `size` (Number) 文件系统大小（GB）,取值范围默认为[100,1048576]，实际取值受限于用户剩余容量配额大小。为避免资源浪费，单用户单资源池默认分配500TB容量配额，可提交工单提升配额。
 - `subnet_id` (String) 子网ID，当isVpce为true时必填
 - `vpc_id` (String) VPC ID
 
@@ -75,11 +75,11 @@ resource "ctyun_oceanfs" "example" {
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
-- `expire_time` (String) 过期时间
+- `create_time` (String) 创建时间，为UTC格式
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) 资源ID
 - `status` (String) 文件系统状态
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 - `used_size` (Number) 已使用大小（GB）
 
 <a id="nestedatt--tags"></a>

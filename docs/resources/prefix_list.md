@@ -10,7 +10,7 @@
 
 ### Required
 
-- `address_type` (String) 地址类型，取值范围：ipv4， ipv6
+- `address_type` (String) 地址类型，取值范围：ipv4，ipv6
 - `limit` (Number) 前缀列表支持的最大条目容量，创建后将无法修改,限制1-200条，具体以账户配额为准,不能小于前缀列表规则个数
 - `name` (String) 前缀列表名称，支持更新。支持拉丁字母、中文、数字，下划线，连字符，中文 / 英文字母开头，不能以 http: / https: 开头，长度 2 - 32
 - `prefix_list_rules` (Attributes Set) 前缀规则列表 (see [below for nested schema](#nestedatt--prefix_list_rules))
@@ -22,9 +22,9 @@
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) 前缀列表id
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--prefix_list_rules"></a>
 ### Nested Schema for `prefix_list_rules`

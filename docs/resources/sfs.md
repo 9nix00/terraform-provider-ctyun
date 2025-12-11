@@ -56,10 +56,10 @@ resource "ctyun_sfs" "sfs_test" {
 
 - `cycle_type` (String) 计费类型，year/month/on_demand。不支持更新
 - `name` (String) 文件系统名称；单账户单资源池下，命名需唯一，支持更新
-- `sfs_protocol` (String) 协议类型，nfs/cifs
-- `sfs_size` (Number) 大小，单位GB，取值范围：[500GB, 32768GB]。支持更新。弹性文件只支持扩容，不支持缩容
-- `sfs_type` (String) 存储类型，capacity(标准型)或performance（性能型）
+- `protocol` (String) 协议类型，nfs/cifs
+- `size` (Number) 大小，单位GB，取值范围：[500GB, 32768GB]。支持更新。弹性文件只支持扩容，不支持缩容
 - `subnet_id` (String) 子网ID
+- `type` (String) 存储类型，capacity(标准型)或performance（性能型）
 - `vpc_id` (String) 虚拟私有云ID
 
 ### Optional
@@ -73,8 +73,11 @@ resource "ctyun_sfs" "sfs_test" {
 
 ### Read-Only
 
+- `create_time` (String) 创建时间，为UTC格式
+- `expire_time` (String) 到期时间，为UTC格式，按需时为空
 - `id` (String) 弹性文件系统id
 - `share_path` (String) 挂载路径
 - `share_path_windows` (String) 挂载路径（windows）
 - `status` (String) 弹性文件系统状态
+- `update_time` (String) 更新时间，为UTC格式
 - `used_size` (Number) 弹性文件系统已使用大小（MB）

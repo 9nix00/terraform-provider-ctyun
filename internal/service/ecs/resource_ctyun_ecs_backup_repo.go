@@ -519,7 +519,7 @@ package ecs
 //	defer func() {
 //		if err != nil {
 //			title := "导入失败：" + err.Error()
-//			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+//			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[region_id]"
 //			response.Diagnostics.AddError(title, detail)
 //		}
 //	}()

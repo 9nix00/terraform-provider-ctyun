@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -13,11 +14,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 )
 
 var (
-	_ resource.Resource              = &ctyunDhcpOptionSetAssociationVpc{}
-	_ resource.ResourceWithConfigure = &ctyunDhcpOptionSetAssociationVpc{}
+	_ resource.Resource                = &ctyunDhcpOptionSetAssociationVpc{}
+	_ resource.ResourceWithConfigure   = &ctyunDhcpOptionSetAssociationVpc{}
+	_ resource.ResourceWithImportState = &ctyunDhcpOptionSetAssociationVpc{}
 )
 
 func NewCtyunDhcpOptionSetAssociationVpc() resource.Resource {
@@ -26,6 +29,48 @@ func NewCtyunDhcpOptionSetAssociationVpc() resource.Resource {
 
 type ctyunDhcpOptionSetAssociationVpc struct {
 	meta *common.CtyunMetadata
+}
+
+func (c *ctyunDhcpOptionSetAssociationVpc) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID]"
+			response.Diagnostics.AddError(title, detail)
+		}
+	}()
+	var config CtyunDhcpOptionSetAssociationVpcConfig
+	var ID, regionId string
+	// 根据分隔符数量判断是否输入了regionID,
+	if strings.Count(request.ID, common.ImportSeparator) == 0 {
+		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
+
+		ID = request.ID
+	} else {
+		err = terraform_extend.Split(request.ID, &ID, &regionId)
+		if err != nil {
+			return
+		}
+	}
+
+	if ID == "" {
+		err = fmt.Errorf("ID不能为空")
+		return
+	}
+	if regionId == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
+	config.DhcpOptionSetsId = types.StringValue(ID)
+	config.RegionId = types.StringValue(regionId)
+
+	instance, err := c.getAndMerge(ctx, &config)
+	if err != nil {
+		return
+	}
+	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
 }
 
 func (c *ctyunDhcpOptionSetAssociationVpc) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -80,6 +125,7 @@ func (c *ctyunDhcpOptionSetAssociationVpc) Configure(_ context.Context, request 
 }
 
 func (c *ctyunDhcpOptionSetAssociationVpc) Create(ctx context.Context, request resource.CreateRequest, response *resource.CreateResponse) {
+
 	var plan CtyunDhcpOptionSetAssociationVpcConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {

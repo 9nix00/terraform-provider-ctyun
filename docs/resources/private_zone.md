@@ -52,9 +52,9 @@ resource "ctyun_private_zone" "private_zone_example" {
 
 ### Read-Only
 
-- `create_time` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (String) zone id
-- `update_time` (String) 更新时间
+- `update_time` (String) 更新时间，为UTC格式
 
 <a id="nestedatt--tags"></a>
 ### Nested Schema for `tags`

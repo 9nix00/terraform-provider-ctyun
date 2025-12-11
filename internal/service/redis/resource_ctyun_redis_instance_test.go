@@ -112,9 +112,36 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 			},
 			// 验证绑定关系导入
 			{
-				ResourceName:            associationName,
-				ImportState:             true,
-				ImportStateVerify:       true,
+				ResourceName:      associationName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_address"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{},
+			},
+			{
+				ResourceName:      associationName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_address"],
+					), nil
+				},
 				ImportStateVerifyIgnore: []string{},
 			},
 			// 通过查询进行检查

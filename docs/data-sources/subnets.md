@@ -95,5 +95,4 @@ Read-Only:
 - `start` (String) 子网网段起始IP
 - `subnet_id` (String) subnetID
 - `type` (Number) 子网类型:当前仅支持：0（普通子网）,1（裸金属子网）
-- `updated_at` (String) 更新时间
 - `vpc_id` (String) VpcID

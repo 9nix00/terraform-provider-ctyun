@@ -79,7 +79,7 @@ Read-Only:
 - `end` (Number) 分区leader副本的最小偏移量
 - `hw` (Number) 分区消息高水位线，所有副本均已确认写入的最大偏移量
 - `total` (Number) 分区消息总数
-- `update_time` (Number) 分区最近写入消息的毫秒时间戳
+- `update_timestamp` (Number) 分区最近写入消息的毫秒时间戳
 
 
 <a id="nestedatt--partition_list--replicas"></a>

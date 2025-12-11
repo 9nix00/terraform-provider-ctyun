@@ -40,7 +40,7 @@ resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
 
 ### Read-Only
 
-- `id` (String) 权限组Fuid
+- `id` (String) 权限组ID
 - `is_default` (Boolean) 是否为默认权限组
 - `permission_rule_count` (Number) 权限组规则个数
 - `sfs_count` (Number) 绑定的文件系统个数

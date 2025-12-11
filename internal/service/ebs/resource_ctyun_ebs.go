@@ -520,7 +520,7 @@ func (c *ctyunEbs) ImportState(ctx context.Context, request resource.ImportState
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[project_id],[azName],[regionId]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[project_id],[az_name],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()

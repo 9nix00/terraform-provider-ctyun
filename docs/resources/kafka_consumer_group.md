@@ -45,7 +45,7 @@ resource "ctyun_kafka_consumer_group" "tbidgqvfbs" {
 ### Read-Only
 
 - `coordinator_id` (Number) 协调器编号
-- `ctime` (String) 创建时间
+- `create_time` (String) 创建时间，为UTC格式
 - `id` (Number) ID
 - `state` (String) 消费组状态
 
@@ -60,7 +60,7 @@ Required:
 Optional:
 
 - `partition_shift_list` (Attributes List) 位点重置列表，当type为3时必填 支持更新 (see [below for nested schema](#nestedatt--reset_config--partition_shift_list))
-- `time` (Number) 重置时间点毫秒时间戳，type=1时必填 支持更新
+- `timestamp` (Number) 重置时间点毫秒时间戳，type=1时必填 支持更新
 
 <a id="nestedatt--reset_config--partition_shift_list"></a>
 ### Nested Schema for `reset_config.partition_shift_list`

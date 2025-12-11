@@ -10,7 +10,7 @@
 
 ### Required
 
-- `inst_id` (String) MySQL实例ID
+- `instance_id` (String) MySQL实例ID
 - `ip_list` (Set of String) ip列表,数量限制：1-1000
 - `mode` (String) 修改模式， cover(覆盖) ， append(追加) ， delete(删除,若分组下的ip被全部删除，则会将该分组也删除，默认分组(default)则会被设置成只允许本机访问，即只有127.0.0.1这个白名单ip)
 

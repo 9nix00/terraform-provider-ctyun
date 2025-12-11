@@ -202,13 +202,12 @@ func (c *ctyunEbmAssociationEbs) Configure(_ context.Context, request resource.C
 	c.meta = meta
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[ebsID],[regionID],[azName]
 func (c *ctyunEbmAssociationEbs) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[[azName]],[azName],[regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[ebsID],[az_name],[region_id]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
@@ -246,6 +245,10 @@ func (c *ctyunEbmAssociationEbs) ImportState(ctx context.Context, request resour
 	}
 	if regionID == "" {
 		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+	if azName == "" {
+		err = fmt.Errorf("azName不能为空")
 		return
 	}
 	config.InstanceID = types.StringValue(instanceID)
@@ -430,7 +433,7 @@ func (c *ctyunEbmAssociationEbs) getAndMerge(ctx context.Context, plan *CtyunEbm
 		if ebsID == utils.SecString(attachID) {
 			plan.ID = types.StringValue(fmt.Sprintf(
 				"%s,%s,%s,%s",
-				instanceID, ebsID, plan.RegionID.ValueString(), plan.AzName.ValueString()))
+				instanceID, ebsID, plan.AzName.ValueString(), plan.RegionID.ValueString()))
 			return
 		}
 	}

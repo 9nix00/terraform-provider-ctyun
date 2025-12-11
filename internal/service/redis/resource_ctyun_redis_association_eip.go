@@ -192,20 +192,44 @@ func (c *ctyunRedisAssociationEip) Configure(_ context.Context, request resource
 	c.eipService = business.NewEipService(meta)
 }
 
-// 导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[eip_address],[regionID]
 func (c *ctyunRedisAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
 	var err error
 	defer func() {
 		if err != nil {
-			response.Diagnostics.AddError(err.Error(), err.Error())
+			title := "导入失败：" + err.Error()
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[eipAddress],[regionID]"
+			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var cfg CtyunRedisAssociationEipConfig
 	var instanceID, eipAddress, regionID string
-	err = terraform_extend.Split(request.ID, &instanceID, &eipAddress, &regionID)
-	if err != nil {
+	// 根据分隔符数量判断是否输入了regionID
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &instanceID, &eipAddress)
+		if err != nil {
+			return
+		}
+	} else {
+		err = terraform_extend.Split(request.ID, &instanceID, &eipAddress, &regionID)
+		if err != nil {
+			return
+		}
+	}
+
+	if instanceID == "" {
+		err = fmt.Errorf("instanceID不能为空")
 		return
 	}
+	if eipAddress == "" {
+		err = fmt.Errorf("eipAddress不能为空")
+		return
+	}
+	if regionID == "" {
+		err = fmt.Errorf("regionID不能为空")
+		return
+	}
+
 	cfg.RegionID = types.StringValue(regionID)
 	cfg.InstanceID = types.StringValue(instanceID)
 	cfg.EipAddress = types.StringValue(eipAddress)
