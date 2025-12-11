@@ -217,7 +217,7 @@ func TestAccCtyunEbs(t *testing.T) {
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					rs, ok := s.RootModule().Resources[associationResourceName]
 					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
+						return "", fmt.Errorf("resource not found: %s", associationResourceName)
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["ebs_id"],
