@@ -161,7 +161,7 @@ func TestAccCtyunElbCertificateImportState(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"certificate", "private_key", "az_name"}},
+				ImportStateVerifyIgnore: []string{"certificate", "private_key", "az_name", "project_id"}},
 			// import state 2
 			{
 				ResourceName: resourceName,
@@ -173,7 +173,7 @@ func TestAccCtyunElbCertificateImportState(t *testing.T) {
 					return fmt.Sprintf("%s,,%s", id, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"certificate", "private_key", "az_name"},
+				ImportStateVerifyIgnore: []string{"certificate", "private_key", "az_name", "project_id"},
 			},
 			// 2.3 destroy
 			{
