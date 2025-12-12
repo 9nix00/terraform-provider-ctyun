@@ -8,6 +8,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -41,9 +42,8 @@ type CtyunEcCloudGatewayConfig struct {
 	Region      types.Int64  `tfsdk:"region"`
 	DcName      types.String `tfsdk:"region_name"`
 	DcID        types.String `tfsdk:"region_id"`
-	//DcType      types.String `tfsdk:"region_type"`
-	CreateTime types.String `tfsdk:"create_time"`
-	RtbID      types.String `tfsdk:"rtb_id"`
+	CreateTime  types.String `tfsdk:"create_time"`
+	RtbID       types.String `tfsdk:"rtb_id"`
 }
 
 func (c *CtyunEcCloudGateway) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -52,7 +52,7 @@ func (c *CtyunEcCloudGateway) Metadata(ctx context.Context, req resource.Metadat
 
 func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**云网关资源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -80,7 +80,7 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "云网关名称",
+				Description: "云网关名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 64),
 				},
@@ -88,7 +88,7 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 			"description": schema.StringAttribute{
 				Optional: true,
 
-				Description: "云网关描述",
+				Description: "云网关描述  支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
 				},
@@ -100,6 +100,9 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.Int64{
+					int64validator.OneOf(1, 2),
+				},
 			},
 			"region_name": schema.StringAttribute{
 				Optional:    true,
@@ -107,6 +110,9 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "资源池名称",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraAzName, true),
 			},
@@ -117,18 +123,11 @@ func (c *CtyunEcCloudGateway) Schema(ctx context.Context, req resource.SchemaReq
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
-			//"region_type": schema.StringAttribute{
-			//	Computed:    true,
-			//	Description: "资源池类型，取值范围: 'CNP':CNP资源池 'MAZ':MAZ资源池 'PRVT':私有云资源池",
-			//	PlanModifiers: []planmodifier.String{
-			//		stringplanmodifier.RequiresReplace(),
-			//	},
-			//	Validators: []validator.String{
-			//		stringvalidator.OneOf("CNP", "MAZ", "PRVT"),
-			//	},
-			//},
 			"create_time": schema.StringAttribute{
 				Computed:    true,
 				Description: "创建时间，为UTC格式",
@@ -383,13 +382,11 @@ func (c *CtyunEcCloudGateway) update(ctx context.Context, plan *CtyunEcCloudGate
 	}
 
 	if !plan.Name.IsNull() {
-		name := plan.Name.ValueString()
-		updateReq.CgwName = &name
+		updateReq.CgwName = plan.Name.ValueStringPointer()
 	}
 
 	if !plan.Description.IsNull() {
-		desc := plan.Description.ValueString()
-		updateReq.CgwDescription = &desc
+		updateReq.CgwDescription = plan.Description.ValueStringPointer()
 	}
 
 	resp, err := c.meta.Apis.SdkEcApis.EcEcUpdateGatewayApi.Do(ctx, c.meta.SdkCredential, updateReq)

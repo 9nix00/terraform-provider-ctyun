@@ -50,7 +50,7 @@ func (c *CtyunEcSdwanInstance) Metadata(ctx context.Context, req resource.Metada
 
 func (c *CtyunEcSdwanInstance) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**SDWAN网络实例资源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -101,7 +101,7 @@ func (c *CtyunEcSdwanInstance) Schema(ctx context.Context, req resource.SchemaRe
 			},
 			"weights": schema.Int64Attribute{
 				Optional:    true,
-				Description: "权重，sdwan默认60，无冗余实例则不传",
+				Description: "权重，sdwan默认60，无冗余实例则不传 支持更新",
 				Validators: []validator.Int64{
 					int64validator.Between(0, 100),
 				},

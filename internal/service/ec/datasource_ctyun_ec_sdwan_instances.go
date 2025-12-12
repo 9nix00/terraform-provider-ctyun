@@ -68,7 +68,7 @@ func (c *CtyunEcSdwanInstances) Metadata(ctx context.Context, req datasource.Met
 
 func (c *CtyunEcSdwanInstances) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**SDWAN网络实例列表数据源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

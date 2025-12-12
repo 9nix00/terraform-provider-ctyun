@@ -9,6 +9,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -48,7 +49,6 @@ type CtyunEcPacketConfig struct {
 	CycleCount           types.Int64  `tfsdk:"cycle_count"`
 	AreaA                types.String `tfsdk:"area_a"`
 	AreaB                types.String `tfsdk:"area_b"`
-	ClientToken          types.String `tfsdk:"client_token"`
 	PayVoucherPrice      types.String `tfsdk:"pay_voucher_price"`
 	MasterOrderID        types.String `tfsdk:"master_order_id"`
 	MasterOrderNO        types.String `tfsdk:"master_order_no"`
@@ -63,7 +63,7 @@ func (c *CtyunEcPacket) Metadata(ctx context.Context, req resource.MetadataReque
 
 func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**云间高速带宽包资源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -88,6 +88,9 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},
@@ -164,18 +167,14 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 				},
 				Default: stringdefault.StaticString("china"),
 			},
-			"client_token": schema.StringAttribute{
-				Optional:    true,
-				Description: "客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
 			"pay_voucher_price": schema.StringAttribute{
 				Optional:    true,
 				Description: "代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"master_order_id": schema.StringAttribute{
@@ -212,6 +211,9 @@ func (c *CtyunEcPacket) Schema(ctx context.Context, req resource.SchemaRequest, 
 				Description: "云间高速带宽包资源ID，用于升配、续订、退订等操作",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 			},
 		},
@@ -423,17 +425,13 @@ func (c *CtyunEcPacket) upgrade(ctx context.Context, plan, state *CtyunEcPacketC
 	if state.ResourceID.IsNull() || state.ResourceID.IsUnknown() {
 		return fmt.Errorf("无法执行升配操作：ResourceID为空")
 	}
-
+	clientToken := uuid.NewString()
 	upgradeReq := &ec.EcEcOrderPacketUpgradeRequest{
-		EcID:       plan.EcID.ValueString(),
-		RegionID:   plan.RegionID.ValueString(),
-		Bandwidth:  int32(plan.Bandwidth.ValueInt64()),
-		ResourceID: state.ResourceID.ValueString(),
-	}
-
-	if !plan.ClientToken.IsNull() {
-		token := plan.ClientToken.ValueString()
-		upgradeReq.ClientToken = &token
+		EcID:        plan.EcID.ValueString(),
+		RegionID:    plan.RegionID.ValueString(),
+		Bandwidth:   int32(plan.Bandwidth.ValueInt64()),
+		ResourceID:  state.ResourceID.ValueString(),
+		ClientToken: &clientToken,
 	}
 
 	tflog.Info(ctx, "升配云间高速带宽包", map[string]interface{}{
@@ -471,18 +469,14 @@ func (c *CtyunEcPacket) renew(ctx context.Context, plan, state *CtyunEcPacketCon
 	if state.ResourceID.IsNull() || state.ResourceID.IsUnknown() {
 		return fmt.Errorf("无法执行续订操作：ResourceID为空")
 	}
-
+	clientToken := uuid.NewString()
 	renewReq := &ec.EcEcOrderPacketRenewRequest{
-		EcID:       plan.EcID.ValueString(),
-		RegionID:   plan.RegionID.ValueString(),
-		ResourceID: state.ResourceID.ValueString(),
-		CycleType:  plan.CycleType.ValueString(),
-		CycleCount: int32(plan.CycleCount.ValueInt64()),
-	}
-
-	if !plan.ClientToken.IsNull() {
-		token := plan.ClientToken.ValueString()
-		renewReq.ClientToken = &token
+		EcID:        plan.EcID.ValueString(),
+		RegionID:    plan.RegionID.ValueString(),
+		ResourceID:  state.ResourceID.ValueString(),
+		CycleType:   plan.CycleType.ValueString(),
+		CycleCount:  int32(plan.CycleCount.ValueInt64()),
+		ClientToken: &clientToken,
 	}
 
 	tflog.Info(ctx, "续订云间高速带宽包", map[string]interface{}{
@@ -522,18 +516,13 @@ func (c *CtyunEcPacket) refund(ctx context.Context, state *CtyunEcPacketConfig) 
 	if state.ResourceID.IsNull() || state.ResourceID.IsUnknown() {
 		return fmt.Errorf("无法执行退订操作：ResourceID为空")
 	}
-
+	clientToken := uuid.NewString()
 	refundReq := &ec.EcEcOrderPacketRefundRequest{
-		EcID:       state.EcID.ValueString(),
-		RegionID:   state.RegionID.ValueString(),
-		ResourceID: state.ResourceID.ValueString(),
+		EcID:        state.EcID.ValueString(),
+		RegionID:    state.RegionID.ValueString(),
+		ResourceID:  state.ResourceID.ValueString(),
+		ClientToken: &clientToken,
 	}
-
-	if !state.ClientToken.IsNull() {
-		token := state.ClientToken.ValueString()
-		refundReq.ClientToken = &token
-	}
-
 	tflog.Info(ctx, "退订云间高速带宽包", map[string]interface{}{
 		"ec_id":       state.EcID.ValueString(),
 		"resource_id": state.ResourceID.ValueString(),
@@ -564,15 +553,17 @@ func (c *CtyunEcPacket) refund(ctx context.Context, state *CtyunEcPacketConfig) 
 
 func (c *CtyunEcPacket) create(ctx context.Context, plan *CtyunEcPacketConfig) (err error) {
 	// 创建云间高速带宽包订购订单
+	clientToken := uuid.NewString()
 	newReq := &ec.EcEcOrderPacketNewRequest{
-		EcID:       plan.EcID.ValueString(),
-		RegionID:   plan.RegionID.ValueString(),
-		PacketName: plan.Name.ValueString(),
-		Bandwidth:  int32(plan.Bandwidth.ValueInt64()),
-		AreaA:      plan.AreaA.ValueStringPointer(),
-		CycleType:  strings.ToUpper(plan.CycleType.ValueString()),
-		CycleCount: int32(plan.CycleCount.ValueInt64()),
-		AreaB:      plan.AreaB.ValueStringPointer(),
+		EcID:        plan.EcID.ValueString(),
+		RegionID:    plan.RegionID.ValueString(),
+		PacketName:  plan.Name.ValueString(),
+		Bandwidth:   int32(plan.Bandwidth.ValueInt64()),
+		AreaA:       plan.AreaA.ValueStringPointer(),
+		CycleType:   strings.ToUpper(plan.CycleType.ValueString()),
+		CycleCount:  int32(plan.CycleCount.ValueInt64()),
+		AreaB:       plan.AreaB.ValueStringPointer(),
+		ClientToken: &clientToken,
 	}
 
 	if !plan.AreaA.IsNull() {
@@ -583,11 +574,6 @@ func (c *CtyunEcPacket) create(ctx context.Context, plan *CtyunEcPacketConfig) (
 	if !plan.AreaB.IsNull() {
 		areaB := plan.AreaB.ValueString()
 		newReq.AreaB = &areaB
-	}
-
-	if !plan.ClientToken.IsNull() {
-		token := plan.ClientToken.ValueString()
-		newReq.ClientToken = &token
 	}
 
 	if !plan.PayVoucherPrice.IsNull() {

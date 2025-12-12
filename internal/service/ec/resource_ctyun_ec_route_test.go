@@ -154,7 +154,7 @@ func TestAccCtyunExpressConnectRouteNextHopTypes(t *testing.T) {
 	for nextHopType, nextHopID := range nextHopTypesAndIDMap {
 		t.Run(nextHopType, func(t *testing.T) {
 			resourceName := "ctyun_ec_route." + rnd + "_" + nextHopType
-			cidr := fmt.Sprintf("192.168.1.%d/32", i)
+			cidr := fmt.Sprintf("192.168.1.%d/32", i+10)
 			ipVersion := "ipv4"
 			description := fmt.Sprintf("Route with %s next hop", nextHopType)
 
