@@ -15,7 +15,7 @@ func TestAccCtyunEcCloudGatewaySdwanAssociation_basic(t *testing.T) {
 
 	// 从环境变量获取测试依赖资源
 	ecID := dependence.expressConnectID
-	sdwanID := "8f24013c-bae9-11f0-9d8d-525400d3a107"
+	sdwanID := dependence.sdwanId
 	cgwID := dependence.cloudGatewayId
 	rtbID := dependence.rtbID
 	cgw_list := fmt.Sprintf("{cgw_id = \"%s\",rtb_id= \"%s\"}",
