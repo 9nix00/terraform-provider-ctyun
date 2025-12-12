@@ -6,8 +6,10 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -85,7 +87,11 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("resource_type"),
+						types.StringValue("PM"),
+						types.StringValue("VM"),
+					),
 				},
 			},
 			"instance_id": schema.StringAttribute{
@@ -95,7 +101,11 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("resource_type"),
+						types.StringValue("PM"),
+						types.StringValue("VM"),
+					),
 				},
 			},
 			"floating_id": schema.StringAttribute{
@@ -105,7 +115,10 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.AlsoRequiresEqualString(
+						path.MatchRoot("resource_type"),
+						types.StringValue("NETWORK"),
+					),
 				},
 			},
 		},

@@ -112,7 +112,8 @@ func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaReque
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.SubnetValidate(),
+					stringvalidator.UTF8LengthAtLeast(1),
+					//validator2.SubnetValidate(),
 				},
 			},
 			"primary_ip_address": schema.StringAttribute{
