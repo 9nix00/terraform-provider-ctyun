@@ -3,6 +3,8 @@ package vpc
 import (
 	"context"
 	"fmt"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"regexp"
 	"strings"
 
@@ -80,7 +82,7 @@ func (c *ctyunDhcpOptionSet) Metadata(_ context.Context, request resource.Metada
 
 func (c *ctyunDhcpOptionSet) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `DHCP选项集资源，用于管理DHCP选项集配置`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -103,7 +105,7 @@ func (c *ctyunDhcpOptionSet) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "集合名，支持拉丁字母、中文、数字，下划线，连字符，必须以中文/英文字母开头，不能以数字、_和-、http:/https:开头，长度2-32",
+				Description: "集合名，支持拉丁字母、中文、数字，下划线，连字符，必须以中文/英文字母开头，不能以数字、_和-、http:/https:开头，长度2-32 支持更新",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 32),
 					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z\\x{4e00}-\\x{9fa5}][0-9a-zA-Z_\\x{4e00}-\\x{9fa5}]+$"), "dhcp名称不符合规则"),
@@ -111,14 +113,14 @@ func (c *ctyunDhcpOptionSet) Schema(_ context.Context, _ resource.SchemaRequest,
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "描述信息，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&**()_-+= <>?:\"{},./;'[**\r\n\r\n**]·~！@#￥%……&**（） —— -+={}《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
+				Description: "描述信息，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&**()_-+= <>?:\"{},./;'[**\r\n\r\n**]·~！@#￥%……&**（） —— -+={}《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128 支持更新",
 				Validators: []validator.String{
-					stringvalidator.LengthAtMost(128),
+					validator2.Desc(),
 				},
 			},
 			"domain_name": schema.StringAttribute{
 				Required:    true,
-				Description: "整个域名的总长度不能超过 255 个字符，每个子域名（包括顶级域名）的长度不能超过 63 个字符，域名中的字符集包括大写字母、小写字母、数字和连字符（减号），连字符不能位于域名的开头",
+				Description: "整个域名的总长度不能超过 255 个字符，每个子域名（包括顶级域名）的长度不能超过 63 个字符，域名中的字符集包括大写字母、小写字母、数字和连字符（减号），连字符不能位于域名的开头 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
 					stringvalidator.RegexMatches(regexp.MustCompile(`^[^-][a-zA-Z0-9\-]*(\.[a-zA-Z0-9\-]+)*$`), "连字符不能位于域名的开头，且格式应符合域名规范"),
@@ -127,7 +129,10 @@ func (c *ctyunDhcpOptionSet) Schema(_ context.Context, _ resource.SchemaRequest,
 			"dns_list": schema.ListAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Description: "服务ip地址列表，最多只能4个IP地址",
+				Description: "服务ip地址列表，最多只能4个IP地址 支持更新",
+				Validators: []validator.List{
+					listvalidator.SizeAtMost(4),
+				},
 			},
 		},
 	}

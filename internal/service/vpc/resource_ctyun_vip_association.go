@@ -37,7 +37,7 @@ func (c *ctyunVipAssociation) Metadata(_ context.Context, request resource.Metad
 
 func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `虚拟IP绑定资源，用于将虚拟IP绑定到实例或弹性IP`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10224288`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -64,6 +64,9 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"resource_type": schema.StringAttribute{
 				Required:    true,
@@ -81,6 +84,9 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"instance_id": schema.StringAttribute{
 				Optional:    true,
@@ -88,12 +94,18 @@ func (c *ctyunVipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"floating_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "弹性IP ID，当 resource_type 为 NETWORK 时，必填",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 		},

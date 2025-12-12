@@ -67,7 +67,7 @@ type CtyunNetworkInterfaceConfig struct {
 
 func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**弹性网卡资源，详细说明请见文档：https://www.ctyun.cn/document/10026730**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10225195`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -110,6 +110,9 @@ func (c *ctyunNetworkInterface) Schema(_ context.Context, _ resource.SchemaReque
 				Description: "子网ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"primary_ip_address": schema.StringAttribute{

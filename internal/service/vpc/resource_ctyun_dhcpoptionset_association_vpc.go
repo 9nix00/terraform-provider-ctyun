@@ -7,6 +7,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	defaults2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -79,7 +80,7 @@ func (c *ctyunDhcpOptionSetAssociationVpc) Metadata(_ context.Context, request r
 
 func (c *ctyunDhcpOptionSetAssociationVpc) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `DHCP选项集与VPC绑定资源，用于管理DHCP选项集和VPC的绑定关系`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -106,11 +107,17 @@ func (c *ctyunDhcpOptionSetAssociationVpc) Schema(_ context.Context, _ resource.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"vpc_ids": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Description: "VPC ID列表",
+				Description: "VPC ID列表 支持更新",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(0),
+				},
 			},
 		},
 	}
