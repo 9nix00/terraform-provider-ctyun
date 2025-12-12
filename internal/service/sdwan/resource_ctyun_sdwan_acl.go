@@ -7,10 +7,12 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -58,7 +60,7 @@ func (c *CtyunSdwanAcl) Metadata(ctx context.Context, req resource.MetadataReque
 
 func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**SD-WAN访问控制资源,详细说明请见文档**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -83,7 +85,7 @@ func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, 
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "访问控制名称",
+				Description: "访问控制名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
@@ -102,12 +104,18 @@ func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, 
 							Validators: []validator.String{
 								stringvalidator.OneOf("in", "out"),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"protocol": schema.StringAttribute{
 							Required:    true,
 							Description: "协议类型，取值范围: udp(UDP), icmp(ICMP), all(ALL), tcp(TCP)",
 							Validators: []validator.String{
 								stringvalidator.OneOf("udp", "icmp", "all", "tcp"),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 						"ip_version": schema.StringAttribute{
@@ -116,18 +124,39 @@ func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, 
 							Validators: []validator.String{
 								stringvalidator.OneOf("IPv4", "IPv6"),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"dst_cidr": schema.StringAttribute{
 							Required:    true,
 							Description: "目的网段",
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"dst_port_range": schema.StringAttribute{
 							Required:    true,
 							Description: "目的端口范围（例如1-200， -1/-1为默认值，表示1-65535）",
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"priority": schema.Int32Attribute{
 							Required:    true,
 							Description: "优先级",
+							Validators: []validator.Int32{
+								int32validator.Between(1, 100),
+							},
+							PlanModifiers: []planmodifier.Int32{
+								int32planmodifier.RequiresReplace(),
+							},
 						},
 						"action": schema.StringAttribute{
 							Required:    true,
@@ -135,14 +164,29 @@ func (c *CtyunSdwanAcl) Schema(ctx context.Context, req resource.SchemaRequest, 
 							Validators: []validator.String{
 								stringvalidator.OneOf("allow", "deny"),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"src_cidr": schema.StringAttribute{
 							Required:    true,
 							Description: "源网段",
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"src_port_range": schema.StringAttribute{
 							Required:    true,
 							Description: "源端口范围（例如1-200， -1/-1为默认值，表示1-65535）",
+							Validators: []validator.String{
+								stringvalidator.LengthAtLeast(1),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 					},
 				},
@@ -314,8 +358,7 @@ func (c *CtyunSdwanAcl) create(ctx context.Context, plan *CtyunSdwanAclConfig) (
 		AclName: plan.Name.ValueString(),
 		Rules:   rules,
 	}
-	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() {
-
+	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() || plan.ProjectID.ValueString() == "" {
 		createReq.ProjectID = "0"
 	} else {
 		createReq.ProjectID = plan.ProjectID.ValueString()

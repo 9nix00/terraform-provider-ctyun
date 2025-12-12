@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"time"
 )
 
@@ -44,7 +45,7 @@ func (c *CtyunSdwan) Metadata(ctx context.Context, req resource.MetadataRequest,
 
 func (c *CtyunSdwan) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**SD-WAN资源,详细说明请见文档**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -61,7 +62,7 @@ func (c *CtyunSdwan) Schema(ctx context.Context, req resource.SchemaRequest, res
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
-				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
+				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, true),
 				Validators: []validator.String{
 					validator2.Project(),
 					stringvalidator.LengthAtLeast(1),
@@ -69,14 +70,19 @@ func (c *CtyunSdwan) Schema(ctx context.Context, req resource.SchemaRequest, res
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "SD-WAN名称",
+				Description: "SD-WAN名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "SD-WAN描述",
+				Description: "SD-WAN描述 支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+					stringvalidator.LengthAtLeast(1),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^\S*$`), "不能含有空格"),
+				},
 			},
 		},
 	}
@@ -197,8 +203,7 @@ func (c *CtyunSdwan) create(ctx context.Context, plan *CtyunSdwanConfig) (err er
 	createReq := &sdwan.SdwanCreateSdwanRequest{
 		SdwanName: plan.Name.ValueString(),
 	}
-	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() {
-
+	if plan.ProjectID.IsNull() || plan.ProjectID.IsUnknown() || plan.ProjectID.ValueString() == "" {
 		createReq.ProjectID = "0"
 	} else {
 		createReq.ProjectID = plan.ProjectID.ValueString()

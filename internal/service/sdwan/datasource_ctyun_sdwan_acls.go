@@ -42,7 +42,7 @@ func (c *CtyunSdwanAcls) Metadata(ctx context.Context, req datasource.MetadataRe
 
 func (c *CtyunSdwanAcls) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**查询SD-WAN访问控制列表**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed: true,
