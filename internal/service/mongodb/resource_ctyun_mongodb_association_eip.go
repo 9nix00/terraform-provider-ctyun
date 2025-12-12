@@ -99,6 +99,9 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					validator2.EipValidate(),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
@@ -106,12 +109,18 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"host_ip": schema.StringAttribute{
 				Required:    true,
 				Description: "主机ip",
 				Validators: []validator.String{
 					validator2.Ip(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"project_id": schema.StringAttribute{

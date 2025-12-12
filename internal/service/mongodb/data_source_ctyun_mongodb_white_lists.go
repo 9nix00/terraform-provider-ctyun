@@ -33,7 +33,7 @@ func (c *CtyunMongodbWhiteLists) Metadata(ctx context.Context, req datasource.Me
 
 func (c *CtyunMongodbWhiteLists) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**MongoDB白名单分组列表数据源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089537**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

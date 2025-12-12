@@ -107,7 +107,7 @@ func (c *CtyunMongodbInstance) Metadata(ctx context.Context, request resource.Me
 
 func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -213,7 +213,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
+				Description: "实例密码，长度为8~26个字符，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+ 支持更新",
 				Validators: []validator.String{
 					validator2.DBPassword(
 						8,
@@ -304,26 +304,26 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"availability_zone_info": schema.ListNestedAttribute{
 				Optional:    true,
-				Description: "mongodb实例节点指定可用区字段，选填。若不填写，将按节点个数均匀分布到各个可用区上。若需要填写可参考提供的examples",
+				Description: "mongodb实例节点指定可用区字段，选填。若不填写，将按节点个数均匀分布到各个可用区上。若需要填写可参考提供的examples 支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
-							Description: "资源池可用区名称",
+							Description: "资源池可用区名称 支持更新",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
-							Description: "资源池可用区总数（开通集群版--nodeType为mongos时范围为[2,16]，nodeType为shard时,shard数量取值范围[2,16]，每一个shard对应3个availabilityZoneCount, 例：nodeType: shard且要开通shard数 量为3时，availabilityZoneCount:9 ；nodeType为config时节点默认为3即availabilityZoneCount: 3）",
+							Description: "资源池可用区总数（开通集群版--nodeType为mongos时范围为[2,16]，nodeType为shard时,shard数量取值范围[2,16]，每一个shard对应3个availabilityZoneCount, 例：nodeType: shard且要开通shard数 量为3时，availabilityZoneCount:9 ；nodeType为config时节点默认为3即availabilityZoneCount: 3） 支持更新",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 16),
 							},
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
-							Description: "master:主节点、mongos:mongos节点、shard:shard节点 、config:config节点（存储类型storageType与shard节点一致，存储空间storageSpace为单个shard的storageSpace）、 backup:备份机(存储类型storageType与shard 节点一致，存储空间storageSpace为shard节点数量乘以单个shard的storageSpace)",
+							Description: "master:主节点、mongos:mongos节点、shard:shard节点 、config:config节点（存储类型storageType与shard节点一致，存储空间storageSpace为单个shard的storageSpace）、 backup:备份机(存储类型storageType与shard 节点一致，存储空间storageSpace为shard节点数量乘以单个shard的storageSpace) 支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf(business.MongodbNodeType...),
 							},
@@ -373,7 +373,7 @@ func (c *CtyunMongodbInstance) Schema(ctx context.Context, request resource.Sche
 			},
 			"read_only_count": schema.Int32Attribute{
 				Optional:    true,
-				Description: "从节点数量",
+				Description: "从节点数量 支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(1, 5),
 				},

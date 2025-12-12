@@ -43,7 +43,7 @@ func (c *CtyunMongodbAccount) Metadata(ctx context.Context, req resource.Metadat
 
 func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**MongoDB数据库账号管理资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089535**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -101,7 +101,7 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "实例密码，长度为8~26个字符，支持更新，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+",
+				Description: "实例密码，长度为8~26个字符，支持更新，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+ 支持更新",
 				Validators: []validator.String{
 					validator2.DBPassword(
 						8,
@@ -115,8 +115,11 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 			"database": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "数据库名称，默认为admin",
+				Description: "数据库名称，默认为admin 支持更新",
 				Default:     stringdefault.StaticString("admin"),
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"roles": schema.ListNestedAttribute{
 				Required:    true,
@@ -125,11 +128,14 @@ func (c *CtyunMongodbAccount) Schema(ctx context.Context, req resource.SchemaReq
 					Attributes: map[string]schema.Attribute{
 						"db": schema.StringAttribute{
 							Required:    true,
-							Description: "数据库名称",
+							Description: "数据库名称 支持更新",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"role": schema.StringAttribute{
 							Required:    true,
-							Description: "角色，可选值：read、readWrite、readWriteAnyDatabase等，默认为readWrite",
+							Description: "角色，可选值：read、readWrite、readWriteAnyDatabase等，默认为readWrite 支持更新",
 							Validators: []validator.String{
 								stringvalidator.OneOf("read", "readWrite", "readAnyDatabase", "readWriteAnyDatabase", "dbAdmin", "dbAdminAnyDatabase", "userAdmin", "userAdminAnyDatabase", "clusterAdmin"),
 							},

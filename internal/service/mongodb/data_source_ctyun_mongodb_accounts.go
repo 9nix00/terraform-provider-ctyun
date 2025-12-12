@@ -33,7 +33,7 @@ func (c *CtyunMongodbAccounts) Metadata(ctx context.Context, req datasource.Meta
 
 func (c *CtyunMongodbAccounts) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**MongoDB数据库账号列表数据源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089535**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
