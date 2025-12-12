@@ -22,6 +22,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -103,6 +104,10 @@ func (c *CtyunMysqlReadOnlyInstance) Schema(ctx context.Context, request resourc
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(32, 32),
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"cycle_type": schema.StringAttribute{
@@ -154,6 +159,9 @@ func (c *CtyunMysqlReadOnlyInstance) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -195,18 +203,31 @@ func (c *CtyunMysqlReadOnlyInstance) Schema(ctx context.Context, request resourc
 				Validators: []validator.Int32{
 					int32validator.Between(100, 32768),
 				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "实例名称（实例名称 (长度4到100，必须以字母或中文开头，只能包含字母(不区分大小写)、中文、数字、-或_)）",
+				Description: "实例名称，实例名称要求：实例名称 长度4到100，必须以字母或中文开头，只能包含字母(不区分大小写)、中文、数字、-或_",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(4, 100),
+					stringvalidator.RegexMatches(regexp.MustCompile("^[a-zA-Z][0-9a-zA-Z_-]+$"), "终端节点服务名称不符合规则"),
 					//stringvalidator.RegexMatches(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"availability_zone_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "可用区id，如果不填写，默认为第一个可用区",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:      true,

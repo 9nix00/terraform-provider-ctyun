@@ -96,7 +96,7 @@ func (c *CtyunPostgresqlCollectorPolicy) Schema(ctx context.Context, req resourc
 			},
 			"sql_collector_status": schema.StringAttribute{
 				Required:    true,
-				Description: "SQL审计状态，取值：enable | disabled",
+				Description: "SQL审计状态，支持更新。取值：enable | disabled",
 				Validators: []validator.String{
 					stringvalidator.OneOf("enable", "disabled"),
 				},
@@ -104,7 +104,7 @@ func (c *CtyunPostgresqlCollectorPolicy) Schema(ctx context.Context, req resourc
 			"log_interval": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "定时收集SQL日志的间隔.单位：分钟，默认5分钟，取值：5，10，30，60",
+				Description: "定时收集SQL日志的间隔，支持更新。单位：分钟，默认5分钟，取值：5，10，30，60",
 				Default:     int32default.StaticInt32(5),
 				Validators: []validator.Int32{
 					int32validator.OneOf(5, 10, 30, 60),

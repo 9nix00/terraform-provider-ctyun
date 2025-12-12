@@ -149,23 +149,29 @@ func (c *CtyunMysqlAccount) Schema(ctx context.Context, request resource.SchemaR
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "数据库账号密码",
+				Description: "数据库账号密码，支持更新。不建议使用弱密码，长度[8,20]位",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 20),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "备注",
+				Description: "备注，支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"schema_privilege_list": schema.SetNestedAttribute{
 				Optional:    true,
-				Description: "数据库权限配置列表",
+				Description: "数据库权限配置列表，支持更新。",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"grant_schema": schema.StringAttribute{
 							Required:    true,
-							Description: "授权数据库名称",
+							Description: "授权数据库名称，支持更新。",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"privilege": schema.StringAttribute{
 							Required:    true,

@@ -54,6 +54,12 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -82,10 +88,22 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 			"src_instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "恢复的源mysql实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"dst_instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "恢复的目标mysql实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"to_timepoint": schema.StringAttribute{
 				Optional:    true,
@@ -105,6 +123,9 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 				Description: "用来恢复的备份任务集【task_id和to_timepoint不能同时为空，优先取to_timepoint】",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"id": schema.Int64Attribute{

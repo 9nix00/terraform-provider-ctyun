@@ -105,6 +105,9 @@ func (c *CtyunPostgresqlReadOnlyInstance) Schema(ctx context.Context, request re
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(32, 32),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"cycle_type": schema.StringAttribute{
 				Required:    true,
@@ -185,12 +188,20 @@ func (c *CtyunPostgresqlReadOnlyInstance) Schema(ctx context.Context, request re
 				Description: "实例名称（实例名称 (长度4到100，必须以字母或中文开头，只能包含字母(不区分大小写)、中文、数字、-或_)）",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(4, 100),
-					//stringvalidator.RegexMatches(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"availability_zone_name": schema.StringAttribute{
 				Optional:    true,
 				Description: "可用区id，如果不填写，默认为第一个可用区",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,

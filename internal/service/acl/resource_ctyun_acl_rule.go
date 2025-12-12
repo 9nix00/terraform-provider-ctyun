@@ -166,7 +166,7 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 			"priority": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "优先级 1 - 32766，不填默认100",
+				Description: "优先级，支持更新。取值范围： 1 - 32766，不填默认100",
 				Default:     int32default.StaticInt32(100),
 				Validators: []validator.Int32{
 					int32validator.Between(1, 32766),
@@ -174,21 +174,21 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
-				Description: "协议，all, icmp, tcp, udp",
+				Description: "协议，支持更新。取值范围：all, icmp, tcp, udp",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.AclRuleProtocols...),
 				},
 			},
 			"ip_version": schema.StringAttribute{
 				Required:    true,
-				Description: "IP版本，支持ipv4, ipv6",
+				Description: "IP版本，支持更新。取值范围：ipv4, ipv6",
 				Validators: []validator.String{
 					stringvalidator.OneOf("ipv4", "ipv6"),
 				},
 			},
 			"destination_port": schema.StringAttribute{
 				Optional:    true,
-				Description: "目的地址端口范围，示例 8080:8085",
+				Description: "目的地址端口范围，支持更新。示例 8080:8085",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`^(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]):(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`), "输入的端口范围有误!"),
 					validator2.AlsoRequiresEqualString(
@@ -207,7 +207,7 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"source_port": schema.StringAttribute{
 				Optional:    true,
-				Description: "源地址端口范围，示例 8080:8085",
+				Description: "源地址端口范围，支持更新。示例： 8080:8085",
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(regexp.MustCompile(`^(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5]):(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$`), "输入的端口范围有误!"),
 					validator2.AlsoRequiresEqualString(
@@ -226,14 +226,14 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"source_ip_address": schema.StringAttribute{
 				Required:    true,
-				Description: "源地址",
+				Description: "源地址，支持更新。支持cidr格式",
 				Validators: []validator.String{
 					validator2.Cidr(),
 				},
 			},
 			"destination_ip_address": schema.StringAttribute{
 				Required:    true,
-				Description: "目的地址",
+				Description: "目的地址，支持更新。支持cidr格式",
 				Validators: []validator.String{
 					validator2.Cidr(),
 				},
@@ -250,11 +250,14 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 				Computed:    true,
 				Description: "acl 规则是否启用，支持更新。取值范围：disable, enable",
 				Default:     stringdefault.StaticString(business.AclRuleEnable),
+				Validators: []validator.String{
+					stringvalidator.OneOf(business.AclRuleEnable, business.AclRuleDisable),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "acl规则描述",
+				Description: "acl规则描述，支持更新",
 				Validators: []validator.String{
 					validator2.Desc(),
 				},

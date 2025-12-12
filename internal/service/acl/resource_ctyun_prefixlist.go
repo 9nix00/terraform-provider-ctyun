@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/setplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -149,21 +150,30 @@ func (c *CtyunPrefix) Schema(ctx context.Context, request resource.SchemaRequest
 			"prefix_list_rules": schema.SetNestedAttribute{
 				Required:    true,
 				Description: "前缀规则列表",
+				PlanModifiers: []planmodifier.Set{
+					setplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"cidr": schema.StringAttribute{
 							Required:    true,
-							Description: "CIDR格式的IP地址段，例如：192.168.0.0/16",
+							Description: "CIDR格式的IP地址段。例如：192.168.0.0/16",
 							Validators: []validator.String{
 								validator2.Cidr(),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 						"description": schema.StringAttribute{
 							Optional:    true,
-							Description: "前缀规则描述，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:\"{},./;'[\\]·！@#￥%……&*（） —— -+={}\\《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
+							Description: "前缀规则描述。支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:\"{},./;'[\\]·！@#￥%……&*（） —— -+={}\\《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128",
 							Validators: []validator.String{
 								stringvalidator.LengthBetween(0, 128),
 								validator2.Desc(),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 					},

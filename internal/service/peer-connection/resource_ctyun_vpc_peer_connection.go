@@ -110,7 +110,7 @@ func (c *CtyunVpcPeerConnection) ImportState(ctx context.Context, request resour
 
 func (c *CtyunVpcPeerConnection) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026760/10037873",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "对等连接id",
@@ -160,12 +160,18 @@ func (c *CtyunVpcPeerConnection) Schema(ctx context.Context, request resource.Sc
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"accept_vpc_id": schema.StringAttribute{
 				Description: "对端的vpc id",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
 				},
 			},
 			"accept_email": schema.StringAttribute{
@@ -174,10 +180,16 @@ func (c *CtyunVpcPeerConnection) Schema(ctx context.Context, request resource.Sc
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
+				Validators: []validator.String{
+					validator2.Email(),
+				},
 			},
 			"description": schema.StringAttribute{
-				Description: "对等连接描述",
+				Description: "对等连接描述，支持更新",
 				Optional:    true,
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"request_vpc_name": schema.StringAttribute{
 				Description: "本端的vpc名称",
@@ -211,17 +223,23 @@ func (c *CtyunVpcPeerConnection) Schema(ctx context.Context, request resource.Sc
 				Computed:    true,
 			},
 			"tags": schema.SetNestedAttribute{
-				Description: "标签",
+				Description: "标签，支持更新",
 				Optional:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
-							Description: "key",
+							Description: "key，支持更新",
 							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"value": schema.StringAttribute{
-							Description: "value",
+							Description: "value，支持更新",
 							Required:    true,
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"id": schema.StringAttribute{
 							Description: "标签id",

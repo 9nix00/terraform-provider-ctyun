@@ -132,4 +132,5 @@ resource "ctyun_ec_region_peer" "region_peer_test" {
 resource "ctyun_sdwan" "ctyun_sdwan_test" {
   name = "ctyun_sdwan_test"
   description = "terraform-ecsdwan测试使用"
+  project_id = "0"
 }

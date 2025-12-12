@@ -10,6 +10,8 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/mapvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -57,6 +59,10 @@ func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request res
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(32, 32),
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 
@@ -90,6 +96,9 @@ func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request res
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -101,6 +110,9 @@ func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request res
 				Description: "要修改的参数对。传入该参数，则无需传入template_id，当前mysql实例的参数可根据data.ctyun_mysql_parameters获取。",
 				PlanModifiers: []planmodifier.Map{
 					mapplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.Map{
+					mapvalidator.SizeAtLeast(1),
 				},
 			},
 		},

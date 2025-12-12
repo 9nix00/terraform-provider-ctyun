@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
@@ -112,34 +113,44 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			"vpc_id_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "关联的vpc，最多同时支持 5 个 VPC",
+				Description: "关联的vpc，最多同时支持 5 个 VPC。支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeBetween(1, 5),
 				},
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "内网DNS名称",
+				Description: "内网DNS名称。要求：由多个以点分隔的字符串组成，可包含字母、数字中划线、中划线不能在开头或末尾，单个字符串不超过63个字符，域名总长度不超过254个字符",
 				Validators: []validator.String{
-					stringvalidator.UTF8LengthAtLeast(1),
+					stringvalidator.UTF8LengthBetween(1, 254),
+					validator2.DnsName(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "内网DNS描述",
+				Description: "内网DNS描述，支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"proxy_pattern": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString("zone"),
-				Description: "zone：当前可用区不进行递归解析。 record：不完全劫持，进行递归解析代理, 大小写不敏感",
+				Description: "zone：当前可用区不进行递归解析。 支持更新，record：不完全劫持，进行递归解析代理, 大小写不敏感",
+				Validators: []validator.String{
+					stringvalidator.OneOf("zone", "record"),
+				},
 			},
 			"ttl": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(300),
-				Description: "zone ttl, 单位秒。default is 300，大于等于300，小于等于2147483647",
+				Description: "zone ttl, 单位秒。支持更新，default is 300，大于等于300，小于等于2147483647",
 				Validators: []validator.Int32{
 					int32validator.Between(300, 2147483647),
 				},
@@ -174,11 +185,17 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 						},
 						"key": schema.StringAttribute{
 							Required:    true,
-							Description: "标签key",
+							Description: "标签key，支持更新。",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
-							Description: "标签value",
+							Description: "标签value，支持更新。",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},

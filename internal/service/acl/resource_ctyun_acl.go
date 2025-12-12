@@ -14,6 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
@@ -158,6 +159,9 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Computed:    true,
 				Description: "是否启用acl管控lb流量，不传默认不管控",
 				Default:     booldefault.StaticBool(false),
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
 			},
 			"enabled": schema.StringAttribute{
 				Optional:    true,
@@ -166,6 +170,9 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 				Default:     stringdefault.StaticString(business.AclEnable),
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.AclEnable, business.AclDisable),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"id": schema.StringAttribute{
