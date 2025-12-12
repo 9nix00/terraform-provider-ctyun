@@ -121,7 +121,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s,%s,%s",
-						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["eip_address"],
 						rs.Primary.Attributes["region_id"],
 					), nil
@@ -138,7 +138,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
 					return fmt.Sprintf("%s,%s",
-						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["id"],
 						rs.Primary.Attributes["eip_address"],
 					), nil
 				},
