@@ -167,6 +167,7 @@ func (c *CtyunHpfs) Schema(ctx context.Context, request resource.SchemaRequest, 
 				Description: "并行文件名，仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符，支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 255),
+					validator2.HpfsName(),
 				},
 			},
 			"size": schema.Int32Attribute{

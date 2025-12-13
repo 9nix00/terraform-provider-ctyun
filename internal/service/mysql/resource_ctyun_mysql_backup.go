@@ -107,6 +107,9 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -142,6 +145,9 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份集备注",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -151,6 +157,9 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 				Computed:    true,
 				Description: "备份类型,默认全量物理备份 全量物理备份:full 全量逻辑备份:logic_full。逻辑备份支持资源池：（华北2、西安7），具体可查看文档：https://www.ctyun.cn/document/10033813/10902204",
 				Default:     stringdefault.StaticString("full"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("full", "logic_full"),
+				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},

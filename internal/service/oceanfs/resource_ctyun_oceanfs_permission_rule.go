@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/oceanfs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -97,6 +98,9 @@ func (c *CtyunOceanfsPermissionRule) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -112,7 +116,10 @@ func (c *CtyunOceanfsPermissionRule) Schema(ctx context.Context, request resourc
 			},
 			"auth_addr": schema.StringAttribute{
 				Required:    true,
-				Description: "授权地址。可填写单个 IP 或者单个网段，支持IPv4和IPv6两种网络类型。默认来访地址为*表示允许所有",
+				Description: "授权地址，支持更新。可填写单个 IP 或者单个网段，支持IPv4和IPv6两种网络类型。默认来访地址为*表示允许所有",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"rw_permission": schema.StringAttribute{
 				Required:    true,
@@ -120,12 +127,18 @@ func (c *CtyunOceanfsPermissionRule) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					stringvalidator.OneOf("ro", "rw"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"priority": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(1),
-				Description: "规则优先级。可选范围为1-400，默认值为1，即最高优先级。",
+				Description: "规则优先级，支持更新。可选范围为1-400，默认值为1，即最高优先级。",
+				Validators: []validator.Int32{
+					int32validator.Between(1, 400),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,

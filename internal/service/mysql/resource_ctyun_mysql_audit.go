@@ -53,6 +53,12 @@ func (c *CtyunMysqlAudit) Schema(ctx context.Context, request resource.SchemaReq
 			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例Id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,

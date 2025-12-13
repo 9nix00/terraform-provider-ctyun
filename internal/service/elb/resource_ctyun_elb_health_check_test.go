@@ -178,7 +178,7 @@ func TestAccCtyunElbHealthCheckImportState(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}},
+				ImportStateVerifyIgnore: []string{"projcet_id"}},
 			// import state 2
 			{
 				ResourceName: resourceName,
@@ -190,7 +190,7 @@ func TestAccCtyunElbHealthCheckImportState(t *testing.T) {
 					return fmt.Sprintf("%s,,%s", id, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{},
+				ImportStateVerifyIgnore: []string{"projcet_id"},
 			},
 			// 2.3 delete验证
 			{

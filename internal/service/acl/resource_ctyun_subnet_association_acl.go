@@ -144,7 +144,7 @@ func (c *CtyunSubnetAssociationAcl) Schema(ctx context.Context, request resource
 			},
 			"acl_id": schema.StringAttribute{
 				Required:    true,
-				Description: "acl_id，acl列表可以通过data.ctyun_acls查询",
+				Description: "acl_id，支持更新。acl列表可以通过data.ctyun_acls查询",
 				Validators: []validator.String{
 					validator2.AclID(),
 				},

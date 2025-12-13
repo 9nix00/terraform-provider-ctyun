@@ -10,6 +10,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -102,6 +103,9 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -141,7 +145,7 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "数据库描述，长度为2~256个字符。以中文、英文字母开头，可以包含数字、中文、英文、下划线（_）、短横线（-）",
+				Description: "数据库描述，支持更新。长度为2~256个字符。以中文、英文字母开头，可以包含数字、中文、英文、下划线（_）、短横线（-）",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(2, 256),
 				},
@@ -152,6 +156,9 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"charset_collate": schema.StringAttribute{
 				Optional:    true,
@@ -159,6 +166,12 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 				Description: "字符串排序规则,字符集为UTF8可不传入，其他的字符集必须传入",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("charset_name"),
+						types.StringValue("utf8"),
+					),
 				},
 			},
 			"charset_type": schema.StringAttribute{
@@ -175,6 +188,9 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 				Description: "数据库所有者",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"id": schema.StringAttribute{

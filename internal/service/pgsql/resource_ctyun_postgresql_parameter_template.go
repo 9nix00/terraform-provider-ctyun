@@ -9,6 +9,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -139,10 +140,13 @@ func (c *CtyunPgsqlParamTemplate) Schema(ctx context.Context, request resource.S
 				PlanModifiers: []planmodifier.Int64{
 					int64planmodifier.RequiresReplace(),
 				},
+				Validators: []validator.Int64{
+					int64validator.AtLeast(1),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "参数模板的描述，若不为空，则长度限制：1-1024",
+				Description: "参数模板的描述，支持更新，若不为空，则长度限制：1-1024",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthBetween(1, 1024),
 				},

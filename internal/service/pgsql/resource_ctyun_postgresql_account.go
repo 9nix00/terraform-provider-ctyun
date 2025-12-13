@@ -147,14 +147,17 @@ func (c *CtyunPostgresqlAccount) Schema(ctx context.Context, request resource.Sc
 			"password": schema.StringAttribute{
 				Required:    true,
 				Sensitive:   true,
-				Description: "数据库账号密码，.由大写字母、小写字母、特殊字符、数字中三种或者三种以上组成(特殊字符：@!#$%^&*()_-=)",
+				Description: "数据库账号密码，支持更新。由大写字母、小写字母、特殊字符、数字中三种或者三种以上组成(特殊字符：@!#$%^&*()_-=)",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(8, 32),
 				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "备注",
+				Description: "备注，支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"user_type": schema.StringAttribute{
 				Optional:    true,
@@ -163,6 +166,9 @@ func (c *CtyunPostgresqlAccount) Schema(ctx context.Context, request resource.Sc
 				Description: "账号类型，取值范围：normal-普通账号，advanced-高权限账号。默认为普通账号",
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.PgsqlAccountTypes...),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"is_lock": schema.BoolAttribute{

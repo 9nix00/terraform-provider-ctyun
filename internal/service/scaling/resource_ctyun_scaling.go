@@ -137,6 +137,9 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -145,12 +148,18 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Project(),
+				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraProjectId, false),
 			},
 			"security_group_id_list": schema.SetAttribute{
 				ElementType: types.StringType,
 				Optional:    true,
 				Description: "安全组ID列表。支持更新",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+				},
 			},
 			//"recovery_mode": schema.Int64Attribute{
 			//	Required:    true,
@@ -248,19 +257,31 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 					Attributes: map[string]schema.Attribute{
 						"port": schema.Int32Attribute{
 							Required:    true,
-							Description: "端口号，当status=disable时支持更新",
+							Description: "端口号，当status=disable时支持更新，取值范围：1~65535",
+							Validators: []validator.Int32{
+								int32validator.Between(1, 65535),
+							},
 						},
 						"lb_id": schema.StringAttribute{
 							Required:    true,
 							Description: "负载均衡ID，当status=disable时支持更新",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"weight": schema.Int32Attribute{
 							Required:    true,
 							Description: "权重，当status=disable时支持更新",
+							Validators: []validator.Int32{
+								int32validator.Between(0, 256),
+							},
 						},
 						"host_group_id": schema.StringAttribute{
 							Required:    true,
 							Description: "后端主机组ID，当status=disable时支持更新",
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},
@@ -314,11 +335,17 @@ func (c *ctyunScaling) Schema(ctx context.Context, request resource.SchemaReques
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "需要手动添加的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+				},
 			},
 			"remove_instance_uuid_list": schema.SetAttribute{
 				Optional:    true,
 				ElementType: types.StringType,
 				Description: "需要删除手动/自动加入伸缩组的云主机uuid列表。伸缩组内云主机清单可以根据data.ctyun_scaling_ecs_list获取。支持更新。",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+				},
 			},
 			//"protect_status": schema.StringAttribute{
 			//	Optional:    true,

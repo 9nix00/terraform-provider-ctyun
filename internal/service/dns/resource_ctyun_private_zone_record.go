@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
@@ -113,6 +114,9 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"type": schema.StringAttribute{
 				Required: true,
@@ -126,11 +130,14 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 				Validators: []validator.String{
 					stringvalidator.OneOf("A", "CNAME", "MX", "AAAA", "TXT"),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"value_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "当type=A，value_list必须是 IPv4 地址；" +
+				Description: "支持更新。当type=A，value_list必须是 IPv4 地址；" +
 					"当type=CNAME，value_list填写您要指向的别名，只能写一个域名；" +
 					"当type=MX，value_list 填写邮箱服务器地址，最多可以输入8个不重复地址；" +
 					"当type=AAAA，valueList 填写IPv6地址，最多可以输入8个不重复地址；" +
@@ -143,19 +150,28 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 			"ttl": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "zone ttl，TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。",
+				Description: "zone ttl，支持更新。TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。",
 				Default:     int32default.StaticInt32(300),
 				Validators: []validator.Int32{
 					int32validator.Between(300, 2147483647),
 				},
 			},
 			"name": schema.StringAttribute{
-				Optional:    true,
+				Required:    true,
 				Description: "DNS记录集的 name",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "DNS记录集描述",
+				Description: "DNS记录集描述，支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -172,7 +188,7 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 			"enabled": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启解析记录，默认启用。启用：enable,不启用：disable",
+				Description: "是否开启解析记录，默认启用，支持更新。启用：enable,不启用：disable",
 				Default:     stringdefault.StaticString(business.AclEnable),
 				Validators: []validator.String{
 					stringvalidator.OneOf(business.AclEnable, business.AclDisable),

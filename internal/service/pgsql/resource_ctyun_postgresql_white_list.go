@@ -124,7 +124,10 @@ func (c *CtyunPgsqlWhiteList) Schema(ctx context.Context, request resource.Schem
 			},
 			"mode": schema.StringAttribute{
 				Required:    true,
-				Description: "修改模式， cover(覆盖) ， append(追加) ， delete(删除,若分组下的ip被全部删除，则会将该分组也删除，默认分组(default)则会被设置成只允许本机访问，即只有127.0.0.1这个白名单ip)",
+				Description: "修改模式，支持更新。 cover(覆盖) ， append(追加) ， delete(删除,若分组下的ip被全部删除，则会将该分组也删除，默认分组(default)则会被设置成只允许本机访问，即只有127.0.0.1这个白名单ip)",
+				Validators: []validator.String{
+					stringvalidator.OneOf("cover", "append", "delete"),
+				},
 			},
 			"ip_list": schema.SetAttribute{
 				Required:    true,

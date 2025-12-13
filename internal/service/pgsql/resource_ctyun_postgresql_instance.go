@@ -232,7 +232,7 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 			"password": schema.StringAttribute{
 				Optional:    true,
 				Sensitive:   true,
-				Description: "实例密码，8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=",
+				Description: "实例密码，支持更新。8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=",
 				Validators: []validator.String{
 					validator2.DBPassword(
 						8,
@@ -319,21 +319,21 @@ func (c *CtyunPostgresqlInstance) Schema(ctx context.Context, request resource.S
 					Attributes: map[string]schema.Attribute{
 						"availability_zone_name": schema.StringAttribute{
 							Required:    true,
-							Description: "资源池可用区名称，可以根据data.ctyun_zones查询",
+							Description: "资源池可用区名称，支持更新。可以根据data.ctyun_zones查询",
 							Validators: []validator.String{
 								stringvalidator.UTF8LengthAtLeast(1),
 							},
 						},
 						"availability_zone_count": schema.Int32Attribute{
 							Required:    true,
-							Description: "资源池可用区总数",
+							Description: "资源池可用区总数，支持更新。",
 							Validators: []validator.Int32{
 								int32validator.Between(1, 16),
 							},
 						},
 						"node_type": schema.StringAttribute{
 							Required:    true,
-							Description: "节点类型(master/slave)",
+							Description: "节点类型(master/slave)，支持更新。",
 							Validators: []validator.String{
 								stringvalidator.OneOf("master", "slave"),
 							},

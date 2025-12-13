@@ -140,7 +140,7 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 			},
 			"size": schema.Int32Attribute{
 				Required:    true,
-				Description: "文件系统大小（GB）,取值范围默认为[100,1048576]，实际取值受限于用户剩余容量配额大小。为避免资源浪费，单用户单资源池默认分配500TB容量配额，可提交工单提升配额。",
+				Description: "文件系统大小（GB），支持更新。取值范围默认为[100,1048576]，实际取值受限于用户剩余容量配额大小。为避免资源浪费，单用户单资源池默认分配500TB容量配额，可提交工单提升配额。",
 				Validators: []validator.Int32{
 					int32validator.Between(100, 1048576),
 				},
@@ -193,12 +193,18 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Description: "子网ID，当isVpce为true时必填",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
 				},
 			},
 			"is_vpce": schema.BoolAttribute{
@@ -216,10 +222,22 @@ func (c *CtyunOceanfs) Schema(ctx context.Context, request resource.SchemaReques
 						"key": schema.StringAttribute{
 							Description: "标签键",
 							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 						"value": schema.StringAttribute{
 							Description: "标签值",
 							Required:    true,
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
+							Validators: []validator.String{
+								stringvalidator.UTF8LengthAtLeast(1),
+							},
 						},
 					},
 				},

@@ -95,6 +95,12 @@ func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.S
 			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "mysql实例id",
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -152,6 +158,9 @@ func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.S
 				Description: "允许最早开始备份时间 默认：00:00",
 				Validators: []validator.String{
 					validator2.BackupTimeValidator(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"trigger_days_of_week": schema.SetAttribute{

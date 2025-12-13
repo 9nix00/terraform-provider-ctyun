@@ -8,6 +8,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/oceanfs"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
+	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -100,11 +101,18 @@ func (c *CtyunOceanfsPermissionGroup) Schema(ctx context.Context, request resour
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 255),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "权限组描述信息。支持中英文，长度为0-128字符",
+				Description: "权限组描述信息，支持更新。支持中英文，长度为0-128字符",
+				Validators: []validator.String{
+					stringvalidator.LengthBetween(0, 128),
+					validator2.Desc(),
+				},
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,

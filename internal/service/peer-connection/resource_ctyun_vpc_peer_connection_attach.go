@@ -47,7 +47,7 @@ func NewCtyunVpcPeerConnectionAttach() resource.Resource {
 
 func (c *CtyunVpcPeerConnectionAttach) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "",
+		MarkdownDescription: "-> 详细说明请见文档：https://www.ctyun.cn/document/10026760/10037761",
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,
@@ -66,6 +66,9 @@ func (c *CtyunVpcPeerConnectionAttach) Schema(ctx context.Context, request resou
 				Description: "对接连接id",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"operation": schema.StringAttribute{

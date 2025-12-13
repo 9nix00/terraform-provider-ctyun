@@ -106,6 +106,9 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.UUID(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,
@@ -145,12 +148,20 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "备注",
+				Description: "备注，支持更新",
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"charset_name": schema.StringAttribute{
-				Required:      true,
-				Description:   "字符集",
-				PlanModifiers: []planmodifier.String{},
+				Required:    true,
+				Description: "字符集",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"user_grant_privilege": schema.ListNestedAttribute{
 				Computed: true,

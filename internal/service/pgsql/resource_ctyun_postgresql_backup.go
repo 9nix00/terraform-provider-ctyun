@@ -140,12 +140,19 @@ func (c *CtyunPostgresqlBackup) Schema(ctx context.Context, request resource.Sch
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
 				Description: "备份描述",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.Desc(),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"id": schema.Int64Attribute{
