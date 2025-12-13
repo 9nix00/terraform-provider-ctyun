@@ -31,7 +31,7 @@ func (v validatorHpfsName) ValidateString(_ context.Context, request validator.S
 	name := request.ConfigValue.ValueString()
 	length := len(name)
 	// 检查总长度
-	if len(name) >= 2 && len(name) <= 255 {
+	if len(name) < 2 || len(name) > 255 {
 		errMessage := "长度必须为2-255个字符"
 		response.Diagnostics.AddError(HpfsNameError, errMessage)
 		return
