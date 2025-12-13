@@ -143,7 +143,7 @@ func TestAccCtyunElbLoadBalancerImportState(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"cycle_count", "cycle_type", "az_name"},
+				ImportStateVerifyIgnore: []string{"cycle_count", "cycle_type", "az_name", "project_id"},
 			},
 			// importState 2
 			{
@@ -156,7 +156,7 @@ func TestAccCtyunElbLoadBalancerImportState(t *testing.T) {
 					return fmt.Sprintf("%s,,%s", id, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"cycle_count", "cycle_type", "az_name"},
+				ImportStateVerifyIgnore: []string{"cycle_count", "cycle_type", "az_name", "project_id"},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, subnetID, updateName, update2SlaName, resourceType, vpcID, updateDescription, cycleType, CycleCount, eip),
