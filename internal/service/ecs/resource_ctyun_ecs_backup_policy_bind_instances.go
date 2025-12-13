@@ -90,7 +90,7 @@ func (c *ctyunEcsBackupPolicyBindInstances) Schema(_ context.Context, _ resource
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1), // 至少包含一个字符
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(` ^[a-zA-Z0-9\-_, ]+$`),
+						regexp.MustCompile(`^[a-zA-Z0-9\-_,]+$`),
 						"必须是由逗号分隔的UUID列表",
 					),
 				},
