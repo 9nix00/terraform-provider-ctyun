@@ -191,8 +191,6 @@ func (c *ctyunMysqlAccounts) getPrivilege(item mysql.SchemaPrivilegeVO) string {
 		return business.MysqlSchemaPrivilegeReadOnly
 	} else if *item.DMLPrivilege {
 		return business.MysqlSchemaPrivilegeDML
-	} else if *item.ReadOnly {
-		return business.MysqlSchemaPrivilegeReadOnly
 	}
 	return ""
 }
