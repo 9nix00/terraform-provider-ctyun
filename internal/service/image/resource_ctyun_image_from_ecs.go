@@ -49,7 +49,7 @@ func (c *ctyunImageFromEcs) Metadata(_ context.Context, request resource.Metadat
 
 func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**创建私有镜像，详细说明请见：https://www.ctyun.cn/document/10027726/10031013**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027726/10031013`,
 		Attributes: map[string]schema.Attribute{
 			// 新增：资源ID（由API返回，自动生成）
 			"id": schema.StringAttribute{
@@ -137,6 +137,9 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 								//	"标签键不能换行或以空格开头/结尾。",
 								//),
 							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
+							},
 						},
 						"label_value": schema.StringAttribute{
 							Required:    true,
@@ -147,6 +150,9 @@ func (c *ctyunImageFromEcs) Schema(_ context.Context, _ resource.SchemaRequest, 
 								//	regexp.MustCompile(`^[^\\s\\n].*[^\\s\\n]$|^[^\\s\\n]$`),
 								//	"标签值不能换行或以空格开头/结尾。",
 								//),
+							},
+							PlanModifiers: []planmodifier.String{
+								stringplanmodifier.RequiresReplace(),
 							},
 						},
 					},

@@ -1,5 +1,5 @@
 # ctyun_redis_param_templates (Data Source)
-**详细说明请见文档：https://www.ctyun.cn/document/10029420/10156164**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10156164**
 
 
 

@@ -1,5 +1,5 @@
 # ctyun_private_nats (Data Source)
-**详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10033140
 
 
 

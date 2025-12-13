@@ -53,7 +53,7 @@ type CtyunRedisBackupConfig struct {
 
 func (c *ctyunRedisBackup) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10029420/10142282**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10142282`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:      true,
@@ -298,7 +298,8 @@ func (c *ctyunRedisBackup) checkAfterCreate(ctx context.Context, plan CtyunRedis
 	retryer, _ := business.NewRetryer(time.Second*10, 180)
 	retryer.Start(
 		func(currentTime int) bool {
-			status, err := c.getBackupTasks(ctx, &plan)
+			var status string
+			status, err = c.getBackupTasks(ctx, &plan)
 			if err != nil {
 				return false
 			}

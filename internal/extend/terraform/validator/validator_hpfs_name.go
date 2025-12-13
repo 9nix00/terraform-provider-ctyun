@@ -9,7 +9,7 @@ type validatorHpfsName struct {
 }
 
 const (
-	HpfsNameError = "不满足hpfs名称要求。并行文件名，仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符"
+	HpfsNameError = "不满足hpfs名称要求，并行文件名，仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符"
 )
 
 func HpfsName() validator.String {
@@ -17,7 +17,7 @@ func HpfsName() validator.String {
 }
 
 func (v validatorHpfsName) Description(_ context.Context) string {
-	return "不满足hpfs名称要求,并行文件名，仅允许英文字母数字及-，开头必须为字母，结尾不允许为-，且长度为2-255字符"
+	return HpfsNameError
 }
 
 func (v validatorHpfsName) MarkdownDescription(ctx context.Context) string {

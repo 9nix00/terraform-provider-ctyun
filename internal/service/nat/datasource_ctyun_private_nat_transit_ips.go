@@ -29,7 +29,7 @@ func (c *ctyunPrivateNatTransitIpsDatasource) Metadata(_ context.Context, reques
 
 func (c *ctyunPrivateNatTransitIpsDatasource) Schema(_ context.Context, _ datasource.SchemaRequest, response *datasource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `**详细说明请见文档：https://www.ctyun.cn/document/10026759/10166345`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10166345`,
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
 				Optional:    true,

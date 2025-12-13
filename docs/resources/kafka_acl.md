@@ -1,5 +1,5 @@
 # ctyun_kafka_acl (Resource)
-**详细说明请见文档：https://www.ctyun.cn/document/10029624/11078051**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/11078051**
 
 
 

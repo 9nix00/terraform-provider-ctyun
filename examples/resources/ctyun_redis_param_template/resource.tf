@@ -18,8 +18,8 @@ resource "ctyun_redis_param_template" "test" {
   cache_mode   = "ORIGINAL_67"
   sys_template = false
 
-  params = {
+  params = [{
       param_name    = "maxmemory-policy"
       current_value = "allkeys-lru"
-  }
+  }]
 }

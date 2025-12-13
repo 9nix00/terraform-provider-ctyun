@@ -52,7 +52,7 @@ type CtyunEbsSnapshotPolicyAssociationConfig struct {
 
 func (c *ctyunEbsSnapshotPolicyAssociation) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -90,7 +90,7 @@ func (c *ctyunEbsSnapshotPolicyAssociation) Schema(_ context.Context, _ resource
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1), // 至少包含一个字符
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`^[a-zA-Z0-9\-_,]+$`),
+						regexp.MustCompile(` ^[a-zA-Z0-9\-_, ]+$`),
 						"必须是由逗号分隔的UUID列表",
 					),
 				},

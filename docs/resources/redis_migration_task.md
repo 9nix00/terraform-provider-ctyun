@@ -1,5 +1,5 @@
 # ctyun_redis_migration_task (Resource)
-**详细说明请见文档：https://www.ctyun.cn/document/10029420/10518385**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10518385**
 
 
 

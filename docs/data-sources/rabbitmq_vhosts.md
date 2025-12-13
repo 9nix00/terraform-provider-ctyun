@@ -1,5 +1,5 @@
 # ctyun_rabbitmq_vhosts (Data Source)
-**详细说明请见文档：https://www.ctyun.cn/document/10000118/10220893**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10000118/10220893**
 
 
 

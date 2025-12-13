@@ -1,5 +1,5 @@
 # ctyun_redis_instance_whitelists (Data Source)
-**详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174**
 
 
 

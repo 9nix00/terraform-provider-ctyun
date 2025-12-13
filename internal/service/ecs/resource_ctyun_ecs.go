@@ -73,7 +73,7 @@ func (c *ctyunEcs) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026730**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026730`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				PlanModifiers: []planmodifier.String{stringplanmodifier.UseStateForUnknown()},
@@ -370,7 +370,7 @@ func (c *ctyunEcs) Schema(_ context.Context, _ resource.SchemaRequest, response 
 			"deletion_protection": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启实例删除保护，默认为false，包年包月实例不支持更新实例删除保护参数，支持更新",
+				Description: "是否开启实例删除保护，默认为false，按需实例支持更新",
 				Default:     booldefault.StaticBool(false),
 			},
 			"labels": schema.ListNestedAttribute{
@@ -1770,11 +1770,16 @@ func (c *ctyunEcs) setDeletionProtection(ctx context.Context, plan *CtyunEcsConf
 			InstanceID:         plan.Id.ValueString(),
 			DeletionProtection: deletionProtection,
 		})
-		if resp.StatusCode == common.ErrorStatusCode {
-			err = fmt.Errorf("setDeletionProtection API return error. Message: %s Description: %s", resp.Message, resp.Description)
+		if err != nil {
+			return err
+		} else if resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
+			return err
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
 			return err
 		}
-		return err
+		return nil
 	} else {
 		return nil
 	}

@@ -11,7 +11,7 @@ type validatorDnsName struct {
 }
 
 const (
-	DnsNameError = "不满足dns名称要求,由多个以点分隔的字符串组成，可包含字母、数字中划线、中划线不能在开头或末尾，单个字符串不超过63个字符，域名总长度不超过254个字符"
+	DnsNameError = "不满足dns名称要求，由多个以点分隔的字符串组成，可包含字母、数字中划线、中划线不能在开头或末尾，单个字符串不超过63个字符，域名总长度不超过254个字符"
 )
 
 func DnsName() validator.String {
@@ -19,7 +19,7 @@ func DnsName() validator.String {
 }
 
 func (v validatorDnsName) Description(_ context.Context) string {
-	return "不满足dns名称要求,由多个以点分隔的字符串组成，可包含字母、数字中划线、中划线不能在开头或末尾，单个字符串不超过63个字符，域名总长度不超过254个字符"
+	return DnsNameError
 }
 
 func (v validatorDnsName) MarkdownDescription(ctx context.Context) string {
@@ -45,16 +45,16 @@ func (v validatorDnsName) ValidateString(_ context.Context, request validator.St
 		return
 	}
 
-	// 检查开头和结尾不能是点
-	if domain[0] == '.' || domain[len(domain)-1] == '.' {
-		errMessage := "不得以.和-开头"
+	// 检查开头和结尾不能是.和-
+	if domain[0] == '.' || domain[len(domain)-1] == '.' || domain[0] == '-' || domain[len(domain)-1] == '-' {
+		errMessage := "不得以.和-开头或结尾"
 		response.Diagnostics.AddError(DnsNameError, errMessage)
 		return
 	}
 
 	// 检查连续点
 	if strings.Contains(domain, "..") {
-		errMessage := "不得以.和-结尾"
+		errMessage := "不能出现连续."
 		response.Diagnostics.AddError(DnsNameError, errMessage)
 		return
 	}

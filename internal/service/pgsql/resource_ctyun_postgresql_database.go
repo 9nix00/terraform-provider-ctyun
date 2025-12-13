@@ -163,7 +163,7 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 			"charset_collate": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "字符串排序规则,字符集为UTF8可不传入，其他的字符集必须传入",
+				Description: "字符串排序规则，charset_name为utf8不传，其他的字符集必须传入",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -177,9 +177,15 @@ func (c *CtyunPgsqlDatabase) Schema(ctx context.Context, request resource.Schema
 			"charset_type": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "字符分类,字符集为UTF8可不传入，其他的字符集必须传入",
+				Description: "字符分类，charset_name为utf8不传，其他的字符集必须传入",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					validator2.ConflictsWithEqualString(
+						path.MatchRoot("charset_name"),
+						types.StringValue("utf8"),
+					),
 				},
 			},
 			"owner": schema.StringAttribute{
