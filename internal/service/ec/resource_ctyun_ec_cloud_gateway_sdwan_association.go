@@ -46,7 +46,7 @@ func (c *CtyunEcCloudGatewaySdwanAssociation) Metadata(ctx context.Context, req 
 
 func (c *CtyunEcCloudGatewaySdwanAssociation) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**云网关与SDWAN关联资源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -78,19 +78,19 @@ func (c *CtyunEcCloudGatewaySdwanAssociation) Schema(ctx context.Context, req re
 			"cgw_list": schema.SetNestedAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "需要绑定的云网关列表，如果全部解绑则传空列表",
+				Description: "需要绑定的云网关列表，如果全部解绑则传空列表 支持更新",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"rtb_id": schema.StringAttribute{
 							Required:    true,
-							Description: "云网关默认路由表ID",
+							Description: "云网关默认路由表ID 支持更新",
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},
 						},
 						"cgw_id": schema.StringAttribute{
 							Required:    true,
-							Description: "云网关ID",
+							Description: "云网关ID 支持更新",
 							Validators: []validator.String{
 								stringvalidator.LengthAtLeast(1),
 							},

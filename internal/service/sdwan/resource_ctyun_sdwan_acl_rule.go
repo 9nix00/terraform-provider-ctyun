@@ -6,6 +6,7 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/sdwan"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -50,7 +51,7 @@ func (c *CtyunSdwanAclRule) Metadata(ctx context.Context, req resource.MetadataR
 
 func (c *CtyunSdwanAclRule) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**SD-WAN访问控制规则资源,详细说明请见文档**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -66,17 +67,20 @@ func (c *CtyunSdwanAclRule) Schema(ctx context.Context, req resource.SchemaReque
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"direction": schema.StringAttribute{
 				Required:    true,
-				Description: "控制方向，取值范围: in(入方向), out(出方向)",
+				Description: "控制方向，取值范围: in(入方向), out(出方向)  支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("in", "out"),
 				},
 			},
 			"protocol": schema.StringAttribute{
 				Required:    true,
-				Description: "协议类型，取值范围: udp(UDP), icmp(ICMP), all(ALL), tcp(TCP)",
+				Description: "协议类型，取值范围: udp(UDP), icmp(ICMP), all(ALL), tcp(TCP)  支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("udp", "icmp", "all", "tcp"),
 				},
@@ -84,39 +88,54 @@ func (c *CtyunSdwanAclRule) Schema(ctx context.Context, req resource.SchemaReque
 			"ip_version": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "IP协议版本，取值范围: IPv4(IPv4), IPv6(IPv6)",
+				Description: "IP协议版本，取值范围: IPv4(IPv4), IPv6(IPv6)  支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("IPv4", "IPv6"),
 				},
 			},
 			"dst_cidr": schema.StringAttribute{
 				Required:    true,
-				Description: "目的网段",
+				Description: "目的网段 支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"dst_port_range": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "目的端口范围（例如1-200， -1/-1为默认值，表示1-65535）",
+				Description: "目的端口范围（例如1-200， -1/-1为默认值，表示1-65535） 支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"priority": schema.Int32Attribute{
 				Required:    true,
-				Description: "优先级",
+				Description: "优先级 支持更新",
+				Validators: []validator.Int32{
+					int32validator.AtLeast(1),
+				},
 			},
 			"action": schema.StringAttribute{
 				Required:    true,
-				Description: "策略类型，取值范围: allow(允许), deny(拒绝)",
+				Description: "策略类型，取值范围: allow(允许), deny(拒绝)  支持更新",
 				Validators: []validator.String{
 					stringvalidator.OneOf("allow", "deny"),
 				},
 			},
 			"src_cidr": schema.StringAttribute{
 				Required:    true,
-				Description: "源网段",
+				Description: "源网段 支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 			"src_port_range": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "源端口范围（例如1-200， -1/-1为默认值，表示1-65535）",
+				Description: "源端口范围（例如1-200， -1/-1为默认值，表示1-65535） 支持更新",
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
+				},
 			},
 		},
 	}

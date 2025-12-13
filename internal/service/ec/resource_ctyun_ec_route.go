@@ -190,6 +190,9 @@ func (c *CtyunExpressConnectRoute) Schema(ctx context.Context, request resource.
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.Desc(),
+				},
 			},
 			"ip_version": schema.StringAttribute{
 				Required:    true,
@@ -213,6 +216,9 @@ func (c *CtyunExpressConnectRoute) Schema(ctx context.Context, request resource.
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "路由规则id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"create_time": schema.StringAttribute{
 				Computed:    true,

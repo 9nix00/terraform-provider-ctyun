@@ -49,7 +49,7 @@ func (c *CtyunExpressConnect) Metadata(ctx context.Context, req resource.Metadat
 
 func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**云间高速资源,详细说明请见文档**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -60,7 +60,7 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "名称",
+				Description: "名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 64),
 				},
@@ -74,7 +74,7 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
-				Description: "描述信息",
+				Description: "描述信息 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthAtMost(255),
 				},
@@ -99,6 +99,9 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.LengthAtLeast(1),
 				},
 				Default: defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 			},

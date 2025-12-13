@@ -39,7 +39,7 @@ func (c *CtyunVip) Metadata(_ context.Context, request resource.MetadataRequest,
 
 func (c *CtyunVip) Schema(_ context.Context, _ resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: `高可用虚拟IP资源`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10224288`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -78,6 +78,9 @@ func (c *CtyunVip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.VpcValidate(),
+				},
 			},
 			"subnet_id": schema.StringAttribute{
 				Required:    true,
@@ -85,12 +88,19 @@ func (c *CtyunVip) Schema(_ context.Context, _ resource.SchemaRequest, response 
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.String{
+					validator2.SubnetValidate(),
+				},
 			},
 			"ip_address": schema.StringAttribute{
 				Optional:    true,
 				Description: "ip地址",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+					validator2.Ip(),
 				},
 			},
 			"vip_type": schema.StringAttribute{

@@ -143,7 +143,7 @@ func (c *CtyunExpressConnectRegionPeer) Schema(ctx context.Context, request reso
 			},
 			"rate": schema.Int32Attribute{
 				Required:    true,
-				Description: "带宽值（MB）",
+				Description: "带宽值（MB） 支持更新",
 				Validators: []validator.Int32{
 					int32validator.AtLeast(1),
 				},

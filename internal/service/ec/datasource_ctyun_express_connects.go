@@ -24,7 +24,7 @@ func (c *ctyunExpressConnects) Metadata(_ context.Context, req datasource.Metada
 
 func (c *ctyunExpressConnects) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**云间高速实例列表数据源**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Optional:    true,

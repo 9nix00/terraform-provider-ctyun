@@ -11,11 +11,13 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
 	"github.com/google/uuid"
+	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
@@ -98,6 +100,9 @@ func (c *CtyunExpressConnectVpcInstance) Schema(ctx context.Context, request res
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"cgw_id": schema.StringAttribute{
 				Required:    true,
@@ -105,12 +110,18 @@ func (c *CtyunExpressConnectVpcInstance) Schema(ctx context.Context, request res
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"rtb_id": schema.StringAttribute{
 				Required:    true,
 				Description: "路由表ID",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
+				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"region_id": schema.StringAttribute{
@@ -131,26 +142,47 @@ func (c *CtyunExpressConnectVpcInstance) Schema(ctx context.Context, request res
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"exclusive_id": schema.StringAttribute{
 				Optional:    true,
 				Description: "专属云资源池ID",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"route_learn": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(1),
 				Description: "路由学习开关，开启后云网关自动学习网络实例路由, 1-开启，0不开启",
+				Validators: []validator.Int32{
+					int32validator.OneOf(1, 0),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
 			},
 			"route_sync": schema.Int32Attribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "路由同步开关，开启后云网关路由自动同步到网络实例,1-开启同步，0-不开启同步",
 				Default:     int32default.StaticInt32(1),
+				Validators: []validator.Int32{
+					int32validator.OneOf(1, 0),
+				},
+				PlanModifiers: []planmodifier.Int32{
+					int32planmodifier.RequiresReplace(),
+				},
 			},
 			"subnets": schema.SetAttribute{
 				Required:    true,
-				Description: "subnet id列表",
+				Description: "subnet id列表 支持更新",
 				ElementType: types.StringType,
 				Validators: []validator.Set{
 					setvalidator.SizeAtLeast(1),
@@ -159,6 +191,9 @@ func (c *CtyunExpressConnectVpcInstance) Schema(ctx context.Context, request res
 			"id": schema.StringAttribute{
 				Computed:    true,
 				Description: "vpc网络实例id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
 			},
 			"project_id": schema.StringAttribute{
 				Optional:    true,

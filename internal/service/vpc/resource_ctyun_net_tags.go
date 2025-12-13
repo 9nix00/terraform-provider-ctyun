@@ -43,7 +43,7 @@ func (c *ctyunNetTags) Metadata(_ context.Context, request resource.MetadataRequ
 
 func (c *ctyunNetTags) Schema(_ context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
 	response.Schema = schema.Schema{
-		MarkdownDescription: "详细说明请见文档：https://www.ctyun.cn/document/10026759/00000000",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10026753/10219975`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:      true,
@@ -57,6 +57,9 @@ func (c *ctyunNetTags) Schema(_ context.Context, request resource.SchemaRequest,
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"resource_type": schema.StringAttribute{
@@ -74,6 +77,9 @@ func (c *ctyunNetTags) Schema(_ context.Context, request resource.SchemaRequest,
 				Description: "资源 ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
 				},
 			},
 			"tags": schema.SetNestedAttribute{

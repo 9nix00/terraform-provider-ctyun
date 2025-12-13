@@ -11,6 +11,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/hashicorp/terraform-plugin-framework-validators/setvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -57,7 +58,7 @@ func (c *CtyunMongodbWhiteList) Metadata(ctx context.Context, req resource.Metad
 
 func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**MongoDB白名单分组资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089536**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -102,15 +103,24 @@ func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaR
 			},
 			"group_name": schema.StringAttribute{
 				Required:    true,
-				Description: "白名单分组名",
+				Description: "白名单分组名 支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"ip_type": schema.StringAttribute{
 				Required:    true,
-				Description: "白名单分组名",
+				Description: "ip类型 支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"white_list_type": schema.StringAttribute{
 				Required:    true,
-				Description: "白名单分组名",
+				Description: "白名单列表类型  支持更新",
+				Validators: []validator.String{
+					stringvalidator.UTF8LengthAtLeast(1),
+				},
 			},
 			"white_list_id": schema.Int32Attribute{
 				Computed:    true,
@@ -122,7 +132,10 @@ func (c *CtyunMongodbWhiteList) Schema(ctx context.Context, req resource.SchemaR
 			"ip_list": schema.SetAttribute{
 				ElementType: types.StringType,
 				Required:    true,
-				Description: "IP列表",
+				Description: "IP列表 支持更新",
+				Validators: []validator.Set{
+					setvalidator.SizeAtLeast(1),
+				},
 			},
 		},
 	}

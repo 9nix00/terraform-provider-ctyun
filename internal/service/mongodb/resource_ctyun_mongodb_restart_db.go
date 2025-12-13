@@ -45,7 +45,7 @@ func (c *CtyunMongodbRestartDb) Metadata(ctx context.Context, req resource.Metad
 
 func (c *CtyunMongodbRestartDb) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: `**MongoDB白名单分组资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089536**`,
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:    true,

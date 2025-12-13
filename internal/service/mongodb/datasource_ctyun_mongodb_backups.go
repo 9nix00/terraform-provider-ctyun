@@ -61,7 +61,7 @@ func (d *CtyunMongodbBackups) Metadata(ctx context.Context, req datasource.Metad
 func (d *CtyunMongodbBackups) Schema(ctx context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "天翼云MongoDB备份数据源",
+		MarkdownDescription: `-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535`,
 
 		Attributes: map[string]schema.Attribute{
 			"region_id": schema.StringAttribute{
