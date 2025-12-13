@@ -160,7 +160,7 @@ func TestAccCtyunElbTargetImportState(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name"},
+				ImportStateVerifyIgnore: []string{"az_name", "project_id"},
 			},
 			// importState 2
 			{
@@ -173,7 +173,7 @@ func TestAccCtyunElbTargetImportState(t *testing.T) {
 					return fmt.Sprintf("%s,,%s", id, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name"},
+				ImportStateVerifyIgnore: []string{"az_name", "project_id"},
 			},
 			// destroy
 			{

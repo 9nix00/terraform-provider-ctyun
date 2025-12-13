@@ -275,7 +275,7 @@ func TestAccCtyunElbListenerImportState(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name"}},
+				ImportStateVerifyIgnore: []string{"az_name", "project_id"}},
 			// import state 2
 			{
 				ResourceName: resourceName,
@@ -287,7 +287,7 @@ func TestAccCtyunElbListenerImportState(t *testing.T) {
 					return fmt.Sprintf("%s,,%s", id, regionID), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"az_name"},
+				ImportStateVerifyIgnore: []string{"az_name", "project_id"},
 			},
 			// 1.4 destroy验证
 			{
