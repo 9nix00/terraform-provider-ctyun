@@ -489,98 +489,85 @@ func (c *ctyunEcs) Read(ctx context.Context, request resource.ReadRequest, respo
 }
 
 func (c *ctyunEcs) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
+	var err error
+	defer func() {
+		if err != nil {
+			response.Diagnostics.AddError(err.Error(), err.Error())
+		}
+	}()
 	var state CtyunEcsConfig
 	response.Diagnostics.Append(request.State.Get(ctx, &state)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
 	var plan CtyunEcsConfig
 	response.Diagnostics.Append(request.Plan.Get(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
 	}
-
 	// 更新状态
-	err2 := c.handleInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString(), state.Status.ValueString(), plan.Status.ValueString())
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
-		return
-	}
-
-	// 修改基础信息
-	err := c.updateInstanceInfo(ctx, state, plan)
+	err = c.handleInstance(ctx, state.Id.ValueString(), state.RegionId.ValueString(), state.Status.ValueString(), plan.Status.ValueString())
 	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
 	}
-
+	// 修改基础信息
+	err = c.updateInstanceInfo(ctx, state, plan)
+	if err != nil {
+		return
+	}
 	// 修改硬盘大小
-	err2 = c.updateSystemDisk(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateSystemDisk(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 修改密码
-	err2 = c.updatePassword(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updatePassword(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 修改规格
-	err2 = c.updateFlavor(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateFlavor(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 按需转包，包转按需
-	err2 = c.changePayType(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.changePayType(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 更新安全组
-	err2 = c.updateSecurityGroup(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateSecurityGroup(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 更新密钥
-	err2 = c.updateKeyPair(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateKeyPair(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 更新删除保护设置
-	err2 = c.updateDeletionProtection(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateDeletionProtection(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 更新元数据
-	err2 = c.updateMetadata(ctx, state, plan)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	err = c.updateMetadata(ctx, state, plan)
+	if err != nil {
 		return
 	}
-
 	// 更新标签
-	err2 = c.updateLabels(ctx, state, plan)
-
+	err = c.updateLabels(ctx, state, plan)
+	if err != nil {
+		return
+	}
 	//更新云主机组
-	err2 = c.updateAffinityGroup(ctx, state, plan)
-
+	err = c.updateAffinityGroup(ctx, state, plan)
+	if err != nil {
+		return
+	}
 	// 反查信息
-	instance, err2 := c.getAndMergeEcs(ctx, state)
-	if err2 != nil {
-		response.Diagnostics.AddError(err2.Error(), err2.Error())
+	instance, err := c.getAndMergeEcs(ctx, state)
+	if err != nil {
 		return
 	}
 	instance.IsDestroyInstance = plan.IsDestroyInstance
