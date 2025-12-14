@@ -108,7 +108,7 @@ func (c *CtyunMysqlBackup) Schema(ctx context.Context, request resource.SchemaRe
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 			},
 			"project_id": schema.StringAttribute{

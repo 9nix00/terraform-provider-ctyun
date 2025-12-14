@@ -57,7 +57,7 @@ func (c *CtyunMysqlAudit) Schema(ctx context.Context, request resource.SchemaReq
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 			},
 			"project_id": schema.StringAttribute{

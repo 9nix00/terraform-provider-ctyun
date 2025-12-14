@@ -104,7 +104,6 @@ func (c *CtyunMysqlReadOnlyInstance) Schema(ctx context.Context, request resourc
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(32, 32),
-					validator2.UUID(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

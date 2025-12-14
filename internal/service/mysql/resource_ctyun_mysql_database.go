@@ -107,7 +107,7 @@ func (c *CtyunMysqlDatabase) Schema(ctx context.Context, request resource.Schema
 					stringplanmodifier.RequiresReplace(),
 				},
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 			},
 			"project_id": schema.StringAttribute{

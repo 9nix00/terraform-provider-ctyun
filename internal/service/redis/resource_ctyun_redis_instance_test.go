@@ -116,12 +116,12 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources[resourceName]
+					rs, ok := s.RootModule().Resources[associationName]
 					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
+						return "", fmt.Errorf("resource not found: %s", associationName)
 					}
 					return fmt.Sprintf("%s,%s,%s",
-						rs.Primary.Attributes["id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["eip_address"],
 						rs.Primary.Attributes["region_id"],
 					), nil
@@ -133,12 +133,12 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 				ImportState:       true,
 				ImportStateVerify: true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
-					rs, ok := s.RootModule().Resources[resourceName]
+					rs, ok := s.RootModule().Resources[associationName]
 					if !ok {
-						return "", fmt.Errorf("resource not found: %s", resourceName)
+						return "", fmt.Errorf("resource not found: %s", associationName)
 					}
 					return fmt.Sprintf("%s,%s",
-						rs.Primary.Attributes["id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["eip_address"],
 					), nil
 				},

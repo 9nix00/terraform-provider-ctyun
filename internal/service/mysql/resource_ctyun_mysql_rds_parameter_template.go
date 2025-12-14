@@ -59,7 +59,6 @@ func (c *CtyunMysqlRdsParameterTemplate) Schema(ctx context.Context, request res
 				Description: "mysql数据库实例ID，为该实例管理只读实例",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(32, 32),
-					validator2.UUID(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
