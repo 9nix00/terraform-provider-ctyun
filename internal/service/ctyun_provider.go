@@ -584,7 +584,6 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		pgsql.NewCtyunPostgresqlInstance(),
 		rabbitmq.NewCtyunRabbitmqInstance(),
 		pgsql.NewCtyunMysqlAssociationEip(),
-		pgsql.NewCtyunPostgresqlCollectorPolicy(),
 		mongodb.NewCtyunMongodbInstance(),
 		mysql2.NewCtyunMysqlWhiteList(),
 		ecs.NewCtyunEcsSnapshot(),

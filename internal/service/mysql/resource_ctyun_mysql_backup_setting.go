@@ -54,7 +54,7 @@ func (c *CtyunMysqlBackupSetting) ImportState(ctx context.Context, request resou
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [name][instanceID][projectID][regionID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[projectID],[regionID]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
@@ -71,7 +71,7 @@ func (c *CtyunMysqlBackupSetting) ImportState(ctx context.Context, request resou
 		}
 	}
 	if instId == "" {
-		err = fmt.Errorf("instID 不能为空")
+		err = fmt.Errorf("instanceID 不能为空")
 		return
 	}
 	if regionId == "" {

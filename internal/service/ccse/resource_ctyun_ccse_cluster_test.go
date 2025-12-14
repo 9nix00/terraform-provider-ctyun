@@ -13,7 +13,6 @@ import (
 )
 
 func TestAccCtyunClusterStandard(t *testing.T) {
-	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 
@@ -178,7 +177,6 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 }
 
 func TestAccCtyunClusterManaged(t *testing.T) {
-	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 

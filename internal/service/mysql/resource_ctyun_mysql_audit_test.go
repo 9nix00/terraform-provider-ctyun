@@ -64,7 +64,7 @@ func TestAccCtyunMysqlAudit_basic(t *testing.T) {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "audit_switch", "false"),
 					// 验证所有属性保持不变
-					resource.TestCheckResourceAttr(resourceName, "inst_id", instID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", instID),
 				),
 			},
 		},

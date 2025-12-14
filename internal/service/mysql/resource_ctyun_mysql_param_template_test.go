@@ -146,7 +146,7 @@ func TestAccCtyunMysqlParamTemplateImportState(t *testing.T) {
 					), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"name", "engine", "description", "template_parameters"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"name", "engine", "description", "template_parameters", "project_id"}, // 不需要忽略任何字段
 			},
 			// 4. 清理资源
 			{

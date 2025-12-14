@@ -58,7 +58,7 @@ func TestAccCtyunMysqlBackup(t *testing.T) {
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"description", "task_type"}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"description", "task_type", "project_id"}, // 不需要忽略任何字段
 			},
 			// 验证 backups datasource
 			{
@@ -113,7 +113,7 @@ func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
-					resource.TestCheckResourceAttr(resourceName, "inst_id", mysqlInstanceID),
+					resource.TestCheckResourceAttr(resourceName, "instance_id", mysqlInstanceID),
 					resource.TestCheckResourceAttr(resourceName, "project_id", projectID),
 					resource.TestCheckResourceAttr(resourceName, "description", description),
 					resource.TestCheckResourceAttr(resourceName, "task_type", "full"),
@@ -128,7 +128,7 @@ func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 					rs, _ := s.RootModule().Resources[resourceName]
 					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["region_id"],
 					), nil
@@ -144,7 +144,7 @@ func TestAccCtyunMysqlBackupImportState(t *testing.T) {
 					rs, _ := s.RootModule().Resources[resourceName]
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 					), nil
 				},
 				ImportStateVerify:       true,

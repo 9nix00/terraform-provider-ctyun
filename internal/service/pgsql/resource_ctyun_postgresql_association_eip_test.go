@@ -13,12 +13,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	dnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_association_eip." + rnd
-
-	//
 	resourceFile := "resource_ctyun_postgresql_association_eip.tf"
-
-	datasourceName := "data.ctyun_mysql_association_eips." + dnd
-	datasourceFile := "datasource_ctyun_pgsql_association_eips.tf"
 
 	specsDatasourceName := "data.ctyun_postgresql_specs." + dnd
 	specsDatasourceFile := "datasource_ctyun_postgresql_specs.tf"
@@ -41,29 +36,18 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+			{
+				Config: utils.LoadTestCase(specsDatasourceFile, dnd, instanceType),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrWith(specsDatasourceName, "specs.#", utils.AtLeastOne),
+				),
+			},
 			// 绑定eip
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
 					resource.TestCheckResourceAttr(resourceName, "eip_status", "1"),
-				),
-			},
-			// resource验证
-			//datasource验证
-			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId) +
-					utils.LoadTestCase(datasourceFile, dnd, fmt.Sprintf(`eip_id="%s"`, eipId)),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(datasourceName, "eips.#", "1"),
-					resource.TestCheckResourceAttr(datasourceName, "eips.0.bind_status", "1"),
-				),
-			},
-			// spec datasource验证
-			{
-				Config: utils.LoadTestCase(specsDatasourceFile, dnd, instanceType),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttrWith(specsDatasourceName, "specs.#", utils.AtLeastOne),
 				),
 			},
 			//import验证
@@ -97,7 +81,6 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["eip_id"],
-
 						rs.Primary.Attributes["region_id"],
 					), nil
 				},

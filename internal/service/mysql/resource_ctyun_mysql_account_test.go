@@ -111,7 +111,7 @@ func TestAccCtyunMysqlAccount(t *testing.T) {
 					// 构造导入ID: "id,region_id"
 					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["name"],
-						rs.Primary.Attributes["inst_id"],
+						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["region_id"],
 					), nil

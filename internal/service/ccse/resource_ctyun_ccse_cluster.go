@@ -46,6 +46,7 @@ type ctyunCcseCluster struct {
 	ebmService    *business.EbmService
 	vpcService    *business.VpcService
 	regionService *business.RegionService
+	orderLooper   *business.OrderLooper
 }
 
 func NewCtyunCcseCluster() resource.Resource {
@@ -1070,6 +1071,7 @@ func (c *ctyunCcseCluster) Configure(_ context.Context, request resource.Configu
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.orderLooper = business.NewOrderLooper(c.meta.Apis.CtEcsApis.EcsOrderQueryUuidApi)
 	c.ccseService = business.NewCcseService(c.meta)
 	c.ecsService = business.NewEcsService(c.meta)
 	c.ebmService = business.NewEbmService(c.meta)
@@ -1287,6 +1289,7 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 		return
 	}
 	masterOrderID = resp.ReturnObj.OrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 

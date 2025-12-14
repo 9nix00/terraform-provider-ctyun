@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"testing"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"testing"
 )
 
-func TestAccCtyunCcseScalingNodePoolPolicy(t *testing.T) {
+func TestAccCtyunACcseScalingNodePoolPolicy(t *testing.T) {
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_ccse_node_pool_scaling_policy." + rnd
 	resourceFile := "resource_ctyun_ccse_node_pool_scaling_policy.tf"

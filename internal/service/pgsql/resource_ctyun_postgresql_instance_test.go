@@ -299,7 +299,6 @@ func TestAccCtyunPgsqlInstance(t *testing.T) {
 
 // 不传az Info 测试
 func TestAccCtyunPgsqlInstanceNoAZInfo(t *testing.T) {
-	t.Parallel()
 	rnd := utils.GenerateRandomString()
 	resourceName := "ctyun_postgresql_instance." + rnd
 
