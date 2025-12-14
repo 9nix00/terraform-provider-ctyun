@@ -322,7 +322,7 @@ func (c *ctyunCcsePlugin) checkBeforeCreate(ctx context.Context, plan CtyunCcseP
 func (c *ctyunCcsePlugin) checkAfterCreate(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
 	var executeSuccessFlag bool
 	var failedCnt int
-	retryer, _ := business.NewRetryer(time.Second*10, 600)
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
