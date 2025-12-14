@@ -59,7 +59,7 @@ func (v validatorDnsName) ValidateString(_ context.Context, request validator.St
 		return
 	}
 	// 至少包含一个点
-	if strings.Contains(domain, ".") {
+	if !strings.Contains(domain, ".") {
 		errMessage := "必须由多个以点分隔的字符串组成"
 		response.Diagnostics.AddError(DnsNameError, errMessage)
 		return

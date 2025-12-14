@@ -55,7 +55,7 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 				Required:    true,
 				Description: "mysql实例id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -89,7 +89,7 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 				Required:    true,
 				Description: "恢复的源mysql实例id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -99,7 +99,7 @@ func (c *CtyunMysqlBackupRecovery) Schema(ctx context.Context, request resource.
 				Required:    true,
 				Description: "恢复的目标mysql实例id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),

@@ -96,7 +96,7 @@ func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.S
 				Required:    true,
 				Description: "mysql实例id",
 				Validators: []validator.String{
-					validator2.UUID(),
+					stringvalidator.LengthBetween(32, 32),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
