@@ -26,12 +26,12 @@ func TestAccCtyunKafkaInstanceCluster(t *testing.T) {
 	engineVersion := "3.6"
 	zone := os.Getenv("CTYUN_AZ_NAME")
 
-	initName := "tf-kafka-init-" + utils.GenerateRandomString()
+	initName := "tf-kafka-initc-" + utils.GenerateRandomString()
 	initNodeNum := 3
 	initDiskSize := 100
 	initRetentionHours := 80
 
-	updatedName := "tf-kafka-updated-" + utils.GenerateRandomString()
+	updatedName := "tf-kafka-updatedc-" + utils.GenerateRandomString()
 	updatedNodeNum := 5
 	updatedDiskSize := 200
 	updatedRetentionHours := 60
@@ -231,7 +231,7 @@ func TestAccCtyunKafkaInstanceSingle(t *testing.T) {
 	engineVersion := "3.6"
 	zone := os.Getenv("CTYUN_AZ_NAME")
 
-	initName := "tf-kafka-init-" + utils.GenerateRandomString()
+	initName := "tf-kafka-inits-" + utils.GenerateRandomString()
 	initNodeNum := 1
 	initDiskSize := 100
 	initRetentionHours := 80
