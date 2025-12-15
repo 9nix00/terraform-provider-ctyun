@@ -82,7 +82,7 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["instance_id"],
 						rs.Primary.Attributes["eip_id"],
-						rs.Primary.Attributes["region_id"],
+						rs.Primary.Attributes["project_id"],
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{
