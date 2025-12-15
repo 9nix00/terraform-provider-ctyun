@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"strings"
 	"time"
 )
 
@@ -184,6 +185,9 @@ func (c *CtyunMongodbRestartDb) checkBeforeCreate(ctx context.Context, state *Ct
 				err = err3
 				return false
 			} else if detailResp.StatusCode != 800 {
+				if detailResp.Message != nil && strings.Contains(*detailResp.Message, "实例未正常运行,请稍后再试") {
+					return true // 继续重试
+				}
 				err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
 				return false
 			} else if detailResp.ReturnObj == nil {
