@@ -142,6 +142,7 @@ data "ctyun_postgresql_character_set" "charsets" {
 }
 
 data "ctyun_postgresql_collation_time_zone" "collations" {
+  depends_on = [ctyun_postgresql_instance.test]
   instance_id    = ctyun_postgresql_instance.test.id
 }
 

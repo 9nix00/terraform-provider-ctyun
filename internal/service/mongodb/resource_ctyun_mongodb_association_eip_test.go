@@ -63,13 +63,15 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,%s",
+					return fmt.Sprintf("%s,%s,%s,%s",
 						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+						rs.Primary.Attributes["project_id"],
 						rs.Primary.Attributes["region_id"],
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{
-					"master_order_id",
+					"master_order_id", "project_id",
 				},
 			},
 			{
@@ -81,12 +83,32 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s",
+					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+						rs.Primary.Attributes["project_id"],
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{
-					"master_order_id",
+					"master_order_id", "project_id",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"master_order_id", "project_id", "region_id",
 				},
 			},
 			{

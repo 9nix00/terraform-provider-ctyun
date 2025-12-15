@@ -81,6 +81,7 @@ func (c *CtyunMysqlBackupSetting) ImportState(ctx context.Context, request resou
 	cfg.RegionID = types.StringValue(regionId)
 	cfg.ProjectID = types.StringValue(projectId)
 	cfg.InstID = types.StringValue(instId)
+	cfg.ID = types.StringValue(fmt.Sprintf("%s-setting", instId))
 	err = c.getAndMergeMysqlBackupSetting(ctx, &cfg)
 	if err != nil {
 		return
@@ -172,6 +173,10 @@ func (c *CtyunMysqlBackupSetting) Schema(ctx context.Context, request resource.S
 					setvalidator.ValueInt32sAre(int32validator.Between(1, 7)),
 				},
 			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "id",
+			},
 		},
 	}
 }
@@ -200,6 +205,8 @@ func (c *CtyunMysqlBackupSetting) Create(ctx context.Context, request resource.C
 	if err != nil {
 		return
 	}
+	// id赋值， instance id + "-" + settings
+	plan.ID = types.StringValue(fmt.Sprintf("%s-setting", plan.InstID.ValueString()))
 	response.Diagnostics.Append(response.State.Set(ctx, &plan)...)
 	if response.Diagnostics.HasError() {
 		return
@@ -406,4 +413,5 @@ type CtyunMysqlBackupSettingConfig struct {
 	FrequencyBackupUnitTime types.Int64  `tfsdk:"frequency_backup_unit_time"` // 高频备份频率 单位: 秒，最小为1小时，即3600
 	AllowEarliestTime       types.String `tfsdk:"allow_earliest_time"`
 	TriggerDaysOfWeek       types.Set    `tfsdk:"trigger_days_of_week"`
+	ID                      types.String `tfsdk:"id"`
 }

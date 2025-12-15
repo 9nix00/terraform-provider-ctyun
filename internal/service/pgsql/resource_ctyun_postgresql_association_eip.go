@@ -100,6 +100,13 @@ func (c *CtyunPgsqlAssociationEip) Schema(ctx context.Context, request resource.
 					int32validator.Between(0, 2),
 				},
 			},
+			"id": schema.StringAttribute{
+				Computed:    true,
+				Description: "id",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.UseStateForUnknown(),
+				},
+			},
 		},
 	}
 }
@@ -125,6 +132,9 @@ func (c *CtyunPgsqlAssociationEip) Create(ctx context.Context, request resource.
 	if err != nil {
 		return
 	}
+	// 定义ID，instanceID + EIP id
+	plan.ID = types.StringValue(fmt.Sprintf("%s,%s", plan.InstID.ValueString(), plan.EipID.ValueString()))
+
 	err = c.getAndMergeBindEip(ctx, &plan)
 	if err != nil {
 		return
@@ -218,44 +228,51 @@ func (c *CtyunPgsqlAssociationEip) ImportState(ctx context.Context, request reso
 	defer func() {
 		if err != nil {
 			title := "导入失败：" + err.Error()
-			detail := "导入命令：terraform import [配置标识].[导入配置名称] [ID],[regionID],[projectID]"
+			detail := "导入命令：terraform import [配置标识].[导入配置名称] [instanceID],[eipID],[projectID],[regionID]"
 			response.Diagnostics.AddError(title, detail)
 		}
 	}()
 	var config CtyunPgsqlAssociationEipConfig
-	var eipId, regionId, projectId string
+	var eipID, regionID, projectID, instanceID string
 	// 根据分隔符数量判断是否输入了regionID,projectId
-	if strings.Count(request.ID, common.ImportSeparator) == 0 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		projectId = c.meta.GetExtraIfEmpty(projectId, common.ExtraProjectId)
-		eipId = request.ID
-	} else if strings.Count(request.ID, common.ImportSeparator) == 1 {
-		regionId = c.meta.GetExtraIfEmpty(regionId, common.ExtraRegionId)
-		err = terraform_extend.Split(request.ID, &eipId, &projectId)
+	if strings.Count(request.ID, common.ImportSeparator) == 1 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		projectID = c.meta.GetExtraIfEmpty(projectID, common.ExtraProjectId)
+		err = terraform_extend.Split(request.ID, &instanceID, &eipID)
+		if err != nil {
+			return
+		}
+	} else if strings.Count(request.ID, common.ImportSeparator) == 2 {
+		regionID = c.meta.GetExtraIfEmpty(regionID, common.ExtraRegionId)
+		err = terraform_extend.Split(request.ID, &instanceID, &eipID, &projectID)
 		if err != nil {
 			return
 		}
 	} else {
-		err = terraform_extend.Split(request.ID, &eipId, &projectId, &regionId)
+		err = terraform_extend.Split(request.ID, &instanceID, &eipID, &projectID, &regionID)
 		if err != nil {
 			return
 		}
 	}
-
-	if eipId == "" {
-		err = fmt.Errorf("eipId不能为空")
+	if instanceID == "" {
+		err = fmt.Errorf("instanceID不能为空")
 		return
 	}
-	if regionId == "" {
+	if eipID == "" {
+		err = fmt.Errorf("eipID不能为空")
+		return
+	}
+	if regionID == "" {
 		err = fmt.Errorf("regionID不能为空")
 		return
 	}
-
-	config.EipID = types.StringValue(eipId)
-	config.RegionID = types.StringValue(regionId)
-	if projectId != "" {
-		config.ProjectID = types.StringValue(projectId)
+	config.InstID = types.StringValue(instanceID)
+	config.EipID = types.StringValue(eipID)
+	config.RegionID = types.StringValue(regionID)
+	if projectID != "" {
+		config.ProjectID = types.StringValue(projectID)
 	}
+	config.ID = types.StringValue(fmt.Sprintf("%s,%s", instanceID, eipID))
 	err = c.getAndMergeBindEip(ctx, &config)
 	if err != nil {
 		return
@@ -372,4 +389,5 @@ type CtyunPgsqlAssociationEipConfig struct {
 	ProjectID types.String `tfsdk:"project_id"`  //项目id
 	RegionID  types.String `tfsdk:"region_id"`   //区域Id
 	EipStatus types.Int32  `tfsdk:"eip_status"`  //弹性ip状态 0->unbind，1->bind
+	ID        types.String `tfsdk:"id"`
 }
