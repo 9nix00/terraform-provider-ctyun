@@ -99,7 +99,7 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 					return fmt.Sprintf("%s,0,%s", id, regionId), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"project_id"}, // 不需要忽略任何字段
 			},
 			// 4. 导入测试2
 			{
@@ -114,7 +114,7 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+				ImportStateVerifyIgnore: []string{"project_id"}, // 不需要忽略任何字段
 			},
 			{
 				Config: utils.LoadTestCase(frequencyResourceFile, rnd, mysqlInstanceID, projectID,

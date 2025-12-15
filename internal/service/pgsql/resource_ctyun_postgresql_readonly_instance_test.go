@@ -76,7 +76,7 @@ func TestAccCtyunPostgresqlReadOnlyInstance(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{"cycle_type", "cycle_count", "auto_renew", "flavor_name",
-					"availability_zone_name", "instance_id", "project_id"}, // 不需要忽略任何字段
+					"availability_zone_name", "instance_id", "project_id", "instance_id"}, // 不需要忽略任何字段
 			},
 			// 4. 清理资源
 			{
