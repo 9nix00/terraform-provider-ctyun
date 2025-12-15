@@ -18,6 +18,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
+	"strings"
 )
 
 var (
@@ -454,6 +455,10 @@ func (c *CtyunEcCloudGateway) createCgwBill(ctx context.Context, plan *CtyunEcCl
 		if err != nil {
 			return
 		} else if *resp.StatusCode == common.ErrorStatusCode {
+			if resp.Message != nil && strings.Contains(*resp.Message, "该用户账号存在云企业路由器计费订单") {
+				err = nil
+				return
+			}
 			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
 			return
 		} else if resp.ReturnObj == nil {
