@@ -69,7 +69,6 @@ func (c *CtyunMysqlReadOnlyInstance) ImportState(ctx context.Context, request re
 		return
 	}
 	config.ID = types.StringValue(ID)
-	config.InstID = types.StringValue(ID)
 	config.RegionID = types.StringValue(regionId)
 	config.ProjectID = types.StringValue(projectId)
 	err = c.getAndMerge(ctx, &config)

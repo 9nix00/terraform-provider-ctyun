@@ -33,6 +33,14 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 		},
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
+			// datasource
+			{
+				Config: utils.LoadTestCase(specDatasourceFile, dnd, instance_series),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
+				),
+			},
+			// eip 绑定
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -40,11 +48,64 @@ func TestAccCtyunMysqlAssociationEip(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "instance_id", instId),
 				),
 			},
+			//import验证
 			{
-				Config: utils.LoadTestCase(specDatasourceFile, dnd, instance_series),
-				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(specDatasourceName, "specs.#", "8"),
-				),
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+						rs.Primary.Attributes["project_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"master_order_id",
+					"project_id",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+						rs.Primary.Attributes["region_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"master_order_id", "project_id",
+				},
+			},
+			{
+				ResourceName:      resourceName,
+				ImportState:       true,
+				ImportStateVerify: true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,%s",
+						rs.Primary.Attributes["instance_id"],
+						rs.Primary.Attributes["eip_id"],
+					), nil
+				},
+				ImportStateVerifyIgnore: []string{
+					"master_order_id", "project_id", "region_id",
+				},
 			},
 			{
 				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, eipAddress, instId),

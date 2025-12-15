@@ -58,8 +58,8 @@ func TestAccCtyunMysqlAudit_basic(t *testing.T) {
 			// 2. 由于不支持更新，重新应用相同配置
 			{
 				Config: utils.LoadTestCase(
-					resourceFile, rnd, projectID,
-					instID, auditSwitch2,
+					resourceFile, rnd, instID, projectID,
+					auditSwitch2,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "audit_switch", "false"),

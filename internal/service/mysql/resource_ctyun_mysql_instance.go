@@ -196,7 +196,7 @@ func (c *CtyunMysqlInstance) Schema(ctx context.Context, request resource.Schema
 			},
 			"security_group_id": schema.StringAttribute{
 				Required:    true,
-				Description: "安全组Id",
+				Description: "安全组Id，支持多个安全组，用英文逗号分割(,)。支持更新，最少得有一个安全组",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

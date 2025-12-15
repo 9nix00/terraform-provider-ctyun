@@ -25,8 +25,8 @@ func TestAccCtyunPostgresqlAccount(t *testing.T) {
 
 	// 测试数据
 	accountName := "test_account_" + rnd
-	initialPassword := "TestPassword123!"
-	updatedPassword := "UpdatedPassword456!"
+	initialPassword := "Te123!" + utils.GenerateRandomString()
+	updatedPassword := "updatED123!" + utils.GenerateRandomString()
 	initialDescription := "Initial_account_description"
 	updatedDescription := "Updated_account_description"
 
@@ -182,7 +182,7 @@ func TestAccCtyunPostgresqlAdvancedAccount(t *testing.T) {
 
 	// 测试数据
 	accountName := "admin_" + rnd
-	password := "AdminPassword123!"
+	password := "Ad123!" + utils.GenerateRandomString()
 	description := "Advanced_account_for_administration"
 
 	// 等待函数

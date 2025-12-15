@@ -85,18 +85,33 @@ func TestAccCtyunMysqlBackupSetting(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "trigger_days_of_week.2", "6"),
 				),
 			},
+			// 4. 导入测试1
+			{
+				ResourceName: resourceName,
+				ImportState:  true,
+				ImportStateIdFunc: func(s *terraform.State) (string, error) {
+					rs, ok := s.RootModule().Resources[resourceName]
+					id := rs.Primary.Attributes["instance_id"]
+					regionId := rs.Primary.Attributes["region_id"]
+					if !ok {
+						return "", fmt.Errorf("resource not found: %s", resourceName)
+					}
+					return fmt.Sprintf("%s,0,%s", id, regionId), nil
+				},
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段
+			},
 			// 4. 导入测试2
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
 				ImportStateIdFunc: func(s *terraform.State) (string, error) {
 					rs, ok := s.RootModule().Resources[resourceName]
-					id := rs.Primary.ID
-					regionId := rs.Primary.Attributes["region_id"]
+					id := rs.Primary.Attributes["instance_id"]
 					if !ok {
 						return "", fmt.Errorf("resource not found: %s", resourceName)
 					}
-					return fmt.Sprintf("%s,0,%s", id, regionId), nil
+					return fmt.Sprintf("%s", id), nil
 				},
 				ImportStateVerify:       true,
 				ImportStateVerifyIgnore: []string{}, // 不需要忽略任何字段

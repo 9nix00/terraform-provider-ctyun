@@ -63,7 +63,7 @@ func TestAccCtyunMysqlInstanceUpdatePassword(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{"flavor_name", "password", "auto_renew",
-					"backup_storage_type", "availability_zone_info", "running_control", "cycle_count", "master_order_id"},
+					"backup_storage_type", "availability_zone_info", "running_control", "cycle_count", "master_order_id", "project_id"},
 			},
 			// import state验证2
 			{

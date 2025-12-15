@@ -107,7 +107,6 @@ func (c *CtyunMysqlAudit) Create(ctx context.Context, request resource.CreateReq
 	if response.Diagnostics.HasError() {
 		return
 	}
-
 	// 开启/关闭sql审计
 	err = c.create(ctx, &plan)
 	if err != nil {
@@ -137,6 +136,11 @@ func (c *CtyunMysqlAudit) Delete(ctx context.Context, request resource.DeleteReq
 }
 
 func (c *CtyunMysqlAudit) create(ctx context.Context, config *CtyunMysqlAuditConfig) error {
+	// 进行审计之前，确定数据库是否running
+	err := c.startedLoop(ctx, config)
+	if err != nil {
+		return err
+	}
 	params := &mysql.TeledbStartAuditRequest{
 		OuterProdInstId: config.InstID.ValueString(),
 		AuditSwitch:     config.AuditSwitch.ValueBool(),
