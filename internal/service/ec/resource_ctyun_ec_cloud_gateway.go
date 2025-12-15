@@ -454,7 +454,7 @@ func (c *CtyunEcCloudGateway) createCgwBill(ctx context.Context, plan *CtyunEcCl
 		resp, err = c.meta.Apis.SdkEcApis.EcEcCgwBillNewApi.Do(ctx, c.meta.SdkCredential, req)
 		if err != nil {
 			return
-		} else if *resp.StatusCode == common.ErrorStatusCode {
+		} else if *resp.StatusCode != common.NormalStatusCode {
 			if resp.Message != nil && strings.Contains(*resp.Message, "该用户账号存在云企业路由器计费订单") {
 				err = nil
 				return
