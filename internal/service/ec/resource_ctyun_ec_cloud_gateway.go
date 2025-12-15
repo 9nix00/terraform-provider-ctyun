@@ -41,7 +41,7 @@ type CtyunEcCloudGatewayConfig struct {
 	Description types.String `tfsdk:"description"`
 	Region      types.Int64  `tfsdk:"region"`
 	DcName      types.String `tfsdk:"region_name"`
-	DcID        types.String `tfsdk:"region_id"`
+	RegionID    types.String `tfsdk:"region_id"`
 	CreateTime  types.String `tfsdk:"create_time"`
 	RtbID       types.String `tfsdk:"rtb_id"`
 }
@@ -165,6 +165,10 @@ func (c *CtyunEcCloudGateway) Create(ctx context.Context, req resource.CreateReq
 	if err != nil {
 		return
 	}
+	err = c.createCgwBill(ctx, &plan)
+	if err != nil {
+		return
+	}
 	err = c.create(ctx, &plan)
 	if err != nil {
 		return
@@ -280,7 +284,7 @@ func (c *CtyunEcCloudGateway) create(ctx context.Context, plan *CtyunEcCloudGate
 	createReq := &ec.EcEcCreateGatewayRequest{
 		CgwName: plan.Name.ValueString(),
 		DcName:  plan.DcName.ValueString(),
-		DcID:    plan.DcID.ValueString(),
+		DcID:    plan.RegionID.ValueString(),
 		EcID:    plan.EcID.ValueString(),
 		DcType:  "CNP",
 	}
@@ -343,7 +347,7 @@ func (c *CtyunEcCloudGateway) getAndMerge(ctx context.Context, plan *CtyunEcClou
 	}
 
 	if result.DcID == nil {
-		return fmt.Errorf("API return error. DcID is nil")
+		return fmt.Errorf("API return error. RegionID is nil")
 	}
 
 	if result.DcName == nil {
@@ -353,7 +357,7 @@ func (c *CtyunEcCloudGateway) getAndMerge(ctx context.Context, plan *CtyunEcClou
 	plan.ID = types.StringValue(*result.CgwID)
 	plan.Name = types.StringValue(*result.CgwName)
 	plan.EcID = types.StringValue(*result.EcID)
-	plan.DcID = types.StringValue(*result.DcID)
+	plan.RegionID = types.StringValue(*result.DcID)
 	plan.DcName = types.StringValue(*result.DcName)
 	plan.Region = types.Int64Value(*result.Region)
 	plan.Description = types.StringValue(*resp.Description)
@@ -415,5 +419,48 @@ func (c *CtyunEcCloudGateway) delete(ctx context.Context, state CtyunEcCloudGate
 	} else if *resp.StatusCode != common.NormalStatusCode {
 		return fmt.Errorf("API return error. Message: %s", *resp.Message)
 	}
+	return
+}
+
+// createCgwBill 创建云网关计费
+func (c *CtyunEcCloudGateway) createCgwBill(ctx context.Context, plan *CtyunEcCloudGatewayConfig) (err error) {
+	// 实现创建云网关计费的逻辑
+	// 使用 c.meta.Apis.SdkEcApis.EcEcCgwBillNewApi 调用新创建的订购API
+	oderType := "1"
+	oderState := "1"
+	// 构造查询参数（这里需要根据实际业务需求进行调整）
+	queryReq := &ec.EcEcTgwOrderQueryRequest{
+		EcID:       plan.EcID.ValueString(),
+		OrderType:  &oderType,
+		OrderState: &oderState,
+	}
+	queryResp, err := c.meta.Apis.SdkEcApis.EcEcTgwOrderQueryApi.Do(ctx, c.meta.SdkCredential, queryReq)
+	if err != nil {
+		return
+	} else if *queryResp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *queryResp.Message)
+	} else if queryResp.ReturnObj == nil || len(queryResp.ReturnObj.Results) == 0 {
+		// 构造请求参数（这里需要根据实际业务需求进行调整）
+		req := &ec.EcEcCgwBillNewRequest{
+			EcID: plan.EcID.ValueString(),
+			// RegionID, ClientToken, PayVoucherPrice 等参数根据实际需求添加
+		}
+
+		tflog.Info(ctx, "创建云网关计费", map[string]interface{}{
+			"ec_id": plan.EcID.ValueString(),
+		})
+		var resp *ec.EcEcCgwBillNewResponse
+		resp, err = c.meta.Apis.SdkEcApis.EcEcCgwBillNewApi.Do(ctx, c.meta.SdkCredential, req)
+		if err != nil {
+			return
+		} else if *resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
+			return
+		}
+	}
+
 	return
 }
