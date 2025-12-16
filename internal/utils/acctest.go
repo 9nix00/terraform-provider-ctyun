@@ -62,14 +62,9 @@ func generateRandomStringWithRetry(retryCount int) string {
 	length := 10
 	builder := strings.Builder{}
 	builder.Grow(length)
-
-	// 👇 仅新增这1行（定义字符集长度）
 	charsetLen := big.NewInt(int64(len(charset)))
 
-	// 👇 循环逻辑和你完全一样，仅改随机索引生成
 	for i := 0; i < length; i++ {
-		// 👇 核心改动（替代你原来的 r.Intn()）
-		// rand.Int 第一个参数固定传 rand.Reader，第二个传字符集长度（范围）
 		randomIndex, _ := crand.Int(crand.Reader, charsetLen)
 		builder.WriteByte(charset[randomIndex.Int64()])
 	}
