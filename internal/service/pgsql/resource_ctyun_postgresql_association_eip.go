@@ -55,10 +55,6 @@ func (c *CtyunPgsqlAssociationEip) Schema(ctx context.Context, request resource.
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
-			"eip": schema.StringAttribute{
-				Computed:    true,
-				Description: "弹性ip地址",
-			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
 				Description: "实例id",
@@ -189,9 +185,16 @@ func (c *CtyunPgsqlAssociationEip) Delete(ctx context.Context, request resource.
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+	state.eipAddress = *eip.EipAddress
+
 	unbindParams := &pgsql.PgsqlUnBindEipRequest{
 		EipID:  state.EipID.ValueString(),
-		Eip:    state.Eip.ValueString(),
+		Eip:    state.eipAddress,
 		InstID: state.InstID.ValueString(),
 	}
 	unbindHeader := &pgsql.PgsqlUnBindEipRequestHeader{}
@@ -285,7 +288,7 @@ func (c *CtyunPgsqlAssociationEip) PgsqlBindEip(ctx context.Context, config *Cty
 	if err != nil {
 		return
 	}
-	config.Eip = types.StringValue(*eip.EipAddress)
+	config.eipAddress = *eip.EipAddress
 	params := &pgsql.PgsqlBindEipRequest{
 		EipID:  config.EipID.ValueString(),
 		Eip:    *eip.EipAddress,
@@ -383,11 +386,11 @@ func (c *CtyunPgsqlAssociationEip) getAndMergeBindEip(ctx context.Context, confi
 }
 
 type CtyunPgsqlAssociationEipConfig struct {
-	EipID     types.String `tfsdk:"eip_id"`      //弹性id
-	Eip       types.String `tfsdk:"eip"`         //弹性ip
-	InstID    types.String `tfsdk:"instance_id"` //实例id
-	ProjectID types.String `tfsdk:"project_id"`  //项目id
-	RegionID  types.String `tfsdk:"region_id"`   //区域Id
-	EipStatus types.Int32  `tfsdk:"eip_status"`  //弹性ip状态 0->unbind，1->bind
-	ID        types.String `tfsdk:"id"`
+	EipID      types.String `tfsdk:"eip_id"`      //弹性id
+	InstID     types.String `tfsdk:"instance_id"` //实例id
+	ProjectID  types.String `tfsdk:"project_id"`  //项目id
+	RegionID   types.String `tfsdk:"region_id"`   //区域Id
+	EipStatus  types.Int32  `tfsdk:"eip_status"`  //弹性ip状态 0->unbind，1->bind
+	ID         types.String `tfsdk:"id"`
+	eipAddress string
 }

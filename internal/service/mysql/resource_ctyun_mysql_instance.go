@@ -768,6 +768,9 @@ func (c *CtyunMysqlInstance) updateInfoLoop(ctx context.Context, state *CtyunMys
 				state.ProjectID.ValueString(),
 				state.RegionID.ValueString(),
 			)
+			if err != nil {
+				return false
+			}
 			if instance.ProdInstName == plan.Name.ValueString() && instance.WritePort == fmt.Sprintf("%d", plan.WritePort.ValueInt32()) {
 				return false
 			}
@@ -796,6 +799,9 @@ func (c *CtyunMysqlInstance) startedLoop(ctx context.Context, state *CtyunMysqlI
 				state.ProjectID.ValueString(),
 				state.RegionID.ValueString(),
 			)
+			if err != nil {
+				return false
+			}
 			runningStatus := instance.ProdRunningStatus
 			orderStatus := instance.ProdOrderStatus
 			// 若变配前，发现数据库已冻结，将其恢复
@@ -1194,7 +1200,9 @@ func (c *CtyunMysqlInstance) generateAzInfos(ctx context.Context, config *CtyunM
 		// 2. 获取az信息
 		var regionAzList []mysql.TeledbGetAvailabilityZoneResponseReturnObjData
 		regionAzList, err = c.getAzInfoByRegion(ctx, config)
-
+		if err != nil {
+			return err
+		}
 		if len(regionAzList) < 1 {
 			err = errors.New("该资源池AZ信息获取为空，无法直接分配节点AZ信息")
 		}

@@ -87,7 +87,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{
-					"master_order_id", "project_id", "eip",
+					"master_order_id", "project_id",
 				},
 			},
 			{
@@ -105,7 +105,7 @@ func TestAccCtyunPgsqlAssociationEip(t *testing.T) {
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{
-					"master_order_id", "project_id", "region_id", "eip",
+					"master_order_id", "project_id", "region_id",
 				},
 			},
 			// 解绑
