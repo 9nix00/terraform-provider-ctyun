@@ -768,6 +768,9 @@ func (c *CtyunMysqlInstance) updateInfoLoop(ctx context.Context, state *CtyunMys
 				state.ProjectID.ValueString(),
 				state.RegionID.ValueString(),
 			)
+			if err != nil {
+				return false
+			}
 			if instance.ProdInstName == plan.Name.ValueString() && instance.WritePort == fmt.Sprintf("%d", plan.WritePort.ValueInt32()) {
 				return false
 			}
@@ -796,6 +799,9 @@ func (c *CtyunMysqlInstance) startedLoop(ctx context.Context, state *CtyunMysqlI
 				state.ProjectID.ValueString(),
 				state.RegionID.ValueString(),
 			)
+			if err != nil {
+				return false
+			}
 			runningStatus := instance.ProdRunningStatus
 			orderStatus := instance.ProdOrderStatus
 			// 若变配前，发现数据库已冻结，将其恢复
