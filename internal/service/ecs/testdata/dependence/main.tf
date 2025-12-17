@@ -72,6 +72,7 @@ resource "ctyun_ecs" "ecs_test" {
   password            = var.password
   cycle_type          = "on_demand"
   subnet_id           = ctyun_subnet.subnet_test.id
+
 }
 
 
