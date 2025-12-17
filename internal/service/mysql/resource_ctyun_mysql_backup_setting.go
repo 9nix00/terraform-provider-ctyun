@@ -31,7 +31,8 @@ var (
 )
 
 type CtyunMysqlBackupSetting struct {
-	meta *common.CtyunMetadata
+	meta         *common.CtyunMetadata
+	mysqlService *business.MysqlService
 }
 
 func (c *CtyunMysqlBackupSetting) Metadata(ctx context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {
@@ -47,6 +48,7 @@ func (c *CtyunMysqlBackupSetting) Configure(ctx context.Context, request resourc
 	}
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
+	c.mysqlService = business.NewMysqlService(c.meta)
 }
 
 func (c *CtyunMysqlBackupSetting) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -282,6 +284,12 @@ func (c *CtyunMysqlBackupSetting) Delete(ctx context.Context, request resource.D
 }
 
 func (c *CtyunMysqlBackupSetting) updateMysqlBackupSettingConfig(ctx context.Context, config *CtyunMysqlBackupSettingConfig) error {
+
+	err := c.mysqlService.WaitInstanceStatus(ctx, config.InstID.ValueString(), config.ProjectID.ValueString(), config.RegionID.ValueString(),
+		business.MysqlRunningStatusStarted, business.MysqlOrderStatusStarted)
+	if err != nil {
+		return err
+	}
 	var triggerWeek []int32
 	diags := config.TriggerDaysOfWeek.ElementsAs(ctx, &triggerWeek, false)
 	if diags.HasError() {

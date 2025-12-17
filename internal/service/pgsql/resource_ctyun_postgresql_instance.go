@@ -727,6 +727,9 @@ func (c *CtyunPostgresqlInstance) getAndMergePgsqlInstance(ctx context.Context, 
 	config.Name = types.StringValue(returnObj.ProdInstName)
 	config.ProdType = types.Int32Value(returnObj.ProdType)
 	prodId, err := strconv.ParseInt(returnObj.SpuCode, 10, 64)
+	if err != nil {
+		return
+	}
 	config.ProdID = types.StringValue(business.PgsqlProdIDRevDict[prodId])
 	config.ReadPort = types.Int32Value(returnObj.ReadPort)
 	config.WritePort = types.StringValue(returnObj.WritePort)

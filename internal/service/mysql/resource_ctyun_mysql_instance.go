@@ -1200,7 +1200,9 @@ func (c *CtyunMysqlInstance) generateAzInfos(ctx context.Context, config *CtyunM
 		// 2. 获取az信息
 		var regionAzList []mysql.TeledbGetAvailabilityZoneResponseReturnObjData
 		regionAzList, err = c.getAzInfoByRegion(ctx, config)
-
+		if err != nil {
+			return err
+		}
 		if len(regionAzList) < 1 {
 			err = errors.New("该资源池AZ信息获取为空，无法直接分配节点AZ信息")
 		}

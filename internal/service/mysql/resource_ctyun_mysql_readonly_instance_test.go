@@ -141,7 +141,7 @@ func TestAccCtyunMysqlReadOnlyInstanceImportState(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{"cycle_type", "cycle_count", "auto_renew", "flavor_name",
-					"storage_type", "storage_space", "availability_zone_name"}, // 不需要忽略任何字段
+					"storage_type", "storage_space", "availability_zone_name", "instance_id"}, // 不需要忽略任何字段
 			},
 			// 3. 导入测试
 			{
@@ -158,7 +158,7 @@ func TestAccCtyunMysqlReadOnlyInstanceImportState(t *testing.T) {
 				},
 				ImportStateVerify: true,
 				ImportStateVerifyIgnore: []string{"cycle_type", "cycle_count", "auto_renew", "flavor_name",
-					"storage_type", "storage_space", "availability_zone_name"}, // 不需要忽略任何字段
+					"storage_type", "storage_space", "availability_zone_name", "instance_id"}, // 不需要忽略任何字段
 			},
 			// 4. 清理资源
 			{

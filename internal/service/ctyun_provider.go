@@ -651,7 +651,6 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		ec2.NewCtyunExpressConnectRegionPeer(),
 		ec2.NewCtyunExpressConnectVpcInstance(),
 		ec2.NewCtyunEcSdwanInstance(),
-		ec2.NewCtyunEcCloudGatewaySdwanAssociation(),
 		// 添加SD-WAN资源
 		sdwan2.NewCtyunSdwan(),
 		sdwan2.NewCtyunSdwanAcl(),
