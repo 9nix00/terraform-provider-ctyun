@@ -122,6 +122,7 @@ func (c *ctyunPostgresqlDatabases) Read(ctx context.Context, request datasource.
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 	databaseRespList, err := c.getDatabaseList(ctx, config)
 	if err != nil {
 		return
@@ -192,5 +193,5 @@ type CtyunPostgresqlDatabases struct {
 	ProjectID           types.String                   `tfsdk:"project_id"`
 	RegionID            types.String                   `tfsdk:"region_id"`
 	Name                types.String                   `tfsdk:"name"`
-	PostgresqlDatabases []CtyunPostgresqlDatabaseModel `tfsdk:"postgresql_databases"`
+	PostgresqlDatabases []CtyunPostgresqlDatabaseModel `tfsdk:"databases"`
 }
