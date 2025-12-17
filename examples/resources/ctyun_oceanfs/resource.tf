@@ -33,9 +33,9 @@ resource "ctyun_subnet" "subnet_test" {
 
 
 resource "ctyun_oceanfs" "example" {
-  sfs_protocol = "nfs"
+  protocol = "nfs"
   name         = "oceanfs-examples"
-  sfs_size     = "100"
+  size     = "100"
   cycle_type   = "month"
   cycle_count  = "1"
   vpc_id       = ctyun_vpc.vpc_test.id

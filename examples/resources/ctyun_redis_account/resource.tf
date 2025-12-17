@@ -18,7 +18,7 @@ variable "password" {
 
 resource "ctyun_redis_account" "test" {
       name = "test"
-      prod_inst_id = "425c9173f98b4646a72ce0b986af00b0"
+      instance_id = "425c9173f98b4646a72ce0b986af00b0"
       password  = var.password
       privilege = "ro"
       description = "description1111"

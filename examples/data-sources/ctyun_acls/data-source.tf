@@ -11,10 +11,16 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_acls" "example" {
-  id         = %[2]s
-  project_id = "%[3]s"
-  name       = "%[4]s"
+resource "ctyun_acl" "example" {
+  vpc_id        = "vpc-exampleid1"
+  name          = "example-acl"
+  description   = "Example ACL created for demonstration"
+  enabled       = "enable"
+  apply_to_public_lb = false
+}
+
+data "ctyun_acl" "example" {
+  id         = ctyun_acl.example.id
   page_no    = 1
   page_size  = 20
 }

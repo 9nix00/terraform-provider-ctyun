@@ -192,5 +192,5 @@ type CtyunPostgresqlDatabases struct {
 	ProjectID           types.String                   `tfsdk:"project_id"`
 	RegionID            types.String                   `tfsdk:"region_id"`
 	Name                types.String                   `tfsdk:"name"`
-	PostgresqlDatabases []CtyunPostgresqlDatabaseModel `tfsdk:"postgresql_databases"`
+	PostgresqlDatabases []CtyunPostgresqlDatabaseModel `tfsdk:"databases"`
 }

@@ -38,10 +38,6 @@ resource "ctyun_security_group" "security_group_test" {
   }
 }
 
-data "ctyun_mysql_specs" "mysql_specs" {
-  instance_series = "S"
-}
-
 variable "password" {
   type      = string
   sensitive = true
@@ -75,8 +71,7 @@ resource "ctyun_mysql_instance" "mysql_example2" {
 }
 
 // 升配磁盘空间
-
-resource "ctyun_mysql_instance" "mysql_example1" {
+resource "ctyun_mysql_instance" "mysql_example3" {
   cycle_type        = "on_demand"
   vpc_id            = ctyun_vpc.vpc_test.id
   subnet_id         = ctyun_subnet.subnet_test.id
@@ -91,8 +86,7 @@ resource "ctyun_mysql_instance" "mysql_example1" {
 
 
 // 升配规格
-
-resource "ctyun_mysql_instance" "mysql_example1" {
+resource "ctyun_mysql_instance" "mysql_example4" {
   cycle_type        = "on_demand"
   vpc_id            = ctyun_vpc.vpc_test.id
   subnet_id         = ctyun_subnet.subnet_test.id
@@ -106,8 +100,7 @@ resource "ctyun_mysql_instance" "mysql_example1" {
 }
 
 // 升配节点 (如单节点->一主两备)
-
-resource "ctyun_mysql_instance" "mysql_example1" {
+resource "ctyun_mysql_instance" "mysql_example5" {
   cycle_type        = "on_demand"
   vpc_id            = ctyun_vpc.vpc_test.id
   subnet_id         = ctyun_subnet.subnet_test.id

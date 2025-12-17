@@ -61,7 +61,7 @@ func (c *ctyunImage) Schema(_ context.Context, _ resource.SchemaRequest, respons
 				},
 				Validators: []validator.String{
 					stringvalidator.LengthAtLeast(1),
-					stringvalidator.RegexMatches(regexp.MustCompile(`^[^/]+/[^/]+/.+$`), "格式应为{internetEndpoint}/{bucket}/{key}"),
+					stringvalidator.RegexMatches(regexp.MustCompile(`^[^/]+//[^/]+/.+$`), "格式应为{internetEndpoint}/{bucket}/{key}"),
 				},
 			},
 			"name": schema.StringAttribute{

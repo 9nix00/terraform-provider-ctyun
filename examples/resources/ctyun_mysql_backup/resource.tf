@@ -57,25 +57,25 @@ variable "password" {
   sensitive = true
 }
 resource "ctyun_mysql_database" "db1" {
-  inst_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id      = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db1"
   charset_name = "utf8mb4"
 }
 resource "ctyun_mysql_database" "db2" {
-  inst_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id      = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db2"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db1]
 }
 resource "ctyun_mysql_database" "db3" {
-  inst_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id      = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db3"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db2]
 }
 
 resource "ctyun_mysql_backup" "backup_test" {
-  inst_id     = ctyun_mysql_instance.mysql_backup.id
+  instance_id     = ctyun_mysql_instance.mysql_backup.id
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"

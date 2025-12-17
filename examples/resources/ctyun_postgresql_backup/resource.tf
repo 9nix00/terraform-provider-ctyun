@@ -58,7 +58,7 @@ resource "ctyun_postgresql_instance" "test" {
 
 
 resource "ctyun_postgresql_backup" "example" {
-  inst_id = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
   name = "pgsql-backup-example"
   description = "pgsql备份"
 }

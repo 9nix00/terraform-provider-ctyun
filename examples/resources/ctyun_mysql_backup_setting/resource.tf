@@ -58,7 +58,7 @@ variable "password" {
 
 
 resource "ctyun_mysql_backup_setting" "examples" {
-  inst_id                    = ctyun_mysql_instance.mysql_setting.id
+  instance_id                    = ctyun_mysql_instance.mysql_setting.id
   storage_day                = 7
   allow_earliest_time        = "00:01"
   trigger_days_of_week       = [1,3,5]

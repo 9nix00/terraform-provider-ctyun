@@ -13,6 +13,5 @@ provider "ctyun" {
 
 # instance id 和 name 根据实际情况进行替换
 data "ctyun_postgresql_databases" "exmaples" {
-  instance_id = "678ff914cf80469d86bdd663ee9b6377"
-  name        = "database_example"
+  instance_id = "0e7ed95b886145159c286361463370b5"
 }

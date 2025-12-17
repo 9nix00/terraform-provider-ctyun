@@ -20,7 +20,7 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
-  name = "permission-group_example"
+  name = "permission-group-example"
   description = "创建sfs规则组"
 }
 
@@ -42,11 +42,12 @@ resource "ctyun_subnet" "subnet_test" {
     "8.8.8.8",
   ]
 }
+
 resource "ctyun_sfs" "sfs_test" {
-  sfs_type     = "performance"
-  sfs_protocol = "nfs"
+  type     = "performance"
+  protocol = "nfs"
   name         = "sfs-example"
-  sfs_size     = 500
+  size     = 500
   cycle_type   = "on_demand"
   az_name      = "cn-huadong1-jsnj1A-public-ctcloud"
   vpc_id       = ctyun_vpc.vpc_test.id

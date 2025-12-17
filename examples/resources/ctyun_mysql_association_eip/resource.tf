@@ -64,6 +64,6 @@ resource "ctyun_eip" "eip_test" {
 
 resource "ctyun_mysql_association_eip" "association_eip" {
   eip_id = ctyun_eip.eip_test.id
-  inst_id = ctyun_mysql_instance.mysql_test.id
+  instance_id = ctyun_mysql_instance.mysql_test.id
 }
 

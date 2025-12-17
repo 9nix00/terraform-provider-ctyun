@@ -22,11 +22,7 @@ resource "ctyun_ec_packet" "example" {
   bandwidth    = 10
   cycle_type   = "month"
   cycle_count  = 1
-
-  # 可选参数
-  on_demand    = false
   area_a       = "china"
   area_b       = "china"
-
 }
 

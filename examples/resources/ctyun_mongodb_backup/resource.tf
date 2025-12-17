@@ -56,6 +56,6 @@ variable "password" {
 }
 resource "ctyun_mongodb_backup" "example" {
   instance_id  = ctyun_mongodb_instance.test.id
-  backup_name  = "example-backup"
+  name  = "example-backup"
   description  = "Example MongoDB backup"
 }

@@ -60,7 +60,7 @@ resource "ctyun_postgresql_instance" "test" {
 
 
 resource "ctyun_postgresql_account" "account_test" {
-  inst_id = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
   name = "example_user"
   password = var.password
   user_type = "normal"
