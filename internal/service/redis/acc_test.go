@@ -14,6 +14,7 @@ type Dependence struct {
 	subnetID           string
 	securityGroupID    string
 	eipAddress         string
+	eipID              string
 	redisVersion       string
 	redisEngineEdition string
 	instanceId         string
@@ -45,6 +46,7 @@ func TestMain(m *testing.M) {
 		subnetID:           outputs["subnet_id"].Value,
 		securityGroupID:    outputs["security_group_id"].Value,
 		eipAddress:         outputs["eip_address"].Value,
+		eipID:              outputs["eip_id"].Value,
 		redisVersion:       outputs["redis_version"].Value,
 		redisEngineEdition: outputs["redis_engine_edition"].Value,
 		instanceId:         outputs["redis_instance_id"].Value,

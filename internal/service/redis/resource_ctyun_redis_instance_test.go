@@ -99,7 +99,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					updatedPassword, updatedEngineVersion, updatedMaintenanceTime, updatedProtectionStatus,
 				) + utils.LoadTestCase(
 					associationFile, and,
-					dependence.eipAddress,
+					dependence.eipID,
 					resourceName+".id",
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -122,7 +122,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s",
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["eip_address"],
+						rs.Primary.Attributes["eip_id"],
 						rs.Primary.Attributes["region_id"],
 					), nil
 				},
@@ -139,7 +139,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s",
 						rs.Primary.Attributes["instance_id"],
-						rs.Primary.Attributes["eip_address"],
+						rs.Primary.Attributes["eip_id"],
 					), nil
 				},
 				ImportStateVerifyIgnore: []string{},
@@ -158,7 +158,7 @@ func TestAccCtyunRedisInstance(t *testing.T) {
 					updatedPassword, updatedEngineVersion, updatedMaintenanceTime, updatedProtectionStatus,
 				) + utils.LoadTestCase(
 					associationFile, and,
-					dependence.eipAddress,
+					dependence.eipID,
 					resourceName+".id",
 				) + utils.LoadTestCase(
 					datasourceFile, dnd,
