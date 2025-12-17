@@ -19,7 +19,7 @@ resource "ctyun_acl" "example" {
   apply_to_public_lb = false
 }
 
-data "ctyun_acl" "example" {
+data "ctyun_acls" "example" {
   id         = ctyun_acl.example.id
   page_no    = 1
   page_size  = 20
