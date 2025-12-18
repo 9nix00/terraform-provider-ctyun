@@ -20,7 +20,6 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 	//eipId := "eip-140rfs2and"
 	//eipAddress := "150.223.193.123"
 	instId := dependence.mongodbID
-	hostIp := dependence.hostIP
 	//instId := "c1ef217509294dc6a4d6b6ec24a46586"
 	//hostIp := "192.168.128.3"
 
@@ -40,14 +39,14 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 		Steps: []resource.TestStep{
 			// 绑定IP验证
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp),
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "eip_id", eipId),
 					resource.TestCheckResourceAttr(resourceName, "instance_id", instId),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp) +
+				Config: utils.LoadTestCase(resourceFile, rnd, eipId, instId) +
 					utils.LoadTestCase(specDatasourceFile, dnd, instanceType),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(specDatasourceName, "specs.#"),
@@ -112,7 +111,7 @@ func TestAccCtyunMongodbAssociationEip(t *testing.T) {
 				},
 			},
 			{
-				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, instId, hostIp),
+				Config:  utils.LoadTestCase(resourceFile, rnd, eipId, instId),
 				Destroy: true,
 			},
 		},

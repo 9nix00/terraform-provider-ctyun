@@ -35,8 +35,9 @@ func NewCtyunMongodbAssociationEip() resource.Resource {
 }
 
 type CtyunMongodbAssociationEip struct {
-	meta       *common.CtyunMetadata
-	eipService *business.EipService
+	meta           *common.CtyunMetadata
+	eipService     *business.EipService
+	mongodbService *business.MongodbService
 }
 
 func (c *CtyunMongodbAssociationEip) ImportState(ctx context.Context, request resource.ImportStateRequest, response *resource.ImportStateResponse) {
@@ -103,6 +104,7 @@ func (c *CtyunMongodbAssociationEip) Configure(ctx context.Context, request reso
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.eipService = business.NewEipService(c.meta)
+	c.mongodbService = business.NewMongodbService(c.meta)
 }
 
 func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resource.SchemaRequest, response *resource.SchemaResponse) {
@@ -124,16 +126,6 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 				Description: "实例id",
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
-			},
-			"host_ip": schema.StringAttribute{
-				Required:    true,
-				Description: "主机ip",
-				Validators: []validator.String{
-					validator2.Ip(),
 				},
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -162,10 +154,6 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 				Validators: []validator.String{
 					stringvalidator.UTF8LengthAtLeast(1),
 				},
-			},
-			"eip_address": schema.StringAttribute{
-				Computed:    true,
-				Description: "弹性ip对应的地址",
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -259,9 +247,22 @@ func (c *CtyunMongodbAssociationEip) Delete(ctx context.Context, request resourc
 	if response.Diagnostics.HasError() {
 		return
 	}
+
+	// 根据eip id 获取 eip地址
+	eip, err := c.eipService.GetEipAddressByEipID(ctx, state.EipID.ValueString(), state.RegionID.ValueString())
+	if err != nil {
+		return
+	}
+	if eip == nil {
+		err = fmt.Errorf("eip is not found")
+		return
+	}
+
+	state.eipAddress = *eip.EipAddress
+
 	unbindParams := &mongodb.MongodbUnbindEipRequest{
 		EipID:  state.EipID.ValueString(),
-		Eip:    state.EipAddress.ValueString(),
+		Eip:    state.eipAddress,
 		InstID: state.InstID.ValueString(),
 	}
 	unbindHeader := &mongodb.MongodbUnbindEipRequestHeader{}
@@ -283,18 +284,24 @@ func (c *CtyunMongodbAssociationEip) Delete(ctx context.Context, request resourc
 }
 
 func (c *CtyunMongodbAssociationEip) MongodbBindEip(ctx context.Context, config *MongodbAssociationEipConfig) (err error) {
-
+	// 根据eip id 获取 eip地址
 	eip, err := c.eipService.GetEipAddressByEipID(ctx, config.EipID.ValueString(), config.RegionID.ValueString())
 	if err != nil {
 		return err
 	}
-	config.EipAddress = types.StringValue(*eip.EipAddress)
+	// 根据inst id 获取 host ip
+	hostIP, err := c.mongodbService.GetHostIpByInstID(ctx, config.InstID.ValueString(), config.RegionID.ValueString(), config.ProjectID.ValueString())
+	if err != nil {
+		return err
+	}
+	config.hostIP = hostIP
+	config.eipAddress = *eip.EipAddress
 
 	bindParams := &mongodb.MongodbBindEipRequest{
 		EipID:  config.EipID.ValueString(),
-		Eip:    config.EipAddress.ValueString(),
+		Eip:    config.eipAddress,
 		InstID: config.InstID.ValueString(),
-		HostIp: config.HostIP.ValueString(),
+		HostIp: config.hostIP,
 	}
 	bindHeader := &mongodb.MongodbBindEipRequestHeader{}
 	if config.ProjectID.ValueString() != "" {
@@ -341,7 +348,7 @@ func (c *CtyunMongodbAssociationEip) BindLoop(ctx context.Context, config *Mongo
 			}
 			nodeInfoVos := resp.ReturnObj.NodeInfoVOS
 			for _, vos := range nodeInfoVos {
-				if vos.OuterElasticIpId == config.EipID.ValueString() && vos.ElasticIp == config.EipAddress.ValueString() {
+				if vos.OuterElasticIpId == config.EipID.ValueString() && vos.ElasticIp == config.eipAddress {
 					return false
 				}
 			}
@@ -408,7 +415,7 @@ func (c *CtyunMongodbAssociationEip) getAndMergeBindEip(ctx context.Context, con
 	if err2 != nil {
 		err = err2
 		return
-	} else if resp.StatusCode != 800 {
+	} else if resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
@@ -417,17 +424,15 @@ func (c *CtyunMongodbAssociationEip) getAndMergeBindEip(ctx context.Context, con
 	}
 	nodeinfoVos := resp.ReturnObj.NodeInfoVOS[0]
 	config.EipID = types.StringValue(nodeinfoVos.OuterElasticIpId)
-	config.EipAddress = types.StringValue(nodeinfoVos.ElasticIp)
-	config.HostIP = types.StringValue(resp.ReturnObj.Host)
 	return
 }
 
 type MongodbAssociationEipConfig struct {
 	EipID      types.String `tfsdk:"eip_id"`      // 弹性ip id
 	InstID     types.String `tfsdk:"instance_id"` // 实例id
-	HostIP     types.String `tfsdk:"host_ip"`     // 主机ip
 	ProjectID  types.String `tfsdk:"project_id"`  // 项目id
 	RegionID   types.String `tfsdk:"region_id"`   // 资源池id
-	EipAddress types.String `tfsdk:"eip_address"` // eip地址
 	ID         types.String `tfsdk:"id"`
+	eipAddress string
+	hostIP     string // 主机ip
 }

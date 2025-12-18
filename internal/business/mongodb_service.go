@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctyun-sdk-endpoint/mongodb"
@@ -71,4 +72,39 @@ func (u MongodbService) GetIDByOrder(ctx context.Context, masterOrderID string, 
 		id = resp.ReturnObj.Data[0]
 	}
 	return
+}
+
+func (u MongodbService) GetHostIpByInstID(ctx context.Context, instID string, regionID string, projectID string) (string, error) {
+	detail, err := u.GetMongodbDetail(ctx, instID, regionID, projectID)
+	if err != nil {
+		return "", err
+	}
+	return detail.Host, nil
+}
+
+func (u MongodbService) GetMongodbDetail(ctx context.Context, instID string, regionID string, projectID string) (*mongodb.DetailRespReturnObj, error) {
+	detailParams := &mongodb.MongodbQueryDetailRequest{
+		ProdInstId: instID,
+	}
+	detailHeader := &mongodb.MongodbQueryDetailRequestHeaders{
+		RegionID: regionID,
+	}
+	if projectID != "" {
+		detailHeader.ProjectID = &projectID
+	}
+	resp, err := u.meta.Apis.SdkMongodbApis.MongodbQueryDetailApi.Do(ctx, u.meta.Credential, detailParams, detailHeader)
+	if err != nil {
+		return nil, err
+	} else if resp == nil {
+		err = errors.New("获取mongodb实例为nil，请稍后再试！")
+		return nil, err
+	} else if resp.StatusCode != 800 {
+		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
+		return nil, err
+	} else if resp.ReturnObj == nil {
+		err = common.InvalidReturnObjError
+		return nil, err
+	}
+	detail := resp.ReturnObj
+	return detail, nil
 }
