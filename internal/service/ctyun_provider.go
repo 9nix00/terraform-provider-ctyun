@@ -638,7 +638,6 @@ func (c *CtyunProvider) Resources(ctx context.Context) []func() resource.Resourc
 		kafka.NewCtyunKafkaUser(),
 		kafka.NewCtyunKafkaAcl(),
 		ccse.NewCtyunCcseNamespace(),
-		ccse.NewCtyunCcseScalingNodePoolPolicy(),
 		acl.NewCtyunAcl(),
 		acl.NewCtyunAclRule(),
 		acl.NewCtyunPrefix(),

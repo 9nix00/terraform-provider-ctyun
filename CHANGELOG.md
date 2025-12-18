@@ -52,7 +52,6 @@
 * ctyun_postgresql_white_list
 * ctyun_mysql_database
 * ctyun_ccse_namespace
-* ctyun_ccse_node_pool_scaling_policy
 * ctyun_crs_vpc_attach
 * ctyun_acl
 * ctyun_acl_rule

@@ -1219,7 +1219,6 @@ func (c *ctyunCcseCluster) create(ctx context.Context, plan *CtyunCcseClusterCon
 	}
 
 	// 处理slaveHost
-
 	slaveHost := ccse.CcseCreateClusterSlaveHostRequest{
 		Size:       0,
 		MirrorType: plan.SlaveHost.MirrorType.ValueInt32(),
@@ -1374,6 +1373,8 @@ func (c *ctyunCcseCluster) refund(ctx context.Context, plan CtyunCcseClusterConf
 		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
 	}
+	masterOrderID := resp.ReturnObj.OrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1391,6 +1392,8 @@ func (c *ctyunCcseCluster) destroy(ctx context.Context, plan CtyunCcseClusterCon
 		err = fmt.Errorf("API return error. Message: %s RequestId: %s", resp.Message, resp.RequestId)
 		return
 	}
+	masterOrderID := resp.ReturnObj.OrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
 	return
 }
 
@@ -1690,6 +1693,11 @@ func (c *ctyunCcseCluster) updateManagedSeries(ctx context.Context, plan, state 
 		return
 	} else if resp.ReturnObj == nil {
 		err = common.InvalidReturnObjError
+		return
+	}
+	masterOrderID := resp.ReturnObj.OrderId
+	err = c.orderLooper.WaitOrderFinish(ctx, c.meta.Credential, masterOrderID)
+	if err != nil {
 		return
 	}
 	return c.checkAfterUpdateManagedSeries(ctx, plan, state)
