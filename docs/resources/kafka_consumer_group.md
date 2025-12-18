@@ -1,5 +1,5 @@
 # ctyun_kafka_consumer_group (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145103**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145103
 
 
 
@@ -21,7 +21,7 @@ provider "ctyun" {
 
 resource "ctyun_kafka_consumer_group" "tbidgqvfbs" {
   name = "test_kafka_consumer_group"
-  prod_inst_id = "4bd607df61d348b1949db223614315c1"
+  instance_id = "4bd607df61d348b1949db223614315c1"
   description  = "desc"
 }
 ```

@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_mysql_white_list" "test" {
-  prod_inst_id = "e5ad1c553e394bc891c5bf8fc58be191"
+  instance_id = "e5ad1c553e394bc891c5bf8fc58be191"
   group_name = "eip_white"
   group_white_list = ["192.168.1.1", "30.8.7.*"]
 }
@@ -32,7 +32,7 @@ resource "ctyun_mysql_white_list" "test" {
 ### Required
 
 - `group_name` (String) 白名单分组名（必须以小写字母开头，且必须以小写字母或数字结尾，可包含数字或下划线，不含其他特殊字符)
-- `group_white_list` (Set of String) 白名单ip列表，举例：['192.168.0.1', '192.168.0.*'],指定IP地址192.168.0.1：表示允许192.168.0.1的IP地址访问实例。 指定IP地址192.168.0.*：表示允许从192.168.0.1到192.168.0.255的IP地址访问实例。
+- `group_white_list` (Set of String) 白名单ip列表，支持更新，举例：['192.168.0.1', '192.168.0.*'],指定IP地址192.168.0.1：表示允许192.168.0.1的IP地址访问实例。 指定IP地址192.168.0.*：表示允许从192.168.0.1到192.168.0.255的IP地址访问实例。
 - `instance_id` (String) mysql实例id
 
 ### Optional
@@ -45,4 +45,5 @@ resource "ctyun_mysql_white_list" "test" {
 - `access_machine_type` (String) 访问类型
 - `create_time` (String) 创建时间，为UTC格式
 - `group_white_list_count` (Number) 白名单分组组内数量
+- `id` (String) id 唯一标识
 - `update_time` (String) 更新时间，为UTC格式

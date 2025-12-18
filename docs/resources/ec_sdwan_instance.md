@@ -1,5 +1,5 @@
 # ctyun_ec_sdwan_instance (Resource)
-**SDWAN网络实例资源**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220
 
 
 
@@ -16,6 +16,7 @@ terraform {
 
 provider "ctyun" {
   env = "prod"
+  project_id = "0"
 }
 resource "ctyun_ec_cloud_gateway" "example" {
   ec_id       = ctyun_express_connect.example.id
@@ -63,7 +64,7 @@ resource "ctyun_ec_sdwan_instance" "example" {
 
 - `route_learn` (Number) 路由学习开关，开启后云网关自动学习网络实例路由，取值范围: 1:学习 0:不学习，默认学习
 - `route_sync` (Number) 路由同步开关，开启后云网关路由自动同步到网络实例，取值范围: 1:同步 0:不同步，默认同步
-- `weights` (Number) 权重，sdwan默认60，无冗余实例则不传
+- `weights` (Number) 权重，sdwan默认60，无冗余实例则不传 支持更新
 
 ### Read-Only
 

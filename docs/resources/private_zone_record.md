@@ -49,17 +49,17 @@ resource "ctyun_private_zone_record" "example" {
 
 ### Required
 
+- `name` (String) DNS记录集的 name
 - `type` (String) 内网DNS记录类型，支持: A / CNAME / MX / AAAA / TXT, 大小写不敏感。A-将域名指向一个IPv4地址；CNAME-将域名指向另一个域名；MX-邮件交换记录，用于指定接收电子邮件的服务器；MX-邮件交换记录，用于指定接收电子邮件的服务器；AAAA-将域名指向一个IPv6地址；TXT-文本记录，可以包含任意文本信息；
-- `value_list` (Set of String) 当type=A，value_list必须是 IPv4 地址；当type=CNAME，value_list填写您要指向的别名，只能写一个域名；当type=MX，value_list 填写邮箱服务器地址，最多可以输入8个不重复地址；当type=AAAA，valueList 填写IPv6地址，最多可以输入8个不重复地址；当type= TXT 时，valueList 填写文本记录值(合法字符包含大小写字母、数字、空格，文本记录)
+- `value_list` (Set of String) 支持更新。当type=A，value_list必须是 IPv4 地址；当type=CNAME，value_list填写您要指向的别名，只能写一个域名；当type=MX，value_list 填写邮箱服务器地址，最多可以输入8个不重复地址；当type=AAAA，valueList 填写IPv6地址，最多可以输入8个不重复地址；当type= TXT 时，valueList 填写文本记录值(合法字符包含大小写字母、数字、空格，文本记录)
 - `zone_id` (String) 内网DNS id
 
 ### Optional
 
-- `description` (String) DNS记录集描述
-- `enabled` (String) 是否开启解析记录，默认启用。启用：enable,不启用：disable
-- `name` (String) DNS记录集的 name
+- `description` (String) DNS记录集描述，支持更新
+- `enabled` (String) 是否开启解析记录，默认启用，支持更新。启用：enable,不启用：disable
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
-- `ttl` (Number) zone ttl，TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。
+- `ttl` (Number) zone ttl，支持更新。TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。
 
 ### Read-Only
 

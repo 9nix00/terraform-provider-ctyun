@@ -1,5 +1,5 @@
 # ctyun_net_resources_by_tag (Data Source)
-**根据标签筛选网络资源列表**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
 
 
 

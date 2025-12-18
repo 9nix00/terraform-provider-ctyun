@@ -20,8 +20,7 @@ provider "ctyun" {
 }
 
 data "ctyun_hpfs_clusters" "test" {
-  sfs_type = "hpfs_perf"
-  az_name = "cn-huadong1-jsnj1A-public-ctcloud"
+  type = "hpfs_perf"
 }
 ```
 

@@ -26,14 +26,6 @@ resource "ctyun_vpc" "vpc_test" {
   enable_ipv6 = true
 }
 
-resource "ctyun_nat" "nat_test"{
-  vpc_id = ctyun_vpc.vpc_test.id
-  spec = 1
-  name = "tf-nat"
-  description = "terraform测试使用"
-  cycle_type = "on_demand"
-}
-
 resource "ctyun_eip" "eip_test" {
   name                = "tf-eip-for-nat1"
   bandwidth           = 1

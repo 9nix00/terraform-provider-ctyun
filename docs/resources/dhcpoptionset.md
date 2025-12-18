@@ -1,5 +1,5 @@
 # ctyun_dhcpoptionset (Resource)
-DHCP选项集资源，用于管理DHCP选项集配置
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
 
 
 
@@ -19,7 +19,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_dhcpoptionset" "example" {
-  name        = "example-dhcp-option-set"
+  name        = "dhcpoptionset"
   description = "Example DHCP option set"
   domain_name = "example.com"
   dns_list    = ["8.8.8.8", "114.114.114.114"]
@@ -31,15 +31,15 @@ resource "ctyun_dhcpoptionset" "example" {
 
 ### Required
 
-- `dns_list` (List of String) 服务ip地址列表，最多只能4个IP地址
-- `domain_name` (String) 整个域名的总长度不能超过 255 个字符，每个子域名（包括顶级域名）的长度不能超过 63 个字符，域名中的字符集包括大写字母、小写字母、数字和连字符（减号），连字符不能位于域名的开头
-- `name` (String) 集合名，支持拉丁字母、中文、数字，下划线，连字符，必须以中文/英文字母开头，不能以数字、_和-、http:/https:开头，长度2-32
+- `dns_list` (List of String) 服务ip地址列表，最多只能4个IP地址 支持更新
+- `domain_name` (String) 整个域名的总长度不能超过 255 个字符，每个子域名（包括顶级域名）的长度不能超过 63 个字符，域名中的字符集包括大写字母、小写字母、数字和连字符（减号），连字符不能位于域名的开头 支持更新
+- `name` (String) 集合名，支持拉丁字母、中文、数字，下划线，连字符，必须以中文/英文字母开头，不能以数字、_和-、http:/https:开头，长度2-32 支持更新
 
 ### Optional
 
 - `description` (String) 描述信息，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&**()_-+= <>?:"{},./;'[**
 
-**]·~！@#￥%……&**（） —— -+={}《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
+**]·~！@#￥%……&**（） —— -+={}《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128 支持更新
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only

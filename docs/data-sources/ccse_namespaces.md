@@ -1,5 +1,5 @@
 # ctyun_ccse_namespaces (Data Source)
--> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10656137
 
 
 

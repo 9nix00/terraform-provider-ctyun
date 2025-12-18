@@ -1,5 +1,5 @@
 # ctyun_kafka_consumer_groups (Data Source)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145103**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145103
 
 
 
@@ -19,9 +19,24 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_consumer_groups" "tbidgqvfbs" {
+resource "ctyun_kafka_instance" "test" {
+  instance_name = "tf-kafka-34ywerkb"
+  engine_version = "3.6"
+  spec_name = "kafka.4u8g.cluster"
+  node_num = 5
+  zone_list = ["cn-huadong1-jsnj1A-public-ctcloud"]
+  disk_type = "SSD"
+  disk_size = 300
+  vpc_id = "vpc-ewivt5nhiz"
+  subnet_id = "subnet-vhyywu7mfe"
+  security_group_id = "sg-ed9i3c98t2"
+  cycle_type = "on_demand"
+  retention_hours = 55
+}
+
+data "ctyun_kafka_consumer_groups" "test" {
     name = "init-kafka-consumer_group"
-    prod_inst_id = "4bd607df61d348b1949db223614315c1"
+    instance_id = ctyun_kafka_instance.test.id
 }
 ```
 

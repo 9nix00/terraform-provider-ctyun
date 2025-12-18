@@ -1,5 +1,5 @@
 # ctyun_ec_cloud_gateway (Resource)
-**云网关资源**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220
 
 
 
@@ -40,11 +40,11 @@ resource "ctyun_ec_cloud_gateway" "example" {
 ### Required
 
 - `ec_id` (String) 云间高速实例ID
-- `name` (String) 云网关名称
+- `name` (String) 云网关名称 支持更新
 
 ### Optional
 
-- `description` (String) 云网关描述
+- `description` (String) 云网关描述  支持更新
 - `region` (Number) 地域信息，取值如下: 1：中国大陆（默认） 2:亚太
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `region_name` (String) 资源池名称

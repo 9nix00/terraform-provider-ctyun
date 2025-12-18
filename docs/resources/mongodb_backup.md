@@ -1,5 +1,5 @@
 # ctyun_mongodb_backup (Resource)
-天翼云MongoDB备份资源
+-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
 
 
 
@@ -64,7 +64,7 @@ variable "password" {
 }
 resource "ctyun_mongodb_backup" "example" {
   instance_id  = ctyun_mongodb_instance.test.id
-  backup_name  = "example-backup"
+  name  = "example-backup"
   description  = "Example MongoDB backup"
 }
 ```

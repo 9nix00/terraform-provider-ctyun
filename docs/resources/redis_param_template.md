@@ -1,5 +1,5 @@
 # ctyun_redis_param_template (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10156164**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10156164
 
 
 
@@ -26,10 +26,10 @@ resource "ctyun_redis_param_template" "test" {
   cache_mode   = "ORIGINAL_67"
   sys_template = false
 
-  params = {
+  params = [{
       param_name    = "maxmemory-policy"
       current_value = "allkeys-lru"
-  }
+  }]
 }
 ```
 

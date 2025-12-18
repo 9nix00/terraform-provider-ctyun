@@ -1,5 +1,5 @@
 # ctyun_ccse_namespace (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10102631**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10083472/10102631
 
 
 

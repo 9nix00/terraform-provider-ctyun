@@ -1,5 +1,5 @@
 # ctyun_ports (Data Source)
-**查询弹性网卡列表，详细说明请见文档：https://www.ctyun.cn/document/10026730**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10225195
 
 
 

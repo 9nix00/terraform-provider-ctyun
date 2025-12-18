@@ -52,126 +52,67 @@ resource "ctyun_security_group" "sg_test" {
 // 开通样例
 resource "ctyun_postgresql_instance" "test" {
   cycle_type            = "on_demand"
-  host_type             = "S7"
   prod_id               = "Single1222"
-  storage_type          = "SATA"
+  flavor_name           = "c7.xlarge.2"
+  storage_type          = "SSD"
   storage_space         = 100
-  name                  = "pgsql-test"
+  name                  = "pgsql-test-tf1"
   password              = var.password
   case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C4G"
   vpc_id                = ctyun_vpc.vpc_test.id
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 100
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
-}
-
-// 升配pgsql--对备用磁盘扩容(在升配主storage时候，确保备用磁盘空间>主磁盘空间)
-resource "ctyun_postgresql_instance" "test" {
-  cycle_type            = "on_demand"
-  host_type             = "S7"
-  prod_id               = "Single1222"
-  storage_type          = "SATA"
-  storage_space         = 100
-  name                  = "pgsql-test"
-  password              = var.password
-  case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C4G"
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 120
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
+  backup_storage_type  = "OS"
 }
 
 
-// 升配pgsql--对主磁盘扩容(在升配主storage时候，确保备用磁盘空间>主磁盘空间)
-resource "ctyun_postgresql_instance" "test" {
+// 升配pgsql--对磁盘扩容(在升配主storage时候，确保备用磁盘空间>主磁盘空间)
+resource "ctyun_postgresql_instance" "test1" {
   cycle_type            = "on_demand"
-  host_type             = "S7"
   prod_id               = "Single1222"
-  storage_type          = "SATA"
+  flavor_name           = "c7.xlarge.2"
+  storage_type          = "SSD"
   storage_space         = 120
-  name                  = "pgsql-test"
+  name                  = "pgsql-test-tf1"
   password              = var.password
   case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C4G"
   vpc_id                = ctyun_vpc.vpc_test.id
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 120
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
+  backup_storage_type  = "OS"
 }
 
 
 // 升配规格 2C4G->2C8G
-resource "ctyun_postgresql_instance" "test" {
+resource "ctyun_postgresql_instance" "test2" {
   cycle_type            = "on_demand"
-  host_type             = "S7"
   prod_id               = "Single1222"
-  storage_type          = "SATA"
+  flavor_name           = "c7.xlarge.4"
+  storage_type          = "SSD"
   storage_space         = 120
-  name                  = "pgsql-test"
+  name                  = "pgsql-test-tf1"
   password              = var.password
   case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C8G"
   vpc_id                = ctyun_vpc.vpc_test.id
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 1, "node_type" : "master" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 120
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
+  backup_storage_type  = "OS"
 }
 
-
-// 升配类型
-
 // 升配规格 单节点->1主2备
-resource "ctyun_postgresql_instance" "test" {
+resource "ctyun_postgresql_instance" "test3" {
   cycle_type            = "on_demand"
-  host_type             = "S7"
-  prod_id               = "Master2Slave1222"
-  storage_type          = "SATA"
+  prod_id               = "MasterSlave1222"
+  flavor_name           = "c7.xlarge.4"
+  storage_type          = "SSD"
   storage_space         = 120
-  name                  = "pgsql-test"
+  name                  = "pgsql-test-tf1"
   password              = var.password
   case_sensitive        = true
-  instance_series       = "S"
-  prod_performance_spec = "2C8G"
   vpc_id                = ctyun_vpc.vpc_test.id
   subnet_id             = ctyun_subnet.subnet_test.id
   security_group_id     = ctyun_security_group.sg_test.id
-  availability_zone_info = [
-    { "availability_zone_name" : "cn-gs-qyi2-1a-public-ctcloud", "availability_zone_count" : 2, "node_type" : "slave" }
-  ] // availability_zone_name值根据情况而定
-  backup_storage_type   = "SATA"
-  backup_storage_space  = 120
-  os_type               = "ctyunos"
-  cpu_type              = "Intel"
+  backup_storage_type  = "OS"
 }
 ```
 
@@ -199,7 +140,7 @@ resource "ctyun_postgresql_instance" "test" {
 - `case_sensitive` (Boolean) 是否区分大小写: true=区分, false=不区分。默认不区分
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `is_mgr` (Boolean) 是否开启MRG，默认false
-- `password` (String, Sensitive) 实例密码，8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=
+- `password` (String, Sensitive) 实例密码，支持更新。8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID。若环境变量为空，则默认为0
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 - `running_control` (String) 控制是否暂停，启用和重启实例。支持更新，取值范围：stop, start, restart
@@ -227,6 +168,6 @@ resource "ctyun_postgresql_instance" "test" {
 
 Required:
 
-- `availability_zone_count` (Number) 资源池可用区总数
-- `availability_zone_name` (String) 资源池可用区名称，可以根据data.ctyun_zones查询
-- `node_type` (String) 节点类型(master/slave)
+- `availability_zone_count` (Number) 资源池可用区总数，支持更新。
+- `availability_zone_name` (String) 资源池可用区名称，支持更新。可以根据data.ctyun_zones查询
+- `node_type` (String) 节点类型(master/slave)，支持更新。

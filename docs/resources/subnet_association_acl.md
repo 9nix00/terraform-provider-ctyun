@@ -30,7 +30,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "example-vpc-id"
+  vpc_id        = "vpc-idexample1"
   name          = "example-acl"
   description   = "Example ACL created for demonstration"
   enabled       = "enable"
@@ -47,7 +47,7 @@ resource "ctyun_subnet_association_acl" "example" {
 
 ### Required
 
-- `acl_id` (String) acl_id，acl列表可以通过data.ctyun_acls查询
+- `acl_id` (String) acl_id，支持更新。acl列表可以通过data.ctyun_acls查询
 - `subnet_id` (String) subnet_id，subnet列表可能通过data.ctyun_subnets查询，不支持更新
 
 ### Optional

@@ -1,5 +1,5 @@
 # ctyun_vip (Resource)
-高可用虚拟IP资源
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10224288
 
 
 
@@ -34,7 +34,7 @@ resource "ctyun_vip" "example" {
   subnet_id  = ctyun_subnet.subnet_test.id
   ip_address = "192.168.1.100"
   vip_type   = "v4"
-  project_id = "project-id"
+  project_id = "0"
 }
 ```
 

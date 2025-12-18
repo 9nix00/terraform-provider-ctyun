@@ -14,7 +14,7 @@
 - `ec_id` (String) 云间高速ID
 - `name` (String) 连接名称
 - `packet_id` (String) 带宽包ID
-- `rate` (Number) 带宽值（MB）
+- `rate` (Number) 带宽值（MB） 支持更新
 - `src_cgw_id` (String) 本端网关ID
 
 ### Optional

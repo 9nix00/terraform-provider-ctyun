@@ -1,5 +1,5 @@
 # ctyun_sdwan_acls (Data Source)
-**查询SD-WAN访问控制列表**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852
 
 
 

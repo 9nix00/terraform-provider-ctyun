@@ -27,7 +27,7 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
-  name = "permission-group_example"
+  name = "permission-group-example"
   description = "创建sfs规则组"
 }
 

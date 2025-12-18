@@ -1,5 +1,5 @@
 # ctyun_mongodb_backups (Data Source)
-天翼云MongoDB备份数据源
+-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
 
 
 

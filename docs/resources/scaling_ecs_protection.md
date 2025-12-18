@@ -1,5 +1,5 @@
 # ctyun_scaling_ecs_protection (Resource)
--> 详细说明请见文档：//www.ctyun.cn/document/10027725/10216534
+-> 详细说明请见文档：https://www.ctyun.cn/document/10027725/10216534
 
 
 

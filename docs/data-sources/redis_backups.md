@@ -1,5 +1,5 @@
 # ctyun_redis_backups (Data Source)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10142282**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10142282
 
 
 
@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 data "ctyun_redis_backups" "test"{
-    prod_inst_id = "1234567890"
+    instance_id = "3f40648b0d7f4ec4beb82657bd4fbcc6"
 }
 ```
 

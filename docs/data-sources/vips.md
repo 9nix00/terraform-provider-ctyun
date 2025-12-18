@@ -1,5 +1,5 @@
 # ctyun_vips (Data Source)
-高可用虚拟IP列表数据源
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
 
 
 

@@ -1,5 +1,5 @@
 # ctyun_kafka_acls (Data Source)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145597**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145597
 
 
 
@@ -19,10 +19,9 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_acls" "tbidgqvfbs" {
+data "ctyun_kafka_acls" "test" {
     name = "init-kafka-acl"
-    prod_inst_id = "4bd607df61d348b1949db223614315c1"
-
+    instance_id = "4bd607df61d348b1949db223614315c1"
 }
 ```
 

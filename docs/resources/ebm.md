@@ -89,13 +89,6 @@ data "ctyun_ebm_device_images" "dependence" {
   image_type = "standard"
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-ebm"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
-
 variable "password" {
   type      = string
   sensitive = true
@@ -107,7 +100,7 @@ resource "ctyun_ebm" "ebm_test" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
+  bandwidth = 2
   cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
@@ -123,7 +116,6 @@ resource "ctyun_ebm" "ebm_test2" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type1
   image_uuid = data.ctyun_ebm_device_images.test.images[0].image_uuid
@@ -153,9 +145,9 @@ resource "ctyun_ebm" "ebm_test2" {
 
 - `auto_renew` (Boolean) 是否自动续订，默认非自动续订，当cycle_type不等于on_demand时才可填写。
 - `az_name` (String) 可用区名称
+- `bandwidth` (Number) 带宽大小，传递时会自动创建弹性IP并绑定，单位为Mbit/s，取值范围：[1, 2000]
 - `cycle_count` (Number) 订购时长，最长订购周期为60个月（5年）；非按需时必填
 - `data_volume_raid_uuid` (String) 本地数据盘raid类型，如果有本地盘则必填，可通过ctyun_ebm_device_raids查询
-- `eip_id` (String) 弹性公网IP的ID
 - `key_pair_name` (String) 密钥对名词，和password只能传其中之一
 - `metadata` (Map of String) 物理机元数据信息，键值对形式，支持更新
 - `password` (String, Sensitive) 密码(必须包含大小写字母和（一个数字或者特殊字符）长度8到30位)，未传入有效的keyName时必须传入password，支持更新

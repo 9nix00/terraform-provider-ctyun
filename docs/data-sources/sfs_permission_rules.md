@@ -1,5 +1,5 @@
 # ctyun_sfs_permission_rules (Data Source)
-天翼云SFS（文件存储）权限组规则管理，支持权限组规则创建、更新和删除。具体文档可参考：https://www.ctyun.cn/document/10027350/10192622
+-> 详细说明请见文档：https://www.ctyun.cn/document/10027350/10192622
 
 
 
@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
-  name = "permission-group_example"
+  name = "permission-group-example"
   description = "创建sfs规则组"
 }
 
