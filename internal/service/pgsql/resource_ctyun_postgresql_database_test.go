@@ -23,6 +23,9 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 	collationDatasourceName := "data.ctyun_postgresql_collation_time_zone." + dnd
 	collationDatasourceFile := "datasource_ctyun_postgresql_collation_time_zone.tf"
 
+	databasesDatasourceName := "data.ctyun_postgresql_databases." + dnd
+	databasesDatasourceFile := "datasource_ctyun_postgresql_databases.tf"
+
 	// 从环境变量获取测试依赖资源
 	projectID := "0"
 	instanceID := dependence.pgsqlID
@@ -90,7 +93,20 @@ func TestAccCtyunPostgresqlDatabase(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 				),
 			},
-			// 3. 导入测试
+			// datasource 验证
+			{
+				Config: utils.LoadTestCase(
+					resourceFile, rnd, projectID,
+					instanceID, dbName,
+					charset,
+					ownerAccount, updatedDescription,
+				) + utils.LoadTestCase(
+					databasesDatasourceFile, dnd, instanceID, dbName),
+
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttrSet(databasesDatasourceName, "databases.#")),
+			},
+			// 4. 导入测试
 			{
 				ResourceName: resourceName,
 				ImportState:  true,
