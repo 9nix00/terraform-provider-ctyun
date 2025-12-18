@@ -113,7 +113,7 @@ func (c *CtyunMongodbAssociationEip) Schema(ctx context.Context, request resourc
 		Attributes: map[string]schema.Attribute{
 			"eip_id": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性id",
+				Description: "弹性IP的ID",
 				Validators: []validator.String{
 					validator2.EipValidate(),
 				},

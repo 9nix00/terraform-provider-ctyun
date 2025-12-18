@@ -72,7 +72,6 @@ resource "ctyun_eip" "eip_test" {
 resource "ctyun_mongodb_association_eip" "test" {
   eip_id = ctyun_eip.eip_test.id
   instance_id = ctyun_mongodb_instance.test.id
-  host_ip = "192.168.1.2"
 }
 ```
 
@@ -81,8 +80,7 @@ resource "ctyun_mongodb_association_eip" "test" {
 
 ### Required
 
-- `eip_id` (String) 弹性id
-- `host_ip` (String) 主机ip
+- `eip_id` (String) 弹性IP的ID
 - `instance_id` (String) 实例id
 
 ### Optional
@@ -92,5 +90,4 @@ resource "ctyun_mongodb_association_eip" "test" {
 
 ### Read-Only
 
-- `eip_address` (String) 弹性ip对应的地址
 - `id` (String) id

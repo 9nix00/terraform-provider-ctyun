@@ -273,10 +273,10 @@ Required:
 - `cycle_type` (String) 订购周期类型，取值范围：month：按月，year：按年、on_demand：按需。当此值为month或者year时，cycle_count为必填
 - `deploy_type` (String) 部署模式，单可用区为single，多可用区为multi
 - `elb_prod_code` (String) ApiServer的ELB类型，支持standardI（标准I型），standardII（标准II型），enhancedI（增强I型），enhancedII（增强II型），higherI（高阶I型），您可查看<a href="https://www.ctyun.cn/document/10026756/10032048">ELB类型规格说明</a>
-- `end_port` (Number) 节点服务终止端口，可选范围20106-32767，startPort到endPort范围需大于20，支持更新
+- `end_port` (Number) 节点服务终止端口，可选范围30000-32767，startPort到endPort范围需大于20，支持更新
 - `kube_proxy` (String) kubeProxy类型：iptables或ipvs。您可查看<a href="https://www.ctyun.cn/document/10083472/10915725">iptables与IPVS如何选择</a>
 - `network_plugin` (String) 网络插件，可选calico和cubecni，calico需要申请白名单。您可查看<a href="https://www.ctyun.cn/document/10083472/10520760">容器网络插件说明</a>
-- `start_port` (Number) 节点服务开始端口，可选范围20106-32767，支持更新
+- `start_port` (Number) 节点服务开始端口，可选范围30000-32767，支持更新
 - `subnet_id` (String) 子网ID
 - `timezone` (String) 时区，例如Asia/Shanghai (UTC+08:00)
 - `vpc_id` (String) 虚拟私有云ID

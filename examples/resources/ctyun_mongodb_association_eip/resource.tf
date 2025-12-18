@@ -64,5 +64,4 @@ resource "ctyun_eip" "eip_test" {
 resource "ctyun_mongodb_association_eip" "test" {
   eip_id = ctyun_eip.eip_test.id
   instance_id = ctyun_mongodb_instance.test.id
-  host_ip = "192.168.1.2"
 }

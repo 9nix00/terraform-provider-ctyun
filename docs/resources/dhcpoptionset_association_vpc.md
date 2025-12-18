@@ -1,5 +1,5 @@
 # ctyun_dhcpoptionset_association_vpc (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10381274
 
 
 

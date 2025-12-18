@@ -32,8 +32,8 @@ resource "ctyun_eip_association" "eip_association_test2" {
 
 ### Required
 
-- `eip_id` (String) 弹性ip的id
-- `instance_id` (String) 绑定对象的实例id
+- `eip_id` (String) 弹性IP的ID
+- `instance_id` (String) 绑定对象的实例ID，绑定对象支持云主机和物理机
 
 ### Optional
 
