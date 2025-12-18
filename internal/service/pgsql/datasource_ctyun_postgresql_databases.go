@@ -122,6 +122,7 @@ func (c *ctyunPostgresqlDatabases) Read(ctx context.Context, request datasource.
 		err = errors.New("region ID不能为空！")
 		return
 	}
+	config.RegionID = types.StringValue(regionId)
 	databaseRespList, err := c.getDatabaseList(ctx, config)
 	if err != nil {
 		return
