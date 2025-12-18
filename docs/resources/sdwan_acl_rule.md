@@ -1,5 +1,5 @@
 # ctyun_sdwan_acl_rule (Resource)
-**SD-WAN访问控制规则资源,详细说明请见文档**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852
 
 
 
@@ -54,18 +54,18 @@ resource "ctyun_sdwan_acl_rule" "demo" {
 ### Required
 
 - `acl_id` (String) ACL ID
-- `action` (String) 策略类型，取值范围: allow(允许), deny(拒绝)
-- `direction` (String) 控制方向，取值范围: in(入方向), out(出方向)
-- `dst_cidr` (String) 目的网段
-- `priority` (Number) 优先级
-- `protocol` (String) 协议类型，取值范围: udp(UDP), icmp(ICMP), all(ALL), tcp(TCP)
-- `src_cidr` (String) 源网段
+- `action` (String) 策略类型，取值范围: allow(允许), deny(拒绝)  支持更新
+- `direction` (String) 控制方向，取值范围: in(入方向), out(出方向)  支持更新
+- `dst_cidr` (String) 目的网段 支持更新
+- `priority` (Number) 优先级 支持更新
+- `protocol` (String) 协议类型，取值范围: udp(UDP), icmp(ICMP), all(ALL), tcp(TCP)  支持更新
+- `src_cidr` (String) 源网段 支持更新
 
 ### Optional
 
-- `dst_port_range` (String) 目的端口范围（例如1-200， -1/-1为默认值，表示1-65535）
-- `ip_version` (String) IP协议版本，取值范围: IPv4(IPv4), IPv6(IPv6)
-- `src_port_range` (String) 源端口范围（例如1-200， -1/-1为默认值，表示1-65535）
+- `dst_port_range` (String) 目的端口范围（例如1-200， -1/-1为默认值，表示1-65535） 支持更新
+- `ip_version` (String) IP协议版本，取值范围: IPv4(IPv4), IPv6(IPv6)  支持更新
+- `src_port_range` (String) 源端口范围（例如1-200， -1/-1为默认值，表示1-65535） 支持更新
 
 ### Read-Only
 

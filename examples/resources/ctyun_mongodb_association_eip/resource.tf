@@ -57,10 +57,12 @@ variable "password" {
 }
 resource "ctyun_eip" "eip_test" {
   name        = "tf-eip-for-mon"
-  description = "terraform测试使用"
+  bandwidth = 2
+  cycle_type = "month"
+  cycle_count = 1
 }
 resource "ctyun_mongodb_association_eip" "test" {
   eip_id = ctyun_eip.eip_test.id
-  inst_id = ctyun_mongodb_instance.test.id
+  instance_id = ctyun_mongodb_instance.test.id
   host_ip = "192.168.1.2"
 }

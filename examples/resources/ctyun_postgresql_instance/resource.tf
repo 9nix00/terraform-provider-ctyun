@@ -59,8 +59,7 @@ resource "ctyun_postgresql_instance" "test" {
 
 
 // 升配pgsql--对磁盘扩容(在升配主storage时候，确保备用磁盘空间>主磁盘空间)
-
-resource "ctyun_postgresql_instance" "test" {
+resource "ctyun_postgresql_instance" "test1" {
   cycle_type            = "on_demand"
   prod_id               = "Single1222"
   flavor_name           = "c7.xlarge.2"
@@ -77,8 +76,7 @@ resource "ctyun_postgresql_instance" "test" {
 
 
 // 升配规格 2C4G->2C8G
-
-resource "ctyun_postgresql_instance" "test" {
+resource "ctyun_postgresql_instance" "test2" {
   cycle_type            = "on_demand"
   prod_id               = "Single1222"
   flavor_name           = "c7.xlarge.4"
@@ -93,11 +91,8 @@ resource "ctyun_postgresql_instance" "test" {
   backup_storage_type  = "OS"
 }
 
-
-// 升配类型
-
 // 升配规格 单节点->1主2备
-resource "ctyun_postgresql_instance" "test" {
+resource "ctyun_postgresql_instance" "test3" {
   cycle_type            = "on_demand"
   prod_id               = "MasterSlave1222"
   flavor_name           = "c7.xlarge.4"

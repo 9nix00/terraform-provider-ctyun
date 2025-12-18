@@ -13,6 +13,7 @@ const (
 	ImageImageCheckNotFound          = "Image.ImageCheck.NotFound"
 	OpenapiEipNotFound               = "Openapi.Eip.NotFound"
 	EbsEbsInfoDataDamaged            = "ebs.ebsInfo.dataDamaged"
+	EbsEbsInfoNotExists              = "ebs.ebsInfo.notExists"
 	OpenapiSecurityGroupNotFound     = "Openapi.SecurityGroup.NotFound"
 	OpenapiSharedbandwidthNotFound   = "Openapi.Sharedbandwidth.NotFound"
 	EbsOrderInProgress               = "ebs.order.inProgress"

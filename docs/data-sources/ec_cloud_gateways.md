@@ -1,5 +1,5 @@
 # ctyun_ec_cloud_gateways (Data Source)
-**云网关实例列表数据源**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220
 
 
 

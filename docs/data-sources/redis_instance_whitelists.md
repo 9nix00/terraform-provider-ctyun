@@ -1,5 +1,5 @@
 # ctyun_redis_instance_whitelists (Data Source)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174
 
 
 
@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 data "ctyun_redis_instance_whitelists" "test"{
-    prod_inst_id = "1234567890"
+    instance_id = "3f40648b0d7f4ec4beb82657bd4fbcc6"
 }
 ```
 

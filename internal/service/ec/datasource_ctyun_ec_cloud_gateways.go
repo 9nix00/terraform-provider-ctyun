@@ -179,7 +179,7 @@ func (c *ctyunEcCloudGateways) Read(ctx context.Context, req datasource.ReadRequ
 		}
 
 		if r.DcID == nil {
-			resp.Diagnostics.AddError("API return error", "DcID is nil")
+			resp.Diagnostics.AddError("API return error", "RegionID is nil")
 			return
 		}
 

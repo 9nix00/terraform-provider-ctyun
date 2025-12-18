@@ -1,5 +1,5 @@
 # ctyun_private_nat_snat (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10026759/00000000
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026759/10378381
 
 
 
@@ -68,7 +68,7 @@ resource "ctyun_private_nat_transit_ip" "transit_ip2"{
 resource "ctyun_private_nat_snat" "private_nat_snat"{
   nat_gateway_id =ctyun_private_nat.private_nat.id
   source_subnet_id= ctyun_subnet.subnet_test.id
-  snat_ips = [ctyun_private_nat_transit_ip.transit_ip.address,ctyun_private_nat_transit_ip.transit_ip2.address]
+  addresses = [ctyun_private_nat_transit_ip.transit_ip.address,ctyun_private_nat_transit_ip.transit_ip2.address]
   description = "snat 测试-更新"
 }
 ```

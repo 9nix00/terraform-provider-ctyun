@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 # instance id根据实例情况进行修改
-data "ctyun_mysql_white_lists" "examples" {
-  instance_id = "678ff914cf80469d86bdd663ee9b6377"
+data "ctyun_postgresql_white_lists" "examples" {
+  instance_id = "0e7ed95b886145159c286361463370b5"
 }
 

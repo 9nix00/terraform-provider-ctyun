@@ -12,5 +12,5 @@ provider "ctyun" {
 }
 
 data "ctyun_redis_instance_whitelists" "test"{
-    prod_inst_id = "1234567890"
+    instance_id = "3f40648b0d7f4ec4beb82657bd4fbcc6"
 }

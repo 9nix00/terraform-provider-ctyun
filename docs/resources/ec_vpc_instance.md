@@ -13,7 +13,7 @@
 - `cgw_id` (String) 云网关实例ID
 - `ec_id` (String) 云间高速实例ID
 - `rtb_id` (String) 路由表ID
-- `subnets` (Set of String) subnet id列表
+- `subnets` (Set of String) subnet id列表 支持更新
 - `vpc_id` (String) vpc ID
 
 ### Optional

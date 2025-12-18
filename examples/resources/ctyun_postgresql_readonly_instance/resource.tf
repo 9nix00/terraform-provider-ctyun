@@ -57,7 +57,7 @@ resource "ctyun_postgresql_instance" "test" {
 
 
 resource "ctyun_postgresql_readonly_instance" "example" {
-  inst_id     = ctyun_postgresql_instance.test.id
+  instance_id     = ctyun_postgresql_instance.test.id
   cycle_type  = "on_demand"
   flavor_name = "c7.xlarge.2"
   name        = "pgsql-ro-example"

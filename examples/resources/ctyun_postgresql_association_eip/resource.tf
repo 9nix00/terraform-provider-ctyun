@@ -68,6 +68,5 @@ resource "ctyun_eip" "eip_test" {
 
 resource "ctyun_postgresql_association_eip" "pgsql_association_eip_test" {
   eip_id = ctyun_eip.eip_test.id
-  eip    = ctyun_eip.eip_test.address
-  inst_id = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
 }

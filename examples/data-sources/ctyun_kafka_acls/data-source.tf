@@ -11,8 +11,7 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_kafka_acls" "tbidgqvfbs" {
+data "ctyun_kafka_acls" "test" {
     name = "init-kafka-acl"
-    prod_inst_id = "4bd607df61d348b1949db223614315c1"
-
+    instance_id = "4bd607df61d348b1949db223614315c1"
 }

@@ -120,7 +120,7 @@ func (c *ctyunZosBucket) Schema(_ context.Context, _ resource.SchemaRequest, res
 				ElementType: types.StringType,
 				Optional:    true,
 				Computed:    true,
-				Description: "标签，支持更新",
+				Description: "标签，对标aws s3中桶标签，支持更新",
 				Validators: []validator.Map{
 					mapvalidator.SizeAtMost(10),
 				},

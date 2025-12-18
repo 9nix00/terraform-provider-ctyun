@@ -1,5 +1,5 @@
 # ctyun_mongodb_account (Resource)
-**MongoDB数据库账号管理资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089535**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
 
 
 
@@ -88,12 +88,12 @@ resource "ctyun_mongodb_account" "example" {
 
 - `instance_id` (String) MongoDB实例ID
 - `name` (String) 账号名称，以字母开头，由字母、数字和下划线组成，长度2-16个字符
-- `password` (String, Sensitive) 实例密码，长度为8~26个字符，支持更新，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+
+- `password` (String, Sensitive) 实例密码，长度为8~26个字符，支持更新，必须包含大写字母、小写字母、数字和特殊字符~!@#%^*_=+ 支持更新
 - `roles` (Attributes List) 角色列表，支持更新 (see [below for nested schema](#nestedatt--roles))
 
 ### Optional
 
-- `database` (String) 数据库名称，默认为admin
+- `database` (String) 数据库名称，默认为admin 支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
@@ -106,5 +106,5 @@ resource "ctyun_mongodb_account" "example" {
 
 Required:
 
-- `db` (String) 数据库名称
-- `role` (String) 角色，可选值：read、readWrite、readWriteAnyDatabase等，默认为readWrite
+- `db` (String) 数据库名称 支持更新
+- `role` (String) 角色，可选值：read、readWrite、readWriteAnyDatabase等，默认为readWrite 支持更新

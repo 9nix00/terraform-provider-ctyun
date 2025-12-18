@@ -227,6 +227,9 @@ func (c *CtyunMysqlAudit) startedLoop(ctx context.Context, state *CtyunMysqlAudi
 				state.ProjectID.ValueString(),
 				state.RegionID.ValueString(),
 			)
+			if err != nil {
+				return false
+			}
 			runningStatus := instance.ProdRunningStatus
 			orderStatus := instance.ProdOrderStatus
 			// 若变配前，发现数据库已冻结，将其恢复
@@ -237,7 +240,6 @@ func (c *CtyunMysqlAudit) startedLoop(ctx context.Context, state *CtyunMysqlAudi
 				}
 			}
 			if runningStatus == business.MysqlRunningStatusStarted && orderStatus == business.MysqlRunningStatusStarted {
-				// 有三次是start，才认为状态正常
 				cnt++
 				if cnt > 1 {
 					return false

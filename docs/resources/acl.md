@@ -19,7 +19,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "example-vpc-id"
+  vpc_id        = "vpc-exampleid1"
   name          = "example-acl"
   description   = "Example ACL created for demonstration"
   enabled       = "enable"

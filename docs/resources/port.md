@@ -1,5 +1,5 @@
 # ctyun_port (Resource)
-**弹性网卡资源，详细说明请见文档：https://www.ctyun.cn/document/10026730**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10225195
 
 
 

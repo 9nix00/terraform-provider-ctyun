@@ -1,5 +1,5 @@
 # ctyun_elb_acl (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10026756/10032777**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026756/10032777
 
 
 

@@ -79,7 +79,7 @@ resource "ctyun_vip" "example" {
   subnet_id  = ctyun_subnet.subnet_test.id
   ip_address = "192.168.1.100"
   vip_type   = "v4"
-  project_id = "project-id"
+  project_id = "0"
 }
 resource "ctyun_port" "port_test" {
   name                       = "tf-test-port"

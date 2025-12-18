@@ -589,8 +589,14 @@ func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
 					}
 					return fmt.Sprintf("%s,%s,%s,%s", id, vpcId, projectId, regionId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"add_instance_uuid_list", "remove_instance_uuid_list", "is_destroy", "expected_count"},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"add_instance_uuid_list",
+					"remove_instance_uuid_list",
+					"is_destroy",
+					"expected_count",
+					"project_id",
+				},
 			},
 			{
 				ResourceName: resourceName,
@@ -601,8 +607,14 @@ func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
 					projectId := ds.Attributes["project_id"]
 					return fmt.Sprintf("%s,%s,%s", id, vpcId, projectId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"add_instance_uuid_list", "remove_instance_uuid_list", "is_destroy", "expected_count"},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"add_instance_uuid_list",
+					"remove_instance_uuid_list",
+					"is_destroy",
+					"expected_count",
+					"project_id",
+				},
 			},
 			{
 				ResourceName: resourceName,
@@ -612,8 +624,14 @@ func TestAccCtyunScalingNoneExpectedCount(t *testing.T) {
 					id := ds.ID
 					return fmt.Sprintf("%s,%s", id, vpcId), nil
 				},
-				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"add_instance_uuid_list", "remove_instance_uuid_list", "is_destroy", "expected_count", "project_id"},
+				ImportStateVerify: true,
+				ImportStateVerifyIgnore: []string{
+					"add_instance_uuid_list",
+					"remove_instance_uuid_list",
+					"is_destroy",
+					"expected_count",
+					"project_id",
+				},
 			},
 			{
 				Config: utils.LoadTestCase(resourceFile, rnd, securityGroupIDList, name, healthMode, subnetIDList, moveOutStrategy, vpcId, minCount, maxCount,

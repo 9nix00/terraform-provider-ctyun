@@ -2,7 +2,9 @@ package ec
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ec"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -305,18 +307,13 @@ func (c *CtyunEcSdwanInstance) create(ctx context.Context, plan *CtyunEcSdwanIns
 
 	resp, err := c.meta.Apis.SdkEcApis.EcEcCreateSDWANInstanceApi.Do(ctx, c.meta.SdkCredential, req)
 	if err != nil {
-		tflog.Error(ctx, "Failed to create SDWAN network instance due to API error", map[string]interface{}{
-			"error": err.Error(),
-		})
 		return
 	} else if resp == nil {
-		tflog.Error(ctx, "Failed to create SDWAN network instance, response is nil")
 		return fmt.Errorf("API return error. StatusCode is nil")
 	} else if *resp.StatusCode != common.NormalStatusCode {
 		err = fmt.Errorf("API return error. Message: %s", *resp.Message)
 		return
 	} else if resp.ReturnObj == nil {
-		tflog.Error(ctx, "Failed to create SDWAN network instance, ReturnObj is nil")
 		err = common.InvalidReturnObjError
 		return
 	}
@@ -331,14 +328,14 @@ func (c *CtyunEcSdwanInstance) getAndMerge(ctx context.Context, state *CtyunEcSd
 
 	// 根据InstanceID查询实例
 	listReq := &ec.EcEcListSDWANInstanceRequest{
-		EcID:       state.EcID.ValueString(),
-		InstanceID: &instanceID,
+		EcID: state.EcID.ValueString(),
 	}
-
-	tflog.Info(ctx, "Starting to read instance", map[string]interface{}{
-		"instance_id": instanceID,
-		"ec_id":       state.EcID.ValueString(),
-	})
+	if !state.SdwanID.IsNull() {
+		listReq.SdwanID = state.SdwanID.ValueStringPointer()
+	}
+	if !state.CgwID.IsNull() {
+		listReq.CgwID = state.CgwID.ValueStringPointer()
+	}
 
 	listResp, err := c.meta.Apis.SdkEcApis.EcEcListSDWANInstanceApi.Do(ctx, c.meta.SdkCredential, listReq)
 	if err != nil {
@@ -430,44 +427,47 @@ func (c *CtyunEcSdwanInstance) delete(ctx context.Context, state CtyunEcSdwanIns
 // getInstanceID 通过查询获取实例ID
 func (c *CtyunEcSdwanInstance) getInstanceID(ctx context.Context, ecID, sdwanID, cgwID string) (string, error) {
 	// 等待实例创建完成并获取实例ID
-	// 这里使用轮询方式获取实例ID
+	// 使用更灵活的重试机制
 	req := &ec.EcEcListSDWANInstanceRequest{
 		EcID:    ecID,
 		SdwanID: &sdwanID,
 		CgwID:   &cgwID,
 	}
-	time.Sleep(4 * time.Second)
 
-	// 添加重试机制，最多尝试15次，每次间隔4秒
-	for i := 0; i < 15; i++ {
-
+	// 初始化重试器，最大轮询61次，间隔10秒
+	retryer, err := business.NewRetryer(time.Second*10, 61)
+	if err != nil {
+		return "", fmt.Errorf("failed to create retryer: %w", err)
+	}
+	time.Sleep(time.Second * 10)
+	var instanceID string
+	result := retryer.Start(func(currentTime int) bool {
 		resp, err := c.meta.Apis.SdkEcApis.EcEcListSDWANInstanceApi.Do(ctx, c.meta.SdkCredential, req)
+
 		if err != nil {
-			time.Sleep(4 * time.Second)
-			continue
-		}
-		if resp == nil {
-			time.Sleep(4 * time.Second)
-			continue
+			return false
+		} else if resp == nil {
+			return true
 		} else if *resp.StatusCode != common.NormalStatusCode {
-			time.Sleep(4 * time.Second)
-			continue
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return false
+		} else if resp.ReturnObj == nil || resp.ReturnObj.Results == nil || len(resp.ReturnObj.Results) == 0 {
+			err = fmt.Errorf("no SDWAN instance details found for SDWAN ID: %s", sdwanID)
+			return true
 		}
-		if resp.ReturnObj != nil && resp.ReturnObj.Results != nil && len(resp.ReturnObj.Results) == 0 {
-			time.Sleep(4 * time.Second)
-			continue
-		}
-		// 解析返回结果获取实例ID
-		if resp.ReturnObj != nil && resp.ReturnObj.Results != nil && len(resp.ReturnObj.Results) > 0 {
-			for _, result := range resp.ReturnObj.Results {
-				if result.InstanceID != nil {
-					return *result.InstanceID, nil
-				}
+
+		// 查找实例ID
+		for _, result := range resp.ReturnObj.Results {
+			if result.InstanceID != nil && *result.SdwanID == sdwanID && *result.CgwID == cgwID {
+				instanceID = *result.InstanceID
+				return false // 成功，停止重试
 			}
 		}
 
-		time.Sleep(4 * time.Second)
+		return true // 继续重试
+	})
+	if result.ReturnReason == business.ReachMaxLoopTime {
+		return "", errors.New("轮询已达最大次数，资源仍未绑定成功！")
 	}
-
-	return "", fmt.Errorf("failed to get instance id after multiple attempts")
+	return instanceID, nil
 }

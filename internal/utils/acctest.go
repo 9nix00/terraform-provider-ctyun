@@ -1,7 +1,9 @@
 package utils
 
 import (
+	crand "crypto/rand"
 	"fmt"
+	"math/big"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -60,12 +62,11 @@ func generateRandomStringWithRetry(retryCount int) string {
 	length := 10
 	builder := strings.Builder{}
 	builder.Grow(length)
-	r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(retryCount)))
+	charsetLen := big.NewInt(int64(len(charset)))
 
-	// 生成字符串
 	for i := 0; i < length; i++ {
-		randomIndex := r.Intn(len(charset))
-		builder.WriteByte(charset[randomIndex])
+		randomIndex, _ := crand.Int(crand.Reader, charsetLen)
+		builder.WriteByte(charset[randomIndex.Int64()])
 	}
 
 	result := builder.String()

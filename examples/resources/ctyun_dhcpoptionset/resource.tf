@@ -11,7 +11,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_dhcpoptionset" "example" {
-  name        = "example-dhcp-option-set"
+  name        = "dhcpoptionset"
   description = "Example DHCP option set"
   domain_name = "example.com"
   dns_list    = ["8.8.8.8", "114.114.114.114"]

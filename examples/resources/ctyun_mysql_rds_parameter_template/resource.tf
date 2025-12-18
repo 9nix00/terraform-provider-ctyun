@@ -62,6 +62,6 @@ data "ctyun_mysql_param_templates" "template"{
 }
 
 resource "ctyun_mysql_rds_parameter_template" "examples" {
-  inst_id     = ctyun_mysql_instance.mysql_database.id
+  instance_id     = ctyun_mysql_instance.mysql_database.id
   template_id = data.ctyun_mysql_param_templates.template.param_templates[0].id
 }

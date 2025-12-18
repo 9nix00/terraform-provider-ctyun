@@ -39,7 +39,6 @@ type CtyunExpressConnectConfig struct {
 	Description types.String `tfsdk:"description"`
 	Status      types.Int64  `tfsdk:"status"`
 	CreateTime  types.String `tfsdk:"create_time"`
-	ResourceID  types.String `tfsdk:"resource_id"`
 	RegionId    types.String `tfsdk:"region_id"`
 }
 
@@ -63,13 +62,6 @@ func (c *CtyunExpressConnect) Schema(ctx context.Context, req resource.SchemaReq
 				Description: "名称 支持更新",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(1, 64),
-				},
-			},
-			"resource_id": schema.StringAttribute{
-				Computed:    true,
-				Description: "资源项的ID",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
 				},
 			},
 			"description": schema.StringAttribute{
@@ -136,10 +128,6 @@ func (c *CtyunExpressConnect) Create(ctx context.Context, req resource.CreateReq
 		return
 	}
 	err = c.create(ctx, &plan)
-	if err != nil {
-		return
-	}
-	err = c.createCgwBill(ctx, &plan)
 	if err != nil {
 		return
 	}
@@ -333,135 +321,109 @@ func (c *CtyunExpressConnect) delete(ctx context.Context, state CtyunExpressConn
 	return
 }
 
-// createCgwBill 创建云网关计费
-func (c *CtyunExpressConnect) createCgwBill(ctx context.Context, plan *CtyunExpressConnectConfig) (err error) {
-	// 实现创建云网关计费的逻辑
-	// 使用 c.meta.Apis.SdkEcApis.EcEcCgwBillNewApi 调用新创建的订购API
-
-	// 构造请求参数（这里需要根据实际业务需求进行调整）
-	req := &ec.EcEcCgwBillNewRequest{
-		EcID: plan.ID.ValueString(),
-		// RegionID, ClientToken, PayVoucherPrice 等参数根据实际需求添加
-	}
-
-	tflog.Info(ctx, "创建云网关计费", map[string]interface{}{
-		"ec_id": plan.ID.ValueString(),
-	})
-
-	resp, err := c.meta.Apis.SdkEcApis.EcEcCgwBillNewApi.Do(ctx, c.meta.SdkCredential, req)
-	if err != nil {
-		return
-	} else if *resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
-		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
-	plan.ResourceID = types.StringValue(*resp.ReturnObj.MasterResourceID)
-	return
-}
-
 // deleteCgwBill 删除云网关计费
 func (c *CtyunExpressConnect) deleteCgwBill(ctx context.Context, state *CtyunExpressConnectConfig) (err error) {
 	// 实现删除云网关计费的逻辑
 	// 使用 c.meta.Apis.SdkEcApis.EcEcCgwBillRefundApi 调用新创建的退订API
-
-	// 如果ResourceID为空，则无需退订
-	if state.ResourceID.IsNull() || state.ResourceID.IsUnknown() {
-		return nil
-	}
-
-	// 构造请求参数（这里需要根据实际业务需求进行调整）
-	req := &ec.EcEcCgwBillRefundRequest{
+	oderType := "1"
+	oderState := "1"
+	// 构造查询参数（这里需要根据实际业务需求进行调整）
+	queryReq := &ec.EcEcTgwOrderQueryRequest{
 		EcID:       state.ID.ValueString(),
-		RegionID:   state.RegionId.ValueString(),   // 使用实际的RegionID
-		ResourceID: state.ResourceID.ValueString(), // 使用实际的ResourceID
-		// ClientToken 参数根据实际需求添加
+		OrderType:  &oderType,
+		OrderState: &oderState,
 	}
-
-	tflog.Info(ctx, "删除云网关计费", map[string]interface{}{
-		"ec_id": state.ID.ValueString(),
-	})
-
-	resp, err := c.meta.Apis.SdkEcApis.EcEcCgwBillRefundApi.Do(ctx, c.meta.SdkCredential, req)
+	queryResp, err := c.meta.Apis.SdkEcApis.EcEcTgwOrderQueryApi.Do(ctx, c.meta.SdkCredential, queryReq)
 	if err != nil {
 		return
-	} else if *resp.StatusCode == common.ErrorStatusCode {
-		err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+	} else if *queryResp.StatusCode != common.NormalStatusCode {
+		return fmt.Errorf("API return error. Message: %s", *queryResp.Message)
+	} else if queryResp.ReturnObj == nil || len(queryResp.ReturnObj.Results) == 0 {
 		return
-	} else if resp.ReturnObj == nil {
-		err = common.InvalidReturnObjError
-		return
-	}
 
-	// 轮询查询订单状态，确保删除完成
-	// 最多轮询30次，每次间隔5秒
-	for i := 0; i < 30; i++ {
-		time.Sleep(5 * time.Second)
-
-		queryReq := &ec.EcEcTgwOrderQueryRequest{
-			EcID: state.ID.ValueString(),
+	} else {
+		resourceID := queryResp.ReturnObj.Results[0].ResourceID
+		// 构造请求参数（这里需要根据实际业务需求进行调整）
+		req := &ec.EcEcCgwBillRefundRequest{
+			EcID:       state.ID.ValueString(),
+			RegionID:   state.RegionId.ValueString(), // 使用实际的RegionID
+			ResourceID: *resourceID,                  // 使用实际的ResourceID
+			// ClientToken 参数根据实际需求添加
 		}
 
-		// 如果ResourceID存在，则添加到查询条件中
-		if !state.ResourceID.IsNull() && !state.ResourceID.IsUnknown() {
-			resourceID := state.ResourceID.ValueString()
-			queryReq.ResourceID = &resourceID
-		}
-
-		queryResp, err := c.meta.Apis.SdkEcApis.EcEcTgwOrderQueryApi.Do(ctx, c.meta.SdkCredential, queryReq)
+		tflog.Info(ctx, "删除云网关计费", map[string]interface{}{
+			"ec_id": state.ID.ValueString(),
+		})
+		var resp *ec.EcEcCgwBillRefundResponse
+		resp, err = c.meta.Apis.SdkEcApis.EcEcCgwBillRefundApi.Do(ctx, c.meta.SdkCredential, req)
 		if err != nil {
-			// 查询失败，记录日志但继续轮询
-			tflog.Warn(ctx, "查询订单状态失败", map[string]interface{}{
-				"error": err.Error(),
-			})
-			continue
+			return
+		} else if *resp.StatusCode == common.ErrorStatusCode {
+			err = fmt.Errorf("API return error. Message: %s Description: %s", *resp.Message, *resp.Description)
+			return
+		} else if resp.ReturnObj == nil {
+			err = common.InvalidReturnObjError
+			return
 		}
 
-		// 检查API响应状态
-		if queryResp.StatusCode == nil {
-			tflog.Warn(ctx, "查询订单状态失败，StatusCode为空")
-			continue
-		} else if *queryResp.StatusCode != common.NormalStatusCode {
-			// API返回错误，记录日志但继续轮询
-			tflog.Warn(ctx, "查询订单状态失败", map[string]interface{}{
-				"message": func() string {
-					if queryResp.Message != nil {
-						return *queryResp.Message
-					}
-					return "unknown error"
-				}(),
-				"description": func() string {
-					if queryResp.Description != nil {
-						return *queryResp.Description
-					}
-					return "unknown description"
-				}(),
-			})
-			continue
-		}
-
-		// 检查返回结果
-		if queryResp.ReturnObj != nil && queryResp.ReturnObj.Results != nil {
-			// 如果没有查询到订单，说明删除已完成
-			if len(queryResp.ReturnObj.Results) == 0 {
-				tflog.Info(ctx, "确认云间高速实例已成功删除")
-				break
+		// 轮询查询订单状态，确保删除完成
+		// 最多轮询30次，每次间隔5秒
+		for i := 0; i < 30; i++ {
+			time.Sleep(5 * time.Second)
+			queryResp, err := c.meta.Apis.SdkEcApis.EcEcTgwOrderQueryApi.Do(ctx, c.meta.SdkCredential, queryReq)
+			if err != nil {
+				// 查询失败，记录日志但继续轮询
+				tflog.Warn(ctx, "查询订单状态失败", map[string]interface{}{
+					"error": err.Error(),
+				})
+				continue
 			}
 
-			// 如果查询到订单，继续轮询
-			tflog.Info(ctx, "云间高速实例仍在删除中", map[string]interface{}{
-				"result_count": len(queryResp.ReturnObj.Results),
-			})
-		}
+			// 检查API响应状态
+			if queryResp.StatusCode == nil {
+				tflog.Warn(ctx, "查询订单状态失败，StatusCode为空")
+				continue
+			} else if *queryResp.StatusCode != common.NormalStatusCode {
+				// API返回错误，记录日志但继续轮询
+				tflog.Warn(ctx, "查询订单状态失败", map[string]interface{}{
+					"message": func() string {
+						if queryResp.Message != nil {
+							return *queryResp.Message
+						}
+						return "unknown error"
+					}(),
+					"description": func() string {
+						if queryResp.Description != nil {
+							return *queryResp.Description
+						}
+						return "unknown description"
+					}(),
+				})
+				continue
+			}
 
-		// 如果是最后一次轮询，仍然查询到订单，则记录警告
-		if i == 29 && queryResp.ReturnObj != nil && queryResp.ReturnObj.Results != nil && len(queryResp.ReturnObj.Results) > 0 {
-			tflog.Warn(ctx, "轮询结束但仍未确认删除完成", map[string]interface{}{
-				"result_count": len(queryResp.ReturnObj.Results),
-			})
+			// 检查返回结果
+			if queryResp.ReturnObj != nil && queryResp.ReturnObj.Results != nil {
+				// 如果没有查询到订单，说明删除已完成
+				if len(queryResp.ReturnObj.Results) == 0 {
+					tflog.Info(ctx, "确认云间高速实例已成功删除")
+					break
+				}
+
+				// 如果查询到订单，继续轮询
+				tflog.Info(ctx, "云间高速实例仍在删除中", map[string]interface{}{
+					"result_count": len(queryResp.ReturnObj.Results),
+				})
+			}
+
+			// 如果是最后一次轮询，仍然查询到订单，则记录警告
+			if i == 29 && queryResp.ReturnObj != nil && queryResp.ReturnObj.Results != nil && len(queryResp.ReturnObj.Results) > 0 {
+				tflog.Warn(ctx, "轮询结束但仍未确认删除完成", map[string]interface{}{
+					"result_count": len(queryResp.ReturnObj.Results),
+				})
+			}
 		}
 	}
+
 	return nil
 }

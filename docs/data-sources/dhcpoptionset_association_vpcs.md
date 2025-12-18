@@ -1,5 +1,5 @@
 # ctyun_dhcpoptionset_association_vpcs (Data Source)
-DHCP选项集与VPC绑定关系列表数据源
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
 
 
 
@@ -19,7 +19,15 @@ provider "ctyun" {
   env = "prod"
 }
 
+resource "ctyun_dhcpoptionset" "example" {
+  name        = "dhcpoptionset"
+  description = "Example DHCP option set"
+  domain_name = "example.com"
+  dns_list    = ["8.8.8.8", "114.114.114.114"]
+}
+
 data "ctyun_dhcpoptionset_association_vpcs" "example" {
+  dhcp_option_sets_id = ctyun_dhcpoptionset.example.id
 }
 
 output "ctyun_dhcpoptionset_association_vpcs_example" {

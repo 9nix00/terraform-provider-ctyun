@@ -1,5 +1,5 @@
 # ctyun_sdwans (Data Source)
-**SD-WAN数据源,用于查询SD-WAN列表**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852
 
 
 

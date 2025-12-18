@@ -1,5 +1,5 @@
 # ctyun_sdwan_acl (Resource)
-**SD-WAN访问控制资源,详细说明请见文档**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852
 
 
 
@@ -41,7 +41,7 @@ resource "ctyun_sdwan_acl" "acl_test" {
 
 ### Required
 
-- `name` (String) 访问控制名称
+- `name` (String) 访问控制名称 支持更新
 - `rules` (Attributes List) ACL规则列表 (see [below for nested schema](#nestedatt--rules))
 
 ### Optional

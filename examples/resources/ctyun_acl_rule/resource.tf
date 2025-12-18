@@ -9,13 +9,15 @@ terraform {
 provider "ctyun" {
   env = "prod"
 }
+
 resource "ctyun_acl" "example" {
-  vpc_id        = "example-vpc-id"
+  vpc_id        = "vpc-idexample1"
   name          = "example-acl"
   description   = "Example ACL created for demonstration"
   enabled       = "enable"
   apply_to_public_lb = false
 }
+
 resource "ctyun_acl_rule" "example" {
   acl_id                  = ctyun_acl.example.id
   direction               = "ingress"

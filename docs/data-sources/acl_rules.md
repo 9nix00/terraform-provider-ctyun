@@ -19,7 +19,16 @@ provider "ctyun" {
   env = "prod"
 }
 
+resource "ctyun_acl" "example" {
+  vpc_id        = "vpc-exampleid1"
+  name          = "example-acl"
+  description   = "Example ACL created for demonstration"
+  enabled       = "enable"
+  apply_to_public_lb = false
+}
+
 data "ctyun_acl_rules" "example" {
+  acl_id = ctyun_acl.example.id
 }
 
 output "ctyun_acl_rules_example" {

@@ -69,25 +69,25 @@ variable "password" {
   sensitive = true
 }
 resource "ctyun_mysql_database" "db1" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db1"
   charset_name = "utf8mb4"
 }
 resource "ctyun_mysql_database" "db2" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db2"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db1]
 }
 resource "ctyun_mysql_database" "db3" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db3"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db2]
 }
 
 resource "ctyun_mysql_backup" "backup_test" {
-  inst_id     = ctyun_mysql_instance.mysql_src.id
+  instance_id     = ctyun_mysql_instance.mysql_src.id
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"
@@ -96,13 +96,13 @@ resource "ctyun_mysql_backup" "backup_test" {
 
 data "ctyun_mysql_recoverable_time_points" "time_point_test" {
   depends_on = [ctyun_mysql_backup.backup_test]
-  inst_id    = ctyun_mysql_instance.mysql_src.id
+  instance_id    = ctyun_mysql_instance.mysql_src.id
   project_id = "0"
 }
 
 resource "ctyun_mysql_backup_recovery" "example" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
-  src_inst_id  = ctyun_mysql_instance.mysql_src.id
-  dst_inst_id  = ctyun_mysql_instance.mysql_dest.id
-  to_timepoint = data.ctyun_mysql_recoverable_time_points.time_point_test.backup_time_points.0.end_timestamp
+  instance_id      = ctyun_mysql_instance.mysql_src.id
+  src_instance_id  = ctyun_mysql_instance.mysql_src.id
+  dst_instance_id  = ctyun_mysql_instance.mysql_dest.id
+  to_timepoint = data.ctyun_mysql_recoverable_time_points.time_point_test.backup_time_points.0.end_time
 }

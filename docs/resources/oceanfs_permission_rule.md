@@ -40,13 +40,13 @@ resource "ctyun_oceanfs_permission_rule" "example" {
 
 ### Required
 
-- `auth_addr` (String) 授权地址。可填写单个 IP 或者单个网段，支持IPv4和IPv6两种网络类型。默认来访地址为*表示允许所有
+- `auth_addr` (String) 授权地址，支持更新。可填写单个 IP 或者单个网段，支持IPv4和IPv6两种网络类型。默认来访地址为*表示允许所有
 - `permission_group_id` (String) 权限组ID
 - `rw_permission` (String) 读写权限类型。取值：rw：读写权限。对应IP下的计算服务可以对文件系统进行读写操作；ro：只读权限。对应IP下的计算服务可以对文件系统只有只读权限
 
 ### Optional
 
-- `priority` (Number) 规则优先级。可选范围为1-400，默认值为1，即最高优先级。
+- `priority` (Number) 规则优先级，支持更新。可选范围为1-400，默认值为1，即最高优先级。
 - `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
 
 ### Read-Only

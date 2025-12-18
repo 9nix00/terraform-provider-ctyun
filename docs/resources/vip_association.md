@@ -1,5 +1,5 @@
 # ctyun_vip_association (Resource)
-虚拟IP绑定资源，用于将虚拟IP绑定到实例或弹性IP
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026730/10224288
 
 
 
@@ -87,7 +87,7 @@ resource "ctyun_vip" "example" {
   subnet_id  = ctyun_subnet.subnet_test.id
   ip_address = "192.168.1.100"
   vip_type   = "v4"
-  project_id = "project-id"
+  project_id = "0"
 }
 resource "ctyun_port" "port_test" {
   name                       = "tf-test-port"

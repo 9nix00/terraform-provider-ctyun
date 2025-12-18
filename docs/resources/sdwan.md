@@ -1,5 +1,5 @@
 # ctyun_sdwan (Resource)
-**SD-WAN资源,详细说明请见文档**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10035786/10035852
 
 
 
@@ -17,6 +17,7 @@ terraform {
 # 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
   env = "prod"
+  project_id = "0"
 }
 
 resource "ctyun_sdwan" "demo" {
@@ -30,11 +31,11 @@ resource "ctyun_sdwan" "demo" {
 
 ### Required
 
-- `name` (String) SD-WAN名称
+- `name` (String) SD-WAN名称 支持更新
 
 ### Optional
 
-- `description` (String) SD-WAN描述
+- `description` (String) SD-WAN描述 支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 
 ### Read-Only

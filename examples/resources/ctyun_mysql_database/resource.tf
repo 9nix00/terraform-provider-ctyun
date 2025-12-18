@@ -58,7 +58,7 @@ variable "password" {
 }
 
 resource "ctyun_mysql_database" "db" {
-  inst_id      = ctyun_mysql_instance.mysql_database.id
+  instance_id      = ctyun_mysql_instance.mysql_database.id
   name         = "example_db1"
   charset_name = "utf8mb4"
 }

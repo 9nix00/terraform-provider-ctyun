@@ -1,5 +1,5 @@
 # ctyun_mongodb_white_list (Resource)
-**MongoDB白名单分组资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089536**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
 
 
 
@@ -76,11 +76,11 @@ resource "ctyun_mongodb_white_list" "example" {
 
 ### Required
 
-- `group_name` (String) 白名单分组名
+- `group_name` (String) 白名单分组名 支持更新
 - `instance_id` (String) MongoDB实例ID
-- `ip_list` (Set of String) IP列表
-- `ip_type` (String) 白名单分组名
-- `white_list_type` (String) 白名单分组名
+- `ip_list` (Set of String) IP列表 支持更新
+- `ip_type` (String) ip类型 支持更新
+- `white_list_type` (String) 白名单列表类型  支持更新
 
 ### Optional
 
@@ -89,5 +89,5 @@ resource "ctyun_mongodb_white_list" "example" {
 
 ### Read-Only
 
-- `id` (String) 资源唯一标识，格式为 instance_id:ip_whitelist_name
+- `id` (String) 资源唯一标识，格式为 instance_id,ip_whitelist_name
 - `white_list_id` (Number) 白名单分组Id

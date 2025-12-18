@@ -301,6 +301,9 @@ func (c *CtyunMongodbWhiteList) checkBefore(ctx context.Context, state CtyunMong
 				err = err3
 				return false
 			} else if detailResp.StatusCode != 800 {
+				if detailResp.Message != nil && strings.Contains(*detailResp.Message, "实例未正常运行,请稍后再试") {
+					return true // 继续重试
+				}
 				err = fmt.Errorf("API return error. Message: %s", *detailResp.Message)
 				return false
 			} else if detailResp.ReturnObj == nil {

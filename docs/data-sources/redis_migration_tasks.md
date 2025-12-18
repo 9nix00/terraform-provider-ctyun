@@ -1,5 +1,5 @@
 # ctyun_redis_migration_tasks (Data Source)
-**查询Redis数据迁移任务信息**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10518385
 
 
 

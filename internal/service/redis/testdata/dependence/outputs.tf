@@ -14,6 +14,10 @@ output "eip_address" {
   value = ctyun_eip.eip_test.address
 }
 
+output "eip_id" {
+  value = ctyun_eip.eip_test.id
+}
+
 output "redis_version" {
   value = local.spec.version
 }
@@ -35,7 +39,6 @@ output "redis2_address" {
   value = ctyun_redis_instance.test_redis_instance2.connection_address
 }
 
-
 output "instance_account_name" {
   value = ctyun_redis_account.test_instance1_account.name
 }
@@ -47,6 +50,7 @@ output "instance_account_pswd" {
 output "instance2_account_name" {
   value = ctyun_redis_account.test_instance2_account.name
 }
+
 output "instance2_account_pswd" {
   value = ctyun_redis_account.test_instance2_account.password
   sensitive = true

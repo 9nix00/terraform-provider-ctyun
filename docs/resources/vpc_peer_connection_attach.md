@@ -1,4 +1,5 @@
 # ctyun_vpc_peer_connection_attach (Resource)
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026760/10037761
 
 
 
@@ -15,14 +16,10 @@ terraform {
 
 # 可参考index.md，在环境变量中配置ak、sk、资源池ID、可用区名称
 provider "ctyun" {
-  env = "prod"
 }
 
 provider "ctyun" {
   alias           = "test_accpet"
-  ak              = "xxx"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_AK
-  sk              = "xxx"                                    # 如果此值不填，则默认读取环境变量中的CTYUN_SK
-  env             = "prod"                                     # 如果此值不填，则默认读取环境变量中的CTYUN_ENV
 }
 
 resource "ctyun_vpc" "vpc_test" {
@@ -50,7 +47,7 @@ resource "ctyun_vpc_peer_connection" "cross_example" {
   accept_email   = "xxxx@chinatelecom.cn"
 }
 
-resource "ctyun_vpc_peer_connection_attach" "%[1]s" {
+resource "ctyun_vpc_peer_connection_attach" "test" {
   provider = ctyun.test_accpet
   peer_connection_id = ctyun_vpc_peer_connection.cross_example.id
   operation          = "enable"

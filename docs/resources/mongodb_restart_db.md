@@ -1,5 +1,5 @@
 # ctyun_mongodb_restart_db (Resource)
-**MongoDB白名单分组资源,详细说明请见文档 https://www.ctyun.cn/document/10034467/10089536**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10034467/10089535
 
 
 

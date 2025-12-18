@@ -1,5 +1,5 @@
 # ctyun_kafka_user (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145597**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029624/10145597
 
 
 
@@ -21,7 +21,7 @@ provider "ctyun" {
 
 resource "ctyun_kafka_user" "tbidgqvfbs" {
   name = "test_kafka_user"
-  prod_inst_id = "4bd607df61d348b1949db223614315c1"
+  instance_id = "4bd607df61d348b1949db223614315c1"
   password  = "sad231Dwwww"
   permission_info = [{
   permission = "DENY"

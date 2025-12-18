@@ -361,6 +361,7 @@ func (c *ctyunEbs) Create(ctx context.Context, request resource.CreateRequest, r
 	}
 	if instance == nil {
 		response.State.RemoveResource(ctx)
+		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
 }
@@ -442,6 +443,10 @@ func (c *ctyunEbs) Update(ctx context.Context, request resource.UpdateRequest, r
 	instance, ctyunRequestError := c.getAndMergeEbs(ctx, state)
 	if ctyunRequestError != nil {
 		response.Diagnostics.AddError(ctyunRequestError.Error(), ctyunRequestError.Error())
+		return
+	}
+	if instance == nil {
+		response.State.RemoveResource(ctx)
 		return
 	}
 	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
@@ -585,11 +590,15 @@ func (c *ctyunEbs) getAndMergeEbs(ctx context.Context, cfg CtyunEbsConfig) (*Cty
 		DiskID:   cfg.Id.ValueString(),
 	})
 	if err != nil {
-		// 修正错误处理逻辑
-		if resp != nil && resp.ErrorCode == common.EbsEbsInfoDataDamaged {
+		return nil, err
+	} else if resp == nil {
+		return nil, common.InvalidReturnObjError
+	} else if resp.StatusCode != common.NormalStatusCode {
+		if resp.ErrorCode == common.EbsEbsInfoDataDamaged || resp.ErrorCode == common.EbsEbsInfoNotExists || resp.ReturnObj == nil {
+			// 磁盘没了
 			return nil, nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("API return error. Message: %s Description: %s", resp.Message, resp.Description)
 	}
 	obj := resp.ReturnObj
 	diskMode, err2 := business.EbsDiskModeMap.ToOriginalScene(obj.DiskMode, business.EbsDiskModeMapScene1)

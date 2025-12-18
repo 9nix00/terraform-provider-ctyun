@@ -22,7 +22,7 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "example-vpc-id"
+  vpc_id        = "vpc-idexample1"
   name          = "example-acl"
   description   = "Example ACL created for demonstration"
   enabled       = "enable"

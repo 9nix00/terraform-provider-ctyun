@@ -81,13 +81,6 @@ data "ctyun_ebm_device_images" "dependence" {
   image_type = "standard"
 }
 
-resource "ctyun_eip" "eip_test" {
-  name                = "tf-eip-for-ebm"
-  bandwidth           = 1
-  cycle_type          = "on_demand"
-  demand_billing_type = "upflowc"
-}
-
 variable "password" {
   type      = string
   sensitive = true
@@ -99,7 +92,7 @@ resource "ctyun_ebm" "ebm_test" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
+  bandwidth = 2
   cycle_type = "on_demand"
   device_type = local.device_type2
   image_uuid = data.ctyun_ebm_device_images.dependence.images[0].image_uuid
@@ -115,7 +108,6 @@ resource "ctyun_ebm" "ebm_test2" {
   instance_name = "tf-ebm-for-ebm"
   hostname = "tf-ebm-for-ebm"
   password = var.password
-  eip_id = ctyun_eip.eip_test.id
   cycle_type = "on_demand"
   device_type = local.device_type1
   image_uuid = data.ctyun_ebm_device_images.test.images[0].image_uuid

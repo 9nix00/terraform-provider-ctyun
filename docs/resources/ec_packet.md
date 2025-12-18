@@ -1,5 +1,5 @@
 # ctyun_ec_packet (Resource)
-**云间高速带宽包资源**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026763/10038220
 
 
 
@@ -30,12 +30,8 @@ resource "ctyun_ec_packet" "example" {
   bandwidth    = 10
   cycle_type   = "month"
   cycle_count  = 1
-
-  # 可选参数
-  on_demand    = false
   area_a       = "china"
   area_b       = "china"
-
 }
 ```
 
@@ -54,7 +50,6 @@ resource "ctyun_ec_packet" "example" {
 
 - `area_a` (String) 区域A类型，取值如下：china: 中国大陆, APAC:亚太，默认china
 - `area_b` (String) 区域B类型，取值如下：china: 中国大陆, APAC:亚太，默认china
-- `client_token` (String) 客户端存根，用于保证订单幂等性。要求单个云平台账户内唯一
 - `pay_voucher_price` (String) 代金券金额，只适用于预付费客户自动支付，若代金券支付金额传0或者控制符，则不适用代金券支付（小数会只保留2位，非负）
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `resource_id` (String) 云间高速带宽包资源ID，用于升配、续订、退订等操作

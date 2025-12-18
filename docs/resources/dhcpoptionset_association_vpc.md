@@ -1,5 +1,5 @@
 # ctyun_dhcpoptionset_association_vpc (Resource)
-DHCP选项集与VPC绑定资源，用于管理DHCP选项集和VPC的绑定关系
+-> 详细说明请见文档：https://www.ctyun.cn/document/10026755/10028310
 
 
 
@@ -18,7 +18,7 @@ provider "ctyun" {
   env = "prod"
 }
 resource "ctyun_dhcpoptionset" "example" {
-  name        = "example-dhcp-option-set"
+  name        = "dhcpoptionset"
   description = "Example DHCP option set"
   domain_name = "example.com"
   dns_list    = ["8.8.8.8", "114.114.114.114"]
@@ -35,7 +35,7 @@ resource "ctyun_dhcpoptionset_association_vpc" "example" {
 ### Required
 
 - `dhcp_option_sets_id` (String) DHCP选项集ID
-- `vpc_ids` (Set of String) VPC ID列表
+- `vpc_ids` (Set of String) VPC ID列表 支持更新
 
 ### Optional
 

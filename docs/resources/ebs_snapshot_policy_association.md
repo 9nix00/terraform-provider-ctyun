@@ -1,5 +1,5 @@
 # ctyun_ebs_snapshot_policy_association (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10027696/10118856
 
 
 

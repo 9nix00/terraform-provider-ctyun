@@ -57,25 +57,25 @@ variable "password" {
   sensitive = true
 }
 resource "ctyun_mysql_database" "db1" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db1"
   charset_name = "utf8mb4"
 }
 resource "ctyun_mysql_database" "db2" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db2"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db1]
 }
 resource "ctyun_mysql_database" "db3" {
-  inst_id      = ctyun_mysql_instance.mysql_src.id
+  instance_id      = ctyun_mysql_instance.mysql_src.id
   name         = "test_db3"
   charset_name = "utf8mb4"
   depends_on = [ctyun_mysql_database.db2]
 }
 
 resource "ctyun_mysql_backup" "backup_test" {
-  inst_id     = ctyun_mysql_instance.mysql_src.id
+  instance_id     = ctyun_mysql_instance.mysql_src.id
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"
@@ -83,11 +83,11 @@ resource "ctyun_mysql_backup" "backup_test" {
 }
 
 data "ctyun_mysql_backups" "example" {
-  inst_id     = ctyun_mysql_instance.mysql_src.id
+  instance_id     = ctyun_mysql_instance.mysql_src.id
 }
 
 
 resource "ctyun_mysql_backup_cancel" "example" {
-  inst_id     = ctyun_mysql_instance.mysql_src.id
-  backup_record_id = data.ctyun_mysql_backups.example.backup_list.0.records.0.backup_record_id
+  instance_id     = ctyun_mysql_instance.mysql_src.id
+  backup_record_id = data.ctyun_mysql_backups.example.backups.0.records.0.backup_record_id
 }

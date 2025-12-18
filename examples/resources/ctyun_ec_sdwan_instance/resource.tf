@@ -8,6 +8,7 @@ terraform {
 
 provider "ctyun" {
   env = "prod"
+  project_id = "0"
 }
 resource "ctyun_ec_cloud_gateway" "example" {
   ec_id       = ctyun_express_connect.example.id

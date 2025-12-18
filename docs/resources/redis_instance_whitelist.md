@@ -1,5 +1,5 @@
 # ctyun_redis_instance_whitelist (Resource)
--> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174**
+-> 详细说明请见文档：https://www.ctyun.cn/document/10029420/10398174
 
 
 
@@ -21,7 +21,7 @@ provider "ctyun" {
 
 
 resource "ctyun_redis_instance_whitelist" "test" {
-  prod_inst_id = "425c9173f98b4646a72ce0b986af00b0"
+  instance_id = "425c9173f98b4646a72ce0b986af00b0"
   name        = "testName"
   ip           = "10.0.0.1"
 }
