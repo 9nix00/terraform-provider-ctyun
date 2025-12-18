@@ -11,7 +11,4 @@ release-note:new-data-source
 ctyun_iam_policies
 
 release-note:enhancement
-ctyun_eip_association support ebm
-
-release-note:enhancement
-ctyun_ec_vpc_instance support flush route
+resource\ctyun_eip_association support ebm

@@ -35,7 +35,7 @@ release-note:new-resource
 ctyun_postgresql_backup
 
 release-note:new-resource
-ctyun_postgresql_parameter_template
+ctyun_postgresql_param_template
 
 release-note:new-resource
 ctyun_postgresql_readonly_instance
@@ -52,6 +52,9 @@ ctyun_mysql_backups
 release-note:new-data-source
 ctyun_mysql_databases
 
+release-note:new-resource
+ctyun_mysql_database
+
 release-note:new-data-source
 ctyun_mysql_recoverable_time
 
@@ -59,10 +62,10 @@ release-note:new-data-source
 ctyun_mysql_white_lists
 
 release-note:new-data-source
-ctyun_mysql_param_templates.go
+ctyun_mysql_param_templates
 
 release-note:new-data-source
-ctyun_mysql_parameters.go
+ctyun_mysql_parameters
 
 release-note:new-data-source
 ctyun_postgresql_accounts
@@ -80,7 +83,7 @@ release-note:new-data-source
 ctyun_postgresql_databases
 
 release-note:new-data-source
-ctyun_postgresql_parameter_templates
+ctyun_postgresql_param_templates
 
 release-note:new-data-source
 ctyun_postgresql_white_lists

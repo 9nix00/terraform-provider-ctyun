@@ -1,2 +1,0 @@
-release-note:new-resource
-ctyun_ecs_data_volume

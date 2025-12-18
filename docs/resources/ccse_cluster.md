@@ -53,7 +53,7 @@ resource "ctyun_ccse_cluster" "example" {
     cluster_name = "tf-custer-n213nds9124n3"
     cluster_domain = "www.ccc.com"
     network_plugin = "cubecni"
-    start_port = 20106
+    start_port = 30000
     end_port   = 32767
     elb_prod_code = "standardI"
     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
@@ -134,7 +134,7 @@ resource "ctyun_ccse_cluster" "example" {
 #     cluster_name = "auto-sec-grqq33"
 #     cluster_domain = "www.ccc.s"
 #     network_plugin = "cubecni"
-#     start_port = 20106
+#     start_port = 30000
 #     end_port   = 32767
 #     elb_prod_code = "standardI"
 #     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
@@ -185,7 +185,7 @@ resource "ctyun_ccse_cluster" "example" {
 #     cluster_name = "fe-ccse3dsfsdqq3"
 #     cluster_domain = "www.ccc.s"
 #     network_plugin = "calico"
-#     start_port = 20106
+#     start_port = 30000
 #     end_port   = 32767
 #     elb_prod_code = "standardI"
 #     pod_cidr = "172.26.0.0/16"

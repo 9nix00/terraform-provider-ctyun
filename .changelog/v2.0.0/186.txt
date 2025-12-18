@@ -5,7 +5,7 @@ release-note:new-resource
 ctyun_acl_rule
 
 release-note:new-resource
-ctyun_prefixlist
+ctyun_prefix_list
 
 release-note:new-resource
 ctyun_subnet_association_acl
@@ -17,4 +17,4 @@ release-note:new-data-source
 ctyun_acl_rules
 
 release-note:new-data-source
-ctyun_prefixlists
+ctyun_prefix_lists

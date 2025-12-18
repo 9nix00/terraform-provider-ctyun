@@ -54,7 +54,7 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"eip_id": schema.StringAttribute{
 				Required:    true,
-				Description: "弹性ip的id",
+				Description: "弹性IP的ID",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
@@ -76,7 +76,7 @@ func (c *ctyunEipAssociation) Schema(_ context.Context, _ resource.SchemaRequest
 			},
 			"instance_id": schema.StringAttribute{
 				Required:    true,
-				Description: "绑定对象的实例id",
+				Description: "绑定对象的实例ID，绑定对象支持云主机和物理机",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},

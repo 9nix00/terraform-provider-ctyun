@@ -280,16 +280,16 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					},
 					"start_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务开始端口，可选范围20106-32767，支持更新",
+						Description: "节点服务开始端口，可选范围30000-32767，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(20106, 32767),
+							int32validator.Between(30000, 32767),
 						},
 					},
 					"end_port": schema.Int32Attribute{
 						Required:    true,
-						Description: "节点服务终止端口，可选范围20106-32767，startPort到endPort范围需大于20，支持更新",
+						Description: "节点服务终止端口，可选范围30000-32767，startPort到endPort范围需大于20，支持更新",
 						Validators: []validator.Int32{
-							int32validator.Between(20106, 32767),
+							int32validator.Between(30000, 32767),
 						},
 					},
 					"elb_prod_code": schema.StringAttribute{
