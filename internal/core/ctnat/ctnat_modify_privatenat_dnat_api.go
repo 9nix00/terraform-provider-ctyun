@@ -63,11 +63,11 @@ type CtnatModifyPrivatenatDnatRequest struct {
 }
 
 type CtnatModifyPrivatenatDnatResponse struct {
-	StatusCode  int32                                         `json:"statusCode"`  /*  返回状态码（800为成功，900为失败）  */
-	Message     string                                        `json:"message"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
-	Description string                                        `json:"description"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
-	ErrorCode   string                                        `json:"errorCode"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
-	ReturnObj   []*CtnatModifyPrivatenatDnatReturnObjResponse `json:"returnObj"`   /*  接口业务数据  */
+	StatusCode  int32                                       `json:"statusCode"`  /*  返回状态码（800为成功，900为失败）  */
+	Message     string                                      `json:"message"`     /*  statusCode为900时的错误信息; statusCode为800时为success, 英文  */
+	Description string                                      `json:"description"` /*  statusCode为900时的错误信息; statusCode为800时为成功, 中文  */
+	ErrorCode   string                                      `json:"errorCode"`   /*  statusCode为900时为业务细分错误码，三段式：product.module.code; statusCode为800时为SUCCESS  */
+	ReturnObj   *CtnatModifyPrivatenatDnatReturnObjResponse `json:"returnObj"`   /*  接口业务数据  */
 }
 
 type CtnatModifyPrivatenatDnatReturnObjResponse struct{}

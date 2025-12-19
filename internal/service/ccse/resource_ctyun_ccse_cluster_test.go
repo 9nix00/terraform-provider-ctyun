@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/service"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
-	"strconv"
-	"testing"
-	"time"
-
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
+	"strconv"
+	"testing"
 )
 
 func TestAccCtyunClusterStandard(t *testing.T) {
@@ -58,12 +56,6 @@ func TestAccCtyunClusterStandard(t *testing.T) {
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_series", clusterSeries),
-					resource.ComposeAggregateTestCheckFunc(
-						func(s *terraform.State) error {
-							time.Sleep(30 * time.Second)
-							return nil
-						},
-					),
 				),
 			},
 			{
@@ -192,7 +184,6 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 
 	updatedSeriesType := "managedpro"
 	updatedNodeScale := 50
-
 	resource.Test(t, resource.TestCase{
 		CheckDestroy: func(s *terraform.State) error {
 			_, exists := s.RootModule().Resources[resourceName]
@@ -204,7 +195,7 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 		ProtoV6ProviderFactories: service.GetTestAccProtoV6ProviderFactories(),
 		Steps: []resource.TestStep{
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, seriesType, nodeScale),
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.subnetID, dependence.flavorName, seriesType, nodeScale),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(resourceName, "base_info.cluster_series", clusterSeries),
@@ -213,22 +204,16 @@ func TestAccCtyunClusterManaged(t *testing.T) {
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, fmt.Sprintf(dependence.subnetID+`","`+dependence.subnetID2), dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(datasourceName, "records.#", "1"),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_name", clusterName),
 					resource.TestCheckResourceAttr(datasourceName, "records.0.cluster_series", clusterSeries),
-					resource.ComposeAggregateTestCheckFunc(
-						func(s *terraform.State) error {
-							time.Sleep(30 * time.Second)
-							return nil
-						},
-					),
 				),
 			},
 			{
-				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, dependence.flavorName, updatedSeriesType, updatedNodeScale) +
+				Config: utils.LoadTestCase(resourceFile, rnd, clusterName, clusterSeries, dependence.vpcID, dependence.subnetID, fmt.Sprintf(dependence.subnetID+`","`+dependence.subnetID2), dependence.flavorName, updatedSeriesType, updatedNodeScale) +
 					utils.LoadTestCase(datasourceFile, dnd, resourceName+".base_info.cluster_name"),
 				Destroy: true,
 			},

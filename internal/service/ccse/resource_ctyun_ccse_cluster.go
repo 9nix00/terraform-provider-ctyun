@@ -337,11 +337,15 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 					"pod_subnet_id_list": schema.SetAttribute{
 						ElementType: types.StringType,
 						Optional:    true,
-						Description: "pod子网ID列表，网络插件选择cubecni必传，需要属于所选VPC，最多支持10个子网，支持更新",
+						Description: "pod子网ID列表，仅网络插件选择cubecni必传，需要属于所选VPC，最多支持10个子网，支持更新",
 						Validators: []validator.Set{
 							validator2.AlsoRequiresEqualSet(
 								path.MatchRoot("base_info").AtName("network_plugin"),
 								types.StringValue(business.CcsePluginCubecni),
+							),
+							validator2.ConflictsWithEqualSet(
+								path.MatchRoot("base_info").AtName("network_plugin"),
+								types.StringValue(business.CcsePluginCalico),
 							),
 							setvalidator.SizeAtMost(10),
 						},
@@ -498,7 +502,6 @@ func (c *ctyunCcseCluster) Schema(_ context.Context, _ resource.SchemaRequest, r
 								path.MatchRoot("base_info").AtName("cycle_type"),
 								types.StringValue(business.OrderCycleTypeOnDemand),
 							),
-							validator2.CycleCount(1, 11, 1, 3),
 						},
 						PlanModifiers: []planmodifier.Int64{
 							int64planmodifier.RequiresReplace(),
@@ -1482,6 +1485,7 @@ func (c *ctyunCcseCluster) checkNodeStatus(ctx context.Context, plan CtyunCcseCl
 		err = fmt.Errorf("初始节点创建时间过长")
 		return
 	}
+	time.Sleep(10 * time.Second)
 	return
 }
 
@@ -1597,15 +1601,12 @@ func (c *ctyunCcseCluster) updateClusterNetwork(ctx context.Context, plan, state
 		Cubecni:   &ccse.CcseUpdateClusterCubecniRequest{},
 	}
 	var hasChange bool
-	if !plan.BaseInfo.StartPort.Equal(state.BaseInfo.StartPort) {
+	if !plan.BaseInfo.StartPort.Equal(state.BaseInfo.StartPort) || !plan.BaseInfo.EndPort.Equal(state.BaseInfo.EndPort) {
 		params.StartPort = plan.BaseInfo.StartPort.ValueInt32()
-		hasChange = true
-	}
-	if !plan.BaseInfo.EndPort.Equal(state.BaseInfo.EndPort) {
 		params.EndPort = plan.BaseInfo.EndPort.ValueInt32()
 		hasChange = true
 	}
-	if !plan.BaseInfo.SecurityGroupID.Equal(state.BaseInfo.EndPort) {
+	if !plan.BaseInfo.SecurityGroupID.Equal(state.BaseInfo.SecurityGroupID) {
 		params.SecurityGroupId = plan.BaseInfo.SecurityGroupID.ValueString()
 		hasChange = true
 	}
@@ -1641,7 +1642,7 @@ func (c *ctyunCcseCluster) checkBeforeUpdate(ctx context.Context, plan, state Ct
 	return
 }
 
-// checkAfterUpdateClusterNetwork 检查变更托管版规格
+// checkAfterUpdateClusterNetwork 网络信息是否变更完成
 func (c *ctyunCcseCluster) checkAfterUpdateClusterNetwork(ctx context.Context, plan, state CtyunCcseClusterConfig) (err error) {
 	var executeSuccessFlag bool
 	retryer, _ := business.NewRetryer(time.Second*10, 180)

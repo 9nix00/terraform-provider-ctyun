@@ -181,7 +181,6 @@ resource "ctyun_ccse_cluster" "example" {
 #     end_port   = 32767
 #     elb_prod_code = "standardI"
 #     pod_cidr = "172.26.0.0/16"
-#     pod_subnet_id_list = [ctyun_subnet.subnet_test.id]
 #     cycle_type  = "on_demand"
 #     container_runtime = "containerd"
 #     timezone    = "Asia/Shanghai"

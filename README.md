@@ -3,7 +3,7 @@
 ## 依赖项
 
 - 开发依赖项
-  - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.10.5
+  - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.5.7
   - [Go](https://golang.org/doc/install) >= 1.23
 
 
