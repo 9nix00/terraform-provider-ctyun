@@ -186,6 +186,7 @@
 
 ### Bug Fixes
 * resource\ctyun_ebs: remove the state record for non-existent remote resources during terraform refresh.
+* resource\ctyun_ccse_cluster: fix cycle_count validator.
 
 ### Deprecations
 * datasource\ctyun_mongodb_association_eips
