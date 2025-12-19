@@ -436,7 +436,7 @@ func (c *ctyunCcsePlugin) updateChartVersion(ctx context.Context, plan, state Ct
 func (c *ctyunCcsePlugin) checkAfterChartVersion(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
 	var executeSuccessFlag bool
 	var failedCnt int
-	retryer, _ := business.NewRetryer(time.Second*10, 30)
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
@@ -489,7 +489,7 @@ func (c *ctyunCcsePlugin) delete(ctx context.Context, plan CtyunCcsePluginConfig
 // checkAfterDelete 删除后检查
 func (c *ctyunCcsePlugin) checkAfterDelete(ctx context.Context, plan CtyunCcsePluginConfig) (err error) {
 	var executeSuccessFlag bool
-	retryer, _ := business.NewRetryer(time.Second*10, 30)
+	retryer, _ := business.NewRetryer(time.Second*10, 60)
 	retryer.Start(
 		func(currentTime int) bool {
 			var plugin *ccse2.CcseListPluginInstancesReturnObjRecordsResponse
