@@ -40,13 +40,13 @@ resource "ctyun_private_zone" "private_zone_example" {
 ### Required
 
 - `name` (String) 内网DNS名称。要求：由多个以点分隔的字符串组成，可包含字母、数字中划线、中划线不能在开头或末尾，单个字符串不超过63个字符，域名总长度不超过254个字符
-- `vpc_id_list` (Set of String) 关联的vpc，最多同时支持 5 个 VPC。支持更新
+- `vpc_id_list` (Set of String) 关联的vpc，最多同时支持5个VPC。支持更新
 
 ### Optional
 
 - `description` (String) 内网DNS描述，支持更新
-- `proxy_pattern` (String) zone：当前可用区不进行递归解析。 支持更新，record：不完全劫持，进行递归解析代理, 大小写不敏感
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `proxy_pattern` (String) 可选值：zone：当前可用区不进行递归解析，record：不完全劫持，进行递归解析代理，大小写不敏感。默认值zone，支持更新。
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `tags` (Attributes Set) 标签 (see [below for nested schema](#nestedatt--tags))
 - `ttl` (Number) zone ttl, 单位秒。支持更新，default is 300，大于等于300，小于等于2147483647
 

@@ -146,7 +146,7 @@ resource "ctyun_mysql_instance" "mysql_example5" {
 - `cycle_count` (Number) 订购时长，该参数当且仅当在cycle_type为month时填写，支持传递1-36
 - `password` (String, Sensitive) 实例密码，支持更新。密码为8-26位，需为字母、数字和特殊字符~!@#$%^*_-+{[]}:,.?/的组合，区分大小写
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `running_control` (String) 控制是否暂停，启用和重启实例，支持更新，取值范围：freeze, unfreeze, restart
 - `write_port` (Number) 写数据端口，支持更新
 

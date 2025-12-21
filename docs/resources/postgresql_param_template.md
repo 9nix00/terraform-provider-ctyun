@@ -42,7 +42,7 @@ resource "ctyun_postgresql_param_template" "example" {
 
 - `description` (String) 参数模板的描述，支持更新，若不为空，则长度限制：1-1024
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `template_parameters` (Map of String) postgresql模板参数列表，创建参数模板时不可传，更新阶段可传，支持更新。可修改每个参数值，无法新增参数或删除
 
 ### Read-Only

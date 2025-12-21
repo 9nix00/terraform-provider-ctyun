@@ -43,7 +43,7 @@ resource "ctyun_prefix_list" "example" {
 ### Optional
 
 - `description` (String) 前缀列表描述，支持更新。支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:"{},./;'[\]·！@#￥%……&*（） —— -+={}\|《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 
