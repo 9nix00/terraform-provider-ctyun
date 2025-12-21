@@ -142,7 +142,7 @@ resource "ctyun_postgresql_instance" "test3" {
 - `is_mgr` (Boolean) 是否开启MRG，默认false
 - `password` (String, Sensitive) 实例密码，支持更新。8-32位由大写字母、小写字母、数字、特殊字符中的任意三种组成 特殊字符为!@#$%^&*()_+-=
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID。若环境变量为空，则默认为0
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `running_control` (String) 控制是否暂停，启用和重启实例。支持更新，取值范围：stop, start, restart
 - `vip` (String) VIP地址
 

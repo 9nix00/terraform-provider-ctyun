@@ -70,7 +70,7 @@ resource "ctyun_vpc_peer_connection" "cross_example" {
 - `accept_email` (String) 对端vpc账户的邮箱，当建立跨帐号的对等连接，需要对端同意。可调用ctyun_vpc_peer_connection_attch实现
 - `description` (String) 对等连接描述，支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `tags` (Attributes Set) 标签，支持更新 (see [below for nested schema](#nestedatt--tags))
 
 ### Read-Only

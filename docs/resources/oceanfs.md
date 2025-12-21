@@ -70,7 +70,7 @@ resource "ctyun_oceanfs" "example" {
 - `cycle_count` (Number) 包周期数，cycle_type是year或month时必须指定，周期最大长度不能超过3年
 - `is_vpce` (Boolean) 创建文件系统时是否自动创建VPC终端节点。开启后本服务将为您创建免费的VPC终端节点（VPCE），连接文件存储服务。创建VPCE后将返回该VPC专属的挂载地址，通常需要1~3分钟。注：物理机必须通过VPCE专属挂载地址访问文件系统，其它计算服务如云主机、容器为非必须
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `tags` (Attributes Set) 标签列表 (see [below for nested schema](#nestedatt--tags))
 
 ### Read-Only

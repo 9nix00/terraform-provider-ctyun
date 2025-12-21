@@ -36,7 +36,7 @@ resource "ctyun_oceanfs_permission_group" "example" {
 ### Optional
 
 - `description` (String) 权限组描述信息，支持更新。支持中英文，长度为0-128字符
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

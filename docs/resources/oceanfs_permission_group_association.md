@@ -77,7 +77,7 @@ resource "ctyun_oceanfs_permission_group_association" "example" {
 true：创建VPC终端节点（推荐）
 false：不创建VPC终端节点
 注：物理机必须通过VPCE专属挂载地址访问文件系统，其它计算服务如云主机、容器为非必须
-- `region_id` (String) 资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量
+- `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 
 ### Read-Only
 

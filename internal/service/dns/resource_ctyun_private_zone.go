@@ -101,7 +101,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			"region_id": schema.StringAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "资源池id,如果不填这默认使用provider ctyun总region_id 或者环境变量",
+				Description: "资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID",
 				Default:     defaults.AcquireFromGlobalString(common.ExtraRegionId, true),
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -113,7 +113,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 			"vpc_id_list": schema.SetAttribute{
 				Required:    true,
 				ElementType: types.StringType,
-				Description: "关联的vpc，最多同时支持 5 个 VPC。支持更新",
+				Description: "关联的vpc，最多同时支持5个VPC。支持更新",
 				Validators: []validator.Set{
 					setvalidator.SizeBetween(1, 5),
 				},
@@ -141,7 +141,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 				Optional:    true,
 				Computed:    true,
 				Default:     stringdefault.StaticString("zone"),
-				Description: "zone：当前可用区不进行递归解析。 支持更新，record：不完全劫持，进行递归解析代理, 大小写不敏感",
+				Description: "可选值：zone：当前可用区不进行递归解析，record：不完全劫持，进行递归解析代理，大小写不敏感。默认值zone，支持更新。",
 				Validators: []validator.String{
 					stringvalidator.OneOf("zone", "record"),
 				},
@@ -150,7 +150,7 @@ func (c *CtyunPrivateZone) Schema(ctx context.Context, request resource.SchemaRe
 				Optional:    true,
 				Computed:    true,
 				Default:     int32default.StaticInt32(300),
-				Description: "zone ttl, 单位秒。支持更新，default is 300，大于等于300，小于等于2147483647",
+				Description: "zone ttl, 单位秒。默认300，取值范围300-2147483647。支持更新",
 				Validators: []validator.Int32{
 					int32validator.Between(300, 2147483647),
 				},
