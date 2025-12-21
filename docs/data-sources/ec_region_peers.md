@@ -19,7 +19,7 @@ provider "ctyun" {
 }
 
 
-data "ctyun_ec_region_peers" "peers_examples"{
+data "ctyun_ec_region_peers" "peers_examples" {
   ec_id = "49410d6d-fd53-48b3-9f78-cb28da38d7be"
 }
 ```

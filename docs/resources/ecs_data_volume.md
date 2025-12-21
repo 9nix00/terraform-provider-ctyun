@@ -76,8 +76,8 @@ resource "ctyun_ecs" "ecs_test" {
 }
 
 resource "ctyun_ebs" "ebs_test" {
-  count = 5
-  name       = "ebs-data-test${count.index+1}"
+  count      = 5
+  name       = "ebs-data-test${count.index + 1}"
   mode       = "vbd"
   type       = "sata"
   size       = 60

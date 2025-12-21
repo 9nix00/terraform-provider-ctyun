@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 data "ctyun_iam_users" "users" {
-  page_no = 1
+  page_no   = 1
   page_size = 100
 }
 

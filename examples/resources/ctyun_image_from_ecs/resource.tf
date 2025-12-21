@@ -14,7 +14,7 @@ provider "ctyun" {
 # 从云主机整机创建私有镜像
 resource "ctyun_image_from_ecs" "entire_machine" {
   # 整机镜像配置
-  image_type="entire_machine"
+  image_type = "entire_machine"
   # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）
   image_name = "entire-machine-image-update1"
   # 必选参数：云主机ID（状态需为running或stopped，至少有1块数据盘）
@@ -47,7 +47,7 @@ resource "ctyun_image_from_ecs" "entire_machine" {
 
 resource "ctyun_image_from_ecs" "data_disk" {
 
-  image_type="data_disk"
+  image_type = "data_disk"
   # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）
   image_name = "data-disk-image-update"
 
@@ -81,7 +81,7 @@ resource "ctyun_image_from_ecs" "data_disk" {
 resource "ctyun_image_from_ecs" "system_disk" {
   # 必选参数：镜像名称（2~32字符，仅数字、字母、-组成，不以数字或-开头/结尾）
 
-  image_type="system_disk"
+  image_type = "system_disk"
   image_name = "system-disk-image-update"
 
   # 必选参数：云主机ID（状态需为stopped，部分资源池支持running）

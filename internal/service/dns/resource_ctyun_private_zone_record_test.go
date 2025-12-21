@@ -182,7 +182,7 @@ func TestAccCtyunPrivateZoneRecord_CNAME(t *testing.T) {
 					300,
 					recordName,
 					"updated CNAME record",
-					"disable",
+					false,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
@@ -202,7 +202,7 @@ func TestAccCtyunPrivateZoneRecord_CNAME(t *testing.T) {
 					300,
 					recordName,
 					"updated CNAME record",
-					"disable",
+					false,
 				),
 				Destroy: true,
 			},

@@ -19,7 +19,7 @@ resource "ctyun_redis_param_template" "test" {
   sys_template = false
 
   params = [{
-      param_name    = "maxmemory-policy"
-      current_value = "allkeys-lru"
+    param_name    = "maxmemory-policy"
+    current_value = "allkeys-lru"
   }]
 }

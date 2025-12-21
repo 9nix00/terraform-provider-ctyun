@@ -4,5 +4,5 @@ resource "ctyun_acl" "%[1]s" {
   name               = "%[4]s"
   description        = "%[5]s"
   apply_to_public_lb = %[6]t
-  enabled            = "%[7]s"
+  enabled            = %[7]t
 }

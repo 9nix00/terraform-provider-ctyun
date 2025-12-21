@@ -28,7 +28,7 @@ resource "ctyun_vpc" "vpc_test" {
 }
 
 resource "ctyun_sfs_permission_group" "sfs_permission_group_test" {
-  name = "permission-group-example"
+  name        = "permission-group-example"
   description = "创建sfs规则组"
 }
 
@@ -52,21 +52,21 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_sfs" "sfs_test" {
-  type     = "performance"
-  protocol = "nfs"
-  name         = "sfs-example"
-  size     = 500
-  cycle_type   = "on_demand"
-  az_name      = "cn-huadong1-jsnj1A-public-ctcloud"
-  vpc_id       = ctyun_vpc.vpc_test.id
-  subnet_id    = ctyun_subnet.subnet_test.id
+  type       = "performance"
+  protocol   = "nfs"
+  name       = "sfs-example"
+  size       = 500
+  cycle_type = "on_demand"
+  az_name    = "cn-huadong1-jsnj1A-public-ctcloud"
+  vpc_id     = ctyun_vpc.vpc_test.id
+  subnet_id  = ctyun_subnet.subnet_test.id
 }
 
 
 resource "ctyun_sfs_permission_group_association" "sfs_permission_group_association_test" {
   permission_group_id = ctyun_sfs_permission_group.sfs_permission_group_test.id
-  sfs_id               = ctyun_sfs.sfs_test.id
-  vpc_id                = ctyun_vpc.vpc_test1.id
+  sfs_id              = ctyun_sfs.sfs_test.id
+  vpc_id              = ctyun_vpc.vpc_test1.id
 }
 ```
 

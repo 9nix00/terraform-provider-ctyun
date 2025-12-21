@@ -20,17 +20,17 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-exampleid1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-exampleid1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 
 data "ctyun_acls" "example" {
-  id         = ctyun_acl.example.id
-  page_no    = 1
-  page_size  = 20
+  id        = ctyun_acl.example.id
+  page_no   = 1
+  page_size = 20
 }
 
 output "ctyun_acls_example" {
@@ -62,7 +62,7 @@ Read-Only:
 - `apply_to_public_lb` (Boolean) 是否应用到公网负载均衡
 - `create_time` (String) 创建时间，为UTC格式
 - `description` (String) ACL描述
-- `enabled` (String) 启用状态，disalbe和enable
+- `enabled` (Boolean) 是否启用
 - `id` (String) ACL ID
 - `in_policy_id` (Set of String) 入方向策略ID集合
 - `name` (String) ACL名称

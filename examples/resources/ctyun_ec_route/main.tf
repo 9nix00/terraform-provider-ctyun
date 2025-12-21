@@ -56,7 +56,7 @@ resource "ctyun_ec_vpc_instance" "instance_test" {
 
 resource "ctyun_ec_route" "example" {
   ec_id               = ctyun_express_connect.express_connect_example.id
-  cgw_id             =  ctyun_ec_cloud_gateway.cloud_gateway_example.id
+  cgw_id              = ctyun_ec_cloud_gateway.cloud_gateway_example.id
   rtb_id              = ctyun_ec_cloud_gateway.cloud_gateway_example.rtb_id
   cidr                = "192.168.1.3/32"
   ip_version          = "ipv4"

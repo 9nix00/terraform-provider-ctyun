@@ -15,9 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -185,14 +185,11 @@ func (c *CtyunPrivateZoneRecord) Schema(ctx context.Context, request resource.Sc
 				Computed:    true,
 				Description: "更新时间，为UTC格式",
 			},
-			"enabled": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否开启解析记录，默认启用，支持更新。启用：enable,不启用：disable",
-				Default:     stringdefault.StaticString(business.AclEnable),
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.AclEnable, business.AclDisable),
-				},
+				Description: "是否开启解析记录，默认启用，支持更新。",
+				Default:     booldefault.StaticBool(true),
 			},
 		},
 	}
@@ -458,22 +455,13 @@ func (c *CtyunPrivateZoneRecord) delete(ctx context.Context, config CtyunPrivate
 	return nil
 }
 
-func (c *CtyunPrivateZoneRecord) controlEnable(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
-	if config.Enabled.ValueString() == business.AclEnable {
-		err := c.enableRecord(ctx, config)
-		if err != nil {
-			return err
-		}
-	} else if config.Enabled.ValueString() == business.AclDisable {
-		err := c.disableRecord(ctx, config)
-		if err != nil {
-			return err
-		}
+func (c *CtyunPrivateZoneRecord) controlEnable(ctx context.Context, config *CtyunPrivateZoneRecordConfig) (err error) {
+	if config.Enabled.ValueBool() {
+		err = c.enableRecord(ctx, config)
 	} else {
-		err := fmt.Errorf("未知的enabled参数值(%s)", config.Enabled.ValueString())
-		return err
+		err = c.disableRecord(ctx, config)
 	}
-	return nil
+	return
 }
 
 func (c *CtyunPrivateZoneRecord) enableRecord(ctx context.Context, config *CtyunPrivateZoneRecordConfig) error {
@@ -520,7 +508,7 @@ type CtyunPrivateZoneRecordConfig struct {
 	TTL         types.Int32  `tfsdk:"ttl"`
 	Name        types.String `tfsdk:"name"`
 	Description types.String `tfsdk:"description"`
-	Enabled     types.String `tfsdk:"enabled"`
+	Enabled     types.Bool   `tfsdk:"enabled"`
 	ID          types.String `tfsdk:"id"`
 	CreatedTime types.String `tfsdk:"create_time"`
 	UpdatedTime types.String `tfsdk:"update_time"`

@@ -59,5 +59,5 @@ resource "ctyun_postgresql_instance" "test" {
 resource "ctyun_postgresql_white_list" "example" {
   instance_id = ctyun_postgresql_instance.test.id
   mode        = "cover"
-  ip_list = ["192.168.1.0/24", "10.0.0.1/32"]
+  ip_list     = ["192.168.1.0/24", "10.0.0.1/32"]
 }

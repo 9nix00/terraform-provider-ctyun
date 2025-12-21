@@ -19,26 +19,26 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-idexample1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-idexample1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 
 resource "ctyun_acl_rule" "example" {
-  acl_id                  = ctyun_acl.example.id
-  direction               = "ingress"
-  priority                = 100
-  protocol                = "tcp"
-  ip_version              = "ipv4"
-  destination_port        = "8080:8085"
-  source_port             = "8080:8085"
-  source_ip_address       = "192.168.1.0/24"
-  destination_ip_address  = "192.168.2.0/24"
-  action                  = "accept"
-  enabled                 = "enable"
-  description             = "Example ACL rule"
+  acl_id                 = ctyun_acl.example.id
+  direction              = "ingress"
+  priority               = 100
+  protocol               = "tcp"
+  ip_version             = "ipv4"
+  destination_port       = "8080:8085"
+  source_port            = "8080:8085"
+  source_ip_address      = "192.168.1.0/24"
+  destination_ip_address = "192.168.2.0/24"
+  action                 = "accept"
+  enabled                = true
+  description            = "Example ACL rule"
 }
 ```
 
@@ -59,7 +59,7 @@ resource "ctyun_acl_rule" "example" {
 
 - `description` (String) acl规则描述，支持更新
 - `destination_port` (String) 目的地址端口范围，支持更新。示例 8080:8085
-- `enabled` (String) acl 规则是否启用，支持更新。取值范围：disable, enable
+- `enabled` (Boolean) acl 规则是否启用，支持更新。默认启用
 - `priority` (Number) 优先级，支持更新。取值范围： 1 - 32766，不填默认100
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID

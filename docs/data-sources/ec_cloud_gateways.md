@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 data "ctyun_ec_cloud_gateways" "example" {
-  ec_id= "49410d6d-fd53-48b3-9f78-cb28da38d7be"
+  ec_id = "49410d6d-fd53-48b3-9f78-cb28da38d7be"
 }
 
 output "ctyun_ec_cloud_gateways_example" {

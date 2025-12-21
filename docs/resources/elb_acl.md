@@ -20,8 +20,8 @@ provider "ctyun" {
 }
 
 resource "ctyun_elb_acl" "test" {
-  name = "tf_acl"
-  source_ips = ["127.0.0.1/32","192.168.0.0/16","192.168.10.0"]
+  name       = "tf_acl"
+  source_ips = ["127.0.0.1/32", "192.168.0.0/16", "192.168.10.0"]
 }
 ```
 

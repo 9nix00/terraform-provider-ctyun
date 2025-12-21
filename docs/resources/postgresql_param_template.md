@@ -24,9 +24,9 @@ data "ctyun_postgresql_param_templates" "param_templates" {
 }
 
 resource "ctyun_postgresql_param_template" "example" {
-  name = "pgsql_param_template"
+  name               = "pgsql_param_template"
   source_template_id = data.ctyun_postgresql_param_templates.param_templates.parameter_templates[0].id
-  description = "pgsql参数模板"
+  description        = "pgsql参数模板"
 }
 ```
 

@@ -40,7 +40,7 @@ resource "ctyun_private_zone_record" "example" {
   ttl         = 300
   name        = "example-record"
   description = "Example private zone record"
-  enabled     = "enable"
+  enabled     = true
 }
 ```
 
@@ -57,7 +57,7 @@ resource "ctyun_private_zone_record" "example" {
 ### Optional
 
 - `description` (String) DNS记录集描述，支持更新
-- `enabled` (String) 是否开启解析记录，默认启用，支持更新。启用：enable,不启用：disable
+- `enabled` (Boolean) 是否开启解析记录，默认启用，支持更新。
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 - `ttl` (Number) zone ttl，支持更新。TTL指解析记录在本地DNS服务器的缓存时间。如果您的服务地址经常更换，建议TTL值设置相对小些，反之，建议设置相对大些。
 

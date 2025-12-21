@@ -7,7 +7,7 @@ resource "ctyun_acl_rule" "%[1]s" {
   source_ip_address      = "%[7]s"
   destination_ip_address = "%[8]s"
   action                 = "%[9]s"
-  enabled                = "%[10]s"
+  enabled                = %[10]t
   description            = "%[11]s"
   priority               = %[12]d
 }

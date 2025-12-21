@@ -14,7 +14,7 @@ provider "ctyun" {
 
 
 resource "ctyun_mysql_param_template" "examples" {
-  name         = "template_example_1"
-  engine       = "5.7"
-  description  = "param template test"
+  name        = "template_example_1"
+  engine      = "5.7"
+  description = "param template test"
 }

@@ -20,8 +20,8 @@ provider "ctyun" {
 }
 
 data "ctyun_crs_opensource_images" "test" {
-  page_no = 1
-  page_size = 10
+  page_no         = 1
+  page_size       = 10
   repository_name = "neo4j"
 }
 

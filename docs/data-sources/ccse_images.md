@@ -30,7 +30,7 @@ data "ctyun_ecs_flavors" "test" {
 # 云主机
 data "ctyun_ccse_images" "ccse_ecs_image" {
   instance_type = "ecs"
-  flavor_name = data.ctyun_ecs_flavors.test.flavors[0].name
+  flavor_name   = data.ctyun_ecs_flavors.test.flavors[0].name
 }
 
 output "image1" {
@@ -41,7 +41,7 @@ output "image1" {
 # 物理机
 data "ctyun_ccse_images" "ccse_ebm_image" {
   instance_type = "ebm"
-  flavor_name = "physical.s5.2xlarge4"
+  flavor_name   = "physical.s5.2xlarge4"
 }
 
 output "image2" {

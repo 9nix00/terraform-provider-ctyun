@@ -19,7 +19,7 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_elb_targets" "test"{
+data "ctyun_elb_targets" "test" {
 }
 ```
 

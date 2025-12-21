@@ -24,8 +24,8 @@ resource "ctyun_zos_bucket" "foo" {
 }
 
 resource "ctyun_zos_bucket_object" "test" {
-  bucket = ctyun_zos_bucket.foo.bucket
-  key = "aex.txt"
+  bucket  = ctyun_zos_bucket.foo.bucket
+  key     = "aex.txt"
   content = "abcdw"
 }
 ```

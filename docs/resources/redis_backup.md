@@ -21,7 +21,7 @@ provider "ctyun" {
 
 
 resource "ctyun_redis_backup" "test" {
-      instance_id = "425c9173f98b4646a72ce0b986af00b0"
+  instance_id = "425c9173f98b4646a72ce0b986af00b0"
 }
 ```
 

@@ -21,7 +21,7 @@ provider "ctyun" {
 
 
 data "ctyun_mysql_param_templates" "example" {
-  name       = "template_example"
+  name = "template_example"
 }
 ```
 

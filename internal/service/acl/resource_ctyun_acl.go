@@ -9,6 +9,7 @@ import (
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/defaults"
 	validator2 "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform/validator"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -16,7 +17,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -163,17 +163,11 @@ func (c *CtyunAcl) Schema(ctx context.Context, request resource.SchemaRequest, r
 					boolplanmodifier.RequiresReplace(),
 				},
 			},
-			"enabled": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "是否启用ACL，默认启用。启用：enable,不启用：disable",
-				Default:     stringdefault.StaticString(business.AclEnable),
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.AclEnable, business.AclDisable),
-				},
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				Description: "是否启用ACL，默认启用。支持更新",
+				Default:     booldefault.StaticBool(true),
 			},
 			"id": schema.StringAttribute{
 				Computed:    true,
@@ -336,7 +330,7 @@ func (c *CtyunAcl) create(ctx context.Context, config *CtyunAclConfig) error {
 	config.ID = types.StringValue(*resp.ReturnObj.AclID)
 
 	// 判断创建ACL时，就需要禁用ACL
-	if config.Enabled.ValueString() == business.AclDisable {
+	if !config.Enabled.ValueBool() {
 		err = c.update(ctx, config, config)
 		if err != nil {
 			return err
@@ -351,17 +345,13 @@ func (c *CtyunAcl) getAndMerge(ctx context.Context, config *CtyunAclConfig) erro
 		return err
 	}
 	detail := resp.ReturnObj
-	if detail == nil {
-		err = fmt.Errorf("获取acl详情失败，接口返回nil，请联系研发确认问题原因！")
-		return err
-	}
-	config.Description = types.StringValue(*detail.Description)
-	config.ApplyToPublicLb = types.BoolValue(*detail.ApplyToPublicLb)
-	config.Enabled = types.StringValue(*detail.Enabled)
-	config.Name = types.StringValue(*detail.Name)
-	config.VpcID = types.StringValue(*detail.VpcID)
-	config.CreateTime = types.StringValue(*detail.CreatedAt)
-	config.UpdateTime = types.StringValue(*detail.UpdatedAt)
+	config.Description = utils.SecStringValue(detail.Description)
+	config.ApplyToPublicLb = utils.SecBoolValue(detail.ApplyToPublicLb)
+	config.Enabled = types.BoolValue(map[string]bool{business.AclEnable: true, business.AclDisable: false}[utils.SecString(detail.Enabled)])
+	config.Name = utils.SecStringValue(detail.Name)
+	config.VpcID = utils.SecStringValue(detail.VpcID)
+	config.CreateTime = utils.SecStringValue(detail.CreatedAt)
+	config.UpdateTime = utils.SecStringValue(detail.UpdatedAt)
 	return nil
 }
 
@@ -390,11 +380,17 @@ func (c *CtyunAcl) getAclDetail(ctx context.Context, config *CtyunAclConfig) (*c
 }
 
 func (c *CtyunAcl) update(ctx context.Context, state *CtyunAclConfig, plan *CtyunAclConfig) error {
+	var paramEnabled string
+	if plan.Enabled.ValueBool() {
+		paramEnabled = business.AclEnable
+	} else {
+		paramEnabled = business.AclDisable
+	}
 	params := &ctvpc.CtvpcUpdateAclAttributeRequest{
 		RegionID: state.RegionID.ValueString(),
 		AclID:    state.ID.ValueString(),
 		Name:     plan.Name.ValueString(),
-		Enabled:  plan.Enabled.ValueStringPointer(),
+		Enabled:  &paramEnabled,
 	}
 	if !state.ProjectID.IsNull() && !state.ProjectID.IsUnknown() {
 		params.ProjectID = state.ProjectID.ValueStringPointer()
@@ -441,7 +437,7 @@ type CtyunAclConfig struct {
 	Name            types.String `tfsdk:"name"`
 	Description     types.String `tfsdk:"description"`
 	ApplyToPublicLb types.Bool   `tfsdk:"apply_to_public_lb"`
-	Enabled         types.String `tfsdk:"enabled"`
+	Enabled         types.Bool   `tfsdk:"enabled"`
 	ID              types.String `tfsdk:"id"`
 	CreateTime      types.String `tfsdk:"create_time"`
 	UpdateTime      types.String `tfsdk:"update_time"`

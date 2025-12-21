@@ -33,12 +33,12 @@ resource "ctyun_subnet" "subnet_test" {
 
 
 resource "ctyun_oceanfs" "example" {
-  protocol = "nfs"
-  name         = "oceanfs-examples"
-  size     = "100"
-  cycle_type   = "month"
-  cycle_count  = "1"
-  vpc_id       = ctyun_vpc.vpc_test.id
-  subnet_id    = ctyun_subnet.subnet_test.id
-  tags         = [{"key":"test1","value":"value1"},{"key":"test2","value":"value2"}]
+  protocol    = "nfs"
+  name        = "oceanfs-examples"
+  size        = "100"
+  cycle_type  = "month"
+  cycle_count = "1"
+  vpc_id      = ctyun_vpc.vpc_test.id
+  subnet_id   = ctyun_subnet.subnet_test.id
+  tags        = [{ "key" : "test1", "value" : "value1" }, { "key" : "test2", "value" : "value2" }]
 }

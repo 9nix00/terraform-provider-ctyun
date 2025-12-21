@@ -14,5 +14,5 @@ data "ctyun_ports" "port_data" {
 }
 
 output "ctyun_ports_value" {
-  value =data.ctyun_ports.port_data
+  value = data.ctyun_ports.port_data
 }

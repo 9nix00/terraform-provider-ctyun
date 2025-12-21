@@ -19,10 +19,10 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-exampleid1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-exampleid1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 ```
@@ -39,7 +39,7 @@ resource "ctyun_acl" "example" {
 
 - `apply_to_public_lb` (Boolean) 是否启用acl管控lb流量，不传默认不管控
 - `description` (String) acl备注，支持拉丁字母、中文、数字, 特殊字符：~!@#$%^&*()_-+= <>?:'{},./;'[,]·！@#￥%……&*（） —— -+={},《》？：“”【】、；‘'，。、，不能以 http: / https: 开头，长度 0 - 128，支持更新
-- `enabled` (String) 是否启用ACL，默认启用。启用：enable,不启用：disable
+- `enabled` (Boolean) 是否启用ACL，默认启用。支持更新
 - `project_id` (String) 企业项目ID，如果不填则默认使用provider ctyun中的project_id或环境变量中的CTYUN_PROJECT_ID
 - `region_id` (String) 资源池ID，如果不填则默认使用provider ctyun中的region_id或环境变量中的CTYUN_REGION_ID
 

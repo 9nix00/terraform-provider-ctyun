@@ -21,7 +21,7 @@ provider "ctyun" {
 
 resource "ctyun_rabbitmq_vhost" "test" {
   instance_id = "8ccc8af2e6704080a72548735a081660"
-  name = "abceds"
+  name        = "abceds"
 }
 ```
 
