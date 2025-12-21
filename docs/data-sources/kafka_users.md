@@ -20,8 +20,8 @@ provider "ctyun" {
 }
 
 data "ctyun_kafka_users" "tbidgqvfbs" {
-    name = "init-kafka-user"
-    instance_id = "4bd607df61d348b1949db223614315c1"
+  name        = "init-kafka-user"
+  instance_id = "4bd607df61d348b1949db223614315c1"
 }
 ```
 

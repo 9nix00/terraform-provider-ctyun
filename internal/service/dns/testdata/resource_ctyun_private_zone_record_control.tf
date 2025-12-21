@@ -5,6 +5,6 @@ resource "ctyun_private_zone_record" "%[1]s" {
   ttl         = %[5]d
   name        = "%[6]s"
   description = "%[7]s"
-  enabled     = "%[8]s"
+  enabled     = %[8]t
 }
 

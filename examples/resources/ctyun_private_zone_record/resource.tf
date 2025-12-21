@@ -32,5 +32,5 @@ resource "ctyun_private_zone_record" "example" {
   ttl         = 300
   name        = "example-record"
   description = "Example private zone record"
-  enabled     = "enable"
+  enabled     = true
 }

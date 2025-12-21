@@ -22,7 +22,7 @@ resource "ctyun_subnet" "subnet_test" {
   name        = "subnet-test"
   cidr        = "10.0.0.0/8"
   description = "terraform测试使用"
-  dns         = [
+  dns = [
     "114.114.114.114",
     "8.8.8.8"
   ]
@@ -30,10 +30,10 @@ resource "ctyun_subnet" "subnet_test" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-idexample1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-idexample1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 resource "ctyun_subnet_association_acl" "example" {

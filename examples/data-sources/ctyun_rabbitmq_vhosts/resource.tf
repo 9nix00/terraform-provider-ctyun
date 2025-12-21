@@ -19,5 +19,5 @@ data "ctyun_rabbitmq_vhosts" "all" {
 # 指定vhost
 data "ctyun_rabbitmq_vhosts" "test" {
   instance_id = "8ccc8af2e6704080a72548735a081660"
-  name = "/"
+  name        = "/"
 }

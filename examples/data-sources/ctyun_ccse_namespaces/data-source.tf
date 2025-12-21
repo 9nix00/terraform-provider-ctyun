@@ -17,5 +17,5 @@ data "ctyun_ccse_namespaces" "all" {
 
 data "ctyun_ccse_namespaces" "test" {
   cluster_id = "91434876ed1c42d6a3d77dcc4f414bea"
-  field = "metadata.name%3Ddefault"
+  field      = "metadata.name%3Ddefault"
 }

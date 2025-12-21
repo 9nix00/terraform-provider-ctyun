@@ -19,7 +19,7 @@ provider "ctyun" {
   env = "prod"
 }
 data "ctyun_postgresql_instances" "test" {
-  
+
 }
 ```
 

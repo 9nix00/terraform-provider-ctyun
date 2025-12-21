@@ -23,7 +23,7 @@ data "ctyun_private_nat_transit_ips" "transit_ip" {
 }
 
 output "ctyun_private_nat_transit_ips_value" {
-  value =data.ctyun_private_nat_transit_ips.transit_ip
+  value = data.ctyun_private_nat_transit_ips.transit_ip
 }
 ```
 

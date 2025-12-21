@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -67,9 +68,9 @@ func (c *CtyunAclRules) Schema(ctx context.Context, request datasource.SchemaReq
 				Computed:    true,
 				Description: "VPC ID过滤条件",
 			},
-			"enabled": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Computed:    true,
-				Description: "启用状态过滤条件（disable/enable）",
+				Description: "是否启用",
 			},
 			"in_policy_id": schema.ListAttribute{
 				Computed:    true,
@@ -130,9 +131,9 @@ func (c *CtyunAclRules) Schema(ctx context.Context, request datasource.SchemaReq
 							Computed:    true,
 							Description: "动作（accept/drop）",
 						},
-						"enabled": schema.StringAttribute{
+						"enabled": schema.BoolAttribute{
 							Computed:    true,
-							Description: "启用状态（disable/enable）",
+							Description: "是否启用",
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,
@@ -186,9 +187,9 @@ func (c *CtyunAclRules) Schema(ctx context.Context, request datasource.SchemaReq
 							Computed:    true,
 							Description: "动作（accept/drop）",
 						},
-						"enabled": schema.StringAttribute{
+						"enabled": schema.BoolAttribute{
 							Computed:    true,
-							Description: "启用状态（disable/enable）",
+							Description: "是否启用",
 						},
 						"description": schema.StringAttribute{
 							Computed:    true,
@@ -228,7 +229,7 @@ func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest
 	config.Name = types.StringValue(*rule.Name)
 	config.Description = types.StringValue(*rule.Description)
 	config.VpcID = types.StringValue(*rule.VpcID)
-	config.Enabled = types.StringValue(*rule.Enabled)
+	config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*rule.Enabled])
 	config.InPolicyID = rule.InPolicyID
 	config.OutPolicyID = rule.OutPolicyID
 	config.SubnetIDs = rule.SubnetIDs
@@ -244,7 +245,7 @@ func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest
 		inRule.SourceIpAddress = types.StringValue(*ruleItem.SourceIpAddress)
 		inRule.DestinationIpAddress = types.StringValue(*ruleItem.DestinationIpAddress)
 		inRule.Action = types.StringValue(*ruleItem.Action)
-		inRule.Enabled = types.StringValue(*ruleItem.Enabled)
+		inRule.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*ruleItem.Enabled])
 		inRule.Description = types.StringValue(*ruleItem.Description)
 		inRules = append(inRules, inRule)
 	}
@@ -262,7 +263,7 @@ func (c *CtyunAclRules) Read(ctx context.Context, request datasource.ReadRequest
 		outRule.SourceIpAddress = types.StringValue(*ruleItem.SourceIpAddress)
 		outRule.DestinationIpAddress = types.StringValue(*ruleItem.DestinationIpAddress)
 		outRule.Action = types.StringValue(*ruleItem.Action)
-		outRule.Enabled = types.StringValue(*ruleItem.Enabled)
+		outRule.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*ruleItem.Enabled])
 		outRule.Description = types.StringValue(*ruleItem.Description)
 		outRules = append(outRules, outRule)
 	}
@@ -305,7 +306,7 @@ type CtyunAclRuleModel struct {
 	SourceIpAddress      types.String `tfsdk:"source_ip_address"`
 	DestinationIpAddress types.String `tfsdk:"destination_ip_address"`
 	Action               types.String `tfsdk:"action"`
-	Enabled              types.String `tfsdk:"enabled"`
+	Enabled              types.Bool   `tfsdk:"enabled"`
 	Description          types.String `tfsdk:"description"`
 }
 
@@ -316,7 +317,7 @@ type CtyunAclRulesConfig struct {
 	Name        types.String        `tfsdk:"name"`
 	Description types.String        `tfsdk:"description"`
 	VpcID       types.String        `tfsdk:"vpc_id"`
-	Enabled     types.String        `tfsdk:"enabled"`
+	Enabled     types.Bool          `tfsdk:"enabled"`
 	InPolicyID  []string            `tfsdk:"in_policy_id"`
 	OutPolicyID []string            `tfsdk:"out_policy_id"`
 	InRules     []CtyunAclRuleModel `tfsdk:"in_rules"`

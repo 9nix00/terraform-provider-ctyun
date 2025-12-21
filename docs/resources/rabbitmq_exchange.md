@@ -21,9 +21,9 @@ provider "ctyun" {
 
 resource "ctyun_rabbitmq_exchange" "test" {
   instance_id = "8ccc8af2e6704080a72548735a081660"
-  vhost = "/"
-  name = "edxca"
-  type = "direct"
+  vhost       = "/"
+  name        = "edxca"
+  type        = "direct"
   # x_delayed_type = "fanout"
   # durable = true
   # auto_delete = true

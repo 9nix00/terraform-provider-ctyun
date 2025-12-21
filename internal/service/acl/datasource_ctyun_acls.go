@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
+	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int32validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -104,9 +106,9 @@ func (c *ctyunAcls) Schema(ctx context.Context, request datasource.SchemaRequest
 							Computed:    true,
 							Description: "所属VPC ID",
 						},
-						"enabled": schema.StringAttribute{
+						"enabled": schema.BoolAttribute{
 							Computed:    true,
-							Description: "启用状态，disalbe和enable",
+							Description: "是否启用",
 						},
 						"in_policy_id": schema.SetAttribute{
 							Computed:    true,
@@ -196,7 +198,7 @@ func (c *ctyunAcls) Read(ctx context.Context, request datasource.ReadRequest, re
 		var acl CtyunAclInfoModel
 		acl.ID = types.StringValue(*aclItem.AclID)
 		acl.Name = types.StringValue(*aclItem.Name)
-		acl.Enabled = types.StringValue(*aclItem.Enabled)
+		acl.Enabled = types.BoolValue(map[string]bool{business.AclEnable: true, business.AclDisable: true}[utils.SecString(aclItem.Enabled)])
 		acl.Description = types.StringValue(*aclItem.Description)
 		acl.ApplyToPublicLb = types.BoolValue(*aclItem.ApplyToPublicLb)
 		acl.CreateTime = types.StringValue(*aclItem.CreatedAt)
@@ -233,7 +235,7 @@ type CtyunAclInfoModel struct {
 	Description     types.String `tfsdk:"description"`
 	ApplyToPublicLb types.Bool   `tfsdk:"apply_to_public_lb"`
 	VpcID           types.String `tfsdk:"vpc_id"`
-	Enabled         types.String `tfsdk:"enabled"`
+	Enabled         types.Bool   `tfsdk:"enabled"`
 	InPolicyID      types.Set    `tfsdk:"in_policy_id"`
 	OutPolicyID     types.Set    `tfsdk:"out_policy_id"`
 	CreateTime      types.String `tfsdk:"create_time"`

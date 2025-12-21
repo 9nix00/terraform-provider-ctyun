@@ -20,10 +20,10 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-exampleid1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-exampleid1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 
@@ -51,7 +51,7 @@ output "ctyun_acl_rules_example" {
 ### Read-Only
 
 - `description` (String) ACL描述过滤条件
-- `enabled` (String) 启用状态过滤条件（disable/enable）
+- `enabled` (Boolean) 是否启用
 - `in_policy_id` (List of String) 入方向策略ID列表
 - `in_rules` (Attributes List) 入方向规则列表 (see [below for nested schema](#nestedatt--in_rules))
 - `name` (String) ACL名称过滤条件
@@ -71,7 +71,7 @@ Read-Only:
 - `destination_ip_address` (String) 目标IP地址范围
 - `destination_port` (String) 目标端口范围
 - `direction` (String) 规则方向（ingress/egress）
-- `enabled` (String) 启用状态（disable/enable）
+- `enabled` (Boolean) 是否启用
 - `ip_version` (String) IP版本（ipv4/ipv6）
 - `priority` (Number) 规则优先级
 - `protocol` (String) 协议类型（tcp/udp/icmp/all）
@@ -90,7 +90,7 @@ Read-Only:
 - `destination_ip_address` (String) 目标IP地址范围
 - `destination_port` (String) 目标端口范围
 - `direction` (String) 规则方向（ingress/egress）
-- `enabled` (String) 启用状态（disable/enable）
+- `enabled` (Boolean) 是否启用
 - `ip_version` (String) IP版本（ipv4/ipv6）
 - `priority` (Number) 规则优先级
 - `protocol` (String) 协议类型（tcp/udp/icmp/all）

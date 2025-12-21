@@ -20,13 +20,13 @@ provider "ctyun" {
 }
 
 resource "ctyun_kafka_user" "tbidgqvfbs" {
-  name = "test_kafka_user"
+  name        = "test_kafka_user"
   instance_id = "4bd607df61d348b1949db223614315c1"
-  password  = "sad231Dwwww"
+  password    = "sad231Dwwww"
   permission_info = [{
-  permission = "DENY"
-  operation = "READ"
-  topic = "test_topic"}]
+    permission = "DENY"
+    operation  = "READ"
+  topic = "test_topic" }]
 }
 ```
 

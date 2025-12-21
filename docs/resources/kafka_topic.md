@@ -20,9 +20,9 @@ provider "ctyun" {
 }
 
 resource "ctyun_kafka_topic" "tbidgqvfbs" {
-  name = "test_kafka_topic"
-  instance_id = "4bd607df61d348b1949db223614315c1"
-  partition_num  = 1
+  name          = "test_kafka_topic"
+  instance_id   = "4bd607df61d348b1949db223614315c1"
+  partition_num = 1
 
 }
 ```

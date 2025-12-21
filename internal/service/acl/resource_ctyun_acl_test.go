@@ -6,7 +6,6 @@ import (
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/utils"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
-	"os"
 	"testing"
 )
 
@@ -16,7 +15,7 @@ func TestAccCtyunAcl(t *testing.T) {
 	resourceName := "ctyun_acl." + rnd
 	resourceFile := "resource_ctyun_acl.tf"
 	resourceFile1 := "resource_ctyun_acl_all.tf"
-	projectID := os.Getenv("0")
+	projectID := ""
 	vpcID := dependence.vpcID
 
 	// 测试数据
@@ -40,7 +39,7 @@ func TestAccCtyunAcl(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", aclName),
 					resource.TestCheckResourceAttr(resourceName, "description", initialDescription),
 					resource.TestCheckResourceAttr(resourceName, "apply_to_public_lb", "false"),
-					resource.TestCheckResourceAttr(resourceName, "enabled", "enable"),
+					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -49,13 +48,13 @@ func TestAccCtyunAcl(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile1, rnd, projectID,
 					vpcID, aclName+"-updated",
-					updatedDescription, false, "disable",
+					updatedDescription, false, false,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", aclName+"-updated"),
 					resource.TestCheckResourceAttr(resourceName, "description", updatedDescription),
 					resource.TestCheckResourceAttr(resourceName, "apply_to_public_lb", "false"),
-					resource.TestCheckResourceAttr(resourceName, "enabled", "disable"),
+					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
 				),
 			},
 			// 3. 导入测试
@@ -112,7 +111,7 @@ func TestAccCtyunAcl(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile1, rnd, projectID,
 					vpcID, aclName+"-updated",
-					updatedDescription, true, "disable",
+					updatedDescription, true, false,
 				),
 				Destroy: true,
 			},
@@ -146,10 +145,10 @@ func TestAccCtyunAclDisabled(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd, projectID,
 					vpcID, aclName,
-					description, false, "disable",
+					description, false, false,
 				),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "enabled", "disable"),
+					resource.TestCheckResourceAttr(resourceName, "enabled", "false"),
 					resource.TestCheckResourceAttrSet(resourceName, "id"),
 				),
 			},
@@ -158,9 +157,9 @@ func TestAccCtyunAclDisabled(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd, projectID,
 					vpcID, aclName,
-					description, false, "enable"),
+					description, false, true),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "enabled", "enable"),
+					resource.TestCheckResourceAttr(resourceName, "enabled", "true"),
 				),
 			},
 
@@ -169,20 +168,20 @@ func TestAccCtyunAclDisabled(t *testing.T) {
 				Config: utils.LoadTestCase(
 					resourceFile, rnd, projectID,
 					vpcID, aclName,
-					description, false, "enable") +
+					description, false, true) +
 					utils.LoadTestCase(
 						datasourceFile, dnd, fmt.Sprintf("%s.id", resourceName), projectID, aclName, 1, 50),
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr(dataSourceName, "acls.#", "1"),
 					resource.TestCheckResourceAttr(dataSourceName, "acls.0.name", aclName),
-					resource.TestCheckResourceAttr(dataSourceName, "acls.0.enabled", "enable")),
+					resource.TestCheckResourceAttr(dataSourceName, "acls.0.enabled", "true")),
 			},
 			// 4. 清理资源
 			{
 				Config: utils.LoadTestCase(
 					resourceFile, rnd, projectID,
 					vpcID, aclName,
-					description, false, "enable"),
+					description, false, true),
 				Destroy: true,
 			},
 		},

@@ -20,7 +20,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_ecs_affinity_group" "test" {
-  name = "tf-test-group"
+  name   = "tf-test-group"
   policy = "anti-affinity"
 }
 ```

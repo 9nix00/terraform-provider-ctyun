@@ -57,7 +57,7 @@ variable "password" {
 }
 
 resource "ctyun_mysql_account" "example" {
-  instance_id     = ctyun_mysql_instance.mysql_account.id
+  instance_id = ctyun_mysql_instance.mysql_account.id
   name        = "tf_example-user"
   password    = var.password
   schema_privilege_list = [

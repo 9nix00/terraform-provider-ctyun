@@ -15,9 +15,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int32default"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -245,14 +245,11 @@ func (c *CtyunAclRule) Schema(ctx context.Context, request resource.SchemaReques
 					stringvalidator.OneOf(business.AclRuleActionAccept, business.AclRuleActionDrop),
 				},
 			},
-			"enabled": schema.StringAttribute{
+			"enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
-				Description: "acl 规则是否启用，支持更新。取值范围：disable, enable",
-				Default:     stringdefault.StaticString(business.AclRuleEnable),
-				Validators: []validator.String{
-					stringvalidator.OneOf(business.AclRuleEnable, business.AclRuleDisable),
-				},
+				Description: "acl 规则是否启用，支持更新。默认启用",
+				Default:     booldefault.StaticBool(true),
 			},
 			"description": schema.StringAttribute{
 				Optional:    true,
@@ -407,7 +404,7 @@ func (c *CtyunAclRule) create(ctx context.Context, config *CtyunAclRuleConfig) e
 	rule.SourceIpAddress = config.SourceIpAddress.ValueString()
 	rule.DestinationIpAddress = config.DestinationIpAddress.ValueString()
 	rule.Action = config.Action.ValueString()
-	rule.Enabled = config.Enabled.ValueString()
+	rule.Enabled = map[bool]string{true: business.AclRuleEnable, false: business.AclRuleDisable}[config.Enabled.ValueBool()]
 	if !config.Description.IsNull() {
 		rule.Description = config.Description.ValueString()
 	}
@@ -449,7 +446,7 @@ func (c *CtyunAclRule) getAndMerge(ctx context.Context, config *CtyunAclRuleConf
 		config.SourceIpAddress = types.StringValue(*egressDetail.SourceIpAddress)
 		config.DestinationIpAddress = types.StringValue(*egressDetail.DestinationIpAddress)
 		config.Action = types.StringValue(*egressDetail.Action)
-		config.Enabled = types.StringValue(*egressDetail.Enabled)
+		config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*egressDetail.Enabled])
 		config.Description = types.StringValue(*egressDetail.Description)
 	} else {
 		config.Direction = types.StringValue(*ingressDetail.Direction)
@@ -464,7 +461,7 @@ func (c *CtyunAclRule) getAndMerge(ctx context.Context, config *CtyunAclRuleConf
 		config.SourceIpAddress = types.StringValue(*ingressDetail.SourceIpAddress)
 		config.DestinationIpAddress = types.StringValue(*ingressDetail.DestinationIpAddress)
 		config.Action = types.StringValue(*ingressDetail.Action)
-		config.Enabled = types.StringValue(*ingressDetail.Enabled)
+		config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*ingressDetail.Enabled])
 		config.Description = types.StringValue(*ingressDetail.Description)
 	}
 	return nil
@@ -533,7 +530,7 @@ func (c *CtyunAclRule) ingressCheckSame(rule *ctvpc.CtvpcListAclRuleReturnObjInR
 		*rule.SourceIpAddress != config.SourceIpAddress.ValueString() ||
 		*rule.DestinationIpAddress != config.DestinationIpAddress.ValueString() ||
 		*rule.Action != config.Action.ValueString() ||
-		*rule.Enabled != config.Enabled.ValueString() {
+		*rule.Enabled != map[bool]string{true: business.AclRuleEnable, false: business.AclRuleDisable}[config.Enabled.ValueBool()] {
 		return false
 	}
 	if config.Protocol.ValueString() == business.AclRuleProtocolTCP ||
@@ -556,7 +553,7 @@ func (c *CtyunAclRule) egressCheckSame(rule *ctvpc.CtvpcListAclRuleReturnObjOutR
 		*rule.SourceIpAddress != config.SourceIpAddress.ValueString() ||
 		*rule.DestinationIpAddress != config.DestinationIpAddress.ValueString() ||
 		*rule.Action != config.Action.ValueString() ||
-		*rule.Enabled != config.Enabled.ValueString() {
+		*rule.Enabled != map[bool]string{true: business.AclRuleEnable, false: business.AclRuleDisable}[config.Enabled.ValueBool()] {
 		return false
 	}
 	return true
@@ -612,7 +609,7 @@ func (c *CtyunAclRule) update(ctx context.Context, state *CtyunAclRuleConfig, pl
 	rule.SourceIpAddress = plan.SourceIpAddress.ValueString()
 	rule.DestinationIpAddress = plan.DestinationIpAddress.ValueString()
 	rule.Action = plan.Action.ValueString()
-	rule.Enabled = plan.Enabled.ValueString()
+	rule.Enabled = map[bool]string{true: business.AclRuleEnable, false: business.AclRuleDisable}[plan.Enabled.ValueBool()]
 	if !plan.Description.IsNull() {
 		rule.Description = plan.Description.ValueStringPointer()
 	}
@@ -665,7 +662,7 @@ type CtyunAclRuleConfig struct {
 	SourceIpAddress      types.String `tfsdk:"source_ip_address"`
 	DestinationIpAddress types.String `tfsdk:"destination_ip_address"`
 	Action               types.String `tfsdk:"action"`
-	Enabled              types.String `tfsdk:"enabled"`
+	Enabled              types.Bool   `tfsdk:"enabled"`
 	Description          types.String `tfsdk:"description"`
 	ID                   types.String `tfsdk:"id"`
 }

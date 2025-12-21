@@ -29,7 +29,7 @@ resource "ctyun_subnet" "subnet_test" {
   name        = "subnet-test-ccse1"
   cidr        = "192.168.0.0/16"
   description = "terraform测试使用"
-  dns         = [
+  dns = [
     "100.95.0.1"
   ]
   enable_ipv6 = true
@@ -44,16 +44,16 @@ resource "ctyun_port" "port" {
   name                       = "port-test-update"
   description                = "port 测试-测试"
   subnet_id                  = ctyun_subnet.subnet_test.id
-  security_group_ids        =  [ctyun_security_group.security_group_test.id]
+  security_group_ids         = [ctyun_security_group.security_group_test.id]
   secondary_private_ip_count = 1
 }
-resource "ctyun_private_nat" "private_nat"{
-  vpc_id = ctyun_vpc.vpc_test.id
-  spec = "small"
-  name = "private-nat-test"
+resource "ctyun_private_nat" "private_nat" {
+  vpc_id      = ctyun_vpc.vpc_test.id
+  spec        = "small"
+  name        = "private-nat-test"
   description = "私有网关测试"
-  cycle_type = "on_demand"
-  subnet_id = ctyun_subnet.subnet_test.id
+  cycle_type  = "on_demand"
+  subnet_id   = ctyun_subnet.subnet_test.id
 }
 ```
 

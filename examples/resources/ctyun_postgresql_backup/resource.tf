@@ -42,23 +42,23 @@ variable "password" {
 }
 
 resource "ctyun_postgresql_instance" "test" {
-  cycle_type            = "on_demand"
-  prod_id               = "Single1222"
-  flavor_name           = "c7.xlarge.4"
-  storage_type          = "SSD"
-  storage_space         = 120
-  name                  = "pgsql-test-tf1"
-  password              = var.password
-  case_sensitive        = true
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_pgsql_test.id
-  backup_storage_type  = "OS"
+  cycle_type          = "on_demand"
+  prod_id             = "Single1222"
+  flavor_name         = "c7.xlarge.4"
+  storage_type        = "SSD"
+  storage_space       = 120
+  name                = "pgsql-test-tf1"
+  password            = var.password
+  case_sensitive      = true
+  vpc_id              = ctyun_vpc.vpc_test.id
+  subnet_id           = ctyun_subnet.subnet_test.id
+  security_group_id   = ctyun_security_group.sg_pgsql_test.id
+  backup_storage_type = "OS"
 }
 
 
 resource "ctyun_postgresql_backup" "example" {
   instance_id = ctyun_postgresql_instance.test.id
-  name = "pgsql-backup-example"
+  name        = "pgsql-backup-example"
   description = "pgsql备份"
 }

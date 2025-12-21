@@ -12,13 +12,13 @@ provider "ctyun" {
 }
 
 resource "ctyun_eip" "eip_test" {
- name                = "eip-test"
- bandwidth           = 10
- cycle_type          = "on_demand"
- demand_billing_type = "bandwidth"
+  name                = "eip-test"
+  bandwidth           = 10
+  cycle_type          = "on_demand"
+  demand_billing_type = "bandwidth"
 }
 
 resource "ctyun_redis_association_eip" "test" {
-  eip_id = ctyun_eip.eip_test.id
+  eip_id      = ctyun_eip.eip_test.id
   instance_id = "d59e17a10dda4105936b7e3ede290ba5"
 }

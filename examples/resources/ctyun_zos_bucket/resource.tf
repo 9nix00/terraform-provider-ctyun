@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_zos_bucket" "foo" {
-  bucket = "acc-tesss"
-  acl = "public-read"
+  bucket       = "acc-tesss"
+  acl          = "public-read"
   storage_type = "STANDARD_IA"
 }

@@ -11,6 +11,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_redis_backups" "test"{
-    instance_id = "3f40648b0d7f4ec4beb82657bd4fbcc6"
+data "ctyun_redis_backups" "test" {
+  instance_id = "3f40648b0d7f4ec4beb82657bd4fbcc6"
 }

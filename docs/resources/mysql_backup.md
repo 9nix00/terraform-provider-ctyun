@@ -47,16 +47,16 @@ resource "ctyun_security_group" "sg_mysql_test" {
 }
 
 resource "ctyun_mysql_instance" "mysql_backup" {
-  cycle_type            = "on_demand"
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_mysql_test.id
-  name                  = "mysql-test-backup-1"
-  prod_id               = "Single57"
-  storage_type          = "SATA"
-  storage_space         = 100
-  password              = var.password
-  flavor_name           = "c7.2xlarge.4"
+  cycle_type        = "on_demand"
+  vpc_id            = ctyun_vpc.vpc_test.id
+  subnet_id         = ctyun_subnet.subnet_test.id
+  security_group_id = ctyun_security_group.sg_mysql_test.id
+  name              = "mysql-test-backup-1"
+  prod_id           = "Single57"
+  storage_type      = "SATA"
+  storage_space     = 100
+  password          = var.password
+  flavor_name       = "c7.2xlarge.4"
 }
 
 
@@ -65,29 +65,29 @@ variable "password" {
   sensitive = true
 }
 resource "ctyun_mysql_database" "db1" {
-  instance_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id  = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db1"
   charset_name = "utf8mb4"
 }
 resource "ctyun_mysql_database" "db2" {
-  instance_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id  = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db2"
   charset_name = "utf8mb4"
-  depends_on = [ctyun_mysql_database.db1]
+  depends_on   = [ctyun_mysql_database.db1]
 }
 resource "ctyun_mysql_database" "db3" {
-  instance_id      = ctyun_mysql_instance.mysql_backup.id
+  instance_id  = ctyun_mysql_instance.mysql_backup.id
   name         = "test_db3"
   charset_name = "utf8mb4"
-  depends_on = [ctyun_mysql_database.db2]
+  depends_on   = [ctyun_mysql_database.db2]
 }
 
 resource "ctyun_mysql_backup" "backup_test" {
-  instance_id     = ctyun_mysql_instance.mysql_backup.id
+  instance_id = ctyun_mysql_instance.mysql_backup.id
   project_id  = "0"
   description = "terraform单元测试"
   task_type   = "full"
-  depends_on = [ctyun_mysql_database.db3]
+  depends_on  = [ctyun_mysql_database.db3]
 }
 ```
 

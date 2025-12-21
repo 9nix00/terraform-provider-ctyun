@@ -50,18 +50,18 @@ variable "password" {
 }
 
 resource "ctyun_postgresql_instance" "test" {
-  cycle_type            = "on_demand"
-  prod_id               = "Single1222"
-  flavor_name           = "c7.xlarge.4"
-  storage_type          = "SSD"
-  storage_space         = 120
-  name                  = "pgsql-test-tf1"
-  password              = var.password
-  case_sensitive        = true
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_pgsql_test.id
-  backup_storage_type  = "OS"
+  cycle_type          = "on_demand"
+  prod_id             = "Single1222"
+  flavor_name         = "c7.xlarge.4"
+  storage_type        = "SSD"
+  storage_space       = 120
+  name                = "pgsql-test-tf1"
+  password            = var.password
+  case_sensitive      = true
+  vpc_id              = ctyun_vpc.vpc_test.id
+  subnet_id           = ctyun_subnet.subnet_test.id
+  security_group_id   = ctyun_security_group.sg_pgsql_test.id
+  backup_storage_type = "OS"
 }
 
 data "ctyun_postgresql_character_set" "charsets" {
@@ -69,8 +69,8 @@ data "ctyun_postgresql_character_set" "charsets" {
 }
 
 data "ctyun_postgresql_collation_time_zone" "collations" {
-  depends_on = [ctyun_postgresql_instance.test]
-  instance_id    = ctyun_postgresql_instance.test.id
+  depends_on  = [ctyun_postgresql_instance.test]
+  instance_id = ctyun_postgresql_instance.test.id
 }
 
 resource "ctyun_postgresql_database" "examples" {

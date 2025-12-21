@@ -11,6 +11,6 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_redis_param_templates" "test"{
-    type = "custom"
+data "ctyun_redis_param_templates" "test" {
+  type = "custom"
 }

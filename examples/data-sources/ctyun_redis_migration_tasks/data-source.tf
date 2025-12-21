@@ -11,8 +11,8 @@ provider "ctyun" {
   env = "prod"
 }
 
-data "ctyun_redis_migration_tasks" "test"{
-    id="459d960db7c74a3a9ddc8e21cec53597"//任务id  可选
-    page_num = 1
-    page_size = 10
+data "ctyun_redis_migration_tasks" "test" {
+  id        = "459d960db7c74a3a9ddc8e21cec53597" //任务id  可选
+  page_num  = 1
+  page_size = 10
 }

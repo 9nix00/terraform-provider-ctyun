@@ -7,7 +7,7 @@ terraform {
 }
 
 provider "ctyun" {
-  env = "prod"
+  env        = "prod"
   project_id = "0"
 }
 resource "ctyun_ec_cloud_gateway" "example" {
@@ -22,7 +22,7 @@ resource "ctyun_express_connect" "example" {
   description = "云间高速example专用"
 }
 resource "ctyun_sdwan" "demo" {
-  name = "sdwan_demo"
+  name        = "sdwan_demo"
   description = "样列"
 }
 

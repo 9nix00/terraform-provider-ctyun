@@ -20,9 +20,9 @@ provider "ctyun" {
 }
 
 resource "ctyun_kafka_consumer_group" "tbidgqvfbs" {
-  name = "test_kafka_consumer_group"
+  name        = "test_kafka_consumer_group"
   instance_id = "4bd607df61d348b1949db223614315c1"
-  description  = "desc"
+  description = "desc"
 }
 ```
 

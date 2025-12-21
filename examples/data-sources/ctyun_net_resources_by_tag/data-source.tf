@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 data "ctyun_net_resources_by_tag" "example" {
-  label_id= "1c24ddb1ff534de9a4bcd13c3b680b59"
+  label_id = "1c24ddb1ff534de9a4bcd13c3b680b59"
 }
 
 output "ctyun_net_resources_by_tag_example" {

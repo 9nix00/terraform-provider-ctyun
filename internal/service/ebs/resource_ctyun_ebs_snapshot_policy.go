@@ -85,7 +85,7 @@ func (c *ctyunEbsSnapshotPolicy) Schema(_ context.Context, _ resource.SchemaRequ
 					int64validator.Between(-1, 65535),
 				},
 			},
-			"is_enabled": schema.BoolAttribute{
+			"enabled": schema.BoolAttribute{
 				Optional:    true,
 				Computed:    true,
 				Description: "是否启用策略，取值范围：true：启用，false：不启用，默认为true。支持更新",
@@ -321,7 +321,7 @@ func (c *ctyunEbsSnapshotPolicy) getAndMerge(ctx context.Context, cfg *CtyunEbsS
 	cfg.Id = types.StringValue(*policy.SnapshotPolicyID)
 	cfg.RepeatWeekdays = types.StringValue(*policy.RepeatWeekdays)
 	cfg.RepeatTimes = types.StringValue(*policy.RepeatTimes)
-	// 根据 SnapshotPolicyStatus 设置 is_enabled
+	// 根据 SnapshotPolicyStatus 设置 enabled
 	isEnabled := false
 	if *policy.SnapshotPolicyStatus == StatusActivated {
 		isEnabled = true
@@ -546,7 +546,7 @@ type CtyunEbsSnapshotPolicyConfig struct {
 	RepeatWeekdays types.String `tfsdk:"repeat_weekdays"`
 	RepeatTimes    types.String `tfsdk:"repeat_times"`
 	RetentionTime  types.Int64  `tfsdk:"retention_time"`
-	IsEnabled      types.Bool   `tfsdk:"is_enabled"`
+	IsEnabled      types.Bool   `tfsdk:"enabled"`
 	ProjectId      types.String `tfsdk:"project_id"`
 	RegionId       types.String `tfsdk:"region_id"`
 

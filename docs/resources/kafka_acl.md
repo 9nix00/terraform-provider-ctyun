@@ -20,14 +20,14 @@ provider "ctyun" {
 }
 
 resource "ctyun_kafka_acl" "tbidgqvfbs" {
-  name = "test_kafka_acl"
-  instance_id = "4bd607df61d348b1949db223614315c1"
+  name          = "test_kafka_acl"
+  instance_id   = "4bd607df61d348b1949db223614315c1"
   use_new_topic = false
   rules = [{
-           permission:"ALLOW",
-           user_name:"test_user"
-           operation:"READ"
-    }]
+    permission : "ALLOW",
+    user_name : "test_user"
+    operation : "READ"
+  }]
 }
 ```
 

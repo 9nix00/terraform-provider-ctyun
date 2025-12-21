@@ -46,16 +46,16 @@ resource "ctyun_security_group" "sg_mysql_test" {
 }
 
 resource "ctyun_mysql_instance" "mysql_test" {
-  cycle_type            = "on_demand"
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_mysql_test.id
-  name                  = "mysql-test-1"
-  prod_id               = "Single57"
-  storage_type          = "SATA"
-  storage_space         = 100
-  password              = var.password
-  flavor_name           = "c7.2xlarge.4"
+  cycle_type        = "on_demand"
+  vpc_id            = ctyun_vpc.vpc_test.id
+  subnet_id         = ctyun_subnet.subnet_test.id
+  security_group_id = ctyun_security_group.sg_mysql_test.id
+  name              = "mysql-test-1"
+  prod_id           = "Single57"
+  storage_type      = "SATA"
+  storage_space     = 100
+  password          = var.password
+  flavor_name       = "c7.2xlarge.4"
 }
 
 variable "password" {

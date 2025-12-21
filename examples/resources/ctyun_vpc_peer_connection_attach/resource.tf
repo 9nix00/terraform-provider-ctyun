@@ -11,7 +11,7 @@ provider "ctyun" {
 }
 
 provider "ctyun" {
-  alias           = "test_accpet"
+  alias = "test_accpet"
 }
 
 resource "ctyun_vpc" "vpc_test" {
@@ -40,7 +40,7 @@ resource "ctyun_vpc_peer_connection" "cross_example" {
 }
 
 resource "ctyun_vpc_peer_connection_attach" "test" {
-  provider = ctyun.test_accpet
+  provider           = ctyun.test_accpet
   peer_connection_id = ctyun_vpc_peer_connection.cross_example.id
   operation          = "enable"
 }

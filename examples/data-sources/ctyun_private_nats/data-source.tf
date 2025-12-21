@@ -14,5 +14,5 @@ data "ctyun_private_nats" "private_nat_data" {
 }
 
 output "ctyun_private_nats_value" {
-  value =data.ctyun_private_nats.private_nat_data
+  value = data.ctyun_private_nats.private_nat_data
 }

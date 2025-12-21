@@ -28,8 +28,8 @@ resource "ctyun_ebs" "ebs_test" {
 }
 
 resource "ctyun_ebs_snapshot" "test" {
-  name = "tf-test-group"
-  disk_id = ctyun_ebs.ebs_test.id
+  name             = "tf-test-group"
+  disk_id          = ctyun_ebs.ebs_test.id
   retention_policy = "forever"
 }
 ```

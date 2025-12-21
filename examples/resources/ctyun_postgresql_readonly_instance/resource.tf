@@ -41,23 +41,23 @@ resource "ctyun_security_group" "sg_test" {
   }
 }
 resource "ctyun_postgresql_instance" "test" {
-  cycle_type            = "on_demand"
-  prod_id               = "Single1222"
-  flavor_name           = "c7.xlarge.2"
-  storage_type          = "SSD"
-  storage_space         = 100
-  name                  = "pgsql-test-tf1"
-  password              = var.password
-  case_sensitive        = true
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_test.id
-  backup_storage_type  = "OS"
+  cycle_type          = "on_demand"
+  prod_id             = "Single1222"
+  flavor_name         = "c7.xlarge.2"
+  storage_type        = "SSD"
+  storage_space       = 100
+  name                = "pgsql-test-tf1"
+  password            = var.password
+  case_sensitive      = true
+  vpc_id              = ctyun_vpc.vpc_test.id
+  subnet_id           = ctyun_subnet.subnet_test.id
+  security_group_id   = ctyun_security_group.sg_test.id
+  backup_storage_type = "OS"
 }
 
 
 resource "ctyun_postgresql_readonly_instance" "example" {
-  instance_id     = ctyun_postgresql_instance.test.id
+  instance_id = ctyun_postgresql_instance.test.id
   cycle_type  = "on_demand"
   flavor_name = "c7.xlarge.2"
   name        = "pgsql-ro-example"

@@ -39,16 +39,16 @@ resource "ctyun_security_group" "sg_mysql_test" {
 }
 
 resource "ctyun_mysql_instance" "mysql_setting" {
-  cycle_type            = "on_demand"
-  vpc_id                = ctyun_vpc.vpc_test.id
-  subnet_id             = ctyun_subnet.subnet_test.id
-  security_group_id     = ctyun_security_group.sg_mysql_test.id
-  name                  = "mysql-test-setting-1"
-  prod_id               = "Master2Slave80"
-  storage_type          = "SATA"
-  storage_space         = 100
-  password              = var.password
-  flavor_name           = "c7.2xlarge.4"
+  cycle_type        = "on_demand"
+  vpc_id            = ctyun_vpc.vpc_test.id
+  subnet_id         = ctyun_subnet.subnet_test.id
+  security_group_id = ctyun_security_group.sg_mysql_test.id
+  name              = "mysql-test-setting-1"
+  prod_id           = "Master2Slave80"
+  storage_type      = "SATA"
+  storage_space     = 100
+  password          = var.password
+  flavor_name       = "c7.2xlarge.4"
 }
 
 variable "password" {
@@ -58,8 +58,8 @@ variable "password" {
 
 
 resource "ctyun_mysql_backup_setting" "examples" {
-  instance_id                    = ctyun_mysql_instance.mysql_setting.id
-  storage_day                = 7
-  allow_earliest_time        = "00:01"
-  trigger_days_of_week       = [1,3,5]
+  instance_id          = ctyun_mysql_instance.mysql_setting.id
+  storage_day          = 7
+  allow_earliest_time  = "00:01"
+  trigger_days_of_week = [1, 3, 5]
 }

@@ -12,17 +12,17 @@ provider "ctyun" {
 }
 
 resource "ctyun_acl" "example" {
-  vpc_id        = "vpc-exampleid1"
-  name          = "example-acl"
-  description   = "Example ACL created for demonstration"
-  enabled       = "enable"
+  vpc_id             = "vpc-exampleid1"
+  name               = "example-acl"
+  description        = "Example ACL created for demonstration"
+  enabled            = true
   apply_to_public_lb = false
 }
 
 data "ctyun_acls" "example" {
-  id         = ctyun_acl.example.id
-  page_no    = 1
-  page_size  = 20
+  id        = ctyun_acl.example.id
+  page_no   = 1
+  page_size = 20
 }
 
 output "ctyun_acls_example" {

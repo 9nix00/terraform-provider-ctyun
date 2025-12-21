@@ -12,7 +12,7 @@ provider "ctyun" {
 }
 
 resource "ctyun_ccse_namespace" "test" {
-  cluster_id = "91434876ed1c42d6a3d77dcc4f414bea"
+  cluster_id  = "91434876ed1c42d6a3d77dcc4f414bea"
   values_yaml = <<EOF
 apiVersion: v1
 kind: Namespace

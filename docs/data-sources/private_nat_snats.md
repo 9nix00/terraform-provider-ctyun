@@ -23,7 +23,7 @@ data "ctyun_private_nat_dnats" "private_dnat" {
 }
 
 output "ctyun_private_nat_dnats_value" {
-  value =data.ctyun_private_nat_dnats.private_dnat
+  value = data.ctyun_private_nat_dnats.private_dnat
 }
 ```
 
