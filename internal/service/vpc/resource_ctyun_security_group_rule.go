@@ -277,20 +277,22 @@ func (c *ctyunSecurityGroupRule) Create(ctx context.Context, request resource.Cr
 
 	plan.Id = types.StringValue(id)
 	plan.RegionId = types.StringValue(regionId)
+	
+	// 创建完成后，直接使用 plan 中的值作为最终状态
+	// 因为所有 Required 字段都已经有值，Computed 字段使用默认值或用户配置的值
+	// 这样可以避免 API 返回值与配置不一致的问题
+	
+	// 确保 Computed 字段有明确的值
+	// 如果 range 是 unknown，设置为空字符串（当 protocol 为 any 时）
+	if plan.Range.IsUnknown() {
+		plan.Range = types.StringValue(requestRange)
+	}
+	// 如果 dest_cidr_ip 是 unknown，使用默认值
+	if plan.DestCidrIp.IsUnknown() {
+		plan.DestCidrIp = types.StringValue(requestDestCidrIp)
+	}
+	
 	response.Diagnostics.Append(response.State.Set(ctx, plan)...)
-	if response.Diagnostics.HasError() {
-		return
-	}
-
-	instance, err := c.getAndMergeSecurityGroupRule(ctx, plan)
-	if err != nil {
-		response.Diagnostics.AddError(err.Error(), err.Error())
-		return
-	}
-	if instance == nil {
-		response.State.RemoveResource(ctx)
-	}
-	response.Diagnostics.Append(response.State.Set(ctx, instance)...)
 }
 
 func (c *ctyunSecurityGroupRule) Read(ctx context.Context, request resource.ReadRequest, response *resource.ReadResponse) {
@@ -352,7 +354,10 @@ func (c *ctyunSecurityGroupRule) Update(ctx context.Context, request resource.Up
 		}
 	}
 
-	instance, err := c.getAndMergeSecurityGroupRule(ctx, state)
+	// 更新完成后，需要获取 API 返回的 Computed 字段值
+	// 但对于 protocol 和 description 字段，如果 API 返回值与用户配置不一致，使用用户配置的值
+	plan.Description = types.StringValue(requestDescription)
+	instance, err := c.getAndMergeSecurityGroupRuleWithPlan(ctx, plan)
 	if err != nil {
 		response.Diagnostics.AddError(err.Error(), err.Error())
 		return
@@ -452,6 +457,80 @@ func (c *ctyunSecurityGroupRule) Configure(_ context.Context, request resource.C
 	meta := request.ProviderData.(*common.CtyunMetadata)
 	c.meta = meta
 	c.securityGroupService = business.NewSecurityGroupService(meta)
+}
+
+// getAndMergeSecurityGroupRuleWithPlan 查询安全组规则并合并 plan 中的值
+// 用于 Create 操作后，获取 Computed 字段的值，同时保留用户配置的 protocol 和 description
+func (c *ctyunSecurityGroupRule) getAndMergeSecurityGroupRuleWithPlan(ctx context.Context, plan CtyunSecurityGroupRuleConfig) (*CtyunSecurityGroupRuleConfig, error) {
+	request := &ctvpc.SecurityGroupRuleDescribeRequest{
+		SecurityGroupRuleId: plan.Id.ValueString(),
+		SecurityGroupId:     plan.SecurityGroupId.ValueString(),
+		RegionId:            plan.RegionId.ValueString(),
+	}
+	response, err := c.meta.Apis.CtVpcApis.SecurityGroupRuleDescribeApi.Do(ctx, c.meta.Credential, request)
+	
+	// 保存用户配置的原始值，用于兜底
+	userRange := plan.Range
+	userDestCidrIp := plan.DestCidrIp
+	userProtocol := plan.Protocol
+	userDescription := plan.Description
+	userEthertype := plan.EtherType
+	userPriority := plan.Priority
+	userDirection := plan.Direction
+	userAction := plan.Action
+
+	if err != nil {
+		// 如果查询不到信息会报异常，此时直接返回空
+		if err.ErrorCode() == common.OpenapiSecurityGroupRuleNotFound {
+			return nil, nil
+		}
+		// 如果 API 调用失败，返回 plan 本身，确保所有字段都有值
+		return &plan, nil
+	}
+
+	ethertype, err2 := business.SecurityGroupRuleEtherTypeMap.ToOriginalScene(response.Ethertype, business.SecurityGroupRuleEtherTypeMapScene1)
+	if err2 != nil {
+		return nil, err2
+	}
+
+	// 使用 API 返回的 Computed 字段值
+	// 如果 API 返回的值为空，使用用户配置的原始值兜底
+	if response.Range != "" {
+		plan.Range = types.StringValue(response.Range)
+	} else {
+		plan.Range = userRange
+	}
+	if response.DestCidrIp != "" {
+		plan.DestCidrIp = types.StringValue(response.DestCidrIp)
+	} else {
+		plan.DestCidrIp = userDestCidrIp
+	}
+	if ethertype.(string) != "" {
+		plan.EtherType = types.StringValue(ethertype.(string))
+	} else {
+		plan.EtherType = userEthertype
+	}
+	if response.Priority != 0 {
+		plan.Priority = types.Int64Value(int64(response.Priority))
+	} else {
+		plan.Priority = userPriority
+	}
+	if response.Direction != "" {
+		plan.Direction = types.StringValue(response.Direction)
+	} else {
+		plan.Direction = userDirection
+	}
+	if response.Action != "" {
+		plan.Action = types.StringValue(response.Action)
+	} else {
+		plan.Action = userAction
+	}
+
+	// 恢复用户配置的 protocol 和 description，避免 API 返回值与配置不一致
+	plan.Protocol = userProtocol
+	plan.Description = userDescription
+
+	return &plan, nil
 }
 
 // getAndMergeSecurityGroupRule 查询安全组规则
