@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/business"
+	"time"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/common"
 	"github.com/ctyun-it/terraform-provider-ctyun/internal/core/ctvpc"
 	terraform_extend "github.com/ctyun-it/terraform-provider-ctyun/internal/extend/terraform"
@@ -383,6 +384,76 @@ func (c *CtyunAclRule) Delete(ctx context.Context, request resource.DeleteReques
 }
 
 func (c *CtyunAclRule) create(ctx context.Context, config *CtyunAclRuleConfig) error {
+	// 在创建前检查同一方向是否存在相同优先级的规则
+	// 如果存在且内容相同，则直接使用该规则（幂等性处理）
+	// 如果存在但内容不同，则返回错误
+	ruleList, err := c.getRuleList(ctx, config)
+	if err != nil {
+		return err
+	}
+	// 检查优先级冲突
+	if config.Direction.ValueString() == business.AclDirectionIngress {
+		for _, rule := range ruleList.InRules {
+			if rule.Priority == config.Priority.ValueInt32() {
+				// 检查规则内容是否相同
+				tempConfig := &CtyunAclRuleConfig{
+					Direction:            types.StringValue(*rule.Direction),
+					Priority:             types.Int32Value(rule.Priority),
+					Protocol:             types.StringValue(*rule.Protocol),
+					IpVersion:            types.StringValue(*rule.IpVersion),
+					SourceIpAddress:      types.StringValue(*rule.SourceIpAddress),
+					DestinationIpAddress: types.StringValue(*rule.DestinationIpAddress),
+					Action:               types.StringValue(*rule.Action),
+					Enabled:              types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*rule.Enabled]),
+				}
+				if rule.DestinationPort != nil {
+					tempConfig.DestinationPort = types.StringValue(*rule.DestinationPort)
+				}
+				if rule.SourcePort != nil {
+					tempConfig.SourcePort = types.StringValue(*rule.SourcePort)
+				}
+				if c.ingressCheckSame(rule, tempConfig) {
+					// 规则已存在且内容相同，直接使用
+					config.ID = types.StringValue(*rule.AclRuleID)
+					return nil
+				}
+				// 优先级冲突但内容不同，返回错误
+				return fmt.Errorf("acl_rule.conflict.priority:Priority %d is Conflict for direction %s",
+					config.Priority.ValueInt32(), config.Direction.ValueString())
+			}
+		}
+	} else if config.Direction.ValueString() == business.AclDirectionEgress {
+		for _, rule := range ruleList.OutRules {
+			if rule.Priority == config.Priority.ValueInt32() {
+				// 检查规则内容是否相同
+				tempConfig := &CtyunAclRuleConfig{
+					Direction:            types.StringValue(*rule.Direction),
+					Priority:             types.Int32Value(rule.Priority),
+					Protocol:             types.StringValue(*rule.Protocol),
+					IpVersion:            types.StringValue(*rule.IpVersion),
+					SourceIpAddress:      types.StringValue(*rule.SourceIpAddress),
+					DestinationIpAddress: types.StringValue(*rule.DestinationIpAddress),
+					Action:               types.StringValue(*rule.Action),
+					Enabled:              types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*rule.Enabled]),
+				}
+				if rule.DestinationPort != nil {
+					tempConfig.DestinationPort = types.StringValue(*rule.DestinationPort)
+				}
+				if rule.SourcePort != nil {
+					tempConfig.SourcePort = types.StringValue(*rule.SourcePort)
+				}
+				if c.egressCheckSame(rule, tempConfig) {
+					// 规则已存在且内容相同，直接使用
+					config.ID = types.StringValue(*rule.AclRuleID)
+					return nil
+				}
+				// 优先级冲突但内容不同，返回错误
+				return fmt.Errorf("acl_rule.conflict.priority:Priority %d is Conflict for direction %s",
+					config.Priority.ValueInt32(), config.Direction.ValueString())
+			}
+		}
+	}
+
 	params := &ctvpc.CtvpcCreateAclRuleRequest{
 		ClientToken: uuid.NewString(),
 		RegionID:    config.RegionID.ValueString(),
@@ -433,22 +504,8 @@ func (c *CtyunAclRule) getAndMerge(ctx context.Context, config *CtyunAclRuleConf
 	if err != nil {
 		return err
 	}
-	if ingressDetail == nil {
-		config.Direction = types.StringValue(*egressDetail.Direction)
-		config.Priority = types.Int32Value(egressDetail.Priority)
-		config.Protocol = types.StringValue(*egressDetail.Protocol)
-		config.IpVersion = types.StringValue(*egressDetail.IpVersion)
-		if config.Protocol.ValueString() == business.AclRuleProtocolTCP ||
-			config.Protocol.ValueString() == business.AclRuleProtocolUDP {
-			config.DestinationPort = types.StringValue(*egressDetail.DestinationPort)
-			config.SourcePort = types.StringValue(*egressDetail.SourcePort)
-		}
-		config.SourceIpAddress = types.StringValue(*egressDetail.SourceIpAddress)
-		config.DestinationIpAddress = types.StringValue(*egressDetail.DestinationIpAddress)
-		config.Action = types.StringValue(*egressDetail.Action)
-		config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*egressDetail.Enabled])
-		config.Description = types.StringValue(*egressDetail.Description)
-	} else {
+	// 处理 ingress 规则
+	if ingressDetail != nil {
 		config.Direction = types.StringValue(*ingressDetail.Direction)
 		config.Priority = types.Int32Value(ingressDetail.Priority)
 		config.Protocol = types.StringValue(*ingressDetail.Protocol)
@@ -463,39 +520,91 @@ func (c *CtyunAclRule) getAndMerge(ctx context.Context, config *CtyunAclRuleConf
 		config.Action = types.StringValue(*ingressDetail.Action)
 		config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*ingressDetail.Enabled])
 		config.Description = types.StringValue(*ingressDetail.Description)
+		return nil
 	}
-	return nil
+	// 处理 egress 规则
+	if egressDetail != nil {
+		config.Direction = types.StringValue(*egressDetail.Direction)
+		config.Priority = types.Int32Value(egressDetail.Priority)
+		config.Protocol = types.StringValue(*egressDetail.Protocol)
+		config.IpVersion = types.StringValue(*egressDetail.IpVersion)
+		if config.Protocol.ValueString() == business.AclRuleProtocolTCP ||
+			config.Protocol.ValueString() == business.AclRuleProtocolUDP {
+			config.DestinationPort = types.StringValue(*egressDetail.DestinationPort)
+			config.SourcePort = types.StringValue(*egressDetail.SourcePort)
+		}
+		config.SourceIpAddress = types.StringValue(*egressDetail.SourceIpAddress)
+		config.DestinationIpAddress = types.StringValue(*egressDetail.DestinationIpAddress)
+		config.Action = types.StringValue(*egressDetail.Action)
+		config.Enabled = types.BoolValue(map[string]bool{business.AclRuleEnable: true, business.AclRuleDisable: false}[*egressDetail.Enabled])
+		config.Description = types.StringValue(*egressDetail.Description)
+		return nil
+	}
+	// 规则不存在，返回错误
+	return fmt.Errorf("ACL 规则不存在 (id=%s, direction=%s)", config.ID.ValueString(), config.Direction.ValueString())
 }
 
 func (c *CtyunAclRule) getRuleID(ctx context.Context, config *CtyunAclRuleConfig) error {
 	// 通过获取列表获取，rule id
-	ruleList, err := c.getRuleList(ctx, config)
-	if err != nil {
-		return err
+	// 由于资源可能需要时间同步，最多重试 5 次
+	var ruleList *ctvpc.CtvpcListAclRuleReturnObjResponse
+	var err error
+	for i := 0; i < 5; i++ {
+		ruleList, err = c.getRuleList(ctx, config)
+		if err != nil {
+			return err
+		}
+		// 若刚刚创建的规则为入规则，遍历入规则列表
+		if config.Direction.ValueString() == business.AclDirectionIngress {
+			ingressRuleList := ruleList.InRules
+			for _, ingressRule := range ingressRuleList {
+				same := c.ingressCheckSame(ingressRule, config)
+				if same {
+					config.ID = types.StringValue(*ingressRule.AclRuleID)
+					return nil
+				}
+			}
+		} else if config.Direction.ValueString() == business.AclDirectionEgress {
+			egressRuleList := ruleList.OutRules
+			for _, egressRule := range egressRuleList {
+				same := c.egressCheckSame(egressRule, config)
+				if same {
+					config.ID = types.StringValue(*egressRule.AclRuleID)
+					return nil
+				}
+			}
+		} else {
+			err = fmt.Errorf("direction 取值有误！当前值为%s", config.Direction.ValueString())
+			return err
+		}
+		// 如果没找到，等待 2 秒后重试
+		time.Sleep(2 * time.Second)
 	}
-	// 若刚刚创建的规则为入规则，遍历入规则列表
+	// 如果重试后仍然找不到，使用优先级和方向匹配
 	if config.Direction.ValueString() == business.AclDirectionIngress {
-		ingressRuleList := ruleList.InRules
-		for _, ingressRule := range ingressRuleList {
-			same := c.ingressCheckSame(ingressRule, config)
-			if same {
-				config.ID = types.StringValue(*ingressRule.AclRuleID)
-				break
+		for _, rule := range ruleList.InRules {
+			if rule.Priority == config.Priority.ValueInt32() &&
+				*rule.Protocol == config.Protocol.ValueString() &&
+				*rule.IpVersion == config.IpVersion.ValueString() &&
+				*rule.SourceIpAddress == config.SourceIpAddress.ValueString() &&
+				*rule.DestinationIpAddress == config.DestinationIpAddress.ValueString() {
+				config.ID = types.StringValue(*rule.AclRuleID)
+				return nil
 			}
 		}
 	} else if config.Direction.ValueString() == business.AclDirectionEgress {
-		egressRuleList := ruleList.OutRules
-		for _, egressRule := range egressRuleList {
-			same := c.egressCheckSame(egressRule, config)
-			if same {
-				config.ID = types.StringValue(*egressRule.AclRuleID)
+		for _, rule := range ruleList.OutRules {
+			if rule.Priority == config.Priority.ValueInt32() &&
+				*rule.Protocol == config.Protocol.ValueString() &&
+				*rule.IpVersion == config.IpVersion.ValueString() &&
+				*rule.SourceIpAddress == config.SourceIpAddress.ValueString() &&
+				*rule.DestinationIpAddress == config.DestinationIpAddress.ValueString() {
+				config.ID = types.StringValue(*rule.AclRuleID)
+				return nil
 			}
 		}
-	} else {
-		err = fmt.Errorf("direction 取值有误！当前值为%s", config.Direction.ValueString())
-		return err
 	}
-	return nil
+	return fmt.Errorf("无法获取新创建的 ACL 规则 ID，请检查资源状态")
 }
 
 func (c *CtyunAclRule) getRuleList(ctx context.Context, config *CtyunAclRuleConfig) (*ctvpc.CtvpcListAclRuleReturnObjResponse, error) {
